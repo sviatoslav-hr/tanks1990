@@ -1,49 +1,42 @@
+import { Color } from "./color";
+import { Context } from "./context";
+import { Tank } from "./entity";
+
 const WIDTH = 800;
 const HEIGHT = 600;
 
-type Context = CanvasRenderingContext2D;
-
 export function createCanvas(): HTMLCanvasElement {
-  const element = document.createElement("canvas");
-  element.width = WIDTH;
-  element.height = HEIGHT;
-  return element;
+    const element = document.createElement("canvas");
+    element.width = WIDTH;
+    element.height = HEIGHT;
+    return element;
 }
 
 export function startAnimation(canvas: HTMLCanvasElement): void {
-  const ctx = canvas.getContext('2d');
-  if (ctx == null) {
-    console.error("No context found");
-    return;
-  }
-  let x = 1;
-  let y = 1;
-  let dx = 1;
-  let dy = 1;
-  const width = 100;
-  const height = 100;
+    const ctx = new Context(canvas.getContext("2d")!);
+    const tank = new Tank(canvas.width, canvas.height);
 
-  const animate = function(): void {
-    clearScreen(ctx);
-    drawRect(ctx, x, y, width, height, 'red');
-    if (x <= 0 || x + width >= canvas.width) {
-      dx *= -1;
-    }
-    if (y <= 0 || y + height >= canvas.height) {
-      dy *= -1;
-    }
-    x += dx
-    y += dy;
+    let lastTimestamp = performance.now();
+    const animate = function (timestamp: number): void {
+        const dt = timestamp - lastTimestamp;
+        lastTimestamp = timestamp;
+        ctx.clearScreen();
+        tank.draw(ctx);
+        drawFPS(ctx, dt);
+        tank.update(dt);
+        window.requestAnimationFrame(animate);
+    };
     window.requestAnimationFrame(animate);
-  }
-  window.requestAnimationFrame(animate);
 }
 
-function drawRect(ctx: Context, x: number, y: number, width: number, height: number, color: string): void {
-  ctx.fillStyle = color;
-  ctx.fillRect(x, y, width, height)
+function drawFPS(ctx: Context, dt: number): void {
+    const fps = 1000 / dt;
+    ctx.setFont("36px Helvetica");
+    ctx.setFillColor(Color.WHITE);
+    ctx.drawText(numround(fps).toString(), 10, 10);
 }
 
-function clearScreen(ctx: Context): void {
-  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+function numround(value: number, margin: number = 0): number {
+    const n = 10 ** margin;
+    return Math.round(value * n) / n;
 }
