@@ -21,7 +21,9 @@ export class Context {
     }
 
     setFillColor(color: Color) {
-        this.ctx.fillStyle = color;
+        if (this.ctx.fillStyle !== color) {
+            this.ctx.fillStyle = color;
+        }
     }
 
     clearScreen(): void {

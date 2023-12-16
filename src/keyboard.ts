@@ -1,4 +1,4 @@
-export type KeyCode = "KeyW" | "KeyS" | "KeyA" | "KeyD" | "Space";
+export type KeyCode = "KeyW" | "KeyS" | "KeyA" | "KeyD" | "KeyF" | "Space";
 export type KeysState = Partial<Record<KeyCode, boolean>>;
 
 export type Keyboard = {
