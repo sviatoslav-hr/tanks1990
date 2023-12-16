@@ -1,11 +1,5 @@
 import { type Color } from "./color";
-
-export type Rect = {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-};
+import { Rect } from "./math";
 
 export class Context {
     constructor(private ctx: CanvasRenderingContext2D) {

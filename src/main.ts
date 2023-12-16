@@ -1,5 +1,5 @@
 import { createCanvas, startAnimation } from "./canvas";
-import { KeyCode, Keyboard } from "./keyboard";
+import { KeyCode, keyboard } from "./keyboard";
 import "./style.css";
 
 const appElement = document.querySelector<HTMLDivElement>("#app")!;
@@ -12,8 +12,8 @@ appElement.append(canvas);
 startAnimation(canvas);
 
 document.body.addEventListener("keydown", (ev) =>
-    Keyboard.setPressed(ev.code as KeyCode),
+    keyboard.setPressed(ev.code as KeyCode),
 );
 document.body.addEventListener("keyup", (ev) =>
-    Keyboard.setReleased(ev.code as KeyCode),
+    keyboard.setReleased(ev.code as KeyCode),
 );

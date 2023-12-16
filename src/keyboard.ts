@@ -1,4 +1,11 @@
-export type KeyCode = "KeyW" | "KeyS" | "KeyA" | "KeyD" | "KeyF" | "Space";
+export type KeyCode =
+    | "KeyW"
+    | "KeyS"
+    | "KeyA"
+    | "KeyD"
+    | "KeyF"
+    | "KeyB"
+    | "Space";
 export type KeysState = Partial<Record<KeyCode, boolean>>;
 
 export type Keyboard = {
@@ -7,7 +14,7 @@ export type Keyboard = {
     setReleased(code: KeyCode): void;
 };
 
-export const Keyboard: Keyboard = {
+export const keyboard: Keyboard = {
     pressed: {},
     setPressed(code) {
         this.pressed[code] = true;

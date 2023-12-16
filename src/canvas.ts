@@ -1,7 +1,7 @@
 import { Color } from "./color";
 import { Context } from "./context";
 import { Tank } from "./entity";
-import { Keyboard } from "./keyboard";
+import { keyboard } from "./keyboard";
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -23,7 +23,7 @@ export function startAnimation(canvas: HTMLCanvasElement): void {
         lastTimestamp = timestamp;
         ctx.clearScreen();
         tank.draw(ctx);
-        if (Keyboard.pressed.KeyF) {
+        if (keyboard.pressed.KeyF) {
             drawFPS(ctx, dt);
         }
         tank.update(dt);

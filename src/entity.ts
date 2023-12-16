@@ -1,6 +1,7 @@
 import { Color } from "./color";
-import { Context, Rect } from "./context";
-import { Keyboard } from "./keyboard";
+import { type Context } from "./context";
+import { keyboard } from "./keyboard";
+import { type Rect, clamp, rotateRect } from "./math";
 
 type BlockOpts = Rect & {
     color: Color;
@@ -26,9 +27,7 @@ export class Block implements Entity {
         this.color = color;
     }
 
-    update(dt: number): void {
-        throw new Error("Method not implemented.");
-    }
+    update(_: number): void {}
 
     draw(ctx: Context): void {
         ctx.setFillColor(this.color);
@@ -44,7 +43,7 @@ export class Tank implements Entity {
     private dx = 0;
     private dy = 0;
     private rotation = 0;
-    private readonly bgColor = Color.ORANGE_SAFFRON;
+    private showBondary = false;
     private readonly v = 5;
 
     constructor(
@@ -61,6 +60,28 @@ export class Tank implements Entity {
     }
 
     draw(ctx: Context): void {
+        for (const block of this.createModel()) {
+            ctx.setFillColor(block.color);
+            const rotated = rotateRect(
+                block,
+                this.width / 2,
+                this.height / 2,
+                this.rotation,
+            );
+            ctx.drawRect(
+                this.x + rotated.x,
+                this.y + rotated.y,
+                rotated.width,
+                rotated.height,
+            );
+        }
+        if (this.showBondary) {
+            ctx.setStrokeColor(Color.RED);
+            ctx.drawBoundary(this);
+        }
+    }
+
+    private createModel(): BlockOpts[] {
         const blocks: BlockOpts[] = [];
         const wheelWidth = this.width * 0.25;
         const wheelHeight = this.height * 0.75;
@@ -105,84 +126,28 @@ export class Tank implements Entity {
             height: headYOffset,
             color: Color.WHITE_NAVAJO,
         });
-        for (const block of blocks) {
-            ctx.setFillColor(block.color);
-            const rotated = rotateRect(
-                block,
-                this.width / 2,
-                this.height / 2,
-                this.rotation,
-            );
-            ctx.drawRect(
-                this.x + rotated.x,
-                this.y + rotated.y,
-                rotated.width,
-                rotated.height,
-            );
-        }
-        ctx.setStrokeColor(Color.RED);
-        ctx.drawBoundary(this);
+        return blocks;
     }
 
     private handleKeyboard(): void {
         this.dy = 0;
         this.dx = 0;
-        if (Keyboard.pressed.KeyA) {
+        if (keyboard.pressed.KeyA) {
             this.dx = -this.v;
             this.rotation = 270;
         }
-        if (Keyboard.pressed.KeyD) {
+        if (keyboard.pressed.KeyD) {
             this.dx = this.v;
             this.rotation = 90;
         }
-        if (Keyboard.pressed.KeyW) {
+        if (keyboard.pressed.KeyW) {
             this.dy = -this.v;
             this.rotation = 0;
         }
-        if (Keyboard.pressed.KeyS) {
+        if (keyboard.pressed.KeyS) {
             this.dy = this.v;
             this.rotation = 180;
         }
+        this.showBondary = !!keyboard.pressed.KeyB;
     }
-}
-
-function clamp(value: number, min: number, max: number): number {
-    return Math.min(Math.max(value, min), max);
-}
-
-function rotateRect(rect: Rect, cx: number, cy: number, deg: number): Rect {
-    if (deg === 0) {
-        return rect;
-    }
-    const { x, y, width, height } = rect;
-    const rad = toRadians(deg);
-    const cos = Math.cos(rad);
-    const sin = Math.sin(rad);
-    const [nx, ny] = rotatePoint(x + width / 2, y + height / 2, cx, cy, deg);
-    const swap = deg === 90 || deg === 270;
-    return {
-        x: nx - (swap ? height : width) / 2,
-        y: ny - (swap ? width : height) / 2,
-        width: swap ? height : width,
-        height: swap ? width : height,
-    };
-}
-
-function rotatePoint(
-    x: number,
-    y: number,
-    cx: number,
-    cy: number,
-    deg: number,
-): [number, number] {
-    const radians = toRadians(deg),
-        cos = Math.cos(radians),
-        sin = Math.sin(radians),
-        nx = cos * (x - cx) - sin * (y - cy) + cx,
-        ny = cos * (y - cy) + sin * (x - cx) + cy;
-    return [nx, ny];
-}
-
-function toRadians(deg: number): number {
-    return (Math.PI / 180) * deg;
 }
