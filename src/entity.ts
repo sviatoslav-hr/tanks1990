@@ -1,6 +1,6 @@
 import { Color } from "./color";
 import { type Context } from "./context";
-import { keyboard } from "./keyboard";
+import { Keyboard } from "./keyboard";
 import { type Rect, clamp, rotateRect } from "./math";
 
 type BlockOpts = Rect & {
@@ -40,10 +40,10 @@ export class Tank implements Entity {
     public y = 0;
     public width = 100;
     public height = 100;
+    public showBondary = false;
     private dx = 0;
     private dy = 0;
     private rotation = 0;
-    private showBondary = false;
     private readonly v = 5;
 
     constructor(
@@ -132,22 +132,21 @@ export class Tank implements Entity {
     private handleKeyboard(): void {
         this.dy = 0;
         this.dx = 0;
-        if (keyboard.pressed.KeyA) {
+        if (Keyboard.pressed.KeyA) {
             this.dx = -this.v;
             this.rotation = 270;
         }
-        if (keyboard.pressed.KeyD) {
+        if (Keyboard.pressed.KeyD) {
             this.dx = this.v;
             this.rotation = 90;
         }
-        if (keyboard.pressed.KeyW) {
+        if (Keyboard.pressed.KeyW) {
             this.dy = -this.v;
             this.rotation = 0;
         }
-        if (keyboard.pressed.KeyS) {
+        if (Keyboard.pressed.KeyS) {
             this.dy = this.v;
             this.rotation = 180;
         }
-        this.showBondary = !!keyboard.pressed.KeyB;
     }
 }

@@ -1,7 +1,7 @@
 import { Color } from "./color";
 import { Context } from "./context";
 import { Tank } from "./entity";
-import { keyboard } from "./keyboard";
+import { Keyboard } from "./keyboard";
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -18,18 +18,22 @@ export function startAnimation(canvas: HTMLCanvasElement): void {
     const tank = new Tank(canvas.width, canvas.height);
 
     let lastTimestamp = performance.now();
+    let showFPS = false;
     const animate = function (timestamp: number): void {
         const dt = timestamp - lastTimestamp;
         lastTimestamp = timestamp;
         ctx.clearScreen();
         tank.draw(ctx);
-        if (keyboard.pressed.KeyF) {
+        if (showFPS) {
             drawFPS(ctx, dt);
         }
         tank.update(dt);
         window.requestAnimationFrame(animate);
     };
     window.requestAnimationFrame(animate);
+    Keyboard.listen(document.body);
+    Keyboard.onKeydown("KeyF", (code) => (showFPS = !showFPS));
+    Keyboard.onKeydown("KeyB", () => (tank.showBondary = !tank.showBondary));
 }
 
 function drawFPS(ctx: Context, dt: number): void {
