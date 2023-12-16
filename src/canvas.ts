@@ -15,7 +15,8 @@ export function createCanvas(): HTMLCanvasElement {
 
 export function startAnimation(canvas: HTMLCanvasElement): void {
     const ctx = new Context(canvas.getContext("2d")!);
-    const tank = new Tank(canvas.width, canvas.height);
+    const screen = { x: 0, y: 0, width: canvas.width, height: canvas.height };
+    const tank = new Tank(screen);
 
     let lastTimestamp = performance.now();
     let showFPS = false;
@@ -33,7 +34,7 @@ export function startAnimation(canvas: HTMLCanvasElement): void {
     window.requestAnimationFrame(animate);
     Keyboard.listen(document.body);
     Keyboard.onKeydown("KeyF", (code) => (showFPS = !showFPS));
-    Keyboard.onKeydown("KeyB", () => (tank.showBondary = !tank.showBondary));
+    Keyboard.onKeydown("KeyB", () => (tank.showBoundary = !tank.showBoundary));
 }
 
 function drawFPS(ctx: Context, dt: number): void {
