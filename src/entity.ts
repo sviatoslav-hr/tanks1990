@@ -202,18 +202,22 @@ export class PlayerTank extends Tank implements Entity {
     protected handleKeyboard(): void {
         if (Keyboard.pressed.KeyA) {
             this.dx = -this.v;
+            this.dy = 0;
             this.direction = Direction.LEFT;
         }
         if (Keyboard.pressed.KeyD) {
             this.dx = this.v;
+            this.dy = 0;
             this.direction = Direction.RIGHT;
         }
         if (Keyboard.pressed.KeyW) {
             this.dy = -this.v;
+            this.dx = 0;
             this.direction = Direction.UP;
         }
         if (Keyboard.pressed.KeyS) {
             this.dy = this.v;
+            this.dx = 0;
             this.direction = Direction.DOWN;
         }
         if (Keyboard.pressed.Space && !this.shootingDelay) {
