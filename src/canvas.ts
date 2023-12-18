@@ -59,8 +59,8 @@ function drawFPS(ctx: Context, dt: number): void {
     }
 
     ctx.setFillColor(Color.BLACK);
-    ctx.setFont("200 40px Helvetica");
-    ctx.drawText(fps, 8, 8);
+    ctx.setFont("600 36px Helvetica");
+    ctx.drawText(fps, 8, 10);
     ctx.setFont("200 36px Helvetica");
     ctx.setFillColor(Color.WHITE);
     ctx.drawText(fps, 10, 10);
