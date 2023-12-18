@@ -43,8 +43,21 @@ export function startAnimation(canvas: HTMLCanvasElement): void {
     );
 }
 
+// TODO: maybe remove it to a class to have this state there.
+// This way it's possible to have multiple independent FPS counters
+let lastFPS: string = "0";
+let fpsUpdateDelayMs = 0;
 function drawFPS(ctx: Context, dt: number): void {
-    const fps = numround(1000 / dt).toString();
+    let fps: string = "0";
+    if (fpsUpdateDelayMs >= 0) {
+        fps = lastFPS;
+        fpsUpdateDelayMs -= dt;
+    } else {
+        fps = numround(1000 / dt).toString();
+        lastFPS = fps;
+        fpsUpdateDelayMs = 300;
+    }
+
     ctx.setFillColor(Color.BLACK);
     ctx.setFont("200 40px Helvetica");
     ctx.drawText(fps, 8, 8);
