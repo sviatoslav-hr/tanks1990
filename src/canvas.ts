@@ -1,6 +1,6 @@
 import { Color } from "./color";
 import { Context } from "./context";
-import { EnemyTank, Tank } from "./entity";
+import { EnemyTank, PlayerTank } from "./entity";
 import { Keyboard } from "./keyboard";
 
 const WIDTH = 800;
@@ -16,7 +16,7 @@ export function createCanvas(): HTMLCanvasElement {
 export function startAnimation(canvas: HTMLCanvasElement): void {
     const ctx = new Context(canvas.getContext("2d")!);
     const screen = { x: 0, y: 0, width: canvas.width, height: canvas.height };
-    const tank = new Tank(screen);
+    const player = new PlayerTank(screen);
     const enemy = new EnemyTank(screen);
 
     let lastTimestamp = performance.now();
@@ -25,19 +25,22 @@ export function startAnimation(canvas: HTMLCanvasElement): void {
         const dt = timestamp - lastTimestamp;
         lastTimestamp = timestamp;
         ctx.clearScreen();
-        tank.draw(ctx);
         enemy.draw(ctx);
+        player.draw(ctx);
         if (showFPS) {
             drawFPS(ctx, dt);
         }
-        tank.update(dt);
+        player.update(dt);
         enemy.update(dt);
         window.requestAnimationFrame(animate);
     };
     window.requestAnimationFrame(animate);
     Keyboard.listen(document.body);
     Keyboard.onKeydown("KeyF", (code) => (showFPS = !showFPS));
-    Keyboard.onKeydown("KeyB", () => (tank.showBoundary = !tank.showBoundary));
+    Keyboard.onKeydown(
+        "KeyB",
+        () => (player.showBoundary = !player.showBoundary),
+    );
 }
 
 function drawFPS(ctx: Context, dt: number): void {

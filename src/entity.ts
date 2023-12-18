@@ -64,28 +64,23 @@ export class Block implements Entity {
     }
 }
 
-export class Tank implements Entity {
+abstract class Tank implements Entity {
     public x = 0;
     public y = 0;
     public width = 100;
     public height = 100;
     public showBoundary = false;
-    private dx = 0;
-    private dy = 0;
-    private direction = Direction.UP;
-    private shootingDelay = 0;
-    private readonly v = 5;
-    private readonly SHOOTING_DELAY_MS = 300;
-    private readonly projectiles: Projectile[] = [];
+    protected dx = 0;
+    protected dy = 0;
+    protected direction = Direction.UP;
+    protected readonly v = 5;
+    protected readonly SHOOTING_DELAY_MS = 300;
+    protected readonly projectiles: Projectile[] = [];
     protected readonly colors = tankColors.orange;
 
-    constructor(private boundary: Rect) {}
+    constructor(protected boundary: Rect) {}
 
     update(dt: number): void {
-        this.shootingDelay = Math.max(0, this.shootingDelay - dt);
-        this.dy = 0;
-        this.dx = 0;
-        this.handleKeyboard();
         this.x += this.dx;
         this.y += this.dy;
         this.x = clamp(
@@ -178,6 +173,32 @@ export class Tank implements Entity {
         return blocks;
     }
 
+    getProjectilePos(): [number, number] {
+        switch (this.direction) {
+            case Direction.UP:
+                return [this.x + this.width / 2, this.y];
+            case Direction.RIGHT:
+                return [this.x + this.width, this.y + this.height / 2];
+            case Direction.DOWN:
+                return [this.x + this.width / 2, this.y + this.height];
+            case Direction.LEFT:
+                return [this.x, this.y + this.height / 2];
+        }
+    }
+}
+
+export class PlayerTank extends Tank implements Entity {
+    protected colors: TankColorSpecs = tankColors.orange;
+    private shootingDelay = 0;
+
+    update(dt: number): void {
+        this.shootingDelay = Math.max(0, this.shootingDelay - dt);
+        this.dy = 0;
+        this.dx = 0;
+        this.handleKeyboard();
+        super.update(dt);
+    }
+
     protected handleKeyboard(): void {
         if (Keyboard.pressed.KeyA) {
             this.dx = -this.v;
@@ -208,24 +229,16 @@ export class Tank implements Entity {
             );
         }
     }
-
-    getProjectilePos(): [number, number] {
-        switch (this.direction) {
-            case Direction.UP:
-                return [this.x + this.width / 2, this.y];
-            case Direction.RIGHT:
-                return [this.x + this.width, this.y + this.height / 2];
-            case Direction.DOWN:
-                return [this.x + this.width / 2, this.y + this.height];
-            case Direction.LEFT:
-                return [this.x, this.y + this.height / 2];
-        }
-    }
 }
 
 export class EnemyTank extends Tank implements Entity {
     protected colors: TankColorSpecs = tankColors.green;
-    protected handleKeyboard(): void {}
+    protected direction = Direction.RIGHT;
+
+    update(dt: number): void {
+        this.dx = 1;
+        super.update(dt);
+    }
 }
 
 class Projectile implements Entity {
