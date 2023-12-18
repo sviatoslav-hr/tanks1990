@@ -10,13 +10,35 @@ export enum Direction {
     LEFT = 270,
 }
 
+export type Entity = {
+    update(dt: number): void;
+    draw(ctx: Context): void;
+};
+
 type BlockOpts = Rect & {
     color: Color;
 };
 
-export type Entity = {
-    update(dt: number): void;
-    draw(ctx: Context): void;
+type TankColorSpecs = {
+    track: Color;
+    body: Color;
+    turret: Color;
+    gun: Color;
+};
+
+const tankColors: Record<"orange" | "green", TankColorSpecs> = {
+    orange: {
+        track: Color.ORANGE_GAMBOGE,
+        body: Color.ORANGE_GAMBOGE,
+        turret: Color.ORANGE_SAFFRON,
+        gun: Color.WHITE_NAVAJO,
+    },
+    green: {
+        track: Color.GREEN_DARK,
+        body: Color.GREEN_DARK,
+        turret: Color.GREEN_DEEP,
+        gun: Color.GREEN_NT,
+    },
 };
 
 export class Block implements Entity {
@@ -55,6 +77,7 @@ export class Tank implements Entity {
     private readonly v = 5;
     private readonly SHOOTING_DELAY_MS = 300;
     private readonly projectiles: Projectile[] = [];
+    protected readonly colors = tankColors.orange;
 
     constructor(private boundary: Rect) {}
 
@@ -109,53 +132,53 @@ export class Tank implements Entity {
 
     private createModel(): BlockOpts[] {
         const blocks: BlockOpts[] = [];
-        const wheelWidth = this.width * 0.25;
-        const wheelHeight = this.height * 0.75;
-        const bodyHeight = wheelHeight * 0.8;
+        const trackWidth = this.width * 0.25;
+        const trackHeight = this.height * 0.75;
+        const bodyHeight = trackHeight * 0.8;
         const headSize = bodyHeight * 0.7;
-        const wheelYOffset = this.height - wheelHeight;
+        const trackYOffset = this.height - trackHeight;
         blocks.push({
             x: 0,
-            y: wheelYOffset,
-            width: wheelWidth,
-            height: wheelHeight,
-            color: Color.ORANGE_GAMBOGE,
+            y: trackYOffset,
+            width: trackWidth,
+            height: trackHeight,
+            color: this.colors.track,
         });
         blocks.push({
-            x: 3 * wheelWidth,
-            y: wheelYOffset,
-            width: wheelWidth,
-            height: wheelHeight,
-            color: Color.ORANGE_GAMBOGE,
+            x: 3 * trackWidth,
+            y: trackYOffset,
+            width: trackWidth,
+            height: trackHeight,
+            color: this.colors.track,
         });
-        const bodyYOffset = wheelYOffset + (wheelHeight - bodyHeight) / 2;
+        const bodyYOffset = trackYOffset + (trackHeight - bodyHeight) / 2;
         blocks.push({
             x: 0,
             y: bodyYOffset,
             width: this.width,
             height: bodyHeight,
-            color: Color.ORANGE_GAMBOGE,
+            color: this.colors.body,
         });
-        const headYOffset = bodyYOffset + (bodyHeight - headSize) / 2;
+        const turretYOffset = bodyYOffset + (bodyHeight - headSize) / 2;
         blocks.push({
-            x: wheelWidth,
-            y: headYOffset,
-            width: this.width - 2 * wheelWidth,
+            x: trackWidth,
+            y: turretYOffset,
+            width: this.width - 2 * trackWidth,
             height: headSize,
-            color: Color.ORANGE_SAFFRON,
+            color: this.colors.turret,
         });
         const gunWidth = this.width / 15;
         blocks.push({
             x: (this.width - gunWidth) / 2,
             y: 0,
             width: gunWidth,
-            height: headYOffset,
-            color: Color.WHITE_NAVAJO,
+            height: turretYOffset,
+            color: this.colors.gun,
         });
         return blocks;
     }
 
-    private handleKeyboard(): void {
+    protected handleKeyboard(): void {
         if (Keyboard.pressed.KeyA) {
             this.dx = -this.v;
             this.direction = Direction.LEFT;
@@ -198,6 +221,11 @@ export class Tank implements Entity {
                 return [this.x, this.y + this.height / 2];
         }
     }
+}
+
+export class EnemyTank extends Tank implements Entity {
+    protected colors: TankColorSpecs = tankColors.green;
+    protected handleKeyboard(): void {}
 }
 
 class Projectile implements Entity {

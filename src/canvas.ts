@@ -1,6 +1,6 @@
 import { Color } from "./color";
 import { Context } from "./context";
-import { Tank } from "./entity";
+import { EnemyTank, Tank } from "./entity";
 import { Keyboard } from "./keyboard";
 
 const WIDTH = 800;
@@ -17,6 +17,7 @@ export function startAnimation(canvas: HTMLCanvasElement): void {
     const ctx = new Context(canvas.getContext("2d")!);
     const screen = { x: 0, y: 0, width: canvas.width, height: canvas.height };
     const tank = new Tank(screen);
+    const enemy = new EnemyTank(screen);
 
     let lastTimestamp = performance.now();
     let showFPS = false;
@@ -25,10 +26,12 @@ export function startAnimation(canvas: HTMLCanvasElement): void {
         lastTimestamp = timestamp;
         ctx.clearScreen();
         tank.draw(ctx);
+        enemy.draw(ctx);
         if (showFPS) {
             drawFPS(ctx, dt);
         }
         tank.update(dt);
+        enemy.update(dt);
         window.requestAnimationFrame(animate);
     };
     window.requestAnimationFrame(animate);
