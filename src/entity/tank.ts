@@ -28,23 +28,27 @@ const tankColors: Record<"orange" | "green", TankColorSpecs> = {
     },
 };
 
-abstract class Tank implements Entity {
+export abstract class Tank implements Entity {
     public x = 0;
     public y = 0;
     public width = 100;
     public height = 100;
     public showBoundary = false;
+    public dead = false;
     protected dx = 0;
     protected dy = 0;
     protected direction = Direction.UP;
-    protected readonly v = 5;
-    protected readonly SHOOTING_DELAY_MS = 300;
-    protected readonly projectiles: Projectile[] = [];
+    protected shootingDelay = 0;
+    protected projectiles: Projectile[] = [];
+    protected readonly v: number = 5;
+    protected readonly SHOOTING_DELAY_MS: number = 300;
     protected readonly colors = tankColors.orange;
 
     constructor(protected boundary: Rect) {}
 
     update(dt: number): void {
+        if (this.dead) return;
+        this.shootingDelay = Math.max(0, this.shootingDelay - dt);
         this.x += this.dx;
         this.y += this.dy;
         this.x = clamp(
@@ -57,12 +61,11 @@ abstract class Tank implements Entity {
             this.boundary.y,
             this.boundary.y + this.boundary.height - this.height,
         );
-        for (const projectile of this.projectiles) {
-            projectile.update(dt);
-        }
+        this.updateProjectiles(dt);
     }
 
     draw(ctx: Context): void {
+        if (this.dead) return;
         for (const block of this.createModel()) {
             ctx.setFillColor(block.color);
             const rotated = rotateRect(
@@ -87,6 +90,20 @@ abstract class Tank implements Entity {
                 projectile.draw(ctx);
             }
         }
+    }
+
+    shoot(): void {
+        if (this.shootingDelay > 0) return;
+        this.shootingDelay = this.SHOOTING_DELAY_MS;
+        const [px, py] = this.getProjectilePos();
+        this.projectiles.push(
+            new Projectile(
+                px - Projectile.SIZE / 2,
+                py - Projectile.SIZE / 2,
+                this.boundary,
+                this.direction,
+            ),
+        );
     }
 
     private createModel(): BlockOpts[] {
@@ -137,7 +154,20 @@ abstract class Tank implements Entity {
         return blocks;
     }
 
-    getProjectilePos(): [number, number] {
+    private updateProjectiles(dt: number): void {
+        const garbageIndexes: number[] = [];
+        for (const [index, projectile] of this.projectiles.entries()) {
+            projectile.update(dt);
+            if (projectile.dead) {
+                garbageIndexes.push(index);
+            }
+        }
+        this.projectiles = this.projectiles.filter(
+            (_, i) => !garbageIndexes.includes(i),
+        );
+    }
+
+    private getProjectilePos(): [number, number] {
         switch (this.direction) {
             case Direction.UP:
                 return [this.x + this.width / 2, this.y];
@@ -152,11 +182,7 @@ abstract class Tank implements Entity {
 }
 
 export class PlayerTank extends Tank implements Entity {
-    protected colors: TankColorSpecs = tankColors.orange;
-    private shootingDelay = 0;
-
     update(dt: number): void {
-        this.shootingDelay = Math.max(0, this.shootingDelay - dt);
         this.dy = 0;
         this.dx = 0;
         this.handleKeyboard();
@@ -185,16 +211,7 @@ export class PlayerTank extends Tank implements Entity {
             this.direction = Direction.DOWN;
         }
         if (Keyboard.pressed.Space && !this.shootingDelay) {
-            this.shootingDelay = this.SHOOTING_DELAY_MS;
-            const [px, py] = this.getProjectilePos();
-            this.projectiles.push(
-                new Projectile(
-                    px - Projectile.SIZE / 2,
-                    py - Projectile.SIZE / 2,
-                    this.boundary,
-                    this.direction,
-                ),
-            );
+            this.shoot();
         }
     }
 }
@@ -202,9 +219,11 @@ export class PlayerTank extends Tank implements Entity {
 export class EnemyTank extends Tank implements Entity {
     protected colors: TankColorSpecs = tankColors.green;
     protected direction = Direction.RIGHT;
+    protected readonly SHOOTING_DELAY_MS = 1000;
 
     update(dt: number): void {
         this.dx = 1;
         super.update(dt);
+        this.shoot();
     }
 }

@@ -2,6 +2,7 @@ import { Color } from "./color";
 import { Context } from "./context";
 import { EnemyTank, PlayerTank } from "./entity";
 import { Keyboard } from "./keyboard";
+import { STATE } from "./state";
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -16,8 +17,8 @@ export function createCanvas(): HTMLCanvasElement {
 export function startAnimation(canvas: HTMLCanvasElement): void {
     const ctx = new Context(canvas.getContext("2d")!);
     const screen = { x: 0, y: 0, width: canvas.width, height: canvas.height };
-    const player = new PlayerTank(screen);
-    const enemy = new EnemyTank(screen);
+    STATE.tanks.push(new EnemyTank(screen));
+    STATE.tanks.push(new PlayerTank(screen));
 
     let lastTimestamp = performance.now();
     let showFPS = false;
@@ -25,13 +26,11 @@ export function startAnimation(canvas: HTMLCanvasElement): void {
         const dt = timestamp - lastTimestamp;
         lastTimestamp = timestamp;
         ctx.clearScreen();
-        enemy.draw(ctx);
-        player.draw(ctx);
+        STATE.tanks.forEach((t) => t.draw(ctx));
         if (showFPS) {
             drawFPS(ctx, dt);
         }
-        player.update(dt);
-        enemy.update(dt);
+        STATE.tanks.forEach((t) => t.update(dt));
         window.requestAnimationFrame(animate);
     };
     window.requestAnimationFrame(animate);

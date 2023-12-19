@@ -1,8 +1,15 @@
 import { Color } from "../color";
 import { Context } from "../context";
 import { Rect } from "../math";
+import { STATE } from "../state";
 import { Block } from "./block";
-import { Direction, Entity, isOutsideRect, moveEntity } from "./core";
+import {
+    Direction,
+    Entity,
+    isIntesecting,
+    isOutsideRect,
+    moveEntity,
+} from "./core";
 
 export class Projectile implements Entity {
     public dead = false;
@@ -41,6 +48,12 @@ export class Projectile implements Entity {
             this.dead = true;
         } else {
             moveEntity(this.box, this.v, this.direction);
+            for (const tank of STATE.tanks) {
+                if (isIntesecting(this.box, tank)) {
+                    this.dead = true;
+                    tank.dead = true;
+                }
+            }
             this.box.update(dt);
         }
     }

@@ -13,9 +13,13 @@ export function rotateRect(
     rect: Rect,
     cx: number,
     cy: number,
-    deg: number,
+    deg: 0 | 90 | 180 | 270,
 ): Rect {
     if (deg === 0) {
+        return rect;
+    }
+    if (![0, 90, 180, 270].includes(deg)) {
+        console.warn("this rotation degree is not currently supported");
         return rect;
     }
     const { x, y, width, height } = rect;
@@ -23,6 +27,7 @@ export function rotateRect(
     const cos = Math.cos(rad);
     const sin = Math.sin(rad);
     const [nx, ny] = rotatePoint(x + width / 2, y + height / 2, cx, cy, deg);
+    // NOTE: this is a bit scuft, but for now I want to rotate a tank only using a single point.
     const swap = deg === 90 || deg === 270;
     return {
         x: nx - (swap ? height : width) / 2,

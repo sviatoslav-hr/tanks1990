@@ -23,6 +23,16 @@ export function isOutsideRect(entity: Rect, boundary: Rect): boolean {
     );
 }
 
+export function isIntesecting(entity: Rect, boundary: Rect): boolean {
+    const { x: xb0, y: yb0 } = boundary;
+    const xb1 = xb0 + boundary.width,
+        yb1 = yb0 + boundary.height;
+    const { x: x0, y: y0 } = entity;
+    const x1 = x0 + entity.width,
+        y1 = y0 + entity.height;
+    return xb0 <= x0 && x1 <= xb1 && yb0 <= y0 && y1 <= yb1;
+}
+
 export function moveEntity(
     entity: Rect,
     value: number,
