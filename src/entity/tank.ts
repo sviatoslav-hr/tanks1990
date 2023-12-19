@@ -1,23 +1,10 @@
-import { Color } from "./color";
-import { type Context } from "./context";
-import { Keyboard } from "./keyboard";
-import { type Rect, clamp, rotateRect } from "./math";
-
-export enum Direction {
-    UP = 0,
-    RIGHT = 90,
-    DOWN = 180,
-    LEFT = 270,
-}
-
-export type Entity = {
-    update(dt: number): void;
-    draw(ctx: Context): void;
-};
-
-type BlockOpts = Rect & {
-    color: Color;
-};
+import { Color } from "../color";
+import { Context } from "../context";
+import { Keyboard } from "../keyboard";
+import { Rect, clamp, rotateRect } from "../math";
+import { BlockOpts } from "./block";
+import { Direction, Entity } from "./core";
+import { Projectile } from "./projectile";
 
 type TankColorSpecs = {
     track: Color;
@@ -40,29 +27,6 @@ const tankColors: Record<"orange" | "green", TankColorSpecs> = {
         gun: Color.GREEN_NT,
     },
 };
-
-export class Block implements Entity {
-    public x = 0;
-    public y = 0;
-    public width = 50;
-    public height = 50;
-    private readonly color: Color = Color.WHITE;
-
-    constructor({ x, y, width, height, color }: BlockOpts) {
-        this.x = x;
-        this.y = y;
-        this.width = width;
-        this.height = height;
-        this.color = color;
-    }
-
-    update(_: number): void {}
-
-    draw(ctx: Context): void {
-        ctx.setFillColor(this.color);
-        ctx.drawRect(this.x, this.y, this.width, this.height);
-    }
-}
 
 abstract class Tank implements Entity {
     public x = 0;
@@ -242,80 +206,5 @@ export class EnemyTank extends Tank implements Entity {
     update(dt: number): void {
         this.dx = 1;
         super.update(dt);
-    }
-}
-
-class Projectile implements Entity {
-    public dead = false;
-    private readonly box: Block;
-    private readonly v = 7;
-    static readonly SIZE = 8;
-
-    constructor(
-        x: number,
-        y: number,
-        private boundary: Rect,
-        private direction: Direction,
-    ) {
-        this.box = new Block({
-            x,
-            y,
-            width: Projectile.SIZE,
-            height: Projectile.SIZE,
-            color: Color.RED,
-        });
-    }
-
-    get x(): number {
-        return this.box.x;
-    }
-
-    get y(): number {
-        return this.box.y;
-    }
-
-    update(dt: number): void {
-        if (this.dead) {
-            return;
-        }
-        if (isOutsideRect(this.box, this.boundary)) {
-            this.dead = true;
-        } else {
-            moveEntity(this.box, this.v, this.direction);
-            this.box.update(dt);
-        }
-    }
-
-    draw(ctx: Context): void {
-        if (!this.dead) {
-            this.box.draw(ctx);
-        }
-    }
-}
-
-function isOutsideRect(entity: Rect, boundary: Rect): boolean {
-    const { x, y, width, height } = boundary;
-    return (
-        entity.x < x ||
-        entity.y < y ||
-        entity.x + entity.width > x + width ||
-        entity.y + entity.height > y + height
-    );
-}
-
-function moveEntity(entity: Rect, value: number, direction: Direction): void {
-    switch (direction) {
-        case Direction.UP:
-            entity.y -= value;
-            break;
-        case Direction.DOWN:
-            entity.y += value;
-            break;
-        case Direction.RIGHT:
-            entity.x += value;
-            break;
-        case Direction.LEFT:
-            entity.x -= value;
-            break;
     }
 }
