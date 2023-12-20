@@ -31,6 +31,9 @@ export function startAnimation(canvas: HTMLCanvasElement): void {
         for (const tank of STATE.tanks) {
             tank.showBoundary = showBoundary;
             tank.update(dt);
+            if (tank.dead) {
+                tank.respawn();
+            }
         }
         window.requestAnimationFrame(animate);
     };

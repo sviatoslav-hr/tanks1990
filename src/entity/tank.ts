@@ -107,6 +107,8 @@ export abstract class Tank implements Entity {
     }
 
     respawn(): void {
+        this.x = 0;
+        this.y = 0;
         this.dead = false;
     }
 
@@ -236,7 +238,6 @@ export class EnemyTank extends Tank implements Entity {
     }
 
     respawn(): void {
-        this.direction = Math.random() > 0.5 ? Direction.RIGHT : Direction.DOWN;
         super.respawn();
     }
 
