@@ -52,7 +52,7 @@ export class Projectile implements Entity {
             for (const tank of STATE.tanks) {
                 if (isIntesecting(this.box, tank)) {
                     this.dead = true;
-                    tank.dead = true;
+                    tank.dead = !tank.hasShield;
                 }
             }
             this.box.update(dt);

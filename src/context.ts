@@ -8,11 +8,11 @@ export class Context {
         }
     }
 
-    drawBoundary({ x, y, width, height }: Rect): void {
-        this.drawLine(x, y, x + width, y);
-        this.drawLine(x + width, y, x + width, y + height);
-        this.drawLine(x + width, y + height, x, y + height);
-        this.drawLine(x, y + height, x, y);
+    drawBoundary({ x, y, width, height }: Rect, lineWidth = 1): void {
+        this.drawLine(x, y, x + width, y, lineWidth);
+        this.drawLine(x + width, y, x + width, y + height, lineWidth);
+        this.drawLine(x + width, y + height, x, y + height, lineWidth);
+        this.drawLine(x, y + height, x, y, lineWidth);
     }
 
     drawRect2({ x, y, width, height }: Rect): void {
@@ -23,8 +23,8 @@ export class Context {
         this.ctx.fillRect(x, y, width, height);
     }
 
-    drawLine(x0: number, y0: number, x1: number, y1: number): void {
-        this.ctx.lineWidth = 1;
+    drawLine(x0: number, y0: number, x1: number, y1: number, width = 1): void {
+        this.ctx.lineWidth = width;
         this.ctx.beginPath();
         this.ctx.moveTo(x0, y0);
         this.ctx.lineTo(x1, y1);

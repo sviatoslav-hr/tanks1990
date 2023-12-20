@@ -35,20 +35,25 @@ export abstract class Tank implements Entity {
     public height = 100;
     public showBoundary = false;
     public dead = false;
+    public hasShield = true;
     protected dx = 0;
     protected dy = 0;
     protected direction = Direction.UP;
-    protected shootingDelay = 0;
+    protected shootingDelayMs = 0;
     protected projectiles: Projectile[] = [];
+    protected shieldRemainingMs = 0;
     protected readonly v: number = 100;
-    protected readonly SHOOTING_DELAY_MS: number = 300;
+    protected readonly SHOOTING_PERIOD_MS: number = 300;
+    protected readonly SHIELD_TIME_MS: number = 1000;
     protected readonly colors = tankColors.orange;
 
-    constructor(protected boundary: Rect) {}
+    constructor(protected boundary: Rect) {
+        this;
+    }
 
     update(dt: number): void {
         if (this.dead) return;
-        this.shootingDelay = Math.max(0, this.shootingDelay - dt);
+        this.shootingDelayMs = Math.max(0, this.shootingDelayMs - dt);
         this.x += scaleMovement(this.dx, dt);
         this.y += scaleMovement(this.dy, dt);
         this.x = clamp(
@@ -62,6 +67,7 @@ export abstract class Tank implements Entity {
             this.boundary.y + this.boundary.height - this.height,
         );
         this.updateProjectiles(dt);
+        this.updateShield(dt);
     }
 
     draw(ctx: Context): void {
@@ -81,20 +87,24 @@ export abstract class Tank implements Entity {
                 rotated.height,
             );
         }
-        if (this.showBoundary) {
-            ctx.setStrokeColor(Color.RED);
-            ctx.drawBoundary(this);
-        }
         for (const projectile of this.projectiles) {
             if (!projectile.dead) {
                 projectile.draw(ctx);
             }
         }
+        if (this.hasShield) {
+            ctx.setStrokeColor(Color.WHITE);
+            ctx.drawBoundary(this, 2);
+        }
+        if (this.showBoundary) {
+            ctx.setStrokeColor(Color.PINK);
+            ctx.drawBoundary(this, 1);
+        }
     }
 
     shoot(): void {
-        if (this.shootingDelay > 0) return;
-        this.shootingDelay = this.SHOOTING_DELAY_MS;
+        if (this.shootingDelayMs > 0) return;
+        this.shootingDelayMs = this.SHOOTING_PERIOD_MS;
         const [px, py] = this.getProjectilePos();
         this.projectiles.push(
             new Projectile(
@@ -110,6 +120,12 @@ export abstract class Tank implements Entity {
         this.x = 0;
         this.y = 0;
         this.dead = false;
+        this.activateShield();
+    }
+
+    activateShield(): void {
+        this.hasShield = true;
+        this.shieldRemainingMs = this.SHIELD_TIME_MS;
     }
 
     private createModel(): BlockOpts[] {
@@ -158,6 +174,15 @@ export abstract class Tank implements Entity {
             color: this.colors.gun,
         });
         return blocks;
+    }
+
+    protected updateShield(dt: number): void {
+        if (this.shieldRemainingMs || this.hasShield) {
+            this.shieldRemainingMs = Math.max(0, this.shieldRemainingMs - dt);
+            if (!this.shieldRemainingMs) {
+                this.hasShield = false;
+            }
+        }
     }
 
     private updateProjectiles(dt: number): void {
@@ -218,7 +243,7 @@ export class PlayerTank extends Tank implements Entity {
             this.dx = 0;
             this.direction = Direction.DOWN;
         }
-        if (Keyboard.pressed.Space && !this.shootingDelay) {
+        if (Keyboard.pressed.Space && !this.shootingDelayMs) {
             this.shoot();
         }
     }
@@ -229,7 +254,7 @@ export class EnemyTank extends Tank implements Entity {
     protected direction = Direction.RIGHT;
     protected dx = this.v;
     protected dy = 0;
-    protected readonly SHOOTING_DELAY_MS = 1000;
+    protected readonly SHOOTING_PERIOD_MS = 1000;
 
     update(dt: number): void {
         this.updateDirection();

@@ -16,6 +16,7 @@ export function startAnimation(canvas: HTMLCanvasElement): void {
     const screen = { x: 0, y: 0, width: canvas.width, height: canvas.height };
     STATE.tanks.push(new EnemyTank(screen));
     STATE.tanks.push(new PlayerTank(screen));
+    STATE.tanks.forEach((t) => t.activateShield());
 
     let lastTimestamp = performance.now();
     let showFPS = false;
