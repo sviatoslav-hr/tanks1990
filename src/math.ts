@@ -23,9 +23,6 @@ export function rotateRect(
         return rect;
     }
     const { x, y, width, height } = rect;
-    const rad = toRadians(deg);
-    const cos = Math.cos(rad);
-    const sin = Math.sin(rad);
     const [nx, ny] = rotatePoint(x + width / 2, y + height / 2, cx, cy, deg);
     // NOTE: this is a bit scuft, but for now I want to rotate a tank only using a single point.
     const swap = deg === 90 || deg === 270;

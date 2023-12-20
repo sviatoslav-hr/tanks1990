@@ -4,13 +4,10 @@ import { EnemyTank, PlayerTank } from "./entity";
 import { Keyboard } from "./keyboard";
 import { STATE } from "./state";
 
-const WIDTH = 800;
-const HEIGHT = 600;
-
-export function createCanvas(): HTMLCanvasElement {
+export function createCanvas(width: number, height: number): HTMLCanvasElement {
     const element = document.createElement("canvas");
-    element.width = WIDTH;
-    element.height = HEIGHT;
+    element.width = width;
+    element.height = height;
     return element;
 }
 
@@ -22,6 +19,7 @@ export function startAnimation(canvas: HTMLCanvasElement): void {
 
     let lastTimestamp = performance.now();
     let showFPS = false;
+    let showBoundary = false;
     const animate = function (timestamp: number): void {
         const dt = timestamp - lastTimestamp;
         lastTimestamp = timestamp;
@@ -30,16 +28,16 @@ export function startAnimation(canvas: HTMLCanvasElement): void {
         if (showFPS) {
             drawFPS(ctx, dt);
         }
-        STATE.tanks.forEach((t) => t.update(dt));
+        for (const tank of STATE.tanks) {
+            tank.showBoundary = showBoundary;
+            tank.update(dt);
+        }
         window.requestAnimationFrame(animate);
     };
     window.requestAnimationFrame(animate);
     Keyboard.listen(document.body);
-    Keyboard.onKeydown("KeyF", (code) => (showFPS = !showFPS));
-    Keyboard.onKeydown(
-        "KeyB",
-        () => (player.showBoundary = !player.showBoundary),
-    );
+    Keyboard.onKeydown("KeyF", () => (showFPS = !showFPS));
+    Keyboard.onKeydown("KeyB", () => (showBoundary = !showBoundary));
 }
 
 // TODO: maybe remove it to a class to have this state there.
