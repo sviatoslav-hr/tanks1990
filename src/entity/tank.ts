@@ -3,7 +3,7 @@ import { Context } from "../context";
 import { Keyboard } from "../keyboard";
 import { Rect, clamp, rotateRect } from "../math";
 import { BlockOpts } from "./block";
-import { Direction, Entity } from "./core";
+import { Direction, Entity, scaleMovement } from "./core";
 import { Projectile } from "./projectile";
 
 type TankColorSpecs = {
@@ -40,7 +40,7 @@ export abstract class Tank implements Entity {
     protected direction = Direction.UP;
     protected shootingDelay = 0;
     protected projectiles: Projectile[] = [];
-    protected readonly v: number = 5;
+    protected readonly v: number = 100;
     protected readonly SHOOTING_DELAY_MS: number = 300;
     protected readonly colors = tankColors.orange;
 
@@ -49,8 +49,8 @@ export abstract class Tank implements Entity {
     update(dt: number): void {
         if (this.dead) return;
         this.shootingDelay = Math.max(0, this.shootingDelay - dt);
-        this.x += this.dx;
-        this.y += this.dy;
+        this.x += scaleMovement(this.dx, dt);
+        this.y += scaleMovement(this.dy, dt);
         this.x = clamp(
             this.x,
             this.boundary.x,
@@ -104,6 +104,10 @@ export abstract class Tank implements Entity {
                 this.direction,
             ),
         );
+    }
+
+    respawn(): void {
+        this.dead = false;
     }
 
     private createModel(): BlockOpts[] {
@@ -182,6 +186,8 @@ export abstract class Tank implements Entity {
 }
 
 export class PlayerTank extends Tank implements Entity {
+    protected v = 300;
+
     update(dt: number): void {
         this.dy = 0;
         this.dx = 0;
@@ -219,11 +225,54 @@ export class PlayerTank extends Tank implements Entity {
 export class EnemyTank extends Tank implements Entity {
     protected colors: TankColorSpecs = tankColors.green;
     protected direction = Direction.RIGHT;
+    protected dx = this.v;
+    protected dy = 0;
     protected readonly SHOOTING_DELAY_MS = 1000;
 
     update(dt: number): void {
-        this.dx = 1;
+        this.updateDirection();
         super.update(dt);
         this.shoot();
+    }
+
+    respawn(): void {
+        this.direction = Math.random() > 0.5 ? Direction.RIGHT : Direction.DOWN;
+        super.respawn();
+    }
+
+    private updateDirection(): void {
+        if (
+            this.x + this.width >= this.boundary.x + this.boundary.width &&
+            this.y === 0
+        ) {
+            this.direction = Direction.DOWN;
+            this.dx = 0;
+            this.dy = this.v;
+            return;
+        }
+        if (
+            this.x <= 0 &&
+            this.y + this.height === this.boundary.y + this.boundary.height
+        ) {
+            this.direction = Direction.UP;
+            this.dx = 0;
+            this.dy = -this.v;
+            return;
+        }
+        if (
+            this.y + this.height >= this.boundary.y + this.boundary.height &&
+            this.x + this.width >= this.boundary.x + this.boundary.width
+        ) {
+            this.direction = Direction.LEFT;
+            this.dx = -this.v;
+            this.dy = 0;
+            return;
+        }
+        if (this.y <= 0 && this.x === 0) {
+            this.direction = Direction.RIGHT;
+            this.dx = this.v;
+            this.dy = 0;
+            return;
+        }
     }
 }

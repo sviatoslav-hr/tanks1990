@@ -53,3 +53,7 @@ export function moveEntity(
             break;
     }
 }
+
+export function scaleMovement(movement: number, dt: number): number {
+    return movement * (dt / 1000);
+}

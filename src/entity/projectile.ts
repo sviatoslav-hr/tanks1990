@@ -9,12 +9,13 @@ import {
     isIntesecting,
     isOutsideRect,
     moveEntity,
+    scaleMovement,
 } from "./core";
 
 export class Projectile implements Entity {
     public dead = false;
     private readonly box: Block;
-    private readonly v = 7;
+    private readonly v = 700;
     static readonly SIZE = 8;
 
     constructor(
@@ -47,7 +48,7 @@ export class Projectile implements Entity {
         if (isOutsideRect(this.box, this.boundary)) {
             this.dead = true;
         } else {
-            moveEntity(this.box, this.v, this.direction);
+            moveEntity(this.box, scaleMovement(this.v, dt), this.direction);
             for (const tank of STATE.tanks) {
                 if (isIntesecting(this.box, tank)) {
                     this.dead = true;
