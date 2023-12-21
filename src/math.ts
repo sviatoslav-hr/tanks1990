@@ -5,6 +5,14 @@ export type Rect = {
     height: number;
 };
 
+export function xn(rect: Rect): number {
+    return rect.x + rect.width;
+}
+
+export function yn(rect: Rect): number {
+    return rect.y + rect.height;
+}
+
 export function clamp(value: number, min: number, max: number): number {
     return Math.min(Math.max(value, min), max);
 }
@@ -51,4 +59,12 @@ function rotatePoint(
 
 function toRadians(deg: number): number {
     return (Math.PI / 180) * deg;
+}
+
+export function randomInt(min: number, max: number): number {
+    return Math.floor(Math.random() * (max - min) + min);
+}
+
+export function randomFrom<T>(...values: T[]): T {
+    return values[randomInt(0, values.length)]!;
 }

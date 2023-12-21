@@ -2,6 +2,7 @@ import { Color } from "./color";
 import { Context } from "./context";
 import { EnemyTank, PlayerTank } from "./entity";
 import { Keyboard } from "./keyboard";
+import { Rect } from "./math";
 import { STATE } from "./state";
 
 export function createCanvas(width: number, height: number): HTMLCanvasElement {
@@ -15,8 +16,10 @@ export function startAnimation(canvas: HTMLCanvasElement): void {
     const ctx = new Context(canvas.getContext("2d")!);
     const screen = { x: 0, y: 0, width: canvas.width, height: canvas.height };
     STATE.tanks.push(new EnemyTank(screen));
+    STATE.tanks.push(new EnemyTank(screen));
+    STATE.tanks.push(new EnemyTank(screen));
     STATE.tanks.push(new PlayerTank(screen));
-    STATE.tanks.forEach((t) => t.activateShield());
+    STATE.tanks.forEach((t) => (t.dead = true));
 
     let lastTimestamp = performance.now();
     let showFPS = false;
@@ -25,6 +28,7 @@ export function startAnimation(canvas: HTMLCanvasElement): void {
         const dt = timestamp - lastTimestamp;
         lastTimestamp = timestamp;
         ctx.clearScreen();
+        drawGrid(ctx, screen, 100);
         STATE.tanks.forEach((t) => t.draw(ctx));
         if (showFPS) {
             drawFPS(ctx, dt);
@@ -65,6 +69,18 @@ function drawFPS(ctx: Context, dt: number): void {
     ctx.setFont("200 36px Helvetica");
     ctx.setFillColor(Color.WHITE);
     ctx.drawText(fps, 10, 10);
+}
+
+function drawGrid(ctx: Context, boundary: Rect, cellSize: number): void {
+    const { x, y, width, height } = boundary;
+    for (let colX = cellSize; colX < x + width; colX += cellSize) {
+        ctx.setStrokeColor(Color.BLACK_IERIE);
+        ctx.drawLine(colX, y, colX, y + height);
+    }
+    for (let colY = cellSize; colY < y + height; colY += cellSize) {
+        ctx.setStrokeColor(Color.BLACK_IERIE);
+        ctx.drawLine(x, colY, x + width, colY);
+    }
 }
 
 function numround(value: number, margin: number = 0): number {

@@ -1,9 +1,15 @@
 import { Color } from "../color";
 import { Context } from "../context";
 import { Keyboard } from "../keyboard";
-import { Rect, clamp, rotateRect } from "../math";
+import { Rect, randomFrom, rotateRect, xn, yn } from "../math";
 import { BlockOpts } from "./block";
-import { Direction, Entity, scaleMovement } from "./core";
+import {
+    Direction,
+    Entity,
+    clampByBoundary,
+    moveEntity,
+    scaleMovement,
+} from "./core";
 import { Projectile } from "./projectile";
 
 type TankColorSpecs = {
@@ -38,12 +44,13 @@ export abstract class Tank implements Entity {
     public hasShield = true;
     protected dx = 0;
     protected dy = 0;
+    protected v: number = 0;
     protected direction = Direction.UP;
     protected shootingDelayMs = 0;
     protected projectiles: Projectile[] = [];
     protected shieldRemainingMs = 0;
-    protected readonly v: number = 100;
     protected readonly SHOOTING_PERIOD_MS: number = 300;
+    protected readonly MOVEMENT_SPEED: number = 100;
     protected readonly SHIELD_TIME_MS: number = 1000;
     protected readonly colors = tankColors.orange;
 
@@ -54,18 +61,8 @@ export abstract class Tank implements Entity {
     update(dt: number): void {
         if (this.dead) return;
         this.shootingDelayMs = Math.max(0, this.shootingDelayMs - dt);
-        this.x += scaleMovement(this.dx, dt);
-        this.y += scaleMovement(this.dy, dt);
-        this.x = clamp(
-            this.x,
-            this.boundary.x,
-            this.boundary.x + this.boundary.width - this.width,
-        );
-        this.y = clamp(
-            this.y,
-            this.boundary.y,
-            this.boundary.y + this.boundary.height - this.height,
-        );
+        moveEntity(this, scaleMovement(this.v, dt), this.direction);
+        clampByBoundary(this, this.boundary);
         this.updateProjectiles(dt);
         this.updateShield(dt);
     }
@@ -117,8 +114,28 @@ export abstract class Tank implements Entity {
     }
 
     respawn(): void {
-        this.x = 0;
-        this.y = 0;
+        switch (randomFrom(0, 1, 2, 3)) {
+            case 0: {
+                this.x = 0;
+                this.y = 0;
+                break;
+            }
+            case 1: {
+                this.x = xn(this.boundary) - this.width;
+                this.y = 0;
+                break;
+            }
+            case 2: {
+                this.x = xn(this.boundary) - this.width;
+                this.y = yn(this.boundary) - this.height;
+                break;
+            }
+            case 3: {
+                this.x = 0;
+                this.y = yn(this.boundary) - this.height;
+                break;
+            }
+        }
         this.dead = false;
         this.activateShield();
     }
@@ -213,7 +230,7 @@ export abstract class Tank implements Entity {
 }
 
 export class PlayerTank extends Tank implements Entity {
-    protected v = 300;
+    protected readonly MOVEMENT_SPEED: number = 300;
 
     update(dt: number): void {
         this.dy = 0;
@@ -223,41 +240,42 @@ export class PlayerTank extends Tank implements Entity {
     }
 
     protected handleKeyboard(): void {
+        let isMoving = false;
         if (Keyboard.pressed.KeyA) {
-            this.dx = -this.v;
-            this.dy = 0;
             this.direction = Direction.LEFT;
+            isMoving = true;
         }
         if (Keyboard.pressed.KeyD) {
-            this.dx = this.v;
-            this.dy = 0;
+            isMoving = true;
             this.direction = Direction.RIGHT;
         }
         if (Keyboard.pressed.KeyW) {
-            this.dy = -this.v;
-            this.dx = 0;
             this.direction = Direction.UP;
+            isMoving = true;
         }
         if (Keyboard.pressed.KeyS) {
-            this.dy = this.v;
-            this.dx = 0;
             this.direction = Direction.DOWN;
+            isMoving = true;
         }
         if (Keyboard.pressed.Space && !this.shootingDelayMs) {
             this.shoot();
         }
+        this.v = isMoving ? this.MOVEMENT_SPEED : 0;
     }
 }
 
 export class EnemyTank extends Tank implements Entity {
     protected colors: TankColorSpecs = tankColors.green;
     protected direction = Direction.RIGHT;
-    protected dx = this.v;
-    protected dy = 0;
+    protected v = this.MOVEMENT_SPEED;
     protected readonly SHOOTING_PERIOD_MS = 1000;
+    private readonly DIRECTION_CHANGE_MS = 5000;
+    private directionChangeDelay = this.DIRECTION_CHANGE_MS;
 
     update(dt: number): void {
-        this.updateDirection();
+        let dir = this.findDirectionIfStuck();
+        if (dir == null) dir = this.findRandomDirection(dt);
+        if (dir != null) this.direction = dir;
         super.update(dt);
         this.shoot();
     }
@@ -266,39 +284,53 @@ export class EnemyTank extends Tank implements Entity {
         super.respawn();
     }
 
-    private updateDirection(): void {
-        if (
-            this.x + this.width >= this.boundary.x + this.boundary.width &&
-            this.y === 0
-        ) {
-            this.direction = Direction.DOWN;
-            this.dx = 0;
-            this.dy = this.v;
-            return;
+    private findDirectionIfStuck(): Direction | null {
+        if (this.y === 0 && xn(this) >= xn(this.boundary)) {
+            return Direction.DOWN;
+        }
+        if (yn(this) >= yn(this.boundary) && this.x === 0) {
+            return Direction.UP;
+        }
+        if (xn(this) >= xn(this.boundary) && yn(this) >= yn(this.boundary)) {
+            return Direction.LEFT;
+        }
+        if (this.x === 0 && this.y === 0) {
+            return Direction.RIGHT;
+        }
+        if (this.y === 0 && this.direction === Direction.UP) {
+            return Direction.DOWN;
         }
         if (
-            this.x <= 0 &&
-            this.y + this.height === this.boundary.y + this.boundary.height
+            yn(this) >= yn(this.boundary) &&
+            this.direction === Direction.DOWN
         ) {
-            this.direction = Direction.UP;
-            this.dx = 0;
-            this.dy = -this.v;
-            return;
+            return Direction.UP;
         }
         if (
-            this.y + this.height >= this.boundary.y + this.boundary.height &&
-            this.x + this.width >= this.boundary.x + this.boundary.width
+            xn(this) >= xn(this.boundary) &&
+            this.direction === Direction.RIGHT
         ) {
-            this.direction = Direction.LEFT;
-            this.dx = -this.v;
-            this.dy = 0;
-            return;
+            return Direction.LEFT;
         }
-        if (this.y <= 0 && this.x === 0) {
-            this.direction = Direction.RIGHT;
-            this.dx = this.v;
-            this.dy = 0;
-            return;
+        if (this.x === 0 && this.direction === Direction.LEFT) {
+            return Direction.RIGHT;
         }
+        return null;
+    }
+
+    private findRandomDirection(dt: number): Direction | null {
+        this.directionChangeDelay = Math.max(0, this.directionChangeDelay - dt);
+        if (this.directionChangeDelay) return null;
+        if (Math.random() > 0.3) {
+            this.directionChangeDelay = this.DIRECTION_CHANGE_MS;
+            return randomFrom(
+                Direction.UP,
+                Direction.RIGHT,
+                Direction.DOWN,
+                Direction.LEFT,
+            );
+        }
+        this.directionChangeDelay = this.DIRECTION_CHANGE_MS;
+        return null;
     }
 }

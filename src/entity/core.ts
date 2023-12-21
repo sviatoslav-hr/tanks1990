@@ -1,5 +1,5 @@
 import { Context } from "../context";
-import { Rect } from "../math";
+import { Rect, clamp } from "../math";
 
 export type Entity = {
     update(dt: number): void;
@@ -31,6 +31,19 @@ export function isIntesecting(entity: Rect, boundary: Rect): boolean {
     const x1 = x0 + entity.width,
         y1 = y0 + entity.height;
     return xb0 <= x0 && x1 <= xb1 && yb0 <= y0 && y1 <= yb1;
+}
+
+export function clampByBoundary(entity: Rect, boundary: Rect): void {
+    entity.x = clamp(
+        entity.x,
+        boundary.x,
+        boundary.x + boundary.width - entity.width,
+    );
+    entity.y = clamp(
+        entity.y,
+        boundary.y,
+        boundary.y + boundary.height - entity.height,
+    );
 }
 
 export function moveEntity(
