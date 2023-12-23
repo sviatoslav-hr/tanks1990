@@ -1,10 +1,10 @@
 import { Context } from "../context";
-import { Rect, clamp } from "../math";
+import { Rect, clamp, isPosInsideRect, xn, yn } from "../math";
 
 export type Entity = {
     update(dt: number): void;
     draw(ctx: Context): void;
-};
+} & Rect;
 
 export enum Direction {
     UP = 0,
@@ -23,14 +23,14 @@ export function isOutsideRect(entity: Rect, boundary: Rect): boolean {
     );
 }
 
-export function isIntesecting(entity: Rect, boundary: Rect): boolean {
-    const { x: xb0, y: yb0 } = boundary;
-    const xb1 = xb0 + boundary.width,
-        yb1 = yb0 + boundary.height;
-    const { x: x0, y: y0 } = entity;
-    const x1 = x0 + entity.width,
-        y1 = y0 + entity.height;
-    return xb0 <= x0 && x1 <= xb1 && yb0 <= y0 && y1 <= yb1;
+export function isIntesecting(rect: Rect, other: Rect): boolean {
+    // NOTE: checks if any corner of `rect` is inside of `other`
+    return (
+        isPosInsideRect(rect.x, rect.y, other) ||
+        isPosInsideRect(xn(rect), rect.y, other) ||
+        isPosInsideRect(rect.x, yn(rect), other) ||
+        isPosInsideRect(xn(rect), yn(rect), other)
+    );
 }
 
 export function clampByBoundary(entity: Rect, boundary: Rect): void {

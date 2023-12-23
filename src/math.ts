@@ -42,6 +42,10 @@ export function rotateRect(
     };
 }
 
+export function isPosInsideRect(x: number, y: number, rect: Rect): boolean {
+    return rect.x <= x && x <= xn(rect) && rect.y <= y && y <= yn(rect);
+}
+
 function rotatePoint(
     x: number,
     y: number,

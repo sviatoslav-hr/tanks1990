@@ -1,7 +1,8 @@
+import { Tank } from ".";
 import { Color } from "../color";
 import { Context } from "../context";
 import { Rect } from "../math";
-import { STATE } from "../state";
+import { State } from "../state";
 import { Block } from "./block";
 import {
     Direction,
@@ -21,6 +22,7 @@ export class Projectile implements Entity {
     constructor(
         x: number,
         y: number,
+        private author: Tank,
         private boundary: Rect,
         private direction: Direction,
     ) {
@@ -41,6 +43,14 @@ export class Projectile implements Entity {
         return this.box.y;
     }
 
+    get width(): number {
+        return this.box.width;
+    }
+
+    get height(): number {
+        return this.box.width;
+    }
+
     update(dt: number): void {
         if (this.dead) {
             return;
@@ -49,10 +59,16 @@ export class Projectile implements Entity {
             this.dead = true;
         } else {
             moveEntity(this.box, scaleMovement(this.v, dt), this.direction);
-            for (const tank of STATE.tanks) {
-                if (isIntesecting(this.box, tank)) {
+            for (const entity of State.entities) {
+                if (entity === this || entity === this.author) continue;
+                if (isIntesecting(this.box, entity)) {
                     this.dead = true;
-                    tank.dead = !tank.hasShield;
+                    if (
+                        entity instanceof Tank &&
+                        entity.constructor !== this.author.constructor
+                    ) {
+                        entity.dead = !entity.hasShield;
+                    }
                 }
             }
             this.box.update(dt);

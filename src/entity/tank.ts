@@ -2,11 +2,13 @@ import { Color } from "../color";
 import { Context } from "../context";
 import { Keyboard } from "../keyboard";
 import { Rect, randomFrom, rotateRect, xn, yn } from "../math";
+import { State } from "../state";
 import { BlockOpts } from "./block";
 import {
     Direction,
     Entity,
     clampByBoundary,
+    isIntesecting,
     moveEntity,
     scaleMovement,
 } from "./core";
@@ -40,28 +42,40 @@ export abstract class Tank implements Entity {
     public width = 100;
     public height = 100;
     public showBoundary = false;
-    public dead = false;
+    public dead = true;
     public hasShield = true;
+    public projectiles: Projectile[] = [];
     protected dx = 0;
     protected dy = 0;
     protected v: number = 0;
     protected direction = Direction.UP;
     protected shootingDelayMs = 0;
-    protected projectiles: Projectile[] = [];
     protected shieldRemainingMs = 0;
     protected readonly SHOOTING_PERIOD_MS: number = 300;
     protected readonly MOVEMENT_SPEED: number = 100;
     protected readonly SHIELD_TIME_MS: number = 1000;
     protected readonly colors = tankColors.orange;
+    protected index = Tank.index++;
+    private static index = 0;
 
-    constructor(protected boundary: Rect) {
-        this;
+    constructor(protected boundary: Rect) {}
+
+    get collided(): boolean {
+        return State.tanks.some((t) => {
+            return t !== this && !t.dead && isIntesecting(this, t);
+        });
     }
 
     update(dt: number): void {
         if (this.dead) return;
         this.shootingDelayMs = Math.max(0, this.shootingDelayMs - dt);
+        const prevX = this.x;
+        const prevY = this.y;
         moveEntity(this, scaleMovement(this.v, dt), this.direction);
+        if (this.collided) {
+            this.x = prevX;
+            this.y = prevY;
+        }
         clampByBoundary(this, this.boundary);
         this.updateProjectiles(dt);
         this.updateShield(dt);
@@ -96,6 +110,13 @@ export abstract class Tank implements Entity {
         if (this.showBoundary) {
             ctx.setStrokeColor(Color.PINK);
             ctx.drawBoundary(this, 1);
+            ctx.setFont("400 16px Helvetica", "center", "middle");
+            ctx.setFillColor(Color.WHITE);
+            ctx.drawText(
+                `${this.index}: {${Math.floor(this.x)};${Math.floor(this.y)}}`,
+                this.x + this.width / 2,
+                this.y + this.height / 2,
+            );
         }
     }
 
@@ -107,6 +128,7 @@ export abstract class Tank implements Entity {
             new Projectile(
                 px - Projectile.SIZE / 2,
                 py - Projectile.SIZE / 2,
+                this,
                 this.boundary,
                 this.direction,
             ),
@@ -114,6 +136,11 @@ export abstract class Tank implements Entity {
     }
 
     respawn(): void {
+        this.tryRespawn(4);
+    }
+
+    private tryRespawn(limit: number): void {
+        if (limit <= 0) return;
         switch (randomFrom(0, 1, 2, 3)) {
             case 0: {
                 this.x = 0;
@@ -136,8 +163,13 @@ export abstract class Tank implements Entity {
                 break;
             }
         }
-        this.dead = false;
-        this.activateShield();
+        if (this.collided) {
+            this.tryRespawn(limit - 1);
+        } else {
+            this.dead = false;
+            this.shootingDelayMs = this.SHOOTING_PERIOD_MS;
+            this.activateShield();
+        }
     }
 
     activateShield(): void {
@@ -237,6 +269,11 @@ export class PlayerTank extends Tank implements Entity {
         this.dx = 0;
         this.handleKeyboard();
         super.update(dt);
+    }
+
+    respawn(): void {
+        super.respawn();
+        this.shootingDelayMs = 0;
     }
 
     protected handleKeyboard(): void {

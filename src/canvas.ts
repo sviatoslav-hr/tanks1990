@@ -3,7 +3,7 @@ import { Context } from "./context";
 import { EnemyTank, PlayerTank } from "./entity";
 import { Keyboard } from "./keyboard";
 import { Rect } from "./math";
-import { STATE } from "./state";
+import { State } from "./state";
 
 export function createCanvas(width: number, height: number): HTMLCanvasElement {
     const element = document.createElement("canvas");
@@ -15,11 +15,11 @@ export function createCanvas(width: number, height: number): HTMLCanvasElement {
 export function startAnimation(canvas: HTMLCanvasElement): void {
     const ctx = new Context(canvas.getContext("2d")!);
     const screen = { x: 0, y: 0, width: canvas.width, height: canvas.height };
-    STATE.tanks.push(new EnemyTank(screen));
-    STATE.tanks.push(new EnemyTank(screen));
-    STATE.tanks.push(new EnemyTank(screen));
-    STATE.tanks.push(new PlayerTank(screen));
-    STATE.tanks.forEach((t) => (t.dead = true));
+    State.tanks.push(new EnemyTank(screen));
+    State.tanks.push(new EnemyTank(screen));
+    State.tanks.push(new EnemyTank(screen));
+    State.tanks.push(new PlayerTank(screen));
+    State.tanks.forEach((t) => (t.dead = true));
 
     let lastTimestamp = performance.now();
     let showFPS = false;
@@ -29,11 +29,11 @@ export function startAnimation(canvas: HTMLCanvasElement): void {
         lastTimestamp = timestamp;
         ctx.clearScreen();
         drawGrid(ctx, screen, 100);
-        STATE.tanks.forEach((t) => t.draw(ctx));
+        State.tanks.forEach((t) => t.draw(ctx));
         if (showFPS) {
             drawFPS(ctx, dt);
         }
-        for (const tank of STATE.tanks) {
+        for (const tank of State.tanks) {
             tank.showBoundary = showBoundary;
             tank.update(dt);
             if (tank.dead) {

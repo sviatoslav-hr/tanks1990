@@ -35,9 +35,14 @@ export class Context {
         this.ctx.fillText(text, x, y);
     }
 
-    setFont(font: string): void {
+    setFont(
+        font: string,
+        align: CanvasTextAlign = "start",
+        baseline: CanvasTextBaseline = "top",
+    ): void {
         this.ctx.font = font;
-        this.ctx.textBaseline = "top";
+        this.ctx.textBaseline = baseline;
+        this.ctx.textAlign = align;
     }
 
     setStrokeColor(color: Color) {

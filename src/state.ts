@@ -1,7 +1,16 @@
 import { Tank } from "./entity";
+import { Entity } from "./entity/core";
 
-type GameState = {
-    tanks: Tank[];
-};
+export class State {
+    static tanks: Tank[] = [];
 
-export const STATE: GameState = { tanks: [] };
+    static get entities(): Entity[] {
+        const entities: Entity[] = [];
+        for (const t of this.tanks) {
+            entities.push(t, ...t.projectiles);
+        }
+        return entities;
+    }
+}
+
+Object.assign(window, { state: State });
