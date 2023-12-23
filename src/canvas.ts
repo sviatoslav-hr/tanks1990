@@ -1,6 +1,6 @@
 import { Color } from "./color";
 import { Context } from "./context";
-import { EnemyTank, PlayerTank } from "./entity";
+import { EnemyTank, PlayerTank, Tank } from "./entity";
 import { Keyboard } from "./keyboard";
 import { Rect } from "./math";
 import { State } from "./state";
@@ -18,7 +18,8 @@ export function startAnimation(canvas: HTMLCanvasElement): void {
     State.tanks.push(new EnemyTank(screen));
     State.tanks.push(new EnemyTank(screen));
     State.tanks.push(new EnemyTank(screen));
-    State.tanks.push(new PlayerTank(screen));
+    const player = new PlayerTank(screen);
+    State.tanks.push(player);
     State.tanks.forEach((t) => (t.dead = true));
 
     let lastTimestamp = performance.now();
@@ -28,7 +29,7 @@ export function startAnimation(canvas: HTMLCanvasElement): void {
         const dt = timestamp - lastTimestamp;
         lastTimestamp = timestamp;
         ctx.clearScreen();
-        drawGrid(ctx, screen, 100);
+        drawGrid(ctx, screen, Tank.SIZE);
         State.tanks.forEach((t) => t.draw(ctx));
         if (showFPS) {
             drawFPS(ctx, dt);

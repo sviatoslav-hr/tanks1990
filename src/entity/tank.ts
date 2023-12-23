@@ -39,8 +39,8 @@ const tankColors: Record<"orange" | "green", TankColorSpecs> = {
 export abstract class Tank implements Entity {
     public x = 0;
     public y = 0;
-    public width = 100;
-    public height = 100;
+    public width = Tank.SIZE;
+    public height = Tank.SIZE;
     public showBoundary = false;
     public dead = true;
     public hasShield = true;
@@ -56,6 +56,7 @@ export abstract class Tank implements Entity {
     protected readonly SHIELD_TIME_MS: number = 1000;
     protected readonly colors = tankColors.orange;
     protected index = Tank.index++;
+    static SIZE = 50;
     private static index = 0;
 
     constructor(protected boundary: Rect) {}
@@ -73,6 +74,7 @@ export abstract class Tank implements Entity {
         const prevY = this.y;
         moveEntity(this, scaleMovement(this.v, dt), this.direction);
         if (this.collided) {
+            this.handleCollision();
             this.x = prevX;
             this.y = prevY;
         }
@@ -115,7 +117,7 @@ export abstract class Tank implements Entity {
             ctx.drawText(
                 `${this.index}: {${Math.floor(this.x)};${Math.floor(this.y)}}`,
                 this.x + this.width / 2,
-                this.y + this.height / 2,
+                this.y - this.height / 2,
             );
         }
     }
@@ -124,10 +126,12 @@ export abstract class Tank implements Entity {
         if (this.shootingDelayMs > 0) return;
         this.shootingDelayMs = this.SHOOTING_PERIOD_MS;
         const [px, py] = this.getProjectilePos();
+        const size = Tank.SIZE * 0.08;
         this.projectiles.push(
             new Projectile(
-                px - Projectile.SIZE / 2,
-                py - Projectile.SIZE / 2,
+                px - size / 2,
+                py - size / 2,
+                size,
                 this,
                 this.boundary,
                 this.direction,
@@ -234,6 +238,8 @@ export abstract class Tank implements Entity {
         }
     }
 
+    protected handleCollision(): void {}
+
     private updateProjectiles(dt: number): void {
         const garbageIndexes: number[] = [];
         for (const [index, projectile] of this.projectiles.entries()) {
@@ -321,6 +327,11 @@ export class EnemyTank extends Tank implements Entity {
         super.respawn();
     }
 
+    protected handleCollision(): void {
+        const dir = this.findRandomDirection(0, true);
+        if (dir != null) this.direction = dir;
+    }
+
     private findDirectionIfStuck(): Direction | null {
         if (this.y === 0 && xn(this) >= xn(this.boundary)) {
             return Direction.DOWN;
@@ -355,10 +366,10 @@ export class EnemyTank extends Tank implements Entity {
         return null;
     }
 
-    private findRandomDirection(dt: number): Direction | null {
+    private findRandomDirection(dt: number, force = false): Direction | null {
         this.directionChangeDelay = Math.max(0, this.directionChangeDelay - dt);
-        if (this.directionChangeDelay) return null;
-        if (Math.random() > 0.3) {
+        if (this.directionChangeDelay && !force) return null;
+        if (Math.random() > 0.1) {
             this.directionChangeDelay = this.DIRECTION_CHANGE_MS;
             return randomFrom(
                 Direction.UP,

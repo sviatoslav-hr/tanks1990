@@ -17,11 +17,11 @@ export class Projectile implements Entity {
     public dead = false;
     private readonly box: Block;
     private readonly v = 700;
-    static readonly SIZE = 8;
 
     constructor(
         x: number,
         y: number,
+        size: number,
         private author: Tank,
         private boundary: Rect,
         private direction: Direction,
@@ -29,9 +29,9 @@ export class Projectile implements Entity {
         this.box = new Block({
             x,
             y,
-            width: Projectile.SIZE,
-            height: Projectile.SIZE,
-            color: Color.RED,
+            width: size,
+            height: size,
+            color: Color.ORANGE_PHILIPPINE,
         });
     }
 
