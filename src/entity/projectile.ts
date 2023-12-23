@@ -22,7 +22,7 @@ export class Projectile implements Entity {
         x: number,
         y: number,
         size: number,
-        private author: Tank,
+        private owner: Tank,
         private boundary: Rect,
         private direction: Direction,
     ) {
@@ -60,14 +60,11 @@ export class Projectile implements Entity {
         } else {
             moveEntity(this.box, scaleMovement(this.v, dt), this.direction);
             for (const entity of State.entities) {
-                if (entity === this || entity === this.author) continue;
+                if (entity === this || entity === this.owner) continue;
                 if (isIntesecting(this.box, entity)) {
                     this.dead = true;
-                    if (
-                        entity instanceof Tank &&
-                        entity.constructor !== this.author.constructor
-                    ) {
-                        entity.dead = !entity.hasShield;
+                    if (entity instanceof Tank) {
+                        this.owner.doDamage(entity);
                     }
                 }
             }

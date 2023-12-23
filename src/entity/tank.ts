@@ -45,6 +45,7 @@ export abstract class Tank implements Entity {
     public dead = true;
     public hasShield = true;
     public projectiles: Projectile[] = [];
+    public readonly bot: boolean = true;
     protected dx = 0;
     protected dy = 0;
     protected v: number = 0;
@@ -59,7 +60,10 @@ export abstract class Tank implements Entity {
     static SIZE = 50;
     private static index = 0;
 
-    constructor(protected boundary: Rect) {}
+    constructor(protected boundary: Rect) {
+        this.x = -(2 * this.width);
+        this.y = -(2 * this.height);
+    }
 
     get collided(): boolean {
         return State.tanks.some((t) => {
@@ -141,6 +145,17 @@ export abstract class Tank implements Entity {
 
     respawn(): void {
         this.tryRespawn(4);
+    }
+
+    doDamage(other: Tank): boolean {
+        if (other.constructor === this.constructor) {
+            return false;
+        }
+        return other.takeDamage();
+    }
+
+    takeDamage(): boolean {
+        return (this.dead = !this.hasShield);
     }
 
     private tryRespawn(limit: number): void {
@@ -268,18 +283,42 @@ export abstract class Tank implements Entity {
 }
 
 export class PlayerTank extends Tank implements Entity {
+    public readonly bot: boolean = false;
+    public dead = false;
+    public score = 0;
+    public survivedMs = 0;
     protected readonly MOVEMENT_SPEED: number = 300;
 
+    constructor(boundary: Rect) {
+        super(boundary);
+        this.dead = false;
+        this.x = 0;
+        this.y = 0;
+    }
+
     update(dt: number): void {
-        this.dy = 0;
-        this.dx = 0;
-        this.handleKeyboard();
+        if (!this.dead) {
+            this.handleKeyboard();
+        }
         super.update(dt);
+        if (!this.dead) {
+            this.survivedMs += dt;
+        }
     }
 
     respawn(): void {
         super.respawn();
         this.shootingDelayMs = 0;
+        this.score = 0;
+        this.survivedMs = 0;
+    }
+
+    doDamage(other: Tank): boolean {
+        const killed = super.doDamage(other);
+        if (killed) {
+            this.score += 1;
+        }
+        return killed;
     }
 
     protected handleKeyboard(): void {

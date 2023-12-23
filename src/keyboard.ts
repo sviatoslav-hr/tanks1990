@@ -5,6 +5,8 @@ export type KeyCode =
     | "KeyD"
     | "KeyF"
     | "KeyB"
+    | "KeyQ"
+    | "KeyR"
     | "Space";
 export type KeysState = Partial<Record<KeyCode, boolean>>;
 export type KeyHandler = (code: KeyCode) => void;

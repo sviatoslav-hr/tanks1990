@@ -65,6 +65,11 @@ function toRadians(deg: number): number {
     return (Math.PI / 180) * deg;
 }
 
+export function numround(value: number, margin: number = 0): number {
+    const n = 10 ** margin;
+    return Math.round(value * n) / n;
+}
+
 export function randomInt(min: number, max: number): number {
     return Math.floor(Math.random() * (max - min) + min);
 }
