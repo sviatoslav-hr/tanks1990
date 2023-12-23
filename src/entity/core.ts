@@ -2,6 +2,7 @@ import { Context } from "../context";
 import { Rect, clamp, isPosInsideRect, xn, yn } from "../math";
 
 export type Entity = {
+    dead: boolean;
     update(dt: number): void;
     draw(ctx: Context): void;
 } & Rect;

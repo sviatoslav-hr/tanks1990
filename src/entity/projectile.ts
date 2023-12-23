@@ -60,10 +60,15 @@ export class Projectile implements Entity {
         } else {
             moveEntity(this.box, scaleMovement(this.v, dt), this.direction);
             for (const entity of State.entities) {
-                if (entity === this || entity === this.owner) continue;
+                if (entity === this || entity === this.owner || entity.dead) {
+                    continue;
+                }
                 if (isIntesecting(this.box, entity)) {
                     this.dead = true;
-                    if (entity instanceof Tank) {
+                    if (entity instanceof Projectile) {
+                        entity.dead = true;
+                    }
+                    if (entity instanceof Tank && !entity.dead) {
                         this.owner.doDamage(entity);
                     }
                 }
