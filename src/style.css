@@ -18,6 +18,22 @@
   box-sizing: border-box;
 }
 
- canvas {
+.hidden {
+    display: none;
+}
+
+canvas {
     border: 1px solid #191919;
 }
+
+:is(h2, button) > * {
+   display: none;
+}
+
+#menu.start  .start,
+#menu.pause  .pause,
+#menu.dead  .dead
+{
+    display: initial;
+}
+

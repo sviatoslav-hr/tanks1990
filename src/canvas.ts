@@ -11,9 +11,17 @@ export function createCanvas(width: number, height: number): HTMLCanvasElement {
     return element;
 }
 
+enum GameStatus {
+    START,
+    PLAYING,
+    PAUSED,
+    DEAD,
+}
+
 export function startAnimation(canvas: HTMLCanvasElement): void {
     const ctx = new Context(canvas.getContext("2d")!);
     const screen = { x: 0, y: 0, width: canvas.width, height: canvas.height };
+    let status = GameStatus.START;
     State.tanks.push(new EnemyTank(screen));
     State.tanks.push(new EnemyTank(screen));
     State.tanks.push(new EnemyTank(screen));
@@ -24,6 +32,7 @@ export function startAnimation(canvas: HTMLCanvasElement): void {
     let lastTimestamp = performance.now();
     let showFPS = false;
     let showBoundary = false;
+    updateMenu(status);
     const animate = function (timestamp: number): void {
         const dt = timestamp - lastTimestamp;
         lastTimestamp = timestamp;
@@ -33,18 +42,28 @@ export function startAnimation(canvas: HTMLCanvasElement): void {
         if (showFPS) {
             drawFPS(ctx, dt);
         }
-        if (player.dead || Keyboard.pressed.KeyQ) {
+        if (
+            status === GameStatus.PAUSED ||
+            status === GameStatus.DEAD ||
+            (status === GameStatus.PLAYING && Keyboard.pressed.KeyQ)
+        ) {
             drawScore(ctx, player, screen);
         }
-        for (const tank of State.tanks) {
-            tank.showBoundary = showBoundary;
-            tank.update(dt);
-            if (tank.dead && tank.bot) {
-                tank.respawn();
-            }
+        if (player.dead && status === GameStatus.PLAYING) {
+            status = GameStatus.DEAD;
+            updateMenu(status);
         }
-        if (player.dead && Keyboard.pressed.KeyR) {
-            player.respawn();
+        if (status === GameStatus.PLAYING || status === GameStatus.DEAD) {
+            for (const tank of State.tanks) {
+                tank.showBoundary = showBoundary;
+                tank.update(dt);
+                if (tank.dead && tank.bot) {
+                    tank.respawn();
+                }
+            }
+            if (player.dead && Keyboard.pressed.KeyR) {
+                player.respawn();
+            }
         }
         window.requestAnimationFrame(animate);
     };
@@ -52,4 +71,79 @@ export function startAnimation(canvas: HTMLCanvasElement): void {
     Keyboard.listen(document.body);
     Keyboard.onKeydown("KeyF", () => (showFPS = !showFPS));
     Keyboard.onKeydown("KeyB", () => (showBoundary = !showBoundary));
+    Keyboard.onKeydown("Escape", () => {
+        switch (status) {
+            case GameStatus.PLAYING: {
+                status = GameStatus.PAUSED;
+                break;
+            }
+            case GameStatus.PAUSED: {
+                status = GameStatus.PLAYING;
+                break;
+            }
+            case GameStatus.DEAD: {
+                status = GameStatus.START;
+                break;
+            }
+            case GameStatus.START:
+                break;
+            default:
+                console.warn("Unhandled value ", status);
+        }
+        updateMenu(status);
+    });
+    document
+        .querySelector("#menu button")
+        ?.addEventListener(
+            "click",
+            (event) => (status = handleButtonClick(event, status, player)),
+        );
+}
+
+function updateMenu(status: GameStatus): void {
+    const menu = document.getElementById("menu") as HTMLDivElement | null;
+    if (!menu) {
+        console.error("Cannot find the menu element");
+        return;
+    }
+    let className = ""; // clear all the classes
+    menu.querySelector("button")?.focus();
+    switch (status) {
+        case GameStatus.START: {
+            className += "start";
+            break;
+        }
+        case GameStatus.PLAYING: {
+            className += "hidden";
+            break;
+        }
+        case GameStatus.PAUSED: {
+            className += "pause";
+            break;
+        }
+        case GameStatus.DEAD: {
+            className += "dead";
+            break;
+        }
+    }
+    menu.className = className;
+}
+
+function handleButtonClick(
+    event: Event,
+    status: GameStatus,
+    player: PlayerTank,
+): GameStatus {
+    (event.target as HTMLButtonElement)?.blur();
+    switch (status) {
+        case GameStatus.PAUSED:
+        case GameStatus.START:
+            return GameStatus.PLAYING;
+        case GameStatus.PLAYING:
+            return GameStatus.PAUSED;
+        case GameStatus.DEAD: {
+            player.respawn();
+            return GameStatus.PLAYING;
+        }
+    }
 }
