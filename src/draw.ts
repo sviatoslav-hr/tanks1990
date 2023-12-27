@@ -70,5 +70,5 @@ function humanDuration(ms: number): string {
     if (secs) {
         return `${secs}s`;
     }
-    return `${ms}ms`;
+    return `${Math.floor(ms)}ms`;
 }

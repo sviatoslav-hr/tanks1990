@@ -61,9 +61,6 @@ export function startAnimation(canvas: HTMLCanvasElement): void {
                     tank.respawn();
                 }
             }
-            if (player.dead && Keyboard.pressed.KeyR) {
-                player.respawn();
-            }
         }
         window.requestAnimationFrame(animate);
     };
@@ -94,10 +91,10 @@ export function startAnimation(canvas: HTMLCanvasElement): void {
     });
     document
         .querySelector("#menu button")
-        ?.addEventListener(
-            "click",
-            (event) => (status = handleButtonClick(event, status, player)),
-        );
+        ?.addEventListener("click", (event) => {
+            status = handleButtonClick(event, status, player);
+            updateMenu(status);
+        });
 }
 
 function updateMenu(status: GameStatus): void {
@@ -107,7 +104,6 @@ function updateMenu(status: GameStatus): void {
         return;
     }
     let className = ""; // clear all the classes
-    menu.querySelector("button")?.focus();
     switch (status) {
         case GameStatus.START: {
             className += "start";
@@ -127,6 +123,16 @@ function updateMenu(status: GameStatus): void {
         }
     }
     menu.className = className;
+    console.log(`className=${className}`);
+    if (!className.includes("hidden")) {
+        console.log("should focus");
+        const button = menu.querySelector("button");
+        if (button) {
+            button.focus();
+        } else {
+            console.warn("Cannot find menu button");
+        }
+    }
 }
 
 function handleButtonClick(
@@ -137,10 +143,10 @@ function handleButtonClick(
     (event.target as HTMLButtonElement)?.blur();
     switch (status) {
         case GameStatus.PAUSED:
-        case GameStatus.START:
             return GameStatus.PLAYING;
         case GameStatus.PLAYING:
             return GameStatus.PAUSED;
+        case GameStatus.START:
         case GameStatus.DEAD: {
             player.respawn();
             return GameStatus.PLAYING;

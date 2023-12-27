@@ -284,14 +284,13 @@ export abstract class Tank implements Entity {
 
 export class PlayerTank extends Tank implements Entity {
     public readonly bot: boolean = false;
-    public dead = false;
+    public dead = true;
     public score = 0;
     public survivedMs = 0;
     protected readonly MOVEMENT_SPEED: number = 300;
 
     constructor(boundary: Rect) {
         super(boundary);
-        this.dead = false;
         this.x = 0;
         this.y = 0;
     }
