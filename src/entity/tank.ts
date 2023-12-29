@@ -1,8 +1,8 @@
 import { Color } from "../color";
 import { Context } from "../context";
+import { Game } from "../game";
 import { Keyboard } from "../keyboard";
 import { Rect, randomFrom, rotateRect, xn, yn } from "../math";
-import { State } from "../state";
 import { BlockOpts } from "./block";
 import {
     Direction,
@@ -60,13 +60,16 @@ export abstract class Tank implements Entity {
     static SIZE = 50;
     private static index = 0;
 
-    constructor(protected boundary: Rect) {
+    constructor(
+        protected boundary: Rect,
+        protected game: Game,
+    ) {
         this.x = -(2 * this.width);
         this.y = -(2 * this.height);
     }
 
     get collided(): boolean {
-        return State.tanks.some((t) => {
+        return this.game.tanks.some((t) => {
             return t !== this && !t.dead && isIntesecting(this, t);
         });
     }
@@ -136,6 +139,7 @@ export abstract class Tank implements Entity {
                 px - size / 2,
                 py - size / 2,
                 size,
+                this.game,
                 this,
                 this.boundary,
                 this.direction,
@@ -289,8 +293,8 @@ export class PlayerTank extends Tank implements Entity {
     public survivedMs = 0;
     protected readonly MOVEMENT_SPEED: number = 300;
 
-    constructor(boundary: Rect) {
-        super(boundary);
+    constructor(boundary: Rect, game: Game) {
+        super(boundary, game);
         this.x = 0;
         this.y = 0;
     }

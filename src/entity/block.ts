@@ -12,6 +12,7 @@ export class Block implements Entity {
     public y = 0;
     public width = 50;
     public height = 50;
+    public readonly dead = false;
     private readonly color: Color = Color.WHITE;
 
     constructor({ x, y, width, height, color }: BlockOpts) {

@@ -1,8 +1,8 @@
 import { Tank } from ".";
 import { Color } from "../color";
 import { Context } from "../context";
+import { Game } from "../game";
 import { Rect } from "../math";
-import { State } from "../state";
 import { Block } from "./block";
 import {
     Direction,
@@ -22,6 +22,7 @@ export class Projectile implements Entity {
         x: number,
         y: number,
         size: number,
+        private game: Game,
         private owner: Tank,
         private boundary: Rect,
         private direction: Direction,
@@ -59,7 +60,7 @@ export class Projectile implements Entity {
             this.dead = true;
         } else {
             moveEntity(this.box, scaleMovement(this.v, dt), this.direction);
-            for (const entity of State.entities) {
+            for (const entity of this.game.entities) {
                 if (entity === this || entity === this.owner || entity.dead) {
                     continue;
                 }
