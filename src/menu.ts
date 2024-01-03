@@ -1,4 +1,4 @@
-import { GameStatus } from "./game";
+import { Game } from "./game";
 
 enum MenuState {
     HIDDEN = "hidden",
@@ -7,31 +7,87 @@ enum MenuState {
     DEAD = "dead",
 }
 
-type MenuClickCallback = () => void;
+type MenuClickCallback = (button: MenuButton) => void;
 
-// TODO: should this be a WebComponent?
-export class Menu {
-    private state: MenuState = MenuState.START;
-
-    constructor(private element: HTMLElement) {
-        if (!element) {
-            throw new Error("Menu expect an html element to initialize");
-        }
-        this.onButtonClick(() => {
-            if (this.state === MenuState.HIDDEN) {
-                this.button?.blur();
-            } else {
-                this.hide();
-            }
-        });
+class MenuButton extends HTMLElement {
+    private buttonEl: HTMLButtonElement;
+    constructor(
+        text: string,
+        onClick: MenuClickCallback,
+        public states: MenuState[],
+    ) {
+        super();
+        this.buttonEl = document.createElement("button");
+        this.append(this.buttonEl);
+        this.buttonEl.append(text);
+        this.buttonEl.classList.add("button");
+        this.buttonEl.tabIndex = 1;
+        this.buttonEl.addEventListener("click", () => onClick(this));
     }
 
-    private get button(): HTMLButtonElement | null {
-        const button = this.element.querySelector<HTMLButtonElement>("button");
-        if (!button) {
-            console.warn("Cannot find menu button");
-        }
-        return button;
+    focus(options?: FocusOptions): void {
+        this.buttonEl.focus(options);
+    }
+
+    blur(): void {
+        this.buttonEl.blur();
+    }
+}
+
+export function initMenu(menu: Menu, game: Game): void {
+    menu.addButton(
+        "New Game",
+        () => {
+            game.start();
+            menu.hide();
+        },
+        [MenuState.START],
+    );
+    menu.addButton(
+        "Resume",
+        () => {
+            game.resume();
+            menu.hide();
+        },
+        [MenuState.PAUSE],
+    );
+    menu.addButton(
+        "Restart",
+        () => {
+            game.start();
+            menu.hide();
+        },
+        [MenuState.DEAD],
+    );
+    menu.addButton(
+        "Main menu",
+        () => {
+            game.init();
+            menu.showMain();
+        },
+        [MenuState.PAUSE, MenuState.DEAD],
+    );
+}
+
+export class Menu extends HTMLElement {
+    private state: MenuState = MenuState.START;
+    private heading: HTMLHeadingElement;
+    private buttonContainer: HTMLElement;
+    private buttons: MenuButton[] = [];
+
+    constructor() {
+        super();
+        this.classList.add("menu");
+        this.heading = document.createElement("h2");
+        this.append(this.heading);
+        this.buttonContainer = document.createElement("div");
+        this.buttonContainer.classList.add("flex-col");
+        this.append(this.buttonContainer);
+        this.buttonContainer.append(...this.buttons);
+    }
+
+    get dead(): boolean {
+        return this.state === MenuState.DEAD;
     }
 
     showMain(): void {
@@ -50,37 +106,74 @@ export class Menu {
         this.update(MenuState.DEAD);
     }
 
-    onButtonClick(callback: MenuClickCallback): void {
-        this.button?.addEventListener("click", callback);
-    }
-
-    updateByGame(status: GameStatus): void {
-        switch (status) {
-            case GameStatus.START:
-                this.showMain();
-                break;
-            case GameStatus.PLAYING:
-                this.hide();
-                break;
-            case GameStatus.PAUSED:
-                this.showPause();
-                break;
-            case GameStatus.DEAD:
-                this.showDead();
-                break;
-            default:
-                console.warn("Unexpected status ", status);
-        }
+    addButton(
+        text: string,
+        onClick: MenuClickCallback,
+        states: MenuState[],
+    ): void {
+        const button = new MenuButton(
+            text,
+            this.createButtonCallback(onClick),
+            states,
+        );
+        this.buttons.push(button);
+        this.buttonContainer.append(button);
     }
 
     private update(state: MenuState): void {
-        this.element.className = state;
-        this.focusButton(state);
+        this.state = state;
+        if (state === MenuState.HIDDEN) {
+            this.hidden = true;
+            return;
+        } else {
+            this.hidden = false;
+        }
+        this.setHeadingByState(state);
+        let focused = false;
+        for (const button of this.buttons) {
+            button.hidden = !button.states.includes(state);
+            if (!focused && !button.hidden) {
+                console.log("try to focus", button);
+                focused = true;
+                button.focus();
+            }
+        }
     }
 
-    private focusButton(state: MenuState): void {
-        if (state == MenuState.HIDDEN) return;
-        // TODO: each state should have it's own group of buttons and header
-        this.button?.focus();
+    private createButtonCallback(
+        callback: MenuClickCallback,
+    ): MenuClickCallback {
+        return (button) => {
+            if (this.state === MenuState.HIDDEN) {
+                button?.blur();
+                this.hide();
+            }
+            callback(button);
+        };
+    }
+
+    private setHeadingByState(state: MenuState): void {
+        if (state === MenuState.DEAD) {
+            this.heading.classList.add("text-red");
+        } else {
+            this.heading.classList.remove("text-red");
+        }
+        switch (state) {
+            case MenuState.HIDDEN:
+                return;
+            case MenuState.START:
+                return this.setHeading("Tanks 1990");
+            case MenuState.PAUSE:
+                return this.setHeading("Paused");
+            case MenuState.DEAD:
+                return this.setHeading("You are dead");
+        }
+    }
+
+    private setHeading(text: string): void {
+        this.heading.textContent = text;
     }
 }
+
+customElements.define("game-menu", Menu);
+customElements.define("game-menu-button", MenuButton);

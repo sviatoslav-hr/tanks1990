@@ -2,18 +2,18 @@ import { Context } from "./context";
 import { EnemyTank, PlayerTank, Tank } from "./entity";
 import { Entity } from "./entity/core";
 import { Rect } from "./math";
+import { Menu } from "./menu";
 
 export enum GameStatus {
-    START,
+    INITIAL,
     PLAYING,
     PAUSED,
-    DEAD,
 }
 
 export class Game {
     tanks: Tank[] = [];
     player: PlayerTank;
-    status = GameStatus.START;
+    status = GameStatus.INITIAL;
 
     constructor(public screen: Rect) {
         // TODO: maybe give tanks ref to a Game instead?
@@ -26,6 +26,35 @@ export class Game {
         );
     }
 
+    get playing(): boolean {
+        return this.status === GameStatus.PLAYING;
+    }
+
+    get paused(): boolean {
+        return this.status === GameStatus.PAUSED;
+    }
+
+    get dead(): boolean {
+        return this.playing && this.player.dead;
+    }
+
+    init(): void {
+        this.status = GameStatus.INITIAL;
+    }
+
+    pause(): void {
+        this.status = GameStatus.PAUSED;
+    }
+
+    resume(): void {
+        this.status = GameStatus.PLAYING;
+    }
+
+    start(): void {
+        this.player.respawn();
+        this.status = GameStatus.PLAYING;
+    }
+
     drawTanks(ctx: Context): void {
         for (const t of this.tanks) {
             t.draw(ctx);
@@ -33,7 +62,7 @@ export class Game {
     }
 
     updateTanks(dt: number, showBoundary: boolean): void {
-        if (![GameStatus.PLAYING, GameStatus.DEAD].includes(this.status)) {
+        if (!this.playing) {
             return;
         }
         for (const tank of this.tanks) {
@@ -41,22 +70,6 @@ export class Game {
             tank.update(dt);
             if (tank.dead && tank.bot) {
                 tank.respawn();
-            }
-        }
-    }
-
-    updateStatusByMenu(): void {
-        switch (this.status) {
-            case GameStatus.PAUSED:
-                this.status = GameStatus.PLAYING;
-                break;
-            case GameStatus.PLAYING:
-                this.status = GameStatus.PAUSED;
-                break;
-            case GameStatus.START:
-            case GameStatus.DEAD: {
-                this.player.respawn();
-                this.status = GameStatus.PLAYING;
             }
         }
     }

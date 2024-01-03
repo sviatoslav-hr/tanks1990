@@ -27,14 +27,13 @@ export function startAnimation(ctx: Context, game: Game, menu: Menu): void {
         if (showFPS) drawFPS(ctx, dt);
 
         if (
-            status === GameStatus.PAUSED ||
-            status === GameStatus.DEAD ||
-            (status === GameStatus.PLAYING && Keyboard.pressed.KeyQ)
+            game.paused ||
+            game.dead ||
+            (game.playing && Keyboard.pressed.KeyQ)
         ) {
             drawScore(ctx, game.player, screen);
         }
-        if (game.player.dead && status === GameStatus.PLAYING) {
-            game.status = GameStatus.DEAD;
+        if (game.player.dead && game.playing && !menu.dead) {
             menu.showDead();
         }
         game.updateTanks(dt, showBoundary);
@@ -47,28 +46,24 @@ export function startAnimation(ctx: Context, game: Game, menu: Menu): void {
     Keyboard.onKeydown("Escape", () => {
         switch (game.status) {
             case GameStatus.PLAYING: {
-                menu.showPause();
-                game.status = GameStatus.PAUSED;
+                if (game.dead) {
+                    menu.showMain();
+                    game.init();
+                } else {
+                    menu.showPause();
+                    game.pause();
+                }
                 break;
             }
             case GameStatus.PAUSED: {
                 menu.hide();
-                game.status = GameStatus.PLAYING;
+                game.resume();
                 break;
             }
-            case GameStatus.DEAD: {
-                menu.showMain();
-                game.status = GameStatus.START;
-                break;
-            }
-            case GameStatus.START:
+            case GameStatus.INITIAL:
                 break;
             default:
                 console.warn("Unhandled value ", game.status);
         }
-    });
-    menu.onButtonClick(() => {
-        game.updateStatusByMenu();
-        menu.updateByGame(game.status);
     });
 }

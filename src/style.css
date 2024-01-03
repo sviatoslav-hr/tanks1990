@@ -40,14 +40,7 @@ canvas {
     padding: 24px;
 }
 
-#menu.start  .start,
-#menu.pause  .pause,
-#menu.dead  .dead
-{
-    display: initial;
-}
-
-#menu {
+.menu {
     position: absolute;
     left: 50%;
     top: 50%;
@@ -61,18 +54,22 @@ canvas {
     align-items: center;
 }
 
-#menu h2 {
+*[hidden] {
+    display: none !important;
+}
+
+.menu h2 {
     margin-bottom: 32px;
     font-size: 32px;
     font-weight: 600;
     text-transform: uppercase;
 }
 
-#menu button {
-    min-width: 92px;;
+.menu .button {
+    min-width: 128px;;
 }
 
-button {
+.button {
     background-color: #242424;
     border: none;
     border-radius: 4px;
@@ -82,9 +79,10 @@ button {
     border: 2px solid #616161;
     transition: box-shadow ease-in-out 0.15s;
     cursor: pointer;
+    text-align: center;
 }
 
-button:focus-visible, button:hover {
+.button:focus-visible, .button:hover {
     box-shadow: 0 0 10px #616161;
     outline: none;
 }
@@ -101,4 +99,12 @@ button:focus-visible, button:hover {
 
 .w-fit {
     width: fit-content;
+}
+
+.flex-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
 }
