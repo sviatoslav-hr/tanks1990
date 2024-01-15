@@ -145,7 +145,7 @@ export class Menu extends HTMLElement {
     ): MenuClickCallback {
         return (button) => {
             if (this.state === MenuState.HIDDEN) {
-                button?.blur();
+                button.blur();
                 this.hide();
             }
             callback(button);

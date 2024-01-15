@@ -3,6 +3,7 @@ import { Context } from "../context";
 import { Game } from "../game";
 import { Keyboard } from "../keyboard";
 import { Rect, randomFrom, rotateRect, xn, yn } from "../math";
+import { None, Opt, Some } from "../option";
 import { BlockOpts } from "./block";
 import {
     Direction,
@@ -358,9 +359,10 @@ export class EnemyTank extends Tank implements Entity {
     private directionChangeDelay = this.DIRECTION_CHANGE_MS;
 
     update(dt: number): void {
-        let dir = this.findDirectionIfStuck();
-        if (dir == null) dir = this.findRandomDirection(dt);
-        if (dir != null) this.direction = dir;
+        const dir = this.findDirectionIfStuck().orElse(() =>
+            this.findRandomDirection(dt),
+        );
+        if (dir.isSome()) this.direction = dir.val;
         super.update(dt);
         this.shoot();
     }
@@ -371,56 +373,58 @@ export class EnemyTank extends Tank implements Entity {
 
     protected handleCollision(): void {
         const dir = this.findRandomDirection(0, true);
-        if (dir != null) this.direction = dir;
+        if (dir.isSome()) this.direction = dir.val;
     }
 
-    private findDirectionIfStuck(): Direction | null {
+    private findDirectionIfStuck(): Opt<Direction> {
         if (this.y === 0 && xn(this) >= xn(this.boundary)) {
-            return Direction.DOWN;
+            return Some(Direction.DOWN);
         }
         if (yn(this) >= yn(this.boundary) && this.x === 0) {
-            return Direction.UP;
+            return Some(Direction.UP);
         }
         if (xn(this) >= xn(this.boundary) && yn(this) >= yn(this.boundary)) {
-            return Direction.LEFT;
+            return Some(Direction.LEFT);
         }
         if (this.x === 0 && this.y === 0) {
-            return Direction.RIGHT;
+            return Some(Direction.RIGHT);
         }
         if (this.y === 0 && this.direction === Direction.UP) {
-            return Direction.DOWN;
+            return Some(Direction.DOWN);
         }
         if (
             yn(this) >= yn(this.boundary) &&
             this.direction === Direction.DOWN
         ) {
-            return Direction.UP;
+            return Some(Direction.UP);
         }
         if (
             xn(this) >= xn(this.boundary) &&
             this.direction === Direction.RIGHT
         ) {
-            return Direction.LEFT;
+            return Some(Direction.LEFT);
         }
         if (this.x === 0 && this.direction === Direction.LEFT) {
-            return Direction.RIGHT;
+            return Some(Direction.RIGHT);
         }
-        return null;
+        return None();
     }
 
-    private findRandomDirection(dt: number, force = false): Direction | null {
+    private findRandomDirection(dt: number, force = false): Opt<Direction> {
         this.directionChangeDelay = Math.max(0, this.directionChangeDelay - dt);
-        if (this.directionChangeDelay && !force) return null;
+        if (this.directionChangeDelay && !force) return None();
         if (Math.random() > 0.1) {
             this.directionChangeDelay = this.DIRECTION_CHANGE_MS;
-            return randomFrom(
-                Direction.UP,
-                Direction.RIGHT,
-                Direction.DOWN,
-                Direction.LEFT,
+            return Some(
+                randomFrom(
+                    Direction.UP,
+                    Direction.RIGHT,
+                    Direction.DOWN,
+                    Direction.LEFT,
+                ),
             );
         }
         this.directionChangeDelay = this.DIRECTION_CHANGE_MS;
-        return null;
+        return None();
     }
 }

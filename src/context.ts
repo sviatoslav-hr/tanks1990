@@ -2,11 +2,7 @@ import { type Color } from "./color";
 import { Rect } from "./math";
 
 export class Context {
-    constructor(private ctx: CanvasRenderingContext2D) {
-        if (ctx == null) {
-            throw new Error("No context found");
-        }
-    }
+    constructor(private ctx: CanvasRenderingContext2D) {}
 
     drawBoundary({ x, y, width, height }: Rect, lineWidth = 1): void {
         this.drawLine(x, y, x + width, y, lineWidth);
