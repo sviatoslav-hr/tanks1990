@@ -133,7 +133,6 @@ export class Menu extends HTMLElement {
         for (const button of this.buttons) {
             button.hidden = !button.states.includes(state);
             if (!focused && !button.hidden) {
-                console.log("try to focus", button);
                 focused = true;
                 button.focus();
             }

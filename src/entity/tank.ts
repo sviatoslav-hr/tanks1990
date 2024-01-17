@@ -356,11 +356,15 @@ export class EnemyTank extends Tank implements Entity {
     protected v = this.MOVEMENT_SPEED;
     protected readonly SHOOTING_PERIOD_MS = 1000;
     private readonly DIRECTION_CHANGE_MS = 5000;
-    private directionChangeDelay = this.DIRECTION_CHANGE_MS;
+    private randomDirectionDelay = this.DIRECTION_CHANGE_MS;
+    private targetDirectionDelay = this.DIRECTION_CHANGE_MS;
 
     update(dt: number): void {
-        const dir = this.findDirectionIfStuck().orElse(() =>
-            this.findRandomDirection(dt),
+        const player = this.game.player;
+        const dir = this.findDirectionTowards(player, dt).orElse(() =>
+            this.findDirectionIfStuck().orElse(() =>
+                this.findRandomDirection(dt),
+            ),
         );
         if (dir.isSome()) this.direction = dir.val;
         super.update(dt);
@@ -411,10 +415,10 @@ export class EnemyTank extends Tank implements Entity {
     }
 
     private findRandomDirection(dt: number, force = false): Opt<Direction> {
-        this.directionChangeDelay = Math.max(0, this.directionChangeDelay - dt);
-        if (this.directionChangeDelay && !force) return None();
+        this.randomDirectionDelay = Math.max(0, this.randomDirectionDelay - dt);
+        if (this.randomDirectionDelay && !force) return None();
         if (Math.random() > 0.1) {
-            this.directionChangeDelay = this.DIRECTION_CHANGE_MS;
+            this.randomDirectionDelay = this.DIRECTION_CHANGE_MS;
             return Some(
                 randomFrom(
                     Direction.UP,
@@ -424,7 +428,31 @@ export class EnemyTank extends Tank implements Entity {
                 ),
             );
         }
-        this.directionChangeDelay = this.DIRECTION_CHANGE_MS;
+        this.randomDirectionDelay = this.DIRECTION_CHANGE_MS;
         return None();
+    }
+
+    private findDirectionTowards(entity: Entity, dt: number): Opt<Direction> {
+        this.targetDirectionDelay = Math.max(0, this.targetDirectionDelay - dt);
+        if (entity.dead || this.targetDirectionDelay) {
+            return None();
+        }
+        this.targetDirectionDelay = this.DIRECTION_CHANGE_MS;
+        if (Math.random() > 0.3) return None();
+        const dx = this.x - entity.x;
+        const dy = this.y - entity.y;
+        const dirY = dy > 0 ? Direction.UP : Direction.DOWN;
+        const dirX = dx > 0 ? Direction.LEFT : Direction.RIGHT;
+        // NOTE: move along the longer side first
+        if (Math.abs(dx) > Math.abs(dy)) {
+            if (Math.abs(dx) < this.width / 50) {
+                return Some(dirY);
+            }
+            return Some(dirX);
+        }
+        if (Math.abs(dy) < this.height / 50) {
+            return Some(dirX);
+        }
+        return Some(dirY);
     }
 }
