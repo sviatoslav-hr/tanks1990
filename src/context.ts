@@ -2,7 +2,7 @@ import { type Color } from "./color";
 import { Rect } from "./math";
 
 export class Context {
-    constructor(private ctx: CanvasRenderingContext2D) {}
+    constructor(public ctx: CanvasRenderingContext2D) {}
 
     drawBoundary({ x, y, width, height }: Rect, lineWidth = 1): void {
         this.drawLine(x, y, x + width, y, lineWidth);
@@ -31,6 +31,23 @@ export class Context {
         this.ctx.fillText(text, x, y);
     }
 
+    drawImage(
+        src: CanvasImageSource,
+        sx: number,
+        sy: number,
+        sw: number,
+        sh: number,
+        dx: number,
+        dy: number,
+        dw: number,
+        dh: number,
+    ): void {
+        // drawImage(image: CanvasImageSource, dx: number, dy: number): void;
+        // drawImage(image: CanvasImageSource, dx: number, dy: number, dw: number, dh: number): void;
+        // drawImage(image: CanvasImageSource, sx: number, sy: number, sw: number, sh: number, dx: number, dy: number, dw: number, dh: number): void;
+        this.ctx.drawImage(src, sx, sy, sw, sh, dx, dy, dw, dh);
+    }
+
     setFont(
         font: string,
         align: CanvasTextAlign = "start",
@@ -51,6 +68,10 @@ export class Context {
         if (this.ctx.fillStyle !== color) {
             this.ctx.fillStyle = color;
         }
+    }
+
+    rotate(deg: number): void {
+        this.ctx.rotate((deg * Math.PI) / 180);
     }
 
     clearScreen(): void {

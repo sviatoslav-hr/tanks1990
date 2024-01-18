@@ -15,27 +15,10 @@ import {
 } from "./core";
 import { Projectile } from "./projectile";
 
-type TankColorSpecs = {
-    track: Color;
-    body: Color;
-    turret: Color;
-    gun: Color;
-};
-
-const tankColors: Record<"orange" | "green", TankColorSpecs> = {
-    orange: {
-        track: Color.ORANGE_GAMBOGE,
-        body: Color.ORANGE_GAMBOGE,
-        turret: Color.ORANGE_SAFFRON,
-        gun: Color.WHITE_NAVAJO,
-    },
-    green: {
-        track: Color.GREEN_DARK,
-        body: Color.GREEN_DARK,
-        turret: Color.GREEN_DEEP,
-        gun: Color.GREEN_NT,
-    },
-};
+const tankImageYellow = new Image();
+tankImageYellow.src = "/assets/tank_yellow.png";
+const tankImageGreen = new Image();
+tankImageGreen.src = "/assets/tank_green.png";
 
 export abstract class Tank implements Entity {
     public x = 0;
@@ -56,7 +39,7 @@ export abstract class Tank implements Entity {
     protected readonly SHOOTING_PERIOD_MS: number = 300;
     protected readonly MOVEMENT_SPEED: number = 100;
     protected readonly SHIELD_TIME_MS: number = 1000;
-    protected readonly colors = tankColors.orange;
+    protected abstract readonly image: HTMLImageElement;
     protected index = Tank.index++;
     static SIZE = 50;
     private static index = 0;
@@ -93,21 +76,29 @@ export abstract class Tank implements Entity {
 
     draw(ctx: Context): void {
         if (this.dead) return;
-        for (const block of this.createModel()) {
-            ctx.setFillColor(block.color);
-            const rotated = rotateRect(
-                block,
-                this.width / 2,
-                this.height / 2,
-                this.direction,
-            );
-            ctx.drawRect(
-                this.x + rotated.x,
-                this.y + rotated.y,
-                rotated.width,
-                rotated.height,
-            );
-        }
+        // NOTE: set origin at the center of tank for proper rotation
+        ctx.ctx.setTransform(
+            1,
+            0,
+            0,
+            1,
+            this.x + this.width / 2,
+            this.y + this.height / 2,
+        );
+        ctx.rotate(this.direction);
+        // NOTE: draw the image respecting the moved origin
+        ctx.drawImage(
+            this.image,
+            0,
+            0,
+            64,
+            64,
+            -this.width / 2,
+            -this.height / 2,
+            this.width,
+            this.height,
+        );
+        ctx.ctx.setTransform(1, 0, 0, 1, 0, 0);
         for (const projectile of this.projectiles) {
             if (!projectile.dead) {
                 projectile.draw(ctx);
@@ -201,54 +192,6 @@ export abstract class Tank implements Entity {
         this.shieldRemainingMs = this.SHIELD_TIME_MS;
     }
 
-    private createModel(): BlockOpts[] {
-        const blocks: BlockOpts[] = [];
-        const trackWidth = this.width * 0.25;
-        const trackHeight = this.height * 0.75;
-        const bodyHeight = trackHeight * 0.8;
-        const headSize = bodyHeight * 0.7;
-        const trackYOffset = this.height - trackHeight;
-        blocks.push({
-            x: 0,
-            y: trackYOffset,
-            width: trackWidth,
-            height: trackHeight,
-            color: this.colors.track,
-        });
-        blocks.push({
-            x: 3 * trackWidth,
-            y: trackYOffset,
-            width: trackWidth,
-            height: trackHeight,
-            color: this.colors.track,
-        });
-        const bodyYOffset = trackYOffset + (trackHeight - bodyHeight) / 2;
-        blocks.push({
-            x: 0,
-            y: bodyYOffset,
-            width: this.width,
-            height: bodyHeight,
-            color: this.colors.body,
-        });
-        const turretYOffset = bodyYOffset + (bodyHeight - headSize) / 2;
-        blocks.push({
-            x: trackWidth,
-            y: turretYOffset,
-            width: this.width - 2 * trackWidth,
-            height: headSize,
-            color: this.colors.turret,
-        });
-        const gunWidth = this.width / 15;
-        blocks.push({
-            x: (this.width - gunWidth) / 2,
-            y: 0,
-            width: gunWidth,
-            height: turretYOffset,
-            color: this.colors.gun,
-        });
-        return blocks;
-    }
-
     protected updateShield(dt: number): void {
         if (this.shieldRemainingMs || this.hasShield) {
             this.shieldRemainingMs = Math.max(0, this.shieldRemainingMs - dt);
@@ -293,6 +236,7 @@ export class PlayerTank extends Tank implements Entity {
     public score = 0;
     public survivedMs = 0;
     protected readonly MOVEMENT_SPEED: number = 300;
+    protected readonly image = tankImageYellow;
 
     constructor(boundary: Rect, game: Game) {
         super(boundary, game);
@@ -351,13 +295,13 @@ export class PlayerTank extends Tank implements Entity {
 }
 
 export class EnemyTank extends Tank implements Entity {
-    protected colors: TankColorSpecs = tankColors.green;
     protected direction = Direction.RIGHT;
     protected v = this.MOVEMENT_SPEED;
     protected readonly SHOOTING_PERIOD_MS = 1000;
     private readonly DIRECTION_CHANGE_MS = 5000;
     private randomDirectionDelay = this.DIRECTION_CHANGE_MS;
     private targetDirectionDelay = this.DIRECTION_CHANGE_MS;
+    protected readonly image = tankImageGreen;
 
     update(dt: number): void {
         const player = this.game.player;
