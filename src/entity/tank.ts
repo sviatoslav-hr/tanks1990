@@ -41,8 +41,11 @@ export abstract class Tank implements Entity {
     protected readonly SHIELD_TIME_MS: number = 1000;
     protected abstract readonly image: HTMLImageElement;
     protected index = Tank.index++;
+    private animationFrame = 0;
+    private animationDt = 0;
     static SIZE = 50;
     private static index = 0;
+    private static ANIMATION_DELAY_MS = 100;
 
     constructor(
         protected boundary: Rect,
@@ -61,6 +64,12 @@ export abstract class Tank implements Entity {
     update(dt: number): void {
         if (this.dead) return;
         this.shootingDelayMs = Math.max(0, this.shootingDelayMs - dt);
+        this.animationDt += dt;
+        if (this.animationDt >= Tank.ANIMATION_DELAY_MS) {
+            this.animationFrame++;
+            this.animationDt -= Tank.ANIMATION_DELAY_MS;
+        }
+        if (this.animationFrame > 1) this.animationFrame = 0;
         const prevX = this.x;
         const prevY = this.y;
         moveEntity(this, scaleMovement(this.v, dt), this.direction);
@@ -89,7 +98,7 @@ export abstract class Tank implements Entity {
         // NOTE: draw the image respecting the moved origin
         ctx.drawImage(
             this.image,
-            0,
+            64 * this.animationFrame,
             0,
             64,
             64,
