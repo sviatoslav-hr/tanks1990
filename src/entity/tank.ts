@@ -14,11 +14,7 @@ import {
     scaleMovement,
 } from "./core";
 import { Projectile } from "./projectile";
-
-const tankImageYellow = new Image();
-tankImageYellow.src = "/assets/tank_yellow.png";
-const tankImageGreen = new Image();
-tankImageGreen.src = "/assets/tank_green.png";
+import { Sprite, createTankSprite } from "./sprite";
 
 export abstract class Tank implements Entity {
     public x = 0;
@@ -36,16 +32,14 @@ export abstract class Tank implements Entity {
     protected direction = Direction.UP;
     protected shootingDelayMs = 0;
     protected shieldRemainingMs = 0;
+    protected moving = false;
     protected readonly SHOOTING_PERIOD_MS: number = 300;
     protected readonly MOVEMENT_SPEED: number = 100;
     protected readonly SHIELD_TIME_MS: number = 1000;
-    protected abstract readonly image: HTMLImageElement;
+    protected abstract readonly sprite: Sprite<string>;
     protected index = Tank.index++;
-    private animationFrame = 0;
-    private animationDt = 0;
     static SIZE = 50;
     private static index = 0;
-    private static ANIMATION_DELAY_MS = 100;
 
     constructor(
         protected boundary: Rect,
@@ -64,14 +58,11 @@ export abstract class Tank implements Entity {
     update(dt: number): void {
         if (this.dead) return;
         this.shootingDelayMs = Math.max(0, this.shootingDelayMs - dt);
-        this.animationDt += dt;
-        if (this.animationDt >= Tank.ANIMATION_DELAY_MS) {
-            this.animationFrame++;
-            this.animationDt -= Tank.ANIMATION_DELAY_MS;
-        }
-        if (this.animationFrame > 1) this.animationFrame = 0;
         const prevX = this.x;
         const prevY = this.y;
+        if (this.moving) {
+            this.sprite.update(dt);
+        }
         moveEntity(this, scaleMovement(this.v, dt), this.direction);
         if (this.collided) {
             this.handleCollision();
@@ -85,29 +76,7 @@ export abstract class Tank implements Entity {
 
     draw(ctx: Context): void {
         if (this.dead) return;
-        // NOTE: set origin at the center of tank for proper rotation
-        ctx.ctx.setTransform(
-            1,
-            0,
-            0,
-            1,
-            this.x + this.width / 2,
-            this.y + this.height / 2,
-        );
-        ctx.rotate(this.direction);
-        // NOTE: draw the image respecting the moved origin
-        ctx.drawImage(
-            this.image,
-            64 * this.animationFrame,
-            0,
-            64,
-            64,
-            -this.width / 2,
-            -this.height / 2,
-            this.width,
-            this.height,
-        );
-        ctx.ctx.setTransform(1, 0, 0, 1, 0, 0);
+        this.sprite.draw(ctx, this, this.direction);
         for (const projectile of this.projectiles) {
             if (!projectile.dead) {
                 projectile.draw(ctx);
@@ -245,7 +214,7 @@ export class PlayerTank extends Tank implements Entity {
     public score = 0;
     public survivedMs = 0;
     protected readonly MOVEMENT_SPEED: number = 300;
-    protected readonly image = tankImageYellow;
+    protected readonly sprite = createTankSprite("tank_yellow");
 
     constructor(boundary: Rect, game: Game) {
         super(boundary, game);
@@ -254,13 +223,10 @@ export class PlayerTank extends Tank implements Entity {
     }
 
     update(dt: number): void {
-        if (!this.dead) {
-            this.handleKeyboard();
-        }
+        if (this.dead) return;
+        this.handleKeyboard();
         super.update(dt);
-        if (!this.dead) {
-            this.survivedMs += dt;
-        }
+        this.survivedMs += dt;
     }
 
     respawn(): void {
@@ -279,38 +245,39 @@ export class PlayerTank extends Tank implements Entity {
     }
 
     protected handleKeyboard(): void {
-        let isMoving = false;
+        this.moving = false;
         if (Keyboard.pressed.KeyA) {
             this.direction = Direction.LEFT;
-            isMoving = true;
+            this.moving = true;
         }
         if (Keyboard.pressed.KeyD) {
-            isMoving = true;
             this.direction = Direction.RIGHT;
+            this.moving = true;
         }
         if (Keyboard.pressed.KeyW) {
             this.direction = Direction.UP;
-            isMoving = true;
+            this.moving = true;
         }
         if (Keyboard.pressed.KeyS) {
             this.direction = Direction.DOWN;
-            isMoving = true;
+            this.moving = true;
         }
         if (Keyboard.pressed.Space && !this.shootingDelayMs) {
             this.shoot();
         }
-        this.v = isMoving ? this.MOVEMENT_SPEED : 0;
+        this.v = this.moving ? this.MOVEMENT_SPEED : 0;
     }
 }
 
 export class EnemyTank extends Tank implements Entity {
     protected direction = Direction.RIGHT;
     protected v = this.MOVEMENT_SPEED;
+    protected moving = true;
     protected readonly SHOOTING_PERIOD_MS = 1000;
+    protected readonly sprite = createTankSprite("tank_green");
     private readonly DIRECTION_CHANGE_MS = 5000;
     private randomDirectionDelay = this.DIRECTION_CHANGE_MS;
     private targetDirectionDelay = this.DIRECTION_CHANGE_MS;
-    protected readonly image = tankImageGreen;
 
     update(dt: number): void {
         const player = this.game.player;
