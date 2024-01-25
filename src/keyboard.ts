@@ -1,12 +1,13 @@
 export type KeyCode =
+    | "KeyQ"
     | "KeyW"
-    | "KeyS"
+    | "KeyR"
     | "KeyA"
+    | "KeyS"
     | "KeyD"
     | "KeyF"
     | "KeyB"
-    | "KeyQ"
-    | "KeyR"
+    | "Backquote"
     | "Space"
     | "Escape";
 export type KeysState = Partial<Record<KeyCode, boolean>>;

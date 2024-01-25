@@ -1,3 +1,4 @@
+import { Color } from "./color";
 import { Context } from "./context";
 import { drawFPS, drawGrid, drawScore } from "./draw";
 import { Tank } from "./entity";
@@ -22,6 +23,13 @@ export function startAnimation(ctx: Context, game: Game, menu: Menu): void {
         const dt = timestamp - lastTimestamp;
         lastTimestamp = timestamp;
         ctx.clearScreen();
+        ctx.setFillColor(Color.BLACK_RAISIN);
+        ctx.drawRect(
+            game.screen.x,
+            game.screen.y,
+            game.screen.width,
+            game.screen.height,
+        );
         drawGrid(ctx, game.screen, Tank.SIZE);
         game.drawTanks(ctx);
         if (showFPS) drawFPS(ctx, dt);
@@ -40,8 +48,9 @@ export function startAnimation(ctx: Context, game: Game, menu: Menu): void {
         window.requestAnimationFrame(animate);
     };
     window.requestAnimationFrame(animate);
+    // TODO: animation function shouldn't be responsible for Keyboard handling
     Keyboard.listen(document.body);
-    Keyboard.onKeydown("KeyF", () => (showFPS = !showFPS));
+    Keyboard.onKeydown("Backquote", () => (showFPS = !showFPS));
     Keyboard.onKeydown("KeyB", () => (showBoundary = !showBoundary));
     Keyboard.onKeydown("Escape", () => {
         switch (game.status) {

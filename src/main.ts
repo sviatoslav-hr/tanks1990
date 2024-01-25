@@ -2,6 +2,7 @@ import { createCanvas, startAnimation } from "./canvas";
 import { Context } from "./context";
 import { querySelector } from "./dom";
 import { Game } from "./game";
+import { Keyboard } from "./keyboard";
 import { Menu, initMenu } from "./menu";
 import { Opt } from "./option";
 import "./style.css";
@@ -24,3 +25,20 @@ appElement.append(menu);
 initMenu(menu, game);
 menu.showMain();
 startAnimation(ctx, game, menu);
+
+Keyboard.onKeydown("KeyF", () => {
+    if (!document.fullscreenEnabled) {
+        console.warn("Fullscreen is either not supported or disabled");
+        return;
+    }
+    if (document.fullscreenElement) {
+        document.exitFullscreen().catch((err) => {
+            console.error("ERROR: failed to exit Fullscreen", err);
+        });
+    } else {
+        // FIXME: menu is not being captured in fullscreen
+        canvas.requestFullscreen().catch((err) => {
+            console.error("ERROR: failed to enter Fullscreen", err);
+        });
+    }
+});

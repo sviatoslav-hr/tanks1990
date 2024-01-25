@@ -3,6 +3,7 @@ export enum Color {
     WHITE_NAVAJO = "#FFE7A5",
     BLACK = "#000000",
     BLACK_IERIE = "#191919",
+    BLACK_RAISIN = "#242424",
     RED = "#ff0000",
     PINK = "#ff4081",
     ORANGE_SAFFRON = "#FF9A39",
