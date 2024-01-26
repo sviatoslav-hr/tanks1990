@@ -5,6 +5,7 @@ import { Tank } from "./entity";
 import { Game, GameStatus } from "./game";
 import { Keyboard } from "./keyboard";
 import { Menu } from "./menu";
+import { saveBestScore } from "./storage";
 
 export function createCanvas(width: number, height: number): HTMLCanvasElement {
     const element = document.createElement("canvas");
@@ -13,7 +14,12 @@ export function createCanvas(width: number, height: number): HTMLCanvasElement {
     return element;
 }
 
-export function startAnimation(ctx: Context, game: Game, menu: Menu): void {
+export function startAnimation(
+    ctx: Context,
+    game: Game,
+    menu: Menu,
+    storage: Storage,
+): void {
     let lastTimestamp = performance.now();
     let showFPS = false;
     let showBoundary = false;
@@ -39,9 +45,10 @@ export function startAnimation(ctx: Context, game: Game, menu: Menu): void {
             game.dead ||
             (game.playing && Keyboard.pressed.KeyQ)
         ) {
-            drawScore(ctx, game.player, screen);
+            drawScore(ctx, game.player, screen, storage);
         }
         if (game.player.dead && game.playing && !menu.dead) {
+            saveBestScore(storage, game.player.score);
             menu.showDead();
         }
         game.updateTanks(dt, showBoundary);

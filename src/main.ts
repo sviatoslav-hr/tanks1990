@@ -24,7 +24,7 @@ const menu = new Menu();
 appElement.append(menu);
 initMenu(menu, game);
 menu.showMain();
-startAnimation(ctx, game, menu);
+startAnimation(ctx, game, menu, localStorage);
 
 Keyboard.onKeydown("KeyF", () => {
     if (!document.fullscreenEnabled) {

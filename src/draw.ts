@@ -4,6 +4,7 @@ import { Color } from "./color";
 import { Context } from "./context";
 import { PlayerTank } from "./entity";
 import { Rect, numround, xn } from "./math";
+import { getBestScore } from "./storage";
 
 // This way it's possible to have multiple independent FPS counters
 let lastFPS: string = "0";
@@ -31,12 +32,23 @@ export function drawScore(
     ctx: Context,
     player: PlayerTank,
     boundary: Rect,
+    storage: Storage,
 ): void {
     const scoreText = `Score: ${player.score}\n`;
     drawText(ctx, scoreText, xn(boundary) - scoreText.length * 10, 10);
-    if (player.dead || true) {
-        const surviveText = `Survived: ${humanDuration(player.survivedMs)}`;
-        drawText(ctx, surviveText, xn(boundary) - surviveText.length * 10, 44);
+    const surviveText = `Survived: ${humanDuration(player.survivedMs)}`;
+    drawText(ctx, surviveText, xn(boundary) - surviveText.length * 10, 44);
+    if (player.dead) {
+        // TODO: this shound't be constructed each frame..
+        const bestScore = getBestScore(storage);
+        if (!bestScore || !bestScore.score) return;
+        const bestScoreText = `Best Score: ${bestScore.score} - ${shortDate(bestScore.createdAt)}`;
+        drawText(
+            ctx,
+            bestScoreText,
+            xn(boundary) - bestScoreText.length * 9,
+            78,
+        );
     }
 }
 
@@ -71,4 +83,8 @@ function humanDuration(ms: number): string {
         return `${secs}s`;
     }
     return `${Math.floor(ms)}ms`;
+}
+
+function shortDate(date: Date): string {
+    return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;
 }
