@@ -24,7 +24,6 @@ export function startAnimation(
     let showFPS = false;
     let showBoundary = false;
     const animate = function (timestamp: number): void {
-        const status = game.status;
         const screen = game.screen;
         const dt = timestamp - lastTimestamp;
         lastTimestamp = timestamp;

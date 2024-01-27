@@ -7,12 +7,10 @@ import {
     distanceV2,
     oppositeDirection,
     randomFrom,
-    rotateRect,
     xn,
     yn,
 } from "../math";
 import { None, Opt, Some } from "../option";
-import { BlockOpts } from "./block";
 import {
     Direction,
     Entity,
@@ -188,7 +186,7 @@ export abstract class Tank implements Entity {
         }
     }
 
-    protected handleCollision(target: Tank): void {}
+    protected handleCollision(_target: Tank): void {}
 
     private updateProjectiles(dt: number): void {
         const garbageIndexes: number[] = [];
