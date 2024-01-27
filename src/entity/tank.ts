@@ -2,7 +2,15 @@ import { Color } from "../color";
 import { Context } from "../context";
 import { Game } from "../game";
 import { Keyboard } from "../keyboard";
-import { Rect, distanceV2, randomFrom, rotateRect, xn, yn } from "../math";
+import {
+    Rect,
+    distanceV2,
+    oppositeDirection,
+    randomFrom,
+    rotateRect,
+    xn,
+    yn,
+} from "../math";
 import { None, Opt, Some } from "../option";
 import { BlockOpts } from "./block";
 import {
@@ -29,7 +37,7 @@ export abstract class Tank implements Entity {
     protected dx = 0;
     protected dy = 0;
     protected v: number = 0;
-    protected direction = Direction.UP;
+    public direction = Direction.UP;
     protected shootingDelayMs = 0;
     protected shieldRemainingMs = 0;
     protected moving = false;
@@ -49,12 +57,6 @@ export abstract class Tank implements Entity {
         this.y = -(2 * this.height);
     }
 
-    get collided(): boolean {
-        return this.game.tanks.some((t) => {
-            return t !== this && !t.dead && isIntesecting(this, t);
-        });
-    }
-
     update(dt: number): void {
         if (this.dead) return;
         this.shootingDelayMs = Math.max(0, this.shootingDelayMs - dt);
@@ -64,8 +66,9 @@ export abstract class Tank implements Entity {
             this.sprite.update(dt);
         }
         moveEntity(this, scaleMovement(this.v, dt), this.direction);
-        if (this.collided) {
-            this.handleCollision();
+        const collided = this.findCollided();
+        if (collided) {
+            this.handleCollision(collided);
             this.x = prevX;
             this.y = prevY;
         }
@@ -162,7 +165,7 @@ export abstract class Tank implements Entity {
                 break;
             }
         }
-        if (this.collided) {
+        if (this.findCollided()) {
             this.tryRespawn(limit - 1);
         } else {
             this.dead = false;
@@ -185,7 +188,7 @@ export abstract class Tank implements Entity {
         }
     }
 
-    protected handleCollision(): void {}
+    protected handleCollision(target: Tank): void {}
 
     private updateProjectiles(dt: number): void {
         const garbageIndexes: number[] = [];
@@ -211,6 +214,12 @@ export abstract class Tank implements Entity {
             case Direction.LEFT:
                 return [this.x, this.y + this.height / 2];
         }
+    }
+
+    findCollided(): Tank | undefined {
+        return this.game.tanks.find((t) => {
+            return t !== this && !t.dead && isIntesecting(this, t);
+        });
     }
 }
 
@@ -276,7 +285,6 @@ export class PlayerTank extends Tank implements Entity {
 }
 
 export class EnemyTank extends Tank implements Entity {
-    protected direction = Direction.RIGHT;
     protected v = this.MOVEMENT_SPEED;
     protected moving = true;
     protected readonly SHOOTING_PERIOD_MS = 1000;
@@ -284,15 +292,20 @@ export class EnemyTank extends Tank implements Entity {
     private readonly DIRECTION_CHANGE_MS = 2000;
     private randomDirectionDelay = this.DIRECTION_CHANGE_MS;
     private targetDirectionDelay = this.DIRECTION_CHANGE_MS;
+    private collided = false;
 
     update(dt: number): void {
         const player = this.game.player;
-        const dir = this.findDirectionTowards(player, dt).orElse(() =>
-            this.findDirectionIfStuck().orElse(() =>
-                this.findRandomDirection(dt),
-            ),
-        );
-        if (dir.isSome()) this.direction = dir.val;
+        // NOTE: is collided, don't change the direction, allowing entities to move away from each other
+        if (!this.collided) {
+            const dir = this.findPlayerDirection(player, dt).orElse(() => {
+                return this.findDirectionIfStuck().orElse(() =>
+                    this.findRandomDirection(dt),
+                );
+            });
+            if (dir.isSome()) this.direction = dir.val;
+        }
+        this.collided = false;
         super.update(dt);
         this.shoot();
     }
@@ -301,9 +314,16 @@ export class EnemyTank extends Tank implements Entity {
         super.respawn();
     }
 
-    protected handleCollision(): void {
-        const dir = this.findRandomDirection(0, true);
-        if (dir.isSome()) this.direction = dir.val;
+    protected handleCollision(target: Tank): void {
+        this.collided = true;
+        if (target instanceof EnemyTank) {
+            target.collided = true;
+            const dir = this.findDirectionTowards(target);
+            if (dir.isSome()) {
+                this.direction = oppositeDirection(dir.val);
+                target.direction = dir.val;
+            }
+        }
     }
 
     private findDirectionIfStuck(): Opt<Direction> {
@@ -358,15 +378,21 @@ export class EnemyTank extends Tank implements Entity {
         return None();
     }
 
-    private findDirectionTowards(entity: Entity, dt: number): Opt<Direction> {
-        if (entity.dead) return None();
-        const entityDist = distanceV2(this, entity);
+    private findPlayerDirection(player: Entity, dt: number): Opt<Direction> {
+        const dir = this.findDirectionTowards(player);
+        if (dir.isNone()) return dir;
+
+        const entityDist = distanceV2(this, player);
         if (entityDist < Tank.SIZE * 5) return None();
+
         this.targetDirectionDelay = Math.max(0, this.targetDirectionDelay - dt);
-        if (this.targetDirectionDelay) {
-            return None();
-        }
+        if (this.targetDirectionDelay) return None();
         this.targetDirectionDelay = this.DIRECTION_CHANGE_MS;
+        return dir;
+    }
+
+    private findDirectionTowards(entity: Entity): Opt<Direction> {
+        if (entity.dead) return None();
         const dx = this.x - entity.x;
         const dy = this.y - entity.y;
         const dirY = dy > 0 ? Direction.UP : Direction.DOWN;

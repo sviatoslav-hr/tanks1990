@@ -7,13 +7,9 @@ abstract class BaseOption<T> {
         return val == null ? None() : Some(val);
     }
 
-    isSome(): this is SomeOption<T> {
-        return this instanceof SomeOption;
-    }
+    abstract isSome(): this is SomeOption<T>;
 
-    isNone(): this is NoneOption<T> {
-        return this instanceof NoneOption;
-    }
+    abstract isNone(): this is NoneOption<T>;
 
     asNullable(): T | undefined {
         return this.isSome() ? this.val : undefined;
@@ -84,20 +80,43 @@ export function Some<V>(val: V): Opt<V> {
     return new SomeOption(val);
 }
 
+class NoneOption<V> extends BaseOption<V> {
+    // HACK: this is just to make the None<V> differ from Opt<V>.
+    // For some reason if (opt.isNone()) {
+    //  return opt; // opt is still of type Opt<V>, not NoneOption<V>
+    // }
+    // return opt; // here opt is `never`;
+    readonly __isNone = true;
+
+    constructor() {
+        super();
+    }
+
+    isSome(): this is SomeOption<V> {
+        return false;
+    }
+
+    isNone(): this is NoneOption<V> {
+        return true;
+    }
+}
+
 class SomeOption<V> extends BaseOption<V> {
     constructor(public readonly val: V) {
         super();
+    }
+
+    isSome(): this is SomeOption<V> {
+        return true;
+    }
+
+    isNone(): this is NoneOption<V> {
+        return false;
     }
 }
 
 export function None<V>(): Opt<V> {
     return new NoneOption();
-}
-
-class NoneOption<T> extends BaseOption<T> {
-    constructor() {
-        super();
-    }
 }
 
 export const Opt = {

@@ -1,3 +1,5 @@
+import { Direction } from "./entity/core";
+
 export type Vec2 = {
     x: number;
     y: number;
@@ -49,6 +51,19 @@ export function rotateRect(
 
 export function isPosInsideRect(x: number, y: number, rect: Rect): boolean {
     return rect.x <= x && x <= xn(rect) && rect.y <= y && y <= yn(rect);
+}
+
+export function oppositeDirection(dir: Direction): Direction {
+    switch (dir) {
+        case Direction.UP:
+            return Direction.DOWN;
+        case Direction.RIGHT:
+            return Direction.LEFT;
+        case Direction.DOWN:
+            return Direction.UP;
+        case Direction.LEFT:
+            return Direction.RIGHT;
+    }
 }
 
 function rotatePoint(

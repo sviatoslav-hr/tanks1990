@@ -2,7 +2,6 @@ import { Context } from "./context";
 import { EnemyTank, PlayerTank, Tank } from "./entity";
 import { Entity } from "./entity/core";
 import { Rect } from "./math";
-import { Menu } from "./menu";
 
 export enum GameStatus {
     INITIAL,
@@ -42,8 +41,6 @@ export class Game {
 
     init(): void {
         this.status = GameStatus.INITIAL;
-        this.tanks = [this.player];
-        this.addEnemy();
     }
 
     addEnemy(): void {
@@ -63,6 +60,7 @@ export class Game {
         this.player.respawn();
         this.status = GameStatus.PLAYING;
         this.tanks = [this.player];
+        this.addEnemy();
         this.addEnemy();
     }
 
