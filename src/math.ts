@@ -1,3 +1,8 @@
+export type Vec2 = {
+    x: number;
+    y: number;
+};
+
 export type Rect = {
     x: number;
     y: number;
@@ -76,4 +81,8 @@ export function randomInt(min: number, max: number): number {
 
 export function randomFrom<T>(...values: T[]): T {
     return values[randomInt(0, values.length)]!;
+}
+
+export function distanceV2(v1: Vec2, v2: Vec2): number {
+    return Math.sqrt((v1.x - v2.x) ** 2 + (v1.y - v2.y) ** 2);
 }

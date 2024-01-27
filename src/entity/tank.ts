@@ -2,7 +2,7 @@ import { Color } from "../color";
 import { Context } from "../context";
 import { Game } from "../game";
 import { Keyboard } from "../keyboard";
-import { Rect, randomFrom, rotateRect, xn, yn } from "../math";
+import { Rect, distanceV2, randomFrom, rotateRect, xn, yn } from "../math";
 import { None, Opt, Some } from "../option";
 import { BlockOpts } from "./block";
 import {
@@ -281,7 +281,7 @@ export class EnemyTank extends Tank implements Entity {
     protected moving = true;
     protected readonly SHOOTING_PERIOD_MS = 1000;
     protected readonly sprite = createTankSprite("tank_green");
-    private readonly DIRECTION_CHANGE_MS = 5000;
+    private readonly DIRECTION_CHANGE_MS = 2000;
     private randomDirectionDelay = this.DIRECTION_CHANGE_MS;
     private targetDirectionDelay = this.DIRECTION_CHANGE_MS;
 
@@ -359,12 +359,14 @@ export class EnemyTank extends Tank implements Entity {
     }
 
     private findDirectionTowards(entity: Entity, dt: number): Opt<Direction> {
+        if (entity.dead) return None();
+        const entityDist = distanceV2(this, entity);
+        if (entityDist < Tank.SIZE * 5) return None();
         this.targetDirectionDelay = Math.max(0, this.targetDirectionDelay - dt);
-        if (entity.dead || this.targetDirectionDelay) {
+        if (this.targetDirectionDelay) {
             return None();
         }
         this.targetDirectionDelay = this.DIRECTION_CHANGE_MS;
-        if (Math.random() > 0.3) return None();
         const dx = this.x - entity.x;
         const dy = this.y - entity.y;
         const dirY = dy > 0 ? Direction.UP : Direction.DOWN;
