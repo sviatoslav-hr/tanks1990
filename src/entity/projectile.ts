@@ -40,8 +40,16 @@ export class Projectile implements Entity {
         return this.box.x;
     }
 
+    set x(x: number) {
+        this.box.x = x;
+    }
+
     get y(): number {
         return this.box.y;
+    }
+
+    set y(y: number) {
+        this.box.y = y;
     }
 
     get width(): number {
@@ -82,5 +90,11 @@ export class Projectile implements Entity {
         if (!this.dead) {
             this.box.draw(ctx);
         }
+    }
+
+    reviveAt(x: number, y: number): void {
+        this.x = x;
+        this.y = y;
+        this.dead = false;
     }
 }

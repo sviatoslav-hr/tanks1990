@@ -102,7 +102,13 @@ export abstract class Tank implements Entity {
     shoot(): void {
         if (this.shootingDelayMs > 0) return;
         this.shootingDelayMs = this.SHOOTING_PERIOD_MS;
-        const [px, py] = this.getProjectilePos();
+        const [px, py] = this.getProjectileStartPos();
+        const deadProjectile = this.projectiles.find((p) => p.dead);
+        if (deadProjectile) {
+            // NOTE: reuse dead projectiles instead of creating new ones
+            deadProjectile.reviveAt(px, py);
+            return;
+        }
         const size = Tank.SIZE * 0.08;
         this.projectiles.push(
             new Projectile(
@@ -194,7 +200,7 @@ export abstract class Tank implements Entity {
         );
     }
 
-    private getProjectilePos(): [number, number] {
+    private getProjectileStartPos(): [number, number] {
         switch (this.direction) {
             case Direction.UP:
                 return [this.x + this.width / 2, this.y];
