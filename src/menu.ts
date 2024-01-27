@@ -32,6 +32,10 @@ class MenuButton extends HTMLElement {
     blur(): void {
         this.buttonEl.blur();
     }
+
+    setDisabled(disabled: boolean): void {
+        this.buttonEl.disabled = disabled;
+    }
 }
 
 export function initMenu(menu: Menu, game: Game): void {
@@ -104,6 +108,8 @@ export class Menu extends HTMLElement {
 
     showDead(): void {
         this.update(MenuState.DEAD);
+        this.setDisabled(true);
+        setTimeout(() => this.setDisabled(false), 300);
     }
 
     addButton(
@@ -118,6 +124,17 @@ export class Menu extends HTMLElement {
         );
         this.buttons.push(button);
         this.buttonContainer.append(button);
+    }
+
+    private setDisabled(disabled: boolean): void {
+        let focused = false;
+        for (const btn of this.buttons) {
+            btn.setDisabled(disabled);
+            if (!disabled && !focused && !btn.hidden) {
+                btn.focus();
+                focused = true;
+            }
+        }
     }
 
     private update(state: MenuState): void {
