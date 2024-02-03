@@ -1,22 +1,26 @@
-import { createCanvas, startAnimation } from "./canvas";
+import "./style.css";
+
+import {
+    createCanvas,
+    handleResize,
+    startAnimation,
+    toggleFullscreen,
+} from "./canvas";
+import { BASE_HEIGHT, BASE_WIDTH } from "./const";
 import { Context } from "./context";
-import { querySelector } from "./dom";
 import { Game } from "./game";
 import { Keyboard } from "./keyboard";
 import { Menu, initMenu } from "./menu";
-import { Opt } from "./option";
-import "./style.css";
+import { assertError, panic } from "./utils";
 
-const SCREEN_WIDTH = 800;
-const SCREEN_HEIGHT = 600;
-const appElement = querySelector<HTMLDivElement>("#app").expect(
-    "App element should exist",
-);
+const appElement =
+    document.querySelector<HTMLDivElement>("#app") ??
+    panic("App element should exist");
 
-const canvas = createCanvas(SCREEN_WIDTH, SCREEN_HEIGHT);
+const canvas = createCanvas(BASE_WIDTH, BASE_HEIGHT);
 appElement.append(canvas);
 const ctx = new Context(
-    Opt.from(canvas.getContext("2d")).expect("Context should be available"),
+    canvas.getContext("2d") ?? panic("Context should be available"),
 );
 const screen = { x: 0, y: 0, width: canvas.width, height: canvas.height };
 const game = new Game(screen);
@@ -26,19 +30,13 @@ initMenu(menu, game);
 menu.showMain();
 startAnimation(ctx, game, menu, localStorage);
 
+handleResize(canvas);
+window.addEventListener("resize", () => handleResize(canvas));
 Keyboard.onKeydown("KeyF", () => {
-    if (!document.fullscreenEnabled) {
-        console.warn("Fullscreen is either not supported or disabled");
-        return;
-    }
-    if (document.fullscreenElement) {
-        document.exitFullscreen().catch((err) => {
-            console.error("ERROR: failed to exit Fullscreen", err);
+    toggleFullscreen(appElement)
+        .then(() => handleResize(canvas))
+        .catch((err) => {
+            assertError(err);
+            console.error(err);
         });
-    } else {
-        // FIXME: menu is not being captured in fullscreen
-        canvas.requestFullscreen().catch((err) => {
-            console.error("ERROR: failed to enter Fullscreen", err);
-        });
-    }
 });

@@ -81,8 +81,12 @@ function rotatePoint(
     return [nx, ny];
 }
 
-function toRadians(deg: number): number {
+export function toRadians(deg: number): number {
     return (Math.PI / 180) * deg;
+}
+
+export function toDegrees(deg: number): number {
+    return (deg * 180) / Math.PI;
 }
 
 export function numround(value: number, margin: number = 0): number {

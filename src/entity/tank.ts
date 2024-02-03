@@ -1,4 +1,5 @@
 import { Color } from "../color";
+import { BASE_WIDTH } from "../const";
 import { Context } from "../context";
 import { Game } from "../game";
 import { Keyboard } from "../keyboard";
@@ -10,7 +11,6 @@ import {
     xn,
     yn,
 } from "../math";
-import { None, Opt, Some } from "../option";
 import {
     Direction,
     Entity,
@@ -31,11 +31,12 @@ export abstract class Tank implements Entity {
     public dead = true;
     public hasShield = true;
     public projectiles: Projectile[] = [];
+    public direction = Direction.UP;
     public readonly bot: boolean = true;
+
     protected dx = 0;
     protected dy = 0;
     protected v: number = 0;
-    public direction = Direction.UP;
     protected shootingDelayMs = 0;
     protected shieldRemainingMs = 0;
     protected moving = false;
@@ -44,7 +45,9 @@ export abstract class Tank implements Entity {
     protected readonly SHIELD_TIME_MS: number = 1000;
     protected abstract readonly sprite: Sprite<string>;
     protected index = Tank.index++;
-    static SIZE = 50;
+
+    static readonly SIZE = BASE_WIDTH / 16;
+    static readonly PROJECTILE_SIZE = Tank.SIZE * 0.08;
     private static index = 0;
 
     constructor(
@@ -110,7 +113,7 @@ export abstract class Tank implements Entity {
             deadProjectile.reviveAt(px, py);
             return;
         }
-        const size = Tank.SIZE * 0.08;
+        const size = Tank.PROJECTILE_SIZE;
         this.projectiles.push(
             new Projectile(
                 px - size / 2,
@@ -296,12 +299,11 @@ export class EnemyTank extends Tank implements Entity {
         const player = this.game.player;
         // NOTE: is collided, don't change the direction, allowing entities to move away from each other
         if (!this.collided) {
-            const dir = this.findPlayerDirection(player, dt).orElse(() => {
-                return this.findDirectionIfStuck().orElse(() =>
-                    this.findRandomDirection(dt),
-                );
-            });
-            if (dir.isSome()) this.direction = dir.val;
+            const dir =
+                this.findPlayerDirection(player, dt) ??
+                this.findDirectionIfStuck() ??
+                this.findRandomDirection(dt);
+            if (dir != null) this.direction = dir;
         }
         this.collided = false;
         super.update(dt);
@@ -317,80 +319,78 @@ export class EnemyTank extends Tank implements Entity {
         if (target instanceof EnemyTank) {
             target.collided = true;
             const dir = this.findDirectionTowards(target);
-            if (dir.isSome()) {
-                this.direction = oppositeDirection(dir.val);
-                target.direction = dir.val;
+            if (dir != null) {
+                this.direction = oppositeDirection(dir);
+                target.direction = dir;
             }
         }
     }
 
-    private findDirectionIfStuck(): Opt<Direction> {
+    private findDirectionIfStuck(): Direction | null {
         if (this.y === 0 && xn(this) >= xn(this.boundary)) {
-            return Some(Direction.DOWN);
+            return Direction.DOWN;
         }
         if (yn(this) >= yn(this.boundary) && this.x === 0) {
-            return Some(Direction.UP);
+            return Direction.UP;
         }
         if (xn(this) >= xn(this.boundary) && yn(this) >= yn(this.boundary)) {
-            return Some(Direction.LEFT);
+            return Direction.LEFT;
         }
         if (this.x === 0 && this.y === 0) {
-            return Some(Direction.RIGHT);
+            return Direction.RIGHT;
         }
         if (this.y === 0 && this.direction === Direction.UP) {
-            return Some(Direction.DOWN);
+            return Direction.DOWN;
         }
         if (
             yn(this) >= yn(this.boundary) &&
             this.direction === Direction.DOWN
         ) {
-            return Some(Direction.UP);
+            return Direction.UP;
         }
         if (
             xn(this) >= xn(this.boundary) &&
             this.direction === Direction.RIGHT
         ) {
-            return Some(Direction.LEFT);
+            return Direction.LEFT;
         }
         if (this.x === 0 && this.direction === Direction.LEFT) {
-            return Some(Direction.RIGHT);
+            return Direction.RIGHT;
         }
-        return None();
+        return null;
     }
 
-    private findRandomDirection(dt: number, force = false): Opt<Direction> {
+    private findRandomDirection(dt: number, force = false): Direction | null {
         this.randomDirectionDelay = Math.max(0, this.randomDirectionDelay - dt);
-        if (this.randomDirectionDelay && !force) return None();
+        if (this.randomDirectionDelay && !force) return null;
         if (Math.random() > 0.1) {
             this.randomDirectionDelay = this.DIRECTION_CHANGE_MS;
-            return Some(
-                randomFrom(
-                    Direction.UP,
-                    Direction.RIGHT,
-                    Direction.DOWN,
-                    Direction.LEFT,
-                ),
+            return randomFrom(
+                Direction.UP,
+                Direction.RIGHT,
+                Direction.DOWN,
+                Direction.LEFT,
             );
         }
         this.randomDirectionDelay = this.DIRECTION_CHANGE_MS;
-        return None();
+        return null;
     }
 
-    private findPlayerDirection(player: Entity, dt: number): Opt<Direction> {
+    private findPlayerDirection(player: Entity, dt: number): Direction | null {
         const dir = this.findDirectionTowards(player);
-        if (dir.isNone()) return dir;
+        if (dir == null) return dir;
 
         const entityDist = distanceV2(this, player);
-        if (entityDist < Tank.SIZE * 5) return None();
+        if (entityDist < Tank.SIZE * 5) return null;
 
         this.targetDirectionDelay = Math.max(0, this.targetDirectionDelay - dt);
-        if (this.targetDirectionDelay) return None();
+        if (this.targetDirectionDelay) return null;
         this.targetDirectionDelay = this.DIRECTION_CHANGE_MS;
         return dir;
     }
 
-    private findDirectionTowards(entity: Entity): Opt<Direction> {
-        if (entity.dead) return None();
+    private findDirectionTowards(entity: Entity): Direction | null {
+        if (entity.dead) return null;
         const dx = this.x - entity.x;
         const dy = this.y - entity.y;
         const dirY = dy > 0 ? Direction.UP : Direction.DOWN;
@@ -398,13 +398,13 @@ export class EnemyTank extends Tank implements Entity {
         // NOTE: move along the longer side first
         if (Math.abs(dx) > Math.abs(dy)) {
             if (Math.abs(dx) < this.width / 50) {
-                return Some(dirY);
+                return dirY;
             }
-            return Some(dirX);
+            return dirX;
         }
         if (Math.abs(dy) < this.height / 50) {
-            return Some(dirX);
+            return dirX;
         }
-        return Some(dirY);
+        return dirY;
     }
 }

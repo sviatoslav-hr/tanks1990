@@ -1,7 +1,10 @@
 import { Context } from "../context";
 import { Rect } from "../math";
+import { Transform } from "../math/transform";
+import { Vector2 } from "../math/vector";
 
 const ASSETS_URL = "/assets";
+const imageCache: Record<string, HTMLImageElement> = {};
 
 type SpriteOpts<K extends string> = {
     key: string;
@@ -23,7 +26,6 @@ export class Sprite<K extends string> {
     private readonly animationDelayMs: number;
     private readonly image: HTMLImageElement;
     private readonly stateMap: SpriteStateMap<K>;
-    private static images: Record<string, HTMLImageElement> = {};
 
     constructor(opts: SpriteOpts<K>) {
         const { key, frameWidth, frameHeight, animationDelayMs, states } = opts;
@@ -31,13 +33,13 @@ export class Sprite<K extends string> {
         this.frameHeight = frameHeight;
         this.animationDelayMs = animationDelayMs ?? 100;
         const src = `${ASSETS_URL}/${key}.png`;
-        const cached = Sprite.images[src];
+        const cached = imageCache[src];
         if (cached) {
             this.image = cached;
         } else {
             this.image = new Image();
             this.image.src = src;
-            Sprite.images[src] = this.image;
+            imageCache[src] = this.image;
         }
         this.stateMap = {} as SpriteStateMap<K>;
         for (const [index, { name, frames }] of states.entries()) {
@@ -58,17 +60,14 @@ export class Sprite<K extends string> {
         if (this.frameIndex > 1) this.frameIndex = 0;
     }
 
-    draw(ctx: Context, transform: Rect, rotationDeg = 0): void {
+    draw(ctx: Context, boundary: Rect, rotationDeg = 0): void {
         if (!this.state) return;
         // NOTE: set origin at the center of tank for proper rotation
-        ctx.ctx.setTransform(
-            1,
-            0,
-            0,
-            1,
-            transform.x + transform.width / 2,
-            transform.y + transform.height / 2,
+        const translation = new Vector2(
+            boundary.x + boundary.width / 2,
+            boundary.y + boundary.height / 2,
         );
+        ctx.setTransform(Transform.makeTranslation(translation));
         ctx.rotate(rotationDeg);
         // NOTE: draw the image respecting the moved origin
         ctx.drawImage(
@@ -77,12 +76,13 @@ export class Sprite<K extends string> {
             this.state.index * this.frameHeight,
             this.frameWidth,
             this.frameHeight,
-            -transform.width / 2,
-            -transform.height / 2,
-            transform.width,
-            transform.height,
+            -boundary.width / 2,
+            -boundary.height / 2,
+            boundary.width,
+            boundary.height,
         );
-        ctx.ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.resetTransform();
+        ctx.rotate(0);
     }
 
     selectState(state: K): void {

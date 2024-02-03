@@ -1,17 +1,26 @@
 :root {
+    --black-raisin: #242424;
+    --black-eirie: #191919;
+    --gray-granite: #616161;
+    --white: rgba(255, 255, 255, 0.87);
+    --red-carnelian: #b71c1c;
     font-family: Helvetica, Arial, sans-serif;
     line-height: 1.5;
     font-weight: 400;
 
     color-scheme: light dark;
-    color: rgba(255, 255, 255, 0.87);
-    background-color: #242424;
+    color: var(--white);
+    background-color: var(--black-raisin);
 
     font-synthesis: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     -webkit-text-size-adjust: 100%;
+}
+
+html, body {
+    overflow: hidden;
 }
 
 * {
@@ -25,7 +34,7 @@
 }
 
 canvas {
-    border: 2px solid #191919;
+    border: 2px solid var(--black-eirie);
     display: block;
     margin: 0 auto;
 }
@@ -38,6 +47,10 @@ canvas {
     position: relative;
     width: 100%;
     padding: 24px;
+    background-color: var(--black-raisin);
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .menu {
@@ -45,7 +58,7 @@ canvas {
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    background-color: #191919;
+    background-color: var(--black-eirie);
     min-width: 256px;
     padding: 24px;
     border-radius: 12px;
@@ -70,30 +83,30 @@ canvas {
 }
 
 .button {
-    background-color: #242424;
-    box-shadow: 0 0 0 #242424;
+    background-color: var(--black-raisin);
+    box-shadow: 0 0 0 var(--black-raisin);
     border: none;
     border-radius: 4px;
     font-size: 18px;
     font-weight: 600;
     padding: 12px;
-    border: 2px solid #616161;
+    border: 2px solid var(--gray-granite);
     transition-property: box-shadow, background-color, color;
     transition-timing-function: ease-in-out;
     transition-duration: 0.3s;
     cursor: pointer;
     text-align: center;
-    color: #ffffff;
+    color: var(--white);
 }
 
 .button:focus-visible:not(:disabled), .button:hover:not(:disabled) {
-    box-shadow: 0 0 10px #616161;
+    box-shadow: 0 0 10px var(--gray-granite);
     outline: none;
 }
 
 .text-red {
-    color: #b71c1c;
-    text-shadow: 0 0 0.3em #b71c1c;
+    color: var(--red-carnelian);
+    text-shadow: 0 0 0.3em var(--red-carnelian);
 }
 
 .mx-auto {

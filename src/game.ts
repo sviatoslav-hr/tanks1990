@@ -75,7 +75,7 @@ export class Game {
             return;
         }
         const enemiesCount = this.tanks.length - 1;
-        // NOTE: add more enemies as score inscreases in such progression 1=1; 4=2; 8=3; 16=4; 32=5; ...
+        // NOTE: add more enemies as score inscreases in such progression 1=2; 2=3; 4=4; 8=5; 16=6; ...
         // TODO: find a reasonable number/function to scale enetities
         const dscore = 2 ** enemiesCount;
         if (enemiesCount && this.player.score >= dscore) {

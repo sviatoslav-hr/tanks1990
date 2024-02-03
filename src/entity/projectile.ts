@@ -56,8 +56,16 @@ export class Projectile implements Entity {
         return this.box.width;
     }
 
+    set width(w: number) {
+        this.box.width = w;
+    }
+
     get height(): number {
         return this.box.width;
+    }
+
+    set height(h: number) {
+        this.box.height = h;
     }
 
     update(dt: number): void {

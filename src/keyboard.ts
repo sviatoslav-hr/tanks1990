@@ -11,7 +11,7 @@ export type KeyCode =
     | "Space"
     | "Escape";
 export type KeysState = Partial<Record<KeyCode, boolean>>;
-export type KeyHandler = (code: KeyCode) => void;
+export type KeyHandler = (event: Event, code: KeyCode) => void;
 
 export class Keyboard {
     static pressed: KeysState = {};
@@ -22,7 +22,7 @@ export class Keyboard {
             const code = ev.code as KeyCode;
             this.setPressed(code);
             for (const handler of this.keydownHandlers[code] ?? []) {
-                handler(code);
+                handler(ev, code);
             }
         });
         element.addEventListener("keyup", (ev) =>

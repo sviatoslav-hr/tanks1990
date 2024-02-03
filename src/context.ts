@@ -1,5 +1,6 @@
 import { type Color } from "./color";
 import { Rect } from "./math";
+import { Transform } from "./math/transform";
 
 export class Context {
     constructor(public ctx: CanvasRenderingContext2D) {}
@@ -48,6 +49,15 @@ export class Context {
         this.ctx.drawImage(src, sx, sy, sw, sh, dx, dy, dw, dh);
     }
 
+    setTransform(transform: Transform): void {
+        const { a, b, c, d, e, f } = transform;
+        this.ctx.setTransform(a, b, c, d, e, f);
+    }
+
+    resetTransform(): void {
+        this.setTransform(Transform.makeCrear());
+    }
+
     setFont(
         font: string,
         align: CanvasTextAlign = "start",
@@ -72,6 +82,10 @@ export class Context {
 
     rotate(deg: number): void {
         this.ctx.rotate((deg * Math.PI) / 180);
+    }
+
+    scale(scaling: number): void {
+        this.ctx.scale(scaling, scaling);
     }
 
     clearScreen(): void {

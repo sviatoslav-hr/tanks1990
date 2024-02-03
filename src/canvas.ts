@@ -1,4 +1,5 @@
 import { Color } from "./color";
+import { BASE_HEIGHT, BASE_WIDTH } from "./const";
 import { Context } from "./context";
 import { drawFPS, drawGrid, drawScore } from "./draw";
 import { Tank } from "./entity";
@@ -6,6 +7,7 @@ import { Game, GameStatus } from "./game";
 import { Keyboard } from "./keyboard";
 import { Menu } from "./menu";
 import { saveBestScore } from "./storage";
+import { assertError, panic } from "./utils";
 
 export function createCanvas(width: number, height: number): HTMLCanvasElement {
     const element = document.createElement("canvas");
@@ -81,4 +83,56 @@ export function startAnimation(
                 console.warn("Unhandled value ", game.status);
         }
     });
+}
+
+export function handleResize(canvas: HTMLCanvasElement): void {
+    resizeCanvas(canvas, window.innerWidth, window.innerHeight);
+}
+
+export async function toggleFullscreen(
+    appElement: HTMLDivElement,
+): Promise<void> {
+    if (!document.fullscreenEnabled) {
+        console.warn("Fullscreen is either not supported or disabled");
+        return;
+    }
+    if (document.fullscreenElement) {
+        await document
+            .exitFullscreen()
+            .then(() => {
+                throw new Error("hello");
+            })
+            .catch((err) => {
+                assertError(err);
+                panic("ERROR: failed to exit Fullscreen\n" + err.message);
+            });
+    } else {
+        await appElement
+            .requestFullscreen({ navigationUI: "show" })
+            .catch((err) => {
+                assertError(err);
+                panic("ERROR: failed to enter Fullscreen\n" + err.message);
+            });
+    }
+}
+
+export function resizeCanvas(
+    canvas: HTMLCanvasElement,
+    width: number,
+    height: number,
+): void {
+    const shouldScale = width < BASE_WIDTH || height < BASE_HEIGHT;
+    if (document.fullscreenElement || shouldScale) {
+        const padding = 20;
+        const sx = (width - padding) / BASE_WIDTH;
+        const sy = (height - padding) / BASE_HEIGHT;
+        const sMin = Math.min(sx, sy);
+        const resWidth = BASE_WIDTH * sMin;
+        const resHeight = BASE_HEIGHT * sMin;
+        canvas.style.width = resWidth + "px";
+        canvas.style.height = resHeight + "px";
+    } else {
+        canvas.style.width = "";
+        canvas.style.height = "";
+    }
 }
