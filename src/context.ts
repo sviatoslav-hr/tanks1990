@@ -1,6 +1,14 @@
-import { type Color } from "./color";
+import { Color } from "./color";
+import { BASE_FONT_SIZE } from "./const";
 import { Rect } from "./math";
 import { Transform } from "./math/transform";
+
+type ShadowTextOpts = {
+    x: number;
+    y: number;
+    color?: Color;
+    shadowColor?: Color;
+};
 
 export class Context {
     constructor(public ctx: CanvasRenderingContext2D) {}
@@ -28,8 +36,24 @@ export class Context {
         this.ctx.stroke();
     }
 
-    drawText(text: string, x: number, y: number): void {
+    drawText(
+        text: string,
+        { x, y, color = Color.WHITE, shadowColor }: ShadowTextOpts,
+    ): void {
+        if (shadowColor) {
+            this.setFillColor(shadowColor);
+            const offsetX = BASE_FONT_SIZE / 10;
+            this.ctx.fillText(text, x - offsetX, y);
+        }
+        this.setFillColor(color);
         this.ctx.fillText(text, x, y);
+    }
+
+    drawMultilineText(textRows: string[], opts: ShadowTextOpts): void {
+        for (const [index, text] of textRows.entries()) {
+            const lineY = opts.y + BASE_FONT_SIZE * index;
+            this.drawText(text, { ...opts, y: lineY });
+        }
     }
 
     drawImage(
@@ -86,6 +110,10 @@ export class Context {
 
     scale(scaling: number): void {
         this.ctx.scale(scaling, scaling);
+    }
+
+    measureText(text: string): TextMetrics {
+        return this.ctx.measureText(text);
     }
 
     clearScreen(): void {

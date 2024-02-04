@@ -97,8 +97,10 @@ export abstract class Tank implements Entity {
             ctx.setFillColor(Color.WHITE);
             ctx.drawText(
                 `${this.index}: {${Math.floor(this.x)};${Math.floor(this.y)}}`,
-                this.x + this.width / 2,
-                this.y - this.height / 2,
+                {
+                    x: this.x + this.width / 2,
+                    y: this.y - this.height / 2,
+                },
             );
         }
     }

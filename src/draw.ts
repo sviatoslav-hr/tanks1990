@@ -1,6 +1,7 @@
 // TODO: maybe remove it to a class to have this state there.
 
 import { Color } from "./color";
+import { BASE_FONT_SIZE, BASE_PADDING } from "./const";
 import { Context } from "./context";
 import { PlayerTank } from "./entity";
 import { Rect, numround, xn } from "./math";
@@ -20,12 +21,8 @@ export function drawFPS(ctx: Context, dt: number): void {
         fpsUpdateDelayMs = 300;
     }
 
-    ctx.setFillColor(Color.BLACK);
     ctx.setFont("200 36px Helvetica");
-    ctx.drawText(fps, 7, 10);
-    ctx.setFont("200 36px Helvetica");
-    ctx.setFillColor(Color.WHITE);
-    ctx.drawText(fps, 10, 10);
+    ctx.drawText(fps, { x: 10, y: 10 });
 }
 
 export function drawScore(
@@ -34,30 +31,42 @@ export function drawScore(
     boundary: Rect,
     storage: Storage,
 ): void {
-    const scoreText = `Score: ${player.score}\n`;
-    drawText(ctx, scoreText, xn(boundary) - scoreText.length * 10, 10);
-    const surviveText = `Survived: ${humanDuration(player.survivedMs)}`;
-    drawText(ctx, surviveText, xn(boundary) - surviveText.length * 10, 44);
-    if (player.dead) {
-        // TODO: this shound't be constructed each frame..
-        const bestScore = getBestScore(storage);
-        if (!bestScore || !bestScore.score) return;
-        const bestScoreText = `Best Score: ${bestScore.score} - ${shortDate(bestScore.createdAt)}`;
-        drawText(
-            ctx,
-            bestScoreText,
-            xn(boundary) - bestScoreText.length * 9,
-            78,
-        );
-    }
-}
+    ctx.setFont("200 36px Helvetica", "right", "top");
+    const innerPadding = BASE_PADDING / 2;
 
-function drawText(ctx: Context, text: string, x: number, y: number): void {
-    ctx.setFillColor(Color.BLACK);
-    ctx.setFont("200 36px Helvetica", "center", "top");
-    ctx.drawText(text, x - 3, y);
-    ctx.setFillColor(Color.WHITE);
-    ctx.drawText(text, x, y);
+    const scoreText = `Score: ${player.score}`;
+    const surviveText = `Survived: ${humanDuration(player.survivedMs)}`;
+    const bestScore = getBestScore(storage);
+    const bestScoreText =
+        !player.dead && bestScore?.score
+            ? `Best Score: ${bestScore.score} - ${shortDate(bestScore.createdAt)}`
+            : null;
+    let text = `${scoreText}\n${surviveText}`;
+    if (bestScoreText) {
+        text += `\n${bestScoreText}`;
+    }
+    const lines = text.split("\n");
+    const maxWidth = Math.max(...lines.map((l) => ctx.measureText(l).width));
+
+    const boundaryHeight = bestScoreText
+        ? BASE_FONT_SIZE * 3
+        : BASE_FONT_SIZE * 2;
+    ctx.setStrokeColor(Color.WHITE);
+    ctx.drawBoundary(
+        {
+            x: xn(boundary) - BASE_PADDING - maxWidth - innerPadding,
+            y: BASE_PADDING - innerPadding,
+            width: maxWidth + 2 * innerPadding,
+            height: boundaryHeight + 2 * innerPadding,
+        },
+        2,
+    );
+
+    ctx.drawMultilineText(lines, {
+        x: xn(boundary) - BASE_PADDING,
+        y: BASE_PADDING,
+        shadowColor: Color.BLACK,
+    });
 }
 
 export function drawGrid(ctx: Context, boundary: Rect, cellSize: number): void {
