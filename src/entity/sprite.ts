@@ -3,7 +3,7 @@ import { Rect } from "../math";
 import { Transform } from "../math/transform";
 import { Vector2 } from "../math/vector";
 
-const ASSETS_URL = "/assets";
+const ASSETS_URL = "./assets";
 const imageCache: Record<string, HTMLImageElement> = {};
 
 type SpriteOpts<K extends string> = {
