@@ -6,7 +6,13 @@ import { Tank } from "./entity";
 import { Game, GameStatus } from "./game";
 import { Keyboard } from "./keyboard";
 import { Menu } from "./menu";
-import { saveBestScore } from "./storage";
+import {
+    getStoredShowBoundaries,
+    getStoredShowFps,
+    saveBestScore,
+    setStoredShowBoundaries,
+    setStoredShowFps,
+} from "./storage";
 import { assertError, panic } from "./utils";
 
 export function createCanvas(width: number, height: number): HTMLCanvasElement {
@@ -23,8 +29,8 @@ export function startAnimation(
     storage: Storage,
 ): void {
     let lastTimestamp = performance.now();
-    let showFPS = false;
-    let showBoundary = false;
+    let showFPS = getStoredShowFps(storage);
+    let showBoundary = getStoredShowBoundaries(storage);
     const animate = function (timestamp: number): void {
         const screen = game.screen;
         const dt = timestamp - lastTimestamp;
@@ -58,8 +64,14 @@ export function startAnimation(
     window.requestAnimationFrame(animate);
     // TODO: animation function shouldn't be responsible for Keyboard handling
     Keyboard.listen(document.body);
-    Keyboard.onKeydown("Backquote", () => (showFPS = !showFPS));
-    Keyboard.onKeydown("KeyB", () => (showBoundary = !showBoundary));
+    Keyboard.onKeydown("Backquote", () => {
+        showFPS = !showFPS;
+        setStoredShowFps(storage, showFPS);
+    });
+    Keyboard.onKeydown("KeyB", () => {
+        showBoundary = !showBoundary;
+        setStoredShowBoundaries(storage, showBoundary);
+    });
     Keyboard.onKeydown("Escape", () => {
         switch (game.status) {
             case GameStatus.PLAYING: {
@@ -97,22 +109,15 @@ export async function toggleFullscreen(
         return;
     }
     if (document.fullscreenElement) {
-        await document
-            .exitFullscreen()
-            .then(() => {
-                throw new Error("hello");
-            })
-            .catch((err) => {
-                assertError(err);
-                panic("ERROR: failed to exit Fullscreen\n" + err.message);
-            });
+        await document.exitFullscreen().catch((err) => {
+            assertError(err);
+            panic("ERROR: failed to exit Fullscreen\n" + err.message);
+        });
     } else {
-        await appElement
-            .requestFullscreen({ navigationUI: "show" })
-            .catch((err) => {
-                assertError(err);
-                panic("ERROR: failed to enter Fullscreen\n" + err.message);
-            });
+        await appElement.requestFullscreen().catch((err) => {
+            assertError(err);
+            panic("ERROR: failed to enter Fullscreen\n" + err.message);
+        });
     }
 }
 

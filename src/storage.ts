@@ -1,5 +1,7 @@
 const BEST_SCORE_KEY = "best_score";
 const BEST_SCORE_AT_KEY = "best_score_at";
+const SHOW_FPS_KEY = "show_fps";
+const SHOW_BOUNDARIES = "show_boundaries";
 
 type ScoreRecord = {
     score: number;
@@ -34,4 +36,23 @@ export function getBestScore(storage: Storage): ScoreRecord | null {
         return null;
     }
     return { score, createdAt };
+}
+
+export function getStoredShowFps(storage: Storage): boolean {
+    return storage.getItem(SHOW_FPS_KEY) === "true";
+}
+
+export function setStoredShowFps(storage: Storage, value: boolean): void {
+    storage.setItem(SHOW_FPS_KEY, value.toString());
+}
+
+export function getStoredShowBoundaries(storage: Storage): boolean {
+    return storage.getItem(SHOW_BOUNDARIES) === "true";
+}
+
+export function setStoredShowBoundaries(
+    storage: Storage,
+    value: boolean,
+): void {
+    storage.setItem(SHOW_BOUNDARIES, value.toString());
 }
