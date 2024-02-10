@@ -11,6 +11,7 @@ import {
     xn,
     yn,
 } from "../math";
+import { SoundType, playSound } from "../sound";
 import {
     Direction,
     Entity,
@@ -108,6 +109,9 @@ export abstract class Tank implements Entity {
     shoot(): void {
         if (this.shootingDelayMs > 0) return;
         this.shootingDelayMs = this.SHOOTING_PERIOD_MS;
+        if (!this.bot) {
+            playSound(SoundType.SHOOTING);
+        }
         const [px, py] = this.getProjectileStartPos();
         const deadProjectile = this.projectiles.find((p) => p.dead);
         if (deadProjectile) {
@@ -141,7 +145,15 @@ export abstract class Tank implements Entity {
     }
 
     takeDamage(): boolean {
-        return (this.dead = !this.hasShield);
+        if (this.dead) {
+            console.warn("Trying to kill a dead entity");
+            return false;
+        }
+        this.dead = !this.hasShield;
+        if (this.dead) {
+            playSound(SoundType.EXPLOSION);
+        }
+        return this.dead;
     }
 
     private tryRespawn(limit: number): void {

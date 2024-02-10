@@ -12,6 +12,7 @@ import { Game } from "./game";
 import { Keyboard } from "./keyboard";
 import { Menu, initMenu } from "./menu";
 import { assertError, panic } from "./utils";
+import { preloadSounds } from "./sound";
 
 const appElement =
     document.querySelector<HTMLDivElement>("#app") ??
@@ -28,6 +29,7 @@ const menu = new Menu();
 appElement.append(menu);
 initMenu(menu, game);
 menu.showMain();
+preloadSounds();
 startAnimation(ctx, game, menu, localStorage);
 
 handleResize(canvas);
