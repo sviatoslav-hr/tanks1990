@@ -38,7 +38,7 @@ export function drawScore(
     const surviveText = `Survived: ${humanDuration(player.survivedMs)}`;
     const bestScore = getBestScore(storage);
     const bestScoreText =
-        !player.dead && bestScore?.score
+        player.dead && bestScore?.score
             ? `Best Score: ${bestScore.score} - ${shortDate(bestScore.createdAt)}`
             : null;
     let text = `${scoreText}\n${surviveText}`;
