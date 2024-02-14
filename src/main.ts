@@ -9,7 +9,7 @@ import {
 import { BASE_HEIGHT, BASE_WIDTH } from "./const";
 import { Context } from "./context";
 import { Game } from "./game";
-import { Keyboard } from "./keyboard";
+import { keyboard } from "./keyboard";
 import { Menu, initMenu } from "./menu";
 import { assertError, panic } from "./utils";
 import { preloadSounds } from "./sound";
@@ -34,7 +34,7 @@ startAnimation(ctx, game, menu, localStorage);
 
 handleResize(canvas);
 window.addEventListener("resize", () => handleResize(canvas));
-Keyboard.onKeydown("KeyF", () => {
+keyboard.onKeydown("KeyF", () => {
     toggleFullscreen(appElement)
         .then(() => handleResize(canvas))
         .catch((err) => {

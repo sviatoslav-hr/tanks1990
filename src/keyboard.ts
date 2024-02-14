@@ -14,10 +14,27 @@ export type KeysState = Partial<Record<KeyCode, boolean>>;
 export type KeyHandler = (event: Event, code: KeyCode) => void;
 
 export class Keyboard {
-    static pressed: KeysState = {};
-    private static keydownHandlers: Partial<Record<KeyCode, KeyHandler[]>> = {};
+    private currentPressed: KeysState = {};
+    private previousPressed: KeysState = {};
+    private keydownHandlers: Partial<Record<KeyCode, KeyHandler[]>> = {};
 
-    static listen(element: HTMLElement) {
+    isPressed(code: KeyCode): boolean {
+        return !this.previousPressed[code] && !!this.currentPressed[code];
+    }
+
+    isDown(code: KeyCode): boolean {
+        return !!this.currentPressed[code];
+    }
+
+    isReleased(code: KeyCode): boolean {
+        return !!this.previousPressed[code] && !this.currentPressed[code];
+    }
+
+    isUp(code: KeyCode): boolean {
+        return !this.currentPressed[code];
+    }
+
+    listen(element: HTMLElement) {
         element.addEventListener("keydown", (ev) => {
             const code = ev.code as KeyCode;
             this.setPressed(code);
@@ -30,15 +47,20 @@ export class Keyboard {
         );
     }
 
-    static setPressed(code: KeyCode) {
-        this.pressed[code] = true;
+    reset() {
+        this.previousPressed = { ...this.currentPressed };
     }
 
-    static setReleased(code: KeyCode) {
-        this.pressed[code] = false;
+    private setPressed(code: KeyCode) {
+        this.currentPressed[code] = true;
     }
 
-    static onKeydown(code: KeyCode, handler: KeyHandler): void {
+    private setReleased(code: KeyCode) {
+        this.currentPressed[code] = false;
+    }
+
+    // TODO: remove it, use isPressed()
+    onKeydown(code: KeyCode, handler: KeyHandler): void {
         const handlers = this.keydownHandlers[code];
         if (handlers) {
             handlers.push(handler);
@@ -47,3 +69,5 @@ export class Keyboard {
         }
     }
 }
+
+export const keyboard = new Keyboard();

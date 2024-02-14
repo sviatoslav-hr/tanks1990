@@ -2,7 +2,7 @@ import { Color } from "../color";
 import { BASE_WIDTH } from "../const";
 import { Context } from "../context";
 import { Game } from "../game";
-import { Keyboard } from "../keyboard";
+import { keyboard } from "../keyboard";
 import {
     Rect,
     distanceV2,
@@ -203,7 +203,7 @@ export abstract class Tank implements Entity {
         }
     }
 
-    protected handleCollision(_target: Tank): void {}
+    protected handleCollision(_target: Tank): void { }
 
     private updateProjectiles(dt: number): void {
         const garbageIndexes: number[] = [];
@@ -276,23 +276,23 @@ export class PlayerTank extends Tank implements Entity {
 
     protected handleKeyboard(): void {
         this.moving = false;
-        if (Keyboard.pressed.KeyA) {
+        if (keyboard.isDown("KeyA")) {
             this.direction = Direction.LEFT;
             this.moving = true;
         }
-        if (Keyboard.pressed.KeyD) {
+        if (keyboard.isDown("KeyD")) {
             this.direction = Direction.RIGHT;
             this.moving = true;
         }
-        if (Keyboard.pressed.KeyW) {
+        if (keyboard.isDown("KeyW")) {
             this.direction = Direction.UP;
             this.moving = true;
         }
-        if (Keyboard.pressed.KeyS) {
+        if (keyboard.isDown("KeyS")) {
             this.direction = Direction.DOWN;
             this.moving = true;
         }
-        if (Keyboard.pressed.Space && !this.shootingDelayMs) {
+        if (keyboard.isDown("Space") && !this.shootingDelayMs) {
             this.shoot();
         }
         this.v = this.moving ? this.MOVEMENT_SPEED : 0;

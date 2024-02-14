@@ -4,7 +4,7 @@ import { Context } from "./context";
 import { drawFPS, drawGrid, drawScore } from "./draw";
 import { Tank } from "./entity";
 import { Game, GameStatus } from "./game";
-import { Keyboard } from "./keyboard";
+import { keyboard } from "./keyboard";
 import { Menu } from "./menu";
 import {
     getStoredShowBoundaries,
@@ -31,7 +31,7 @@ export function startAnimation(
     let lastTimestamp = performance.now();
     let showFPS = getStoredShowFps(storage);
     let showBoundary = getStoredShowBoundaries(storage);
-    const animate = function (timestamp: number): void {
+    const animate = function(timestamp: number): void {
         const screen = game.screen;
         const dt = timestamp - lastTimestamp;
         lastTimestamp = timestamp;
@@ -50,7 +50,7 @@ export function startAnimation(
         if (
             game.paused ||
             game.dead ||
-            (game.playing && Keyboard.pressed.KeyQ)
+            (game.playing && keyboard.isDown("KeyQ"))
         ) {
             drawScore(ctx, game.player, screen, storage);
         }
@@ -59,20 +59,21 @@ export function startAnimation(
             menu.showDead();
         }
         game.updateTanks(dt, showBoundary);
+        keyboard.reset();
         window.requestAnimationFrame(animate);
     };
     window.requestAnimationFrame(animate);
     // TODO: animation function shouldn't be responsible for Keyboard handling
-    Keyboard.listen(document.body);
-    Keyboard.onKeydown("Backquote", () => {
+    keyboard.listen(document.body);
+    keyboard.onKeydown("Backquote", () => {
         showFPS = !showFPS;
         setStoredShowFps(storage, showFPS);
     });
-    Keyboard.onKeydown("KeyB", () => {
+    keyboard.onKeydown("KeyB", () => {
         showBoundary = !showBoundary;
         setStoredShowBoundaries(storage, showBoundary);
     });
-    Keyboard.onKeydown("Escape", () => {
+    keyboard.onKeydown("Escape", () => {
         switch (game.status) {
             case GameStatus.PLAYING: {
                 if (game.dead) {
