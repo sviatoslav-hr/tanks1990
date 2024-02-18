@@ -20,6 +20,7 @@ import {
     moveEntity,
     scaleMovement,
 } from "./core";
+import { ExplosionEffect } from "./effect";
 import { Projectile } from "./projectile";
 import { Sprite, createTankSprite } from "./sprite";
 
@@ -29,6 +30,7 @@ export abstract class Tank implements Entity {
     public width = Tank.SIZE;
     public height = Tank.SIZE;
     public showBoundary = false;
+    public explosionTimeMs = 0;
     public dead = true;
     public hasShield = true;
     public projectiles: Projectile[] = [];
@@ -41,9 +43,11 @@ export abstract class Tank implements Entity {
     protected shootingDelayMs = 0;
     protected shieldRemainingMs = 0;
     protected moving = false;
+    protected explosionEffect?: ExplosionEffect | null;
     protected readonly SHOOTING_PERIOD_MS: number = 300;
     protected readonly MOVEMENT_SPEED: number = 100;
     protected readonly SHIELD_TIME_MS: number = 1000;
+    protected readonly EXPLOSION_MS: number = 300;
     protected abstract readonly sprite: Sprite<string>;
     protected index = Tank.index++;
 
@@ -60,7 +64,15 @@ export abstract class Tank implements Entity {
     }
 
     update(dt: number): void {
-        if (this.dead) return;
+        this.explosionEffect?.update(dt);
+        this.updateProjectiles(dt);
+        if (this.explosionTimeMs > 0 && this.explosionEffect) {
+            this.explosionTimeMs = Math.max(0, this.explosionTimeMs - dt);
+            return;
+        }
+        if (this.dead) {
+            return;
+        }
         this.shootingDelayMs = Math.max(0, this.shootingDelayMs - dt);
         const prevX = this.x;
         const prevY = this.y;
@@ -75,18 +87,24 @@ export abstract class Tank implements Entity {
             this.y = prevY;
         }
         clampByBoundary(this, this.boundary);
-        this.updateProjectiles(dt);
         this.updateShield(dt);
     }
 
     draw(ctx: Context): void {
+        this.explosionEffect?.draw(ctx);
+        if (this.explosionTimeMs && !this.explosionEffect) {
+            this.sprite.draw(ctx, this, this.direction);
+            const particleSize = Math.floor(this.width / 16); // NOTE: 16 is single px in image
+            this.explosionEffect = ExplosionEffect.fromImageData(ctx.ctx.getImageData(this.x, this.y, this.width, this.height), this, particleSize);
+            this.explosionEffect?.draw(ctx);
+            return;
+        }
+        if (!this.explosionTimeMs && this.explosionEffect) {
+            this.explosionEffect = null;
+        }
+        this.drawProjectiles(ctx);
         if (this.dead) return;
         this.sprite.draw(ctx, this, this.direction);
-        for (const projectile of this.projectiles) {
-            if (!projectile.dead) {
-                projectile.draw(ctx);
-            }
-        }
         if (this.hasShield) {
             ctx.setStrokeColor(Color.WHITE);
             ctx.drawBoundary(this, 2);
@@ -149,11 +167,13 @@ export abstract class Tank implements Entity {
             console.warn("Trying to kill a dead entity");
             return false;
         }
-        this.dead = !this.hasShield;
-        if (this.dead) {
+        const dead = !this.hasShield;
+        if (dead) {
+            this.explosionTimeMs = this.EXPLOSION_MS;
+            this.dead = true;
             playSound(SoundType.EXPLOSION);
         }
-        return this.dead;
+        return dead;
     }
 
     private tryRespawn(limit: number): void {
@@ -218,6 +238,14 @@ export abstract class Tank implements Entity {
         );
     }
 
+    private drawProjectiles(ctx: Context): void {
+        for (const projectile of this.projectiles) {
+            if (!projectile.dead) {
+                projectile.draw(ctx);
+            }
+        }
+    }
+
     private getProjectileStartPos(): [number, number] {
         switch (this.direction) {
             case Direction.UP:
@@ -253,9 +281,9 @@ export class PlayerTank extends Tank implements Entity {
     }
 
     update(dt: number): void {
+        super.update(dt);
         if (this.dead) return;
         this.handleKeyboard();
-        super.update(dt);
         this.survivedMs += dt;
     }
 

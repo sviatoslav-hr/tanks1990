@@ -11,7 +11,7 @@ type ShadowTextOpts = {
 };
 
 export class Context {
-    constructor(public ctx: CanvasRenderingContext2D) {}
+    constructor(public ctx: CanvasRenderingContext2D) { }
 
     drawBoundary({ x, y, width, height }: Rect, lineWidth = 1): void {
         this.drawLine(x, y, x + width, y, lineWidth);
@@ -26,6 +26,12 @@ export class Context {
 
     drawRect(x: number, y: number, width: number, height: number): void {
         this.ctx.fillRect(x, y, width, height);
+    }
+
+    fillCircle(cx: number, cy: number, radius: number): void {
+        this.ctx.beginPath();
+        this.ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        this.ctx.fill();
     }
 
     drawLine(x0: number, y0: number, x1: number, y1: number, width = 1): void {
@@ -98,7 +104,7 @@ export class Context {
         }
     }
 
-    setFillColor(color: Color) {
+    setFillColor(color: Color | string) {
         if (this.ctx.fillStyle !== color) {
             this.ctx.fillStyle = color;
         }
