@@ -57,7 +57,8 @@ export class Sprite<K extends string> {
             this.frameIndex++;
             this.animationDt -= this.animationDelayMs;
         }
-        if (this.frameIndex > 1) this.frameIndex = 0;
+        const maxFrames = this.state?.frames ?? 1;
+        if (this.frameIndex > maxFrames - 1) this.frameIndex = 0;
     }
 
     draw(ctx: Context, boundary: Rect, rotationDeg = 0): void {
@@ -89,6 +90,16 @@ export class Sprite<K extends string> {
         this.state = this.stateMap[state];
         this.frameIndex = 0;
     }
+}
+
+export function createShieldSprite() {
+    return new Sprite({
+        key: "shield",
+        frameWidth: 64,
+        frameHeight: 64,
+        animationDelayMs: 100,
+        states: [{ name: "flowing", frames: 6 }],
+    });
 }
 
 export function createTankSprite(key: "tank_yellow" | "tank_green") {

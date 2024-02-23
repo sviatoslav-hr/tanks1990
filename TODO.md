@@ -11,7 +11,7 @@
     -   [x] **explosion on being killed (split the sprite into pieces and move them away)**
     -   [ ] Use sprite image for explosion animation instead of circle
     -   [ ] spawning
-    -   [ ] shield
+    -   [x] shield
     -   [ ] shooting
     -   [ ] improve movement animation
 -   [ ] consider using interface instead of class for `Vector2`

@@ -22,7 +22,7 @@ import {
 } from "./core";
 import { ExplosionEffect } from "./effect";
 import { Projectile } from "./projectile";
-import { Sprite, createTankSprite } from "./sprite";
+import { Sprite, createShieldSprite, createTankSprite } from "./sprite";
 
 export abstract class Tank implements Entity {
     public x = 0;
@@ -48,6 +48,7 @@ export abstract class Tank implements Entity {
     protected readonly MOVEMENT_SPEED: number = 100;
     protected readonly SHIELD_TIME_MS: number = 1000;
     protected readonly EXPLOSION_MS: number = 300;
+    protected readonly shieldSprite = createShieldSprite();
     protected abstract readonly sprite: Sprite<string>;
     protected index = Tank.index++;
 
@@ -65,6 +66,7 @@ export abstract class Tank implements Entity {
 
     update(dt: number): void {
         this.explosionEffect?.update(dt);
+        this.shieldSprite.update(dt);
         this.updateProjectiles(dt);
         if (this.explosionTimeMs > 0 && this.explosionEffect) {
             this.explosionTimeMs = Math.max(0, this.explosionTimeMs - dt);
@@ -95,7 +97,11 @@ export abstract class Tank implements Entity {
         if (this.explosionTimeMs && !this.explosionEffect) {
             this.sprite.draw(ctx, this, this.direction);
             const particleSize = Math.floor(this.width / 16); // NOTE: 16 is single px in image
-            this.explosionEffect = ExplosionEffect.fromImageData(ctx.ctx.getImageData(this.x, this.y, this.width, this.height), this, particleSize);
+            this.explosionEffect = ExplosionEffect.fromImageData(
+                ctx.ctx.getImageData(this.x, this.y, this.width, this.height),
+                this,
+                particleSize,
+            );
             this.explosionEffect?.draw(ctx);
             return;
         }
@@ -106,8 +112,7 @@ export abstract class Tank implements Entity {
         if (this.dead) return;
         this.sprite.draw(ctx, this, this.direction);
         if (this.hasShield) {
-            ctx.setStrokeColor(Color.WHITE);
-            ctx.drawBoundary(this, 2);
+            this.shieldSprite.draw(ctx, this);
         }
         if (this.showBoundary) {
             ctx.setStrokeColor(Color.PINK);
@@ -223,7 +228,7 @@ export abstract class Tank implements Entity {
         }
     }
 
-    protected handleCollision(_target: Tank): void { }
+    protected handleCollision(_target: Tank): void {}
 
     private updateProjectiles(dt: number): void {
         const garbageIndexes: number[] = [];
