@@ -15,7 +15,6 @@
     -   [ ] shooting
     -   [ ] improve movement animation
 -   [ ] consider using interface instead of class for `Vector2`
--   [ ] sprite for bullets
 -   [ ] add zoom in/out option
 -   [ ] spawn random power-ups
 -   [ ] **Setup map**
@@ -37,3 +36,4 @@
 -   [ ] freeze Death menu for a sec
 -   [ ] consider using states for animations ([see](https://www.youtube.com/watch?v=e3LGFrHqqiI))
 -   [ ] make movement more realistic (speed decreases over time unless entity is moving)
+-   [x] sprite for bullets

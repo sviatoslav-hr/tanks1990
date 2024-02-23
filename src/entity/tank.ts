@@ -53,7 +53,7 @@ export abstract class Tank implements Entity {
     protected index = Tank.index++;
 
     static readonly SIZE = BASE_WIDTH / 16;
-    static readonly PROJECTILE_SIZE = Tank.SIZE * 0.08;
+    static readonly PROJECTILE_SIZE = Tank.SIZE * 0.25;
     private static index = 0;
 
     constructor(
@@ -140,6 +140,7 @@ export abstract class Tank implements Entity {
         if (deadProjectile) {
             // NOTE: reuse dead projectiles instead of creating new ones
             deadProjectile.reviveAt(px, py);
+            deadProjectile.direction = this.direction;
             return;
         }
         const size = Tank.PROJECTILE_SIZE;
@@ -233,9 +234,10 @@ export abstract class Tank implements Entity {
     private updateProjectiles(dt: number): void {
         const garbageIndexes: number[] = [];
         for (const [index, projectile] of this.projectiles.entries()) {
-            projectile.update(dt);
             if (projectile.dead) {
                 garbageIndexes.push(index);
+            } else {
+                projectile.update(dt);
             }
         }
         this.projectiles = this.projectiles.filter(

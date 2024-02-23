@@ -23,6 +23,7 @@ export class Sprite<K extends string> {
     private frameHeight = 0;
     private animationDt = 0;
     private state?: SpriteState<K>;
+    private readonly stateKeys: readonly K[];
     private readonly animationDelayMs: number;
     private readonly image: HTMLImageElement;
     private readonly stateMap: SpriteStateMap<K>;
@@ -38,6 +39,7 @@ export class Sprite<K extends string> {
             this.image = cached;
         } else {
             this.image = new Image();
+            this.image.alt = key;
             this.image.src = src;
             imageCache[src] = this.image;
         }
@@ -49,6 +51,7 @@ export class Sprite<K extends string> {
             }
             this.stateMap[name] = state;
         }
+        this.stateKeys = states.map((s) => s.name);
     }
 
     update(dt: number): void {
@@ -88,7 +91,17 @@ export class Sprite<K extends string> {
 
     selectState(state: K): void {
         this.state = this.stateMap[state];
+        this.animationDt = 0;
         this.frameIndex = 0;
+    }
+
+    reset(): void {
+        const stateKey = this.stateKeys[0];
+        if (!stateKey) {
+            console.warn(`WARN: no states found for sprite ${this.image.alt}`);
+            return;
+        }
+        this.selectState(stateKey);
     }
 }
 
