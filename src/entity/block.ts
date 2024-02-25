@@ -2,9 +2,10 @@ import { Color } from "../color";
 import { Context } from "../context";
 import { Rect } from "../math";
 import { Entity } from "./core";
+import { Sprite } from "./sprite";
 
 export type BlockOpts = Rect & {
-    color: Color;
+    texture: Color | Sprite<"static">;
 };
 
 export class Block implements Entity {
@@ -14,19 +15,30 @@ export class Block implements Entity {
     public height = 50;
     public readonly dead = false;
     private readonly color: Color = Color.WHITE;
+    private readonly sprite?: Sprite<string>;
 
-    constructor({ x, y, width, height, color }: BlockOpts) {
+    constructor({ x, y, width, height, texture }: BlockOpts) {
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
-        this.color = color;
+        if (texture instanceof Sprite) {
+            this.sprite = texture;
+        } else {
+            this.color = texture;
+        }
     }
 
-    update(_: number): void {}
+    update(dt: number): void {
+        this.sprite?.update(dt);
+    }
 
     draw(ctx: Context): void {
-        ctx.setFillColor(this.color);
-        ctx.drawRect(this.x, this.y, this.width, this.height);
+        if (this.sprite) {
+            this.sprite.draw(ctx, this);
+        } else {
+            ctx.setFillColor(this.color);
+            ctx.drawRect(this.x, this.y, this.width, this.height);
+        }
     }
 }

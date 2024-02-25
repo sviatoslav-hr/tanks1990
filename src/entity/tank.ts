@@ -1,5 +1,5 @@
 import { Color } from "../color";
-import { BASE_WIDTH } from "../const";
+import { CELL_SIZE } from "../const";
 import { Context } from "../context";
 import { Game } from "../game";
 import { keyboard } from "../keyboard";
@@ -12,6 +12,7 @@ import {
     yn,
 } from "../math";
 import { SoundType, playSound } from "../sound";
+import { Block } from "./block";
 import {
     Direction,
     Entity,
@@ -27,8 +28,8 @@ import { Sprite, createShieldSprite, createTankSprite } from "./sprite";
 export abstract class Tank implements Entity {
     public x = 0;
     public y = 0;
-    public width = Tank.SIZE;
-    public height = Tank.SIZE;
+    public width = CELL_SIZE - 4;
+    public height = CELL_SIZE - 4;
     public showBoundary = false;
     public explosionTimeMs = 0;
     public dead = true;
@@ -52,8 +53,6 @@ export abstract class Tank implements Entity {
     protected abstract readonly sprite: Sprite<string>;
     protected index = Tank.index++;
 
-    static readonly SIZE = BASE_WIDTH / 16;
-    static readonly PROJECTILE_SIZE = Tank.SIZE * 0.25;
     private static index = 0;
 
     constructor(
@@ -84,7 +83,9 @@ export abstract class Tank implements Entity {
         moveEntity(this, scaleMovement(this.v, dt), this.direction);
         const collided = this.findCollided();
         if (collided) {
-            this.handleCollision(collided);
+            if (collided instanceof Tank) {
+                this.handleCollision(collided);
+            }
             this.x = prevX;
             this.y = prevY;
         }
@@ -143,7 +144,7 @@ export abstract class Tank implements Entity {
             deadProjectile.direction = this.direction;
             return;
         }
-        const size = Tank.PROJECTILE_SIZE;
+        const size = Projectile.SIZE;
         this.projectiles.push(
             new Projectile(
                 px - size / 2,
@@ -229,7 +230,7 @@ export abstract class Tank implements Entity {
         }
     }
 
-    protected handleCollision(_target: Tank): void {}
+    protected handleCollision(_target: Tank): void { }
 
     private updateProjectiles(dt: number): void {
         const garbageIndexes: number[] = [];
@@ -266,10 +267,12 @@ export abstract class Tank implements Entity {
         }
     }
 
-    findCollided(): Tank | undefined {
-        return this.game.tanks.find((t) => {
+    findCollided(): Tank | Block | undefined {
+        const tank = this.game.tanks.find((t) => {
             return t !== this && !t.dead && isIntesecting(this, t);
         });
+        if (tank) return tank;
+        return this.game.blocks.find((b) => isIntesecting(this, b));
     }
 }
 
@@ -430,7 +433,7 @@ export class EnemyTank extends Tank implements Entity {
         if (dir == null) return dir;
 
         const entityDist = distanceV2(this, player);
-        if (entityDist < Tank.SIZE * 5) return null;
+        if (entityDist < CELL_SIZE * 5) return null;
 
         this.targetDirectionDelay = Math.max(0, this.targetDirectionDelay - dt);
         if (this.targetDirectionDelay) return null;

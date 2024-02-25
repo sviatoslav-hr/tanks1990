@@ -73,11 +73,11 @@ export function drawGrid(ctx: Context, boundary: Rect, cellSize: number): void {
     const { x, y, width, height } = boundary;
     for (let colX = cellSize; colX < x + width; colX += cellSize) {
         ctx.setStrokeColor(Color.BLACK_IERIE);
-        ctx.drawLine(colX, y, colX, y + height);
+        ctx.drawLine(colX + 1, y + 1, colX + 1, y + height + 1);
     }
     for (let colY = cellSize; colY < y + height; colY += cellSize) {
         ctx.setStrokeColor(Color.BLACK_IERIE);
-        ctx.drawLine(x, colY, x + width, colY);
+        ctx.drawLine(x + 1, colY + 1, x + width + 1, colY + 1);
     }
 }
 

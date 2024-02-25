@@ -1,4 +1,5 @@
 import { Tank } from ".";
+import { CELL_SIZE } from "../const";
 import { Context } from "../context";
 import { Game } from "../game";
 import { Rect } from "../math";
@@ -13,6 +14,7 @@ import {
 import { Sprite } from "./sprite";
 
 export class Projectile implements Entity {
+    public static SIZE = CELL_SIZE * 0.25;
     public dead = false;
     public width: number;
     public height: number;

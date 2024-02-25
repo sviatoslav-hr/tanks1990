@@ -124,3 +124,10 @@ export function createTankSprite(key: "tank_yellow" | "tank_green") {
         states: [{ name: "moving", frames: 2 }],
     });
 }
+
+export function createStaticSprite(
+    opts: Omit<SpriteOpts<"static">, "states">,
+): Sprite<"static"> {
+    const states = [{ name: "static", frames: 1 } as const];
+    return new Sprite({ ...opts, states });
+}

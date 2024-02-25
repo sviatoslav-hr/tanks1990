@@ -1,8 +1,7 @@
 import { Color } from "./color";
-import { BASE_HEIGHT, BASE_WIDTH } from "./const";
+import { BASE_HEIGHT, BASE_WIDTH, CELL_SIZE } from "./const";
 import { Context } from "./context";
 import { drawFPS, drawGrid, drawScore } from "./draw";
-import { Tank } from "./entity";
 import { Game, GameStatus } from "./game";
 import { keyboard } from "./keyboard";
 import { Menu } from "./menu";
@@ -33,7 +32,7 @@ export function startAnimation(
     let showBoundary = getStoredShowBoundaries(storage);
     const animate = function(timestamp: number): void {
         const screen = game.screen;
-        const dt = timestamp - lastTimestamp;
+        const dt = Math.min(timestamp - lastTimestamp, 1000 / 30);
         lastTimestamp = timestamp;
         ctx.clearScreen();
         ctx.setFillColor(Color.BLACK_RAISIN);
@@ -43,7 +42,7 @@ export function startAnimation(
             game.screen.width,
             game.screen.height,
         );
-        drawGrid(ctx, game.screen, Tank.SIZE);
+        drawGrid(ctx, game.screen, CELL_SIZE);
         game.drawTanks(ctx);
         if (showFPS) drawFPS(ctx, dt);
 

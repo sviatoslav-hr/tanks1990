@@ -50,7 +50,14 @@ export function rotateRect(
 }
 
 export function isPosInsideRect(x: number, y: number, rect: Rect): boolean {
-    return rect.x <= x && x <= xn(rect) && rect.y <= y && y <= yn(rect);
+    x = Math.floor(x);
+    y = Math.floor(y);
+    return (
+        Math.floor(rect.x) <= x &&
+        x <= Math.floor(xn(rect)) &&
+        Math.floor(rect.y) <= y &&
+        y <= Math.floor(yn(rect))
+    );
 }
 
 export function oppositeDirection(dir: Direction): Direction {

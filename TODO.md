@@ -1,5 +1,8 @@
 # TODO:
 
+-   [ ] Setup ESLint
+-   [ ] Define game plan / trajectory / future development / main goal / idea
+-   [ ] Create a separate Sprite class for static objects / non-animated
 -   [ ] **Sounds**
     -   [x] find sounds (see [opengameart](https://opengameart.org/art-search-advanced?keys=&field_art_type_tid%5B%5D=12&sort_by=count&sort_order=DESC))
     -   [x] shooting
@@ -14,6 +17,11 @@
     -   [x] shield
     -   [ ] shooting
     -   [ ] improve movement animation
+-   [ ] Static objects on map
+    -   [ ] Create a static object (data type)
+    -   [ ] Crate a sprite for a static objects
+    -   [ ] Spawn random blocks (static objects) that cannot be passed through
+    -   [ ] Update enemy ai: when enemy is facing the block, it should rotate ?
 -   [ ] consider using interface instead of class for `Vector2`
 -   [ ] add zoom in/out option
 -   [ ] spawn random power-ups

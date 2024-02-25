@@ -1,7 +1,11 @@
+import { Color } from "./color";
+import { CELL_SIZE } from "./const";
 import { Context } from "./context";
 import { EnemyTank, PlayerTank, Tank } from "./entity";
+import { Block } from "./entity/block";
 import { Entity } from "./entity/core";
-import { Rect } from "./math";
+import { Sprite, createStaticSprite } from "./entity/sprite";
+import { Rect, randomInt } from "./math";
 
 export enum GameStatus {
     INITIAL,
@@ -11,6 +15,7 @@ export enum GameStatus {
 
 export class Game {
     tanks: Tank[] = [];
+    blocks: Block[] = [];
     player: PlayerTank;
     status = GameStatus.INITIAL;
 
@@ -36,7 +41,7 @@ export class Game {
         for (const t of this.tanks) {
             entities.push(t, ...t.projectiles);
         }
-        return entities;
+        return entities.concat(this.blocks);
     }
 
     init(): void {
@@ -57,6 +62,7 @@ export class Game {
     }
 
     start(): void {
+        this.loadLevel();
         this.player.respawn();
         this.status = GameStatus.PLAYING;
         this.tanks = [this.player];
@@ -65,6 +71,9 @@ export class Game {
     }
 
     drawTanks(ctx: Context): void {
+        for (const b of this.blocks) {
+            b.draw(ctx);
+        }
         for (const t of this.tanks) {
             t.draw(ctx);
         }
@@ -87,6 +96,32 @@ export class Game {
             if (tank.dead && tank.bot) {
                 tank.respawn();
             }
+        }
+    }
+
+    private loadLevel(): void {
+        this.blocks = [];
+        const BLOCKS_COUNT = 9;
+        for (let i = 0; i < BLOCKS_COUNT; i++) {
+            const x =
+                this.screen.x +
+                randomInt(1, this.screen.width / CELL_SIZE - 1) * CELL_SIZE;
+            const y =
+                this.screen.y +
+                randomInt(1, this.screen.height / CELL_SIZE - 1) * CELL_SIZE;
+            const sprite = createStaticSprite({
+                key: "bricks",
+                frameWidth: 64,
+                frameHeight: 64,
+            });
+            const block = new Block({
+                x,
+                y,
+                width: CELL_SIZE,
+                height: CELL_SIZE,
+                texture: sprite,
+            });
+            this.blocks.push(block);
         }
     }
 }
