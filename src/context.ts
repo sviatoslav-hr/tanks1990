@@ -1,7 +1,7 @@
-import { Color } from "./color";
-import { BASE_FONT_SIZE } from "./const";
-import { Rect } from "./math";
-import { Transform } from "./math/transform";
+import { Color } from './color';
+import { BASE_FONT_SIZE } from './const';
+import { Rect } from './math';
+import { Transform } from './math/transform';
 
 type ShadowTextOpts = {
     x: number;
@@ -11,7 +11,7 @@ type ShadowTextOpts = {
 };
 
 export class Context {
-    constructor(public ctx: CanvasRenderingContext2D) { }
+    constructor(public ctx: CanvasRenderingContext2D) {}
 
     drawBoundary({ x, y, width, height }: Rect, lineWidth = 1): void {
         this.drawLine(x, y, x + width, y, lineWidth);
@@ -90,8 +90,8 @@ export class Context {
 
     setFont(
         font: string,
-        align: CanvasTextAlign = "start",
-        baseline: CanvasTextBaseline = "top",
+        align: CanvasTextAlign = 'start',
+        baseline: CanvasTextBaseline = 'top',
     ): void {
         this.ctx.font = font;
         this.ctx.textBaseline = baseline;

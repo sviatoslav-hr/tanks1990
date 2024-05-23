@@ -1,11 +1,10 @@
-import { Color } from "./color";
-import { CELL_SIZE } from "./const";
-import { Context } from "./context";
-import { EnemyTank, PlayerTank, Tank } from "./entity";
-import { Block } from "./entity/block";
-import { Entity } from "./entity/core";
-import { Sprite, createStaticSprite } from "./entity/sprite";
-import { Rect, randomInt } from "./math";
+import { CELL_SIZE } from './const';
+import { Context } from './context';
+import { EnemyTank, PlayerTank, Tank } from './entity';
+import { Block } from './entity/block';
+import { Entity } from './entity/core';
+import { createStaticSprite } from './entity/sprite';
+import { Rect, randomInt } from './math';
 
 export enum GameStatus {
     INITIAL,
@@ -13,14 +12,19 @@ export enum GameStatus {
     PAUSED,
 }
 
+// TODO: Game/GameState should be the highest level
+// Also it should have a reference to Menu, but Menu shouldn't have the Game ref
 export class Game {
     tanks: Tank[] = [];
     blocks: Block[] = [];
     player: PlayerTank;
     status = GameStatus.INITIAL;
+    showFps = false;
+    showBoundaries = false;
 
     constructor(public screen: Rect) {
         // TODO: maybe give tanks just ref to a Game instead?
+        // WARN: should the player be aware of the screen?
         this.player = new PlayerTank(this.screen, this);
     }
 
@@ -110,7 +114,7 @@ export class Game {
                 this.screen.y +
                 randomInt(1, this.screen.height / CELL_SIZE - 1) * CELL_SIZE;
             const sprite = createStaticSprite({
-                key: "bricks",
+                key: 'bricks',
                 frameWidth: 64,
                 frameHeight: 64,
             });

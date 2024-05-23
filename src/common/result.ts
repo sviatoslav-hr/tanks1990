@@ -1,4 +1,4 @@
-import { Opt } from "./option";
+import { Opt } from './option';
 
 export type Result<T, E = Error> = OkResult<T, E> | ErrResult<T, E>;
 
@@ -14,7 +14,7 @@ abstract class BaseResult<T, E> {
     }
 
     static fromError<T>(error: string | Error): Result<T, Error> {
-        const err = typeof error === "string" ? new Error(error) : error;
+        const err = typeof error === 'string' ? new Error(error) : error;
         return new ErrResult(err);
     }
 
@@ -29,7 +29,7 @@ abstract class BaseResult<T, E> {
     static async tryAsync<V>(
         source: () => PromiseLike<V> | PromiseLike<V>,
     ): Promise<Result<V>> {
-        const promise = typeof source === "function" ? source() : source;
+        const promise = typeof source === 'function' ? source() : source;
         try {
             return Ok(await promise);
         } catch (e) {
@@ -39,7 +39,7 @@ abstract class BaseResult<T, E> {
 
     private static unknownErr(e: unknown): Error {
         if (e instanceof Error) return e;
-        const err = new Error((e ?? "unknown error").toString());
+        const err = new Error((e ?? 'unknown error').toString());
         return err;
     }
 
@@ -50,7 +50,7 @@ abstract class BaseResult<T, E> {
         if (this.isErr()) {
             return { err: BaseResult.unknownErr(this.err) };
         }
-        throw new Error("Unexpected result");
+        throw new Error('Unexpected result');
     }
 
     isOk(): this is OkResult<T, E> {
@@ -85,7 +85,7 @@ abstract class BaseResult<T, E> {
         if (this.isErr()) {
             return Result.Err(this.err);
         }
-        throw new Error("Unexpected");
+        throw new Error('Unexpected');
     }
 
     // Returns the provided default (if Err), or applies a function to the contained value (if Ok).
@@ -103,7 +103,7 @@ abstract class BaseResult<T, E> {
         if (this.isErr()) {
             return func(this.err);
         }
-        throw new Error("Unexpected");
+        throw new Error('Unexpected');
     }
 }
 

@@ -1,9 +1,9 @@
-import { Context } from "../context";
-import { Rect } from "../math";
-import { Transform } from "../math/transform";
-import { Vector2 } from "../math/vector";
+import { Context } from '../context';
+import { Rect } from '../math';
+import { Transform } from '../math/transform';
+import { Vector2 } from '../math/vector';
 
-const ASSETS_URL = "./assets";
+const ASSETS_URL = './assets';
 const imageCache: Record<string, HTMLImageElement> = {};
 
 type SpriteOpts<K extends string> = {
@@ -107,27 +107,27 @@ export class Sprite<K extends string> {
 
 export function createShieldSprite() {
     return new Sprite({
-        key: "shield",
+        key: 'shield',
         frameWidth: 64,
         frameHeight: 64,
         animationDelayMs: 100,
-        states: [{ name: "flowing", frames: 6 }],
+        states: [{ name: 'flowing', frames: 6 }],
     });
 }
 
-export function createTankSprite(key: "tank_yellow" | "tank_green") {
+export function createTankSprite(key: 'tank_yellow' | 'tank_green') {
     return new Sprite({
         key: key,
         frameWidth: 64,
         frameHeight: 64,
         animationDelayMs: 100,
-        states: [{ name: "moving", frames: 2 }],
+        states: [{ name: 'moving', frames: 2 }],
     });
 }
 
 export function createStaticSprite(
-    opts: Omit<SpriteOpts<"static">, "states">,
-): Sprite<"static"> {
-    const states = [{ name: "static", frames: 1 } as const];
+    opts: Omit<SpriteOpts<'static'>, 'states'>,
+): Sprite<'static'> {
+    const states = [{ name: 'static', frames: 1 } as const];
     return new Sprite({ ...opts, states });
 }

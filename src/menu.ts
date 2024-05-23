@@ -1,10 +1,10 @@
-import { Game } from "./game";
+import { Game } from './game';
 
 enum MenuState {
-    HIDDEN = "hidden",
-    START = "start",
-    PAUSE = "pause",
-    DEAD = "dead",
+    HIDDEN = 'hidden',
+    START = 'start',
+    PAUSE = 'pause',
+    DEAD = 'dead',
 }
 
 type MenuClickCallback = (button: MenuButton) => void;
@@ -17,12 +17,12 @@ class MenuButton extends HTMLElement {
         public states: MenuState[],
     ) {
         super();
-        this.buttonEl = document.createElement("button");
+        this.buttonEl = document.createElement('button');
         this.append(this.buttonEl);
         this.buttonEl.append(text);
-        this.buttonEl.classList.add("button");
+        this.buttonEl.classList.add('button');
         this.buttonEl.tabIndex = 1;
-        this.buttonEl.addEventListener("click", () => onClick(this));
+        this.buttonEl.addEventListener('click', () => onClick(this));
     }
 
     focus(options?: FocusOptions): void {
@@ -40,7 +40,7 @@ class MenuButton extends HTMLElement {
 
 export function initMenu(menu: Menu, game: Game): void {
     menu.addButton(
-        "New Game",
+        'New Game',
         () => {
             game.start();
             menu.hide();
@@ -48,7 +48,7 @@ export function initMenu(menu: Menu, game: Game): void {
         [MenuState.START],
     );
     menu.addButton(
-        "Resume",
+        'Resume',
         () => {
             game.resume();
             menu.hide();
@@ -56,7 +56,7 @@ export function initMenu(menu: Menu, game: Game): void {
         [MenuState.PAUSE],
     );
     menu.addButton(
-        "Restart",
+        'Restart',
         () => {
             game.start();
             menu.hide();
@@ -64,7 +64,7 @@ export function initMenu(menu: Menu, game: Game): void {
         [MenuState.DEAD],
     );
     menu.addButton(
-        "Main menu",
+        'Main menu',
         () => {
             game.init();
             menu.showMain();
@@ -81,11 +81,11 @@ export class Menu extends HTMLElement {
 
     constructor() {
         super();
-        this.classList.add("menu");
-        this.heading = document.createElement("h2");
+        this.classList.add('menu');
+        this.heading = document.createElement('h2');
         this.append(this.heading);
-        this.buttonContainer = document.createElement("div");
-        this.buttonContainer.classList.add("flex-col");
+        this.buttonContainer = document.createElement('div');
+        this.buttonContainer.classList.add('flex-col');
         this.append(this.buttonContainer);
         this.buttonContainer.append(...this.buttons);
     }
@@ -170,19 +170,19 @@ export class Menu extends HTMLElement {
 
     private setHeadingByState(state: MenuState): void {
         if (state === MenuState.DEAD) {
-            this.heading.classList.add("text-red");
+            this.heading.classList.add('text-red');
         } else {
-            this.heading.classList.remove("text-red");
+            this.heading.classList.remove('text-red');
         }
         switch (state) {
             case MenuState.HIDDEN:
                 return;
             case MenuState.START:
-                return this.setHeading("Tanks 1990");
+                return this.setHeading('Tanks 1990');
             case MenuState.PAUSE:
-                return this.setHeading("Paused");
+                return this.setHeading('Paused');
             case MenuState.DEAD:
-                return this.setHeading("You are dead");
+                return this.setHeading('You are dead');
         }
     }
 
@@ -191,5 +191,5 @@ export class Menu extends HTMLElement {
     }
 }
 
-customElements.define("game-menu", Menu);
-customElements.define("game-menu-button", MenuButton);
+customElements.define('game-menu', Menu);
+customElements.define('game-menu-button', MenuButton);

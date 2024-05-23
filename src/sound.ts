@@ -1,6 +1,6 @@
 export enum SoundType {
-    EXPLOSION = "8bit_bomb_explosion",
-    SHOOTING = "cannon_fire",
+    EXPLOSION = '8bit_bomb_explosion',
+    SHOOTING = 'cannon_fire',
 }
 
 const soundsCache = new Map<SoundType, HTMLAudioElement>();
@@ -23,6 +23,7 @@ export function playSound(type: SoundType): void {
 function getSound(type: SoundType): HTMLAudioElement {
     const src = `./sounds/${type}.wav`;
     const sound = new Audio(src);
+    sound.volume = 0.3;
     sound.load();
     return sound;
 }

@@ -1,4 +1,4 @@
-import { Direction } from "./entity/core";
+import { Direction } from './entity/core';
 
 export type Vec2 = {
     x: number;
@@ -34,7 +34,7 @@ export function rotateRect(
         return rect;
     }
     if (![0, 90, 180, 270].includes(deg)) {
-        console.warn("this rotation degree is not currently supported");
+        console.warn('this rotation degree is not currently supported');
         return rect;
     }
     const { x, y, width, height } = rect;

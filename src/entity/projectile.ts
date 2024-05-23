@@ -1,8 +1,8 @@
-import { Tank } from ".";
-import { CELL_SIZE } from "../const";
-import { Context } from "../context";
-import { Game } from "../game";
-import { Rect } from "../math";
+import { Tank } from '.';
+import { CELL_SIZE } from '../const';
+import { Context } from '../context';
+import { Game } from '../game';
+import { Rect } from '../math';
 import {
     Direction,
     Entity,
@@ -10,8 +10,8 @@ import {
     isOutsideRect,
     moveEntity,
     scaleMovement,
-} from "./core";
-import { Sprite } from "./sprite";
+} from './core';
+import { Sprite } from './sprite';
 
 export class Projectile implements Entity {
     public static SIZE = CELL_SIZE * 0.25;
@@ -20,11 +20,11 @@ export class Projectile implements Entity {
     public height: number;
     private readonly v = 800;
     private readonly sprite = new Sprite({
-        key: "bullet",
+        key: 'bullet',
         frameWidth: 16,
         frameHeight: 16,
         animationDelayMs: 100,
-        states: [{ name: "moving", frames: 2 }],
+        states: [{ name: 'moving', frames: 2 }],
     });
 
     constructor(

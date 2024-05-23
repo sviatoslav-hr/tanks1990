@@ -1,8 +1,8 @@
-import { Color } from "../color";
-import { CELL_SIZE } from "../const";
-import { Context } from "../context";
-import { Game } from "../game";
-import { keyboard } from "../keyboard";
+import { Color } from '../color';
+import { CELL_SIZE } from '../const';
+import { Context } from '../context';
+import { Game } from '../game';
+import { keyboard } from '../keyboard';
 import {
     Rect,
     distanceV2,
@@ -10,9 +10,9 @@ import {
     randomFrom,
     xn,
     yn,
-} from "../math";
-import { SoundType, playSound } from "../sound";
-import { Block } from "./block";
+} from '../math';
+import { SoundType, playSound } from '../sound';
+import { Block } from './block';
 import {
     Direction,
     Entity,
@@ -20,10 +20,10 @@ import {
     isIntesecting,
     moveEntity,
     scaleMovement,
-} from "./core";
-import { ExplosionEffect } from "./effect";
-import { Projectile } from "./projectile";
-import { Sprite, createShieldSprite, createTankSprite } from "./sprite";
+} from './core';
+import { ExplosionEffect } from './effect';
+import { Projectile } from './projectile';
+import { Sprite, createShieldSprite, createTankSprite } from './sprite';
 
 export abstract class Tank implements Entity {
     public x = 0;
@@ -118,7 +118,7 @@ export abstract class Tank implements Entity {
         if (this.showBoundary) {
             ctx.setStrokeColor(Color.PINK);
             ctx.drawBoundary(this, 1);
-            ctx.setFont("400 16px Helvetica", "center", "middle");
+            ctx.setFont('400 16px Helvetica', 'center', 'middle');
             ctx.setFillColor(Color.WHITE);
             ctx.drawText(
                 `${this.index}: {${Math.floor(this.x)};${Math.floor(this.y)}}`,
@@ -171,7 +171,7 @@ export abstract class Tank implements Entity {
 
     takeDamage(): boolean {
         if (this.dead) {
-            console.warn("Trying to kill a dead entity");
+            console.warn('Trying to kill a dead entity');
             return false;
         }
         const dead = !this.hasShield;
@@ -230,7 +230,7 @@ export abstract class Tank implements Entity {
         }
     }
 
-    protected handleCollision(_target: Tank): void { }
+    protected handleCollision(_target: Tank): void {}
 
     private updateProjectiles(dt: number): void {
         const garbageIndexes: number[] = [];
@@ -282,7 +282,7 @@ export class PlayerTank extends Tank implements Entity {
     public score = 0;
     public survivedMs = 0;
     protected readonly MOVEMENT_SPEED: number = 300;
-    protected readonly sprite = createTankSprite("tank_yellow");
+    protected readonly sprite = createTankSprite('tank_yellow');
 
     constructor(boundary: Rect, game: Game) {
         super(boundary, game);
@@ -314,23 +314,23 @@ export class PlayerTank extends Tank implements Entity {
 
     protected handleKeyboard(): void {
         this.moving = false;
-        if (keyboard.isDown("KeyA")) {
+        if (keyboard.isDown('KeyA')) {
             this.direction = Direction.LEFT;
             this.moving = true;
         }
-        if (keyboard.isDown("KeyD")) {
+        if (keyboard.isDown('KeyD')) {
             this.direction = Direction.RIGHT;
             this.moving = true;
         }
-        if (keyboard.isDown("KeyW")) {
+        if (keyboard.isDown('KeyW')) {
             this.direction = Direction.UP;
             this.moving = true;
         }
-        if (keyboard.isDown("KeyS")) {
+        if (keyboard.isDown('KeyS')) {
             this.direction = Direction.DOWN;
             this.moving = true;
         }
-        if (keyboard.isDown("Space") && !this.shootingDelayMs) {
+        if (keyboard.isDown('Space') && !this.shootingDelayMs) {
             this.shoot();
         }
         this.v = this.moving ? this.MOVEMENT_SPEED : 0;
@@ -341,7 +341,7 @@ export class EnemyTank extends Tank implements Entity {
     protected v = this.MOVEMENT_SPEED;
     protected moving = true;
     protected readonly SHOOTING_PERIOD_MS = 1000;
-    protected readonly sprite = createTankSprite("tank_green");
+    protected readonly sprite = createTankSprite('tank_green');
     private readonly DIRECTION_CHANGE_MS = 2000;
     private randomDirectionDelay = this.DIRECTION_CHANGE_MS;
     private targetDirectionDelay = this.DIRECTION_CHANGE_MS;

@@ -1,6 +1,6 @@
-import { toRadians } from "../math";
-import { assert } from "../utils";
-import { Vector2 } from "./vector";
+import { toRadians } from '../math';
+import { assert } from '../utils';
+import { Vector2 } from './vector';
 
 type TransformMatrix = {
     a: number;
@@ -52,8 +52,8 @@ export class Transform implements TransformMatrix {
     static makeTranslation(x: number, y: number): Transform;
     static makeTranslation(position: Vector2): Transform;
     static makeTranslation(position: Vector2 | number, y?: number): Transform {
-        const x = typeof position === "number" ? position : position.x;
-        y = typeof position === "number" ? y : position.y;
+        const x = typeof position === 'number' ? position : position.x;
+        y = typeof position === 'number' ? y : position.y;
         assert(y != null);
         return Transform.from({
             a: 1,

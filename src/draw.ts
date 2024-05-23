@@ -1,17 +1,17 @@
 // TODO: maybe remove it to a class to have this state there.
 
-import { Color } from "./color";
-import { BASE_FONT_SIZE, BASE_PADDING } from "./const";
-import { Context } from "./context";
-import { PlayerTank } from "./entity";
-import { Rect, numround, xn } from "./math";
-import { getBestScore } from "./storage";
+import { Color } from './color';
+import { BASE_FONT_SIZE, BASE_PADDING } from './const';
+import { Context } from './context';
+import { PlayerTank } from './entity';
+import { Rect, numround, xn } from './math';
+import { getBestScore } from './storage';
 
 // This way it's possible to have multiple independent FPS counters
-let lastFPS: string = "0";
+let lastFPS: string = '0';
 let fpsUpdateDelayMs = 0;
 export function drawFPS(ctx: Context, dt: number): void {
-    let fps: string = "0";
+    let fps: string = '0';
     if (fpsUpdateDelayMs >= 0) {
         fps = lastFPS;
         fpsUpdateDelayMs -= dt;
@@ -21,7 +21,7 @@ export function drawFPS(ctx: Context, dt: number): void {
         fpsUpdateDelayMs = 300;
     }
 
-    ctx.setFont("200 36px Helvetica");
+    ctx.setFont('200 36px Helvetica');
     ctx.drawText(fps, { x: 10, y: 10 });
 }
 
@@ -31,7 +31,7 @@ export function drawScore(
     boundary: Rect,
     storage: Storage,
 ): void {
-    ctx.setFont("200 36px Helvetica", "right", "top");
+    ctx.setFont('200 36px Helvetica', 'right', 'top');
     const innerPadding = BASE_PADDING / 2;
 
     const scoreText = `Score: ${player.score}`;
@@ -45,7 +45,7 @@ export function drawScore(
     if (bestScoreText) {
         text += `\n${bestScoreText}`;
     }
-    const lines = text.split("\n");
+    const lines = text.split('\n');
     const maxWidth = Math.max(...lines.map((l) => ctx.measureText(l).width));
 
     const boundaryHeight = bestScoreText

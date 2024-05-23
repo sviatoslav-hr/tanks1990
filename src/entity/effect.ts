@@ -1,18 +1,22 @@
-import { Color } from "../color";
-import { Context } from "../context";
-import { Rect } from "../math";
-import { assert } from "../utils";
-import { scaleMovement } from "./core";
+import { Color } from '../color';
+import { Context } from '../context';
+import { Rect } from '../math';
+import { assert } from '../utils';
+import { scaleMovement } from './core';
 
 export class ExplosionEffect {
     private circleSize = 0;
 
     private constructor(
         private boundary: Rect,
-        private particles: Particle[]
-    ) { }
+        private particles: Particle[],
+    ) {}
 
-    static fromImageData(image: ImageData, boundary: Rect, particleSize: number): ExplosionEffect | null {
+    static fromImageData(
+        image: ImageData,
+        boundary: Rect,
+        particleSize: number,
+    ): ExplosionEffect | null {
         const { width, height } = boundary;
         assert(image.width === width);
         assert(image.height === height);
@@ -28,13 +32,24 @@ export class ExplosionEffect {
                 const green = image.data[index + 1];
                 const blue = image.data[index + 2];
                 const alpha = image.data[index + 3];
-                if (red == null || green == null || blue == null || alpha == null) {
+                if (
+                    red == null ||
+                    green == null ||
+                    blue == null ||
+                    alpha == null
+                ) {
                     console.warn('Invalid image data');
                     return null;
                 }
                 if (!alpha) continue;
                 const color = `rgb(${red},${green},${blue})`;
-                const particle = new Particle(x + boundary.x, y + boundary.y, particleSize, particleSize, color)
+                const particle = new Particle(
+                    x + boundary.x,
+                    y + boundary.y,
+                    particleSize,
+                    particleSize,
+                    color,
+                );
                 if (particle.x - width / 2 < cx) particle.vx *= -1;
                 if (particle.y - width / 2 < cy) particle.vy *= -1;
                 particles.push(particle);
@@ -58,7 +73,7 @@ export class ExplosionEffect {
     }
 
     update(dt: number): void {
-        this.circleSize += scaleMovement(this.boundary.width * .3 * 5, dt);
+        this.circleSize += scaleMovement(this.boundary.width * 0.3 * 5, dt);
         for (const p of this.particles) {
             p.update(dt);
         }

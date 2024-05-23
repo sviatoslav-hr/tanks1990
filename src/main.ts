@@ -1,44 +1,34 @@
-import "./style.css";
+import './style.css';
 
-import {
-    createCanvas,
-    handleResize,
-    startAnimation,
-    toggleFullscreen,
-} from "./canvas";
-import { BASE_HEIGHT, BASE_WIDTH } from "./const";
-import { Context } from "./context";
-import { Game } from "./game";
-import { keyboard } from "./keyboard";
-import { Menu, initMenu } from "./menu";
-import { assertError, panic } from "./utils";
-import { preloadSounds } from "./sound";
+import { Game } from './game';
+import { keyboard } from './keyboard';
+import { Menu, initMenu } from './menu';
+import { Renderer, toggleFullscreen } from './renderer';
+import { preloadSounds } from './sound';
+import { assert } from './utils';
 
-const appElement =
-    document.querySelector<HTMLDivElement>("#app") ??
-    panic("App element should exist");
+const appElement = document.querySelector<HTMLDivElement>('#app');
+assert(appElement != null, 'No app element found');
 
-const canvas = createCanvas(BASE_WIDTH, BASE_HEIGHT);
-appElement.append(canvas);
-const ctx = new Context(
-    canvas.getContext("2d") ?? panic("Context should be available"),
-);
-const screen = { x: 0, y: 0, width: canvas.width, height: canvas.height };
+const renderer = new Renderer();
+appElement.append(renderer.canvas);
+const screen = {
+    x: 0,
+    y: 0,
+    width: renderer.canvas.width,
+    height: renderer.canvas.height,
+};
 const game = new Game(screen);
 const menu = new Menu();
 appElement.append(menu);
 initMenu(menu, game);
 menu.showMain();
 preloadSounds();
-startAnimation(ctx, game, menu, localStorage);
+renderer.startAnimation(game, menu, localStorage);
 
-handleResize(canvas);
-window.addEventListener("resize", () => handleResize(canvas));
-keyboard.onKeydown("KeyF", () => {
+window.addEventListener('resize', () => renderer.resizeCanvasByWindow());
+keyboard.onKeydown('KeyF', () => {
     toggleFullscreen(appElement)
-        .then(() => handleResize(canvas))
-        .catch((err) => {
-            assertError(err);
-            console.error(err);
-        });
+        .then(() => renderer.resizeCanvasByWindow())
+        .catch((err) => console.error(err));
 });

@@ -1,11 +1,11 @@
-import { Color } from "../color";
-import { Context } from "../context";
-import { Rect } from "../math";
-import { Entity } from "./core";
-import { Sprite } from "./sprite";
+import { Color } from '../color';
+import { Context } from '../context';
+import { Rect } from '../math';
+import { Entity } from './core';
+import { Sprite } from './sprite';
 
 export type BlockOpts = Rect & {
-    texture: Color | Sprite<"static">;
+    texture: Color | Sprite<'static'>;
 };
 
 export class Block implements Entity {
