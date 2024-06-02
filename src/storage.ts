@@ -2,11 +2,14 @@ const BEST_SCORE_KEY = 'best_score';
 const BEST_SCORE_AT_KEY = 'best_score_at';
 const SHOW_FPS_KEY = 'show_fps';
 const SHOW_BOUNDARIES = 'show_boundaries';
+const GAME_VOLUME = 'game_volume';
 
 type ScoreRecord = {
     score: number;
     createdAt: Date;
 };
+
+// TODO: wrap it in a class?
 
 export function saveBestScore(storage: Storage, score: number): void {
     const storedScore = Number(storage.getItem(BEST_SCORE_KEY));
@@ -55,4 +58,15 @@ export function setStoredShowBoundaries(
     value: boolean,
 ): void {
     storage.setItem(SHOW_BOUNDARIES, value.toString());
+}
+
+export function storeVolume(storage: Storage, volume: number): void {
+    storage.setItem(GAME_VOLUME, volume.toString());
+}
+
+export function getStoredVolume(storage: Storage): number | null {
+    const value = storage.getItem(GAME_VOLUME);
+    if (!value) return null;
+    const num = Number(value);
+    return isNaN(num) ? null : Math.max(Math.min(1, num), 0);
 }

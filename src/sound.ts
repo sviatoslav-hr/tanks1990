@@ -1,3 +1,5 @@
+import { getStoredVolume, storeVolume } from './storage';
+
 export enum SoundType {
     EXPLOSION = '8bit_bomb_explosion',
     SHOOTING = 'cannon_fire',
@@ -9,6 +11,10 @@ const soundsCache = new Map<SoundType, HTMLAudioElement>();
 let currentVolume = 0.3 * VOLUME_SCALE;
 
 export function preloadSounds(): void {
+    const volume = getStoredVolume(localStorage);
+    if (volume != null) {
+        currentVolume = volume * VOLUME_SCALE;
+    }
     soundsCache.set(SoundType.EXPLOSION, getSound(SoundType.EXPLOSION));
     soundsCache.set(SoundType.SHOOTING, getSound(SoundType.SHOOTING));
 }
@@ -29,6 +35,7 @@ export function getVolume(): number {
 
 export function setVolume(volume: number): void {
     currentVolume = volume * VOLUME_SCALE;
+    storeVolume(localStorage, volume);
     for (const [_, sound] of soundsCache) {
         sound.volume = currentVolume;
     }

@@ -10,6 +10,7 @@ import { assert } from './utils';
 const appElement = document.querySelector<HTMLDivElement>('#app');
 assert(appElement != null, 'No app element found');
 
+preloadSounds();
 const renderer = new Renderer();
 appElement.append(renderer.canvas);
 const screen = {
@@ -23,7 +24,6 @@ const menu = new Menu();
 appElement.append(menu);
 initMenu(menu, game);
 menu.showMain();
-preloadSounds();
 renderer.startAnimation(game, menu, localStorage);
 
 window.addEventListener('resize', () => renderer.resizeCanvasByWindow());
