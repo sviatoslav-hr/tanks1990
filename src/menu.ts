@@ -1,4 +1,6 @@
 import { Game } from './game';
+import { html } from './html';
+import { getVolume, setVolume } from './sound';
 
 enum MenuState {
     HIDDEN = 'hidden',
@@ -9,12 +11,14 @@ enum MenuState {
 
 type MenuClickCallback = (button: MenuButton) => void;
 
+const DEFAULT_MENU_STATES = [MenuState.START, MenuState.PAUSE, MenuState.DEAD];
+
 class MenuButton extends HTMLElement {
     private buttonEl: HTMLButtonElement;
     constructor(
         text: string,
         onClick: MenuClickCallback,
-        public states: MenuState[],
+        public states: MenuState[] = DEFAULT_MENU_STATES,
     ) {
         super();
         this.buttonEl = document.createElement('button');
@@ -38,6 +42,86 @@ class MenuButton extends HTMLElement {
     }
 }
 
+// TODO: update width on window resize
+export class MenuPage extends HTMLElement {
+    private contentWrapper: HTMLDivElement;
+
+    constructor(
+        title: string,
+        private readonly menu: Menu,
+    ) {
+        super();
+        this.initStyles();
+        this.hide();
+        this.append(this.createCloseButton());
+        this.append(this.createTitle(title));
+        this.append((this.contentWrapper = this.createContentWrapper()));
+    }
+
+    get visible(): boolean {
+        return this.style.display !== 'none';
+    }
+
+    show(): void {
+        this.style.display = 'block';
+    }
+
+    hide(): void {
+        this.style.display = 'none';
+    }
+
+    resize(width: number, height: number): void {
+        this.style.width = `${width}px`;
+        this.style.height = `${height}px`;
+    }
+
+    setContent(html: string | HTMLElement): void {
+        if (typeof html === 'string') {
+            this.contentWrapper.innerHTML = html;
+        } else {
+            this.contentWrapper.replaceChildren(html);
+        }
+    }
+
+    private initStyles(): void {
+        this.classList.add('bg-black-ierie');
+        this.style.opacity = '0.95';
+        this.style.position = 'absolute';
+        this.style.width = '100%';
+        this.style.height = '100%';
+        this.style.top = '50%';
+        this.style.left = '50%';
+        this.style.padding = '16px';
+        this.style.transform = 'translate(-50%, -50%)';
+        this.style.zIndex = '999';
+    }
+
+    private createContentWrapper(): HTMLDivElement {
+        return document.createElement('div');
+    }
+
+    private createTitle(text: string): HTMLElement {
+        const element = document.createElement('h4');
+        element.textContent = text;
+        element.classList.add('bg-black-ierie');
+        element.style.textAlign = 'center';
+        element.style.fontSize = '24px';
+        return element;
+    }
+
+    private createCloseButton(): HTMLButtonElement {
+        const closeButton = document.createElement('button');
+        closeButton.textContent = 'Back';
+        closeButton.classList.add('button');
+        closeButton.onclick = () => {
+            this.hide();
+            this.menu.restore();
+        };
+        return closeButton;
+    }
+}
+
+// TODO: move it below
 export function initMenu(menu: Menu, game: Game): void {
     menu.addButton(
         'New Game',
@@ -71,13 +155,57 @@ export function initMenu(menu: Menu, game: Game): void {
         },
         [MenuState.PAUSE, MenuState.DEAD],
     );
+    const optionsPage = new MenuPage('Options', menu);
+    {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'mx-auto w-fit p-4';
+        const MAX_VOLUME = 50;
+        const initValue = Math.floor(getVolume() * MAX_VOLUME);
+        const slider = new Slider({
+            name: 'volume',
+            label: 'Volume',
+            max: MAX_VOLUME,
+            initValue,
+        });
+        slider.onChange((value) => setVolume(value / MAX_VOLUME));
+        wrapper.append(slider);
+        optionsPage.setContent(wrapper);
+    }
+    menu.addPage(optionsPage);
+    menu.addButton('Options', () => {
+        optionsPage.resize(game.screen.width, game.screen.height);
+        optionsPage.show();
+        menu.hide();
+    });
+    const controlsPage = new MenuPage('Controls', menu);
+    controlsPage.setContent(html`
+        <ul class="mx-auto w-fit hints">
+            <li>
+                Use <code>W</code> <code>S</code> <code>A</code>
+                <code>D</code> to move
+            </li>
+            <li>Press <code>Space</code> to shoot</li>
+            <li><code>Esc</code> to pause</li>
+            <li><code>\`</code> to toggle FPS</li>
+            <li><code>B</code> to display boundaries</li>
+            <li><code>F</code> to toggle Fullscreen</li>
+        </ul>
+    `);
+    menu.addPage(controlsPage);
+    menu.addButton('Controls', () => {
+        controlsPage.resize(game.screen.width, game.screen.height);
+        controlsPage.show();
+        menu.hide();
+    });
 }
 
 export class Menu extends HTMLElement {
     private state: MenuState = MenuState.START;
+    private prevState?: MenuState;
     private heading: HTMLHeadingElement;
     private buttonContainer: HTMLElement;
     private buttons: MenuButton[] = [];
+    private pages: MenuPage[] = [];
 
     constructor() {
         super();
@@ -112,10 +240,16 @@ export class Menu extends HTMLElement {
         setTimeout(() => this.setDisabled(false), 300);
     }
 
+    restore(): void {
+        if (this.state === MenuState.HIDDEN && this.prevState) {
+            this.update(this.prevState);
+        }
+    }
+
     addButton(
         text: string,
         onClick: MenuClickCallback,
-        states: MenuState[],
+        states?: MenuState[],
     ): void {
         const button = new MenuButton(
             text,
@@ -124,6 +258,17 @@ export class Menu extends HTMLElement {
         );
         this.buttons.push(button);
         this.buttonContainer.append(button);
+    }
+
+    addPage(page: MenuPage): void {
+        // TODO: cut out dependency on this element out of menu
+        const appContainer = document.getElementById('app');
+        if (!appContainer) {
+            console.error('Expected app container to exist');
+            return;
+        }
+        this.pages.push(page);
+        appContainer.append(page);
     }
 
     private setDisabled(disabled: boolean): void {
@@ -138,9 +283,13 @@ export class Menu extends HTMLElement {
     }
 
     private update(state: MenuState): void {
+        const prevState = this.state;
         this.state = state;
         if (state === MenuState.HIDDEN) {
             this.hidden = true;
+            if (prevState !== MenuState.HIDDEN) {
+                this.prevState = prevState;
+            }
             return;
         } else {
             this.hidden = false;
@@ -191,5 +340,54 @@ export class Menu extends HTMLElement {
     }
 }
 
+interface SliderConfig {
+    name: string;
+    label?: string;
+    min?: number;
+    max?: number;
+    step?: number;
+    initValue?: number;
+}
+
+class Slider extends HTMLElement {
+    private input: HTMLInputElement;
+
+    constructor({
+        name,
+        label = name,
+        min = 0,
+        max = 50,
+        step = 1,
+        initValue = 0,
+    }: SliderConfig) {
+        super();
+        const labelElement = document.createElement('label');
+        labelElement.textContent = label;
+        labelElement.htmlFor = name;
+        labelElement.style.marginRight = '16px';
+        this.style.display = 'flex';
+        this.style.alignItems = 'center';
+        this.style.justifyContent = 'center';
+        this.input = document.createElement('input');
+        this.input.type = 'range';
+        this.input.name = name;
+        this.input.min = min.toString();
+        this.input.max = max.toString();
+        this.input.step = step.toString();
+        this.input.value = initValue.toString();
+        this.append(labelElement, this.input);
+    }
+
+    onChange(callback: ((value: number) => void) | null): void {
+        this.input.addEventListener('change', (ev) => {
+            if (ev.target === this.input) {
+                callback?.((ev.target as HTMLInputElement).valueAsNumber);
+            }
+        });
+    }
+}
+
 customElements.define('game-menu', Menu);
 customElements.define('game-menu-button', MenuButton);
+customElements.define('game-menu-page', MenuPage);
+customElements.define('game-slider', Slider);

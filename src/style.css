@@ -126,6 +126,10 @@ canvas {
     gap: 24px;
 }
 
+.p-4 {
+    padding: 16px;
+}
+
 .hints li {
     font-size: 16px;
     padding: 4px 0;
@@ -136,4 +140,8 @@ code {
     padding: 0.2em 0.4em;
     border-radius: 0.3em;
     background-color: rgba(255, 255, 255, 0.15);
+}
+
+.bg-black-ierie {
+    background-color: var(--black-eirie);
 }

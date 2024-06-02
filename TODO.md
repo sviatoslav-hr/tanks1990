@@ -1,5 +1,6 @@
 # TODO:
-- [ ] Add options to menu
+
+- [ ] Add Literal fullscreen button (in options or literally below the canvas)
 - [ ] Define game plan / trajectory / future development / main goal / idea
 - [ ] Setup ESLint
 - [ ] Create a separate Sprite class for static objects / non-animated
@@ -46,3 +47,4 @@
 - [ ] consider using states for animations ([see](https://www.youtube.com/watch?v=e3LGFrHqqiI))
 - [ ] make movement more realistic (speed decreases over time unless entity is moving)
 - [x] sprite for bullets
+- [x] Add options to menu

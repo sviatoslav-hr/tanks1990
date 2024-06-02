@@ -3,7 +3,10 @@ export enum SoundType {
     SHOOTING = 'cannon_fire',
 }
 
+const VOLUME_SCALE = 0.3;
+
 const soundsCache = new Map<SoundType, HTMLAudioElement>();
+let currentVolume = 0.3 * VOLUME_SCALE;
 
 export function preloadSounds(): void {
     soundsCache.set(SoundType.EXPLOSION, getSound(SoundType.EXPLOSION));
@@ -20,10 +23,21 @@ export function playSound(type: SoundType): void {
     sound.play();
 }
 
+export function getVolume(): number {
+    return Math.min(currentVolume / VOLUME_SCALE, 1);
+}
+
+export function setVolume(volume: number): void {
+    currentVolume = volume * VOLUME_SCALE;
+    for (const [_, sound] of soundsCache) {
+        sound.volume = currentVolume;
+    }
+}
+
 function getSound(type: SoundType): HTMLAudioElement {
     const src = `./sounds/${type}.wav`;
     const sound = new Audio(src);
-    sound.volume = 0.3;
+    sound.volume = currentVolume;
     sound.load();
     return sound;
 }

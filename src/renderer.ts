@@ -23,7 +23,7 @@ export class Renderer {
         this.canvas.width = BASE_WIDTH;
         this.canvas.height = BASE_HEIGHT;
         const ctx2d =
-            this.canvas.getContext('2d') ??
+            this.canvas.getContext('2d', { willReadFrequently: true }) ??
             panic('Context should be available');
         this.ctx = new Context(ctx2d);
     }
