@@ -22,7 +22,7 @@ export class Game {
     showFps = false;
     showBoundaries = false;
     readonly worldOffset: Vec2 = { x: 0, y: 0 };
-    readonly infiniteMode = true;
+    private infiniteMode = false;
 
     constructor(public screen: Rect) {
         // TODO: maybe give tanks just ref to a Game instead?
@@ -54,7 +54,7 @@ export class Game {
         this.status = GameStatus.INITIAL;
     }
 
-    addEnemy(): void {
+    private spawnEnemy(): void {
         // NOTE: push to the start because of rendering order (could be improved)
         this.tanks.unshift(new EnemyTank(this.screen, this));
     }
@@ -67,13 +67,14 @@ export class Game {
         this.status = GameStatus.PLAYING;
     }
 
-    start(): void {
+    start(infinite = false): void {
+        this.infiniteMode = infinite;
         this.loadLevel();
         this.player.respawn();
         this.status = GameStatus.PLAYING;
         this.tanks = [this.player];
-        this.addEnemy();
-        this.addEnemy();
+        this.spawnEnemy();
+        this.spawnEnemy();
     }
 
     drawTanks(ctx: Context): void {
@@ -93,8 +94,11 @@ export class Game {
         // NOTE: add more enemies as score inscreases in such progression 1=2; 2=3; 4=4; 8=5; 16=6; ...
         // TODO: find a reasonable number/function to scale enetities
         const dscore = 2 ** enemiesCount;
-        if (enemiesCount && this.player.score >= dscore) {
-            this.addEnemy();
+        const shouldSpawn =
+            (this.infiniteMode ? this.player.score * 20 : this.player.score) >=
+            dscore;
+        if (enemiesCount && shouldSpawn) {
+            this.spawnEnemy();
         }
         for (const tank of this.tanks) {
             tank.showBoundary = showBoundary;

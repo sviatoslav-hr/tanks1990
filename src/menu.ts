@@ -132,6 +132,14 @@ export function initMenu(menu: Menu, game: Game): void {
         [MenuState.START],
     );
     menu.addButton(
+        'Infinite Game',
+        () => {
+            game.start(true);
+            menu.hide();
+        },
+        [MenuState.START],
+    );
+    menu.addButton(
         'Resume',
         () => {
             game.resume();
