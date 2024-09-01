@@ -29,7 +29,9 @@
         "noImplicitReturns": true,
         "noFallthroughCasesInSwitch": true,
         "noUnusedLocals": true,
-        "noUnusedParameters": true
+        "noUnusedParameters": true,
+        "typeRoots": ["./node_modules/@types", "./src"],
+        "types": ["jest", "vite-env", "globals"]
     },
     "include": ["src"]
 }

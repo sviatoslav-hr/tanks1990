@@ -47,7 +47,7 @@ export class Renderer {
                 game.screen.width,
                 game.screen.height,
             );
-            drawGrid(this.ctx, game.screen, CELL_SIZE);
+            drawGrid(this.ctx, game, CELL_SIZE);
             game.drawTanks(this.ctx);
             if (game.showFps) drawFPS(this.ctx, dt);
 

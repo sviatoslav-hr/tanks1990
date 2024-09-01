@@ -4,7 +4,7 @@ import { EnemyTank, PlayerTank, Tank } from './entity';
 import { Block } from './entity/block';
 import { Entity } from './entity/core';
 import { createStaticSprite } from './entity/sprite';
-import { Rect, randomInt } from './math';
+import { Rect, Vec2, randomInt } from './math';
 
 export enum GameStatus {
     INITIAL,
@@ -21,6 +21,8 @@ export class Game {
     status = GameStatus.INITIAL;
     showFps = false;
     showBoundaries = false;
+    readonly worldOffset: Vec2 = { x: 0, y: 0 };
+    readonly infiniteMode = true;
 
     constructor(public screen: Rect) {
         // TODO: maybe give tanks just ref to a Game instead?
@@ -103,8 +105,20 @@ export class Game {
         }
     }
 
+    moveWorld(movement: Vec2): void {
+        this.worldOffset.x -= movement.x;
+        this.worldOffset.y -= movement.y;
+        for (const entity of this.entities) {
+            if (entity instanceof PlayerTank) continue;
+            entity.x -= movement.x;
+            entity.y -= movement.y;
+        }
+    }
+
     private loadLevel(): void {
         this.blocks = [];
+        // NOTE: no blocks in inifinite mode for now.
+        if (this.infiniteMode) return;
         const BLOCKS_COUNT = 9;
         for (let i = 0; i < BLOCKS_COUNT; i++) {
             const x =

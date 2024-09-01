@@ -3,7 +3,7 @@
  * https://jestjs.io/docs/configuration
  */
 
-import type { JestConfigWithTsJest } from "ts-jest";
+import type { JestConfigWithTsJest } from 'ts-jest';
 
 const config: JestConfigWithTsJest = {
     // All imported modules in your tests should be mocked automatically
@@ -33,7 +33,7 @@ const config: JestConfigWithTsJest = {
     // ],
 
     // Indicates which provider should be used to instrument code for coverage
-    coverageProvider: "v8",
+    coverageProvider: 'v8',
 
     // A list of reporter names that Jest uses when writing coverage reports
     // coverageReporters: [
@@ -102,7 +102,7 @@ const config: JestConfigWithTsJest = {
     // notifyMode: "failure-change",
 
     // A preset that is used as a base for Jest's configuration
-    preset: "ts-jest",
+    preset: 'ts-jest',
 
     // Run tests from one or more projects
     // projects: undefined,
@@ -134,7 +134,7 @@ const config: JestConfigWithTsJest = {
     // runner: "jest-runner",
 
     // The paths to modules that run some code to configure or set up the testing environment before each test
-    // setupFiles: [],
+    setupFiles: ['./src/globals.ts'],
 
     // A list of paths to modules that run some code to configure or set up the testing framework before each test
     // setupFilesAfterEnv: [],
@@ -146,7 +146,7 @@ const config: JestConfigWithTsJest = {
     // snapshotSerializers: [],
 
     // The test environment that will be used for testing
-    testEnvironment: "node",
+    testEnvironment: 'jsdom',
 
     // Options that will be passed to the testEnvironment
     // testEnvironmentOptions: {},

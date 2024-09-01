@@ -109,6 +109,31 @@ export function randomFrom<T>(...values: T[]): T {
     return values[randomInt(0, values.length)]!;
 }
 
+export function moveToRandomCorner(entity: Rect, boundary: Rect): void {
+    switch (randomFrom(0, 1, 2, 3)) {
+        case 0: {
+            entity.x = 0;
+            entity.y = 0;
+            break;
+        }
+        case 1: {
+            entity.x = xn(boundary) - entity.width;
+            entity.y = 0;
+            break;
+        }
+        case 2: {
+            entity.x = xn(boundary) - entity.width;
+            entity.y = yn(boundary) - entity.height;
+            break;
+        }
+        case 3: {
+            entity.x = 0;
+            entity.y = yn(boundary) - entity.height;
+            break;
+        }
+    }
+}
+
 export function distanceV2(v1: Vec2, v2: Vec2): number {
     return Math.sqrt((v1.x - v2.x) ** 2 + (v1.y - v2.y) ** 2);
 }

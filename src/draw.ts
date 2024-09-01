@@ -4,6 +4,7 @@ import { Color } from './color';
 import { BASE_FONT_SIZE, BASE_PADDING } from './const';
 import { Context } from './context';
 import { PlayerTank } from './entity';
+import { Game } from './game';
 import { Rect, numround, xn } from './math';
 import { getBestScore } from './storage';
 
@@ -69,15 +70,26 @@ export function drawScore(
     });
 }
 
-export function drawGrid(ctx: Context, boundary: Rect, cellSize: number): void {
-    const { x, y, width, height } = boundary;
-    for (let colX = cellSize; colX < x + width; colX += cellSize) {
-        ctx.setStrokeColor(Color.BLACK_IERIE);
-        ctx.drawLine(colX + 1, y + 1, colX + 1, y + height + 1);
+export function drawGrid(ctx: Context, game: Game, cellSize: number): void {
+    let { x, y, width, height } = game.screen;
+    x += game.worldOffset.x % cellSize;
+    y += game.worldOffset.y % cellSize;
+    ctx.setStrokeColor(Color.BLACK_IERIE);
+    for (let colX = x; colX < x + width + cellSize; colX += cellSize) {
+        ctx.drawLine(
+            colX + 1,
+            y + 1 - cellSize,
+            colX + 1,
+            y + height + 1 + cellSize,
+        );
     }
-    for (let colY = cellSize; colY < y + height; colY += cellSize) {
-        ctx.setStrokeColor(Color.BLACK_IERIE);
-        ctx.drawLine(x + 1, colY + 1, x + width + 1, colY + 1);
+    for (let colY = y; colY < y + height + cellSize; colY += cellSize) {
+        ctx.drawLine(
+            x + 1 - cellSize,
+            colY + 1,
+            x + width + 1 + cellSize,
+            colY + 1,
+        );
     }
 }
 

@@ -1,5 +1,4 @@
 import { toRadians } from '../math';
-import { assert } from '../utils';
 import { Vector2 } from './vector';
 
 type TransformMatrix = {

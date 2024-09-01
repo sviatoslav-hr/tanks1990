@@ -6,6 +6,7 @@ import { keyboard } from '../keyboard';
 import {
     Rect,
     distanceV2,
+    moveToRandomCorner,
     oppositeDirection,
     randomFrom,
     xn,
@@ -17,7 +18,9 @@ import {
     Direction,
     Entity,
     clampByBoundary,
+    getMovement,
     isIntesecting,
+    isOutsideRect,
     moveEntity,
     scaleMovement,
 } from './core';
@@ -80,7 +83,15 @@ export abstract class Tank implements Entity {
         if (this.moving) {
             this.sprite.update(dt);
         }
-        moveEntity(this, scaleMovement(this.v, dt), this.direction);
+        if (this.game.infiniteMode && this instanceof PlayerTank) {
+            const movement = getMovement(
+                scaleMovement(this.v, dt),
+                this.direction,
+            );
+            this.game.moveWorld(movement);
+        } else {
+            moveEntity(this, scaleMovement(this.v, dt), this.direction);
+        }
         const collided = this.findCollided();
         if (collided) {
             if (collided instanceof Tank) {
@@ -89,7 +100,9 @@ export abstract class Tank implements Entity {
             this.x = prevX;
             this.y = prevY;
         }
-        clampByBoundary(this, this.boundary);
+        if (!this.game.infiniteMode) {
+            clampByBoundary(this, this.boundary);
+        }
         this.updateShield(dt);
     }
 
@@ -159,7 +172,19 @@ export abstract class Tank implements Entity {
     }
 
     respawn(): void {
-        this.tryRespawn(4);
+        const playerInInfinite =
+            this.game.infiniteMode && this instanceof PlayerTank;
+        if (playerInInfinite) {
+            // NOTE: in infinite mode, player is always in the center
+            this.x = this.boundary.x + this.boundary.width / 2 - this.width / 2;
+            this.y =
+                this.boundary.y + this.boundary.height / 2 - this.height / 2;
+        }
+        if (playerInInfinite || this.tryRespawn(4)) {
+            this.dead = false;
+            this.shootingDelayMs = this.SHOOTING_PERIOD_MS;
+            this.activateShield();
+        }
     }
 
     doDamage(other: Tank): boolean {
@@ -183,37 +208,13 @@ export abstract class Tank implements Entity {
         return dead;
     }
 
-    private tryRespawn(limit: number): void {
-        if (limit <= 0) return;
-        switch (randomFrom(0, 1, 2, 3)) {
-            case 0: {
-                this.x = 0;
-                this.y = 0;
-                break;
-            }
-            case 1: {
-                this.x = xn(this.boundary) - this.width;
-                this.y = 0;
-                break;
-            }
-            case 2: {
-                this.x = xn(this.boundary) - this.width;
-                this.y = yn(this.boundary) - this.height;
-                break;
-            }
-            case 3: {
-                this.x = 0;
-                this.y = yn(this.boundary) - this.height;
-                break;
-            }
-        }
+    private tryRespawn(limit: number): boolean {
+        if (limit <= 0) return false;
+        moveToRandomCorner(this, this.boundary);
         if (this.findCollided()) {
-            this.tryRespawn(limit - 1);
-        } else {
-            this.dead = false;
-            this.shootingDelayMs = this.SHOOTING_PERIOD_MS;
-            this.activateShield();
+            return this.tryRespawn(limit - 1);
         }
+        return true;
     }
 
     activateShield(): void {
@@ -286,8 +287,14 @@ export class PlayerTank extends Tank implements Entity {
 
     constructor(boundary: Rect, game: Game) {
         super(boundary, game);
-        this.x = 0;
-        this.y = 0;
+        if (game.infiniteMode) {
+            this.x = boundary.x + boundary.width / 2;
+            this.y = boundary.y + boundary.height / 2;
+            console.log(this.x, this.y, boundary);
+        } else {
+            this.x = 0;
+            this.y = 0;
+        }
     }
 
     update(dt: number): void {
@@ -432,8 +439,9 @@ export class EnemyTank extends Tank implements Entity {
         const dir = this.findDirectionTowards(player);
         if (dir == null) return dir;
 
-        const entityDist = distanceV2(this, player);
-        if (entityDist < CELL_SIZE * 5) return null;
+        // NOTE: if enemy is outside of screen, always move it towards player
+        const isOutside = !isOutsideRect(player, this.boundary);
+        if (isOutside && distanceV2(this, player) < CELL_SIZE * 5) return null;
 
         this.targetDirectionDelay = Math.max(0, this.targetDirectionDelay - dt);
         if (this.targetDirectionDelay) return null;

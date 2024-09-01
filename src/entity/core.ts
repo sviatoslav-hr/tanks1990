@@ -1,5 +1,5 @@
 import { Context } from '../context';
-import { Rect, clamp, isPosInsideRect, xn, yn } from '../math';
+import { Rect, Vec2, clamp, isPosInsideRect, xn, yn } from '../math';
 
 export type Entity = {
     dead: boolean;
@@ -15,12 +15,11 @@ export enum Direction {
 }
 
 export function isOutsideRect(entity: Rect, boundary: Rect): boolean {
-    const { x, y, width, height } = boundary;
     return (
-        entity.x < x ||
-        entity.y < y ||
-        entity.x + entity.width > x + width ||
-        entity.y + entity.height > y + height
+        entity.x < boundary.x ||
+        entity.y < boundary.y ||
+        xn(entity) > xn(boundary) ||
+        yn(entity) > yn(boundary)
     );
 }
 
@@ -52,20 +51,28 @@ export function moveEntity(
     value: number,
     direction: Direction,
 ): void {
+    const movement = getMovement(value, direction);
+    entity.x += movement.x;
+    entity.y += movement.y;
+}
+
+export function getMovement(value: number, direction: Direction): Vec2 {
+    const vec: Vec2 = { x: 0, y: 0 };
     switch (direction) {
         case Direction.UP:
-            entity.y -= value;
+            vec.y -= value;
             break;
         case Direction.DOWN:
-            entity.y += value;
+            vec.y += value;
             break;
         case Direction.RIGHT:
-            entity.x += value;
+            vec.x += value;
             break;
         case Direction.LEFT:
-            entity.x -= value;
+            vec.x -= value;
             break;
     }
+    return vec;
 }
 
 export function scaleMovement(movement: number, dt: number): number {
