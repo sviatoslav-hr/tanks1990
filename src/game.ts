@@ -30,6 +30,10 @@ export class Game {
         this.player = new PlayerTank(this.screen, this);
     }
 
+    get infinite(): boolean {
+        return this.infiniteMode;
+    }
+
     get playing(): boolean {
         return this.status === GameStatus.PLAYING;
     }

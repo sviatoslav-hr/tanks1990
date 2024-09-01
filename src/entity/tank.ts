@@ -83,7 +83,7 @@ export abstract class Tank implements Entity {
         if (this.moving) {
             this.sprite.update(dt);
         }
-        if (this.game.infiniteMode && this instanceof PlayerTank) {
+        if (this.game.infinite && this instanceof PlayerTank) {
             const movement = getMovement(
                 scaleMovement(this.v, dt),
                 this.direction,
@@ -100,7 +100,7 @@ export abstract class Tank implements Entity {
             this.x = prevX;
             this.y = prevY;
         }
-        if (!this.game.infiniteMode) {
+        if (!this.game.infinite) {
             clampByBoundary(this, this.boundary);
         }
         this.updateShield(dt);
@@ -173,7 +173,7 @@ export abstract class Tank implements Entity {
 
     respawn(): void {
         const playerInInfinite =
-            this.game.infiniteMode && this instanceof PlayerTank;
+            this.game.infinite && this instanceof PlayerTank;
         if (playerInInfinite) {
             // NOTE: in infinite mode, player is always in the center
             this.x = this.boundary.x + this.boundary.width / 2 - this.width / 2;
@@ -287,7 +287,7 @@ export class PlayerTank extends Tank implements Entity {
 
     constructor(boundary: Rect, game: Game) {
         super(boundary, game);
-        if (game.infiniteMode) {
+        if (game.infinite) {
             this.x = boundary.x + boundary.width / 2;
             this.y = boundary.y + boundary.height / 2;
             console.log(this.x, this.y, boundary);
