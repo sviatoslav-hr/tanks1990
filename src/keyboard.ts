@@ -7,6 +7,7 @@ export type KeyCode =
     | 'KeyD'
     | 'KeyF'
     | 'KeyB'
+    | 'KeyP'
     | 'Backquote'
     | 'Space'
     | 'Escape';

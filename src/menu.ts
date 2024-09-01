@@ -193,7 +193,7 @@ export function initMenu(menu: Menu, game: Game): void {
                 <code>D</code> to move
             </li>
             <li>Press <code>Space</code> to shoot</li>
-            <li><code>Esc</code> to pause</li>
+            <li><code>P</code> to pause</li>
             <li><code>\`</code> to toggle FPS</li>
             <li><code>B</code> to display boundaries</li>
             <li><code>F</code> to toggle Fullscreen</li>

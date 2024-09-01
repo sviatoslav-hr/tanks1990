@@ -85,7 +85,7 @@ export class Renderer {
             game.showBoundaries = !game.showBoundaries;
             setStoredShowBoundaries(storage, game.showBoundaries);
         });
-        keyboard.onKeydown('Escape', () => {
+        keyboard.onKeydown('KeyP', () => {
             switch (game.status) {
                 case GameStatus.PLAYING: {
                     if (game.dead) {
