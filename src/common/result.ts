@@ -1,63 +1,73 @@
-import { Opt } from './option';
+export type Result<T, E = Error> = OkResult<T, E> | ErrorResult<T, E>;
 
-export type Result<T, E = Error> = OkResult<T, E> | ErrResult<T, E>;
-
-type RawResult<V> = { val: V; err?: never } | { val?: never; err: Error };
-
-abstract class BaseResult<T, E> {
-    static Ok<V, E>(val: V): Result<V, E> {
+export namespace Result {
+    export function Ok<V, E>(val?: void): Result<void, E>;
+    export function Ok<V, E>(val: V): Result<V, E>;
+    export function Ok<V, E>(val: V): Result<V, E> {
         return new OkResult(val);
     }
-
-    static Err<T, E>(error: E): Result<T, E> {
-        return new ErrResult(error);
+    export function Err<T, E = Error>(err: E): Result<T, E> {
+        return new ErrorResult(err);
     }
 
-    static fromError<T>(error: string | Error): Result<T, Error> {
+    export function fromError<T>(error: string | Error): Result<T, Error> {
         const err = typeof error === 'string' ? new Error(error) : error;
-        return new ErrResult(err);
+        return new ErrorResult(err);
     }
 
-    static try<V>(func: () => V): Result<V, Error> {
+    export function call<V>(func: () => V): Result<V, Error> {
         try {
             return Ok(func());
         } catch (e) {
-            return Err(this.unknownErr(e));
+            return Err(unknownErr(e));
         }
     }
 
-    static async tryAsync<V>(
-        source: () => PromiseLike<V> | PromiseLike<V>,
+    export async function async<V>(
+        source: (() => PromiseLike<V>) | PromiseLike<V>,
     ): Promise<Result<V>> {
         const promise = typeof source === 'function' ? source() : source;
         try {
             return Ok(await promise);
         } catch (e) {
-            return Err(this.unknownErr(e));
+            return Err(unknownErr(e));
         }
     }
 
-    private static unknownErr(e: unknown): Error {
+    export function wrap<T>(
+        err: unknown,
+        message: string,
+    ): ErrorResult<T, Error> {
+        return new ErrorResult(wrapError(err, message));
+    }
+
+    export async function promise<T, E = unknown>(
+        callback: (
+            resolve: (value: T) => void,
+            reject: (error: E) => void,
+        ) => void,
+    ): Promise<Result<T, E>> {
+        return new Promise<Result<T, E>>((resolve) => {
+            callback(
+                (value) => resolve(Ok(value)),
+                (error) => resolve(Err(error)),
+            );
+        });
+    }
+
+    function unknownErr(e: unknown): Error {
         if (e instanceof Error) return e;
         const err = new Error((e ?? 'unknown error').toString());
         return err;
     }
+}
 
-    get result(): RawResult<T> {
-        if (this.isOk()) {
-            return { val: this.val };
-        }
-        if (this.isErr()) {
-            return { err: BaseResult.unknownErr(this.err) };
-        }
-        throw new Error('Unexpected result');
-    }
-
+abstract class BaseResult<T, E> {
     isOk(): this is OkResult<T, E> {
         return this instanceof OkResult;
     }
 
-    isErr(): this is ErrResult<T, E> {
+    isErr(): this is ErrorResult<T, E> {
         return !this.isOk();
     }
 
@@ -69,85 +79,82 @@ abstract class BaseResult<T, E> {
         return this.isErr() && func(this.err);
     }
 
-    option(): Opt<T> {
-        return this.isOk() ? Opt.Some(this.val) : Opt.None();
+    nullable(): T | null {
+        return this.isOk() ? this.val : null;
     }
+
+    abstract unwrap(message?: string): T;
 
     unwrapOr(defaultVal: T): T {
         return this.isOk() ? this.val : defaultVal;
     }
 
     // Produce another result
-    map<U>(callback: (v: T) => U): Result<U, E> {
-        if (this.isOk()) {
-            return Result.Ok(callback(this.val));
-        }
-        if (this.isErr()) {
-            return Result.Err(this.err);
-        }
-        throw new Error('Unexpected');
-    }
+    abstract map<U>(callback: (v: T) => U): Result<U, E>;
 
     // Returns the provided default (if Err), or applies a function to the contained value (if Ok).
-    // mapOr<U>(defaultValue: U, callback: (v: T) => U): U {
-    //     const mapped = this.map(callback);
-    //     const res = mapped.orElse(() => defaultValue);
-    //     return res;
-    // }
+    mapOr<U>(defaultValue: U, callback: (v: T) => U): U {
+        return this.map(callback).orElse(() => defaultValue);
+    }
 
     // Calls func if the result is Err, otherwise returns the Ok value of self.
-    orElse(func: (e: E) => T): T {
-        if (this.isOk()) {
-            return this.val;
-        }
-        if (this.isErr()) {
-            return func(this.err);
-        }
-        throw new Error('Unexpected');
-    }
-}
+    abstract orElse(func: (e: E) => T): T;
 
-export function Ok<V, E>(val: V): Result<V, E> {
-    return BaseResult.Ok(val);
+    abstract context(message: string): Result<T, Error>;
 }
 
 class OkResult<T, E> extends BaseResult<T, E> {
     constructor(public readonly val: T) {
         super();
     }
-}
 
-export function Err<T, E>(val: E): Result<T, E> {
-    return BaseResult.Err(val);
-}
+    unwrap(): T {
+        return this.val;
+    }
 
-class ErrResult<T, E> extends BaseResult<T, E> {
-    constructor(public readonly err: E) {
-        super();
+    map<U>(callback: (v: T) => U): Result<U, E> {
+        return Result.Ok(callback(this.val));
+    }
+
+    orElse(): T {
+        return this.val;
+    }
+
+    context(): OkResult<T, Error> {
+        return this as OkResult<T, Error>;
     }
 }
 
-export const Result = {
-    Ok: Ok,
-    Err: Err,
-    try: BaseResult.try.bind(BaseResult),
-    tryAsync: BaseResult.tryAsync.bind(BaseResult),
-};
+class ErrorResult<T, E> extends BaseResult<T, E> {
+    constructor(public readonly err: E) {
+        super();
+    }
 
-// This is simpler version of Result
-// function Ok<V>(val: V): RawResult<V> {
-//     return { val };
-// }
-//
-// function Err<V>(error: string | Error): RawResult<V> {
-//     const err = typeof error === "string" ? new Error(error) : error;
-//     return { err };
-// }
+    unwrap(message?: string): T {
+        if (message != null) {
+            throw wrapError(this.err, message);
+        }
+        throw this.err;
+    }
 
-// function test1() {
-// const res = Ok(1 as const);
-// res.orElse()
-// const opt = Option.Some(1 as const);
-// opt.orElse()
+    map<U>(): Result<U, E> {
+        return Result.Err(this.err);
+    }
 
-// }
+    orElse(func: (e: E) => T): T {
+        return func(this.err);
+    }
+
+    context(message: string): ErrorResult<T, Error> {
+        return new ErrorResult(wrapError(this.err, message));
+    }
+}
+
+export function wrapError(err: unknown, message: string): Error {
+    if (err instanceof Error) {
+        const wrapped = new Error(message + '\n\t' + err.message);
+        wrapped.stack = err.stack;
+        return wrapped;
+    }
+    return new Error(message + '\n\t' + err);
+}
