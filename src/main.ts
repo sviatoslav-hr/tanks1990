@@ -12,7 +12,7 @@ function main(): void {
     const appElement = document.querySelector<HTMLDivElement>('#app');
     assert(appElement != null, 'No app element found');
 
-    preloadSounds();
+    preloadSounds().then(() => console.log('Sounds preloaded'));
     const renderer = new Renderer();
     appElement.append(renderer.canvas);
     const screen = {
