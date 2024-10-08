@@ -13,6 +13,93 @@ type MenuClickCallback = (button: MenuButton) => void;
 
 const DEFAULT_MENU_STATES = [MenuState.START, MenuState.PAUSE, MenuState.DEAD];
 
+export function initMenu(game: Game): Menu {
+    const menu = new Menu();
+    menu.addButton(
+        'New Game',
+        () => {
+            game.start();
+            menu.hide();
+        },
+        [MenuState.START],
+    );
+    menu.addButton(
+        'Infinite Game',
+        () => {
+            game.start(true);
+            menu.hide();
+        },
+        [MenuState.START],
+    );
+    menu.addButton(
+        'Resume',
+        () => {
+            game.resume();
+            menu.hide();
+        },
+        [MenuState.PAUSE],
+    );
+    menu.addButton(
+        'Restart',
+        () => {
+            game.start();
+            menu.hide();
+        },
+        [MenuState.DEAD],
+    );
+    menu.addButton(
+        'Main menu',
+        () => {
+            game.init();
+            menu.showMain();
+        },
+        [MenuState.PAUSE, MenuState.DEAD],
+    );
+    const optionsPage = new MenuPage('Options', menu);
+    {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'mx-auto w-fit p-4';
+        const MAX_VOLUME = 50;
+        const initValue = Math.floor(getVolume() * MAX_VOLUME);
+        const slider = new Slider({
+            name: 'volume',
+            label: 'Volume',
+            max: MAX_VOLUME,
+            initValue,
+        });
+        slider.onChange((value) => setVolume(value / MAX_VOLUME));
+        wrapper.append(slider);
+        optionsPage.setContent(wrapper);
+    }
+    menu.addPage(optionsPage);
+    menu.addButton('Options', () => {
+        optionsPage.resize(game.screen.width, game.screen.height);
+        optionsPage.show();
+        menu.hide();
+    });
+    const controlsPage = new MenuPage('Controls', menu);
+    controlsPage.setContent(html`
+        <ul class="mx-auto w-fit hints">
+            <li>
+                Use <code>W</code> <code>S</code> <code>A</code>
+                <code>D</code> to move
+            </li>
+            <li>Press <code>Space</code> to shoot</li>
+            <li><code>P</code> to pause</li>
+            <li><code>\`</code> to toggle FPS</li>
+            <li><code>B</code> to display boundaries</li>
+            <li><code>F</code> to toggle Fullscreen</li>
+        </ul>
+    `);
+    menu.addPage(controlsPage);
+    menu.addButton('Controls', () => {
+        controlsPage.resize(game.screen.width, game.screen.height);
+        controlsPage.show();
+        menu.hide();
+    });
+    return menu;
+}
+
 class MenuButton extends HTMLElement {
     private buttonEl: HTMLButtonElement;
     constructor(
@@ -119,92 +206,6 @@ export class MenuPage extends HTMLElement {
         };
         return closeButton;
     }
-}
-
-// TODO: move it below
-export function initMenu(menu: Menu, game: Game): void {
-    menu.addButton(
-        'New Game',
-        () => {
-            game.start();
-            menu.hide();
-        },
-        [MenuState.START],
-    );
-    menu.addButton(
-        'Infinite Game',
-        () => {
-            game.start(true);
-            menu.hide();
-        },
-        [MenuState.START],
-    );
-    menu.addButton(
-        'Resume',
-        () => {
-            game.resume();
-            menu.hide();
-        },
-        [MenuState.PAUSE],
-    );
-    menu.addButton(
-        'Restart',
-        () => {
-            game.start();
-            menu.hide();
-        },
-        [MenuState.DEAD],
-    );
-    menu.addButton(
-        'Main menu',
-        () => {
-            game.init();
-            menu.showMain();
-        },
-        [MenuState.PAUSE, MenuState.DEAD],
-    );
-    const optionsPage = new MenuPage('Options', menu);
-    {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'mx-auto w-fit p-4';
-        const MAX_VOLUME = 50;
-        const initValue = Math.floor(getVolume() * MAX_VOLUME);
-        const slider = new Slider({
-            name: 'volume',
-            label: 'Volume',
-            max: MAX_VOLUME,
-            initValue,
-        });
-        slider.onChange((value) => setVolume(value / MAX_VOLUME));
-        wrapper.append(slider);
-        optionsPage.setContent(wrapper);
-    }
-    menu.addPage(optionsPage);
-    menu.addButton('Options', () => {
-        optionsPage.resize(game.screen.width, game.screen.height);
-        optionsPage.show();
-        menu.hide();
-    });
-    const controlsPage = new MenuPage('Controls', menu);
-    controlsPage.setContent(html`
-        <ul class="mx-auto w-fit hints">
-            <li>
-                Use <code>W</code> <code>S</code> <code>A</code>
-                <code>D</code> to move
-            </li>
-            <li>Press <code>Space</code> to shoot</li>
-            <li><code>P</code> to pause</li>
-            <li><code>\`</code> to toggle FPS</li>
-            <li><code>B</code> to display boundaries</li>
-            <li><code>F</code> to toggle Fullscreen</li>
-        </ul>
-    `);
-    menu.addPage(controlsPage);
-    menu.addButton('Controls', () => {
-        controlsPage.resize(game.screen.width, game.screen.height);
-        controlsPage.show();
-        menu.hide();
-    });
 }
 
 export class Menu extends HTMLElement {

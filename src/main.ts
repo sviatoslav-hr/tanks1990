@@ -1,9 +1,9 @@
-import './style.css';
 import './globals';
+import './style.css';
 
 import { Game } from './game';
 import { keyboard } from './keyboard';
-import { Menu, initMenu } from './menu';
+import { initMenu } from './menu';
 import { Renderer, toggleFullscreen } from './renderer';
 import { preloadSounds } from './sound';
 import { assert } from './utils';
@@ -22,9 +22,8 @@ function main(): void {
         height: renderer.canvas.height,
     };
     const game = new Game(screen);
-    const menu = new Menu();
+    const menu = initMenu(game);
     appElement.append(menu);
-    initMenu(menu, game);
     menu.showMain();
     renderer.startAnimation(game, menu, localStorage);
 
