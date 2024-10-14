@@ -1,8 +1,8 @@
-import type { assert, assertError, panic } from './utils';
+import type { assert, assertError, throwError } from './utils';
 
 type AssertFn = typeof assert;
 type AssertErrorFn = typeof assertError;
-type PanicFn = typeof panic;
+type PanicFn = typeof throwError;
 
 declare global {
     var assert: AssertFn;

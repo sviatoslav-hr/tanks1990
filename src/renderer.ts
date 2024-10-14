@@ -12,7 +12,7 @@ import {
     setStoredShowBoundaries,
     setStoredShowFps,
 } from './storage';
-import { assertError, panic } from './utils';
+import { assertError, throwError } from './utils';
 
 export class Renderer {
     readonly canvas: HTMLCanvasElement;
@@ -24,14 +24,14 @@ export class Renderer {
         this.canvas.height = BASE_HEIGHT;
         const ctx2d =
             this.canvas.getContext('2d', { willReadFrequently: true }) ??
-            panic('Context should be available');
+            throwError('Context should be available');
         this.ctx = new Context(ctx2d);
     }
 
     // TODO: renderer shouldn't be aware of these classes,
     // it should be more abstract
     startAnimation(game: Game, menu: Menu, storage: Storage): void {
-        this.resizeCanvasByWindow();
+        this.resizeCanvas(window.innerWidth, window.innerHeight);
         let lastTimestamp = performance.now();
         game.showFps = getStoredShowFps(storage);
         game.showBoundaries = getStoredShowBoundaries(storage);
@@ -71,8 +71,23 @@ export class Renderer {
         this.handleKeyboard(game, menu, storage);
     }
 
-    resizeCanvasByWindow(): void {
-        this.resizeCanvas(window.innerWidth, window.innerHeight);
+    resizeCanvas(width: number, height: number): [number, number] {
+        const shouldScale = width < BASE_WIDTH || height < BASE_HEIGHT;
+        if (document.fullscreenElement || shouldScale) {
+            const padding = 20;
+            const sx = (width - padding) / BASE_WIDTH;
+            const sy = (height - padding) / BASE_HEIGHT;
+            const sMin = Math.min(sx, sy);
+            const resWidth = BASE_WIDTH * sMin;
+            const resHeight = BASE_HEIGHT * sMin;
+            this.canvas.style.width = resWidth + 'px';
+            this.canvas.style.height = resHeight + 'px';
+            return [resWidth, resHeight];
+        } else {
+            this.canvas.style.width = '';
+            this.canvas.style.height = '';
+            return [BASE_WIDTH, BASE_HEIGHT];
+        }
     }
 
     private handleKeyboard(game: Game, menu: Menu, storage: Storage): void {
@@ -109,23 +124,6 @@ export class Renderer {
             }
         });
     }
-
-    private resizeCanvas(width: number, height: number): void {
-        const shouldScale = width < BASE_WIDTH || height < BASE_HEIGHT;
-        if (document.fullscreenElement || shouldScale) {
-            const padding = 20;
-            const sx = (width - padding) / BASE_WIDTH;
-            const sy = (height - padding) / BASE_HEIGHT;
-            const sMin = Math.min(sx, sy);
-            const resWidth = BASE_WIDTH * sMin;
-            const resHeight = BASE_HEIGHT * sMin;
-            this.canvas.style.width = resWidth + 'px';
-            this.canvas.style.height = resHeight + 'px';
-        } else {
-            this.canvas.style.width = '';
-            this.canvas.style.height = '';
-        }
-    }
 }
 
 export async function toggleFullscreen(
@@ -138,12 +136,12 @@ export async function toggleFullscreen(
     if (document.fullscreenElement) {
         await document.exitFullscreen().catch((err) => {
             assertError(err);
-            panic('ERROR: failed to exit Fullscreen\n' + err.message);
+            throwError('ERROR: failed to exit Fullscreen\n' + err.message);
         });
     } else {
         await appElement.requestFullscreen().catch((err) => {
             assertError(err);
-            panic('ERROR: failed to enter Fullscreen\n' + err.message);
+            throwError('ERROR: failed to enter Fullscreen\n' + err.message);
         });
     }
 }

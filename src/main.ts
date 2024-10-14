@@ -26,11 +26,21 @@ function main(): void {
     appElement.append(menu);
     menu.showMain();
     renderer.startAnimation(game, menu, localStorage);
+    menu.resize(renderer.canvas.clientWidth, renderer.canvas.clientHeight);
 
-    window.addEventListener('resize', () => renderer.resizeCanvasByWindow());
+    window.addEventListener('resize', () => {
+        renderer.resizeCanvas(window.innerWidth, window.innerHeight);
+        menu.resize(renderer.canvas.clientWidth, renderer.canvas.clientHeight);
+    });
     keyboard.onKeydown('KeyF', () => {
         toggleFullscreen(appElement)
-            .then(() => renderer.resizeCanvasByWindow())
+            .then(() => {
+                renderer.resizeCanvas(window.innerWidth, window.innerHeight);
+                menu.resize(
+                    renderer.canvas.clientWidth,
+                    renderer.canvas.clientHeight,
+                );
+            })
             .catch((err) => console.error(err));
     });
 }

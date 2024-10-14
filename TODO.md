@@ -42,9 +42,15 @@
 - [ ] Use transformation matrices
 - [ ] implement Entity Component System (ECS)
 - [ ] **move the camera instead and keep the player in the center** increase boundaries of the world
-- [ ] cache best score instead of fetching it each frame
-- [ ] freeze Death menu for a sec
+- [ ] Score improvement
+    - [ ] rework the score UI
+    - [ ] cache best score instead of fetching it each frame
+- [ ] Menu improvements
+    - [x] fix menu UI and UX
+    - [x] make menu resize with the game window
+    - [ ] freeze Death menu for a sec (so after dying you don't immediately start a new game accidentally)
 - [ ] consider using states for animations ([see](https://www.youtube.com/watch?v=e3LGFrHqqiI))
 - [ ] make movement more realistic (speed decreases over time unless entity is moving)
+- [ ] revisit scaling (maybe scale manually instead of relying on CSS)
 - [x] sprite for bullets
 - [x] Add options to menu

@@ -73,7 +73,6 @@ export function initMenu(game: Game): Menu {
     }
     menu.addPage(optionsPage);
     menu.addButton('Options', () => {
-        optionsPage.resize(game.screen.width, game.screen.height);
         optionsPage.show();
         menu.hide();
     });
@@ -93,7 +92,6 @@ export function initMenu(game: Game): Menu {
     `);
     menu.addPage(controlsPage);
     menu.addButton('Controls', () => {
-        controlsPage.resize(game.screen.width, game.screen.height);
         controlsPage.show();
         menu.hide();
     });
@@ -132,6 +130,7 @@ class MenuButton extends HTMLElement {
 // TODO: update width on window resize
 export class MenuPage extends HTMLElement {
     private contentWrapper: HTMLDivElement;
+    private container: HTMLDivElement;
 
     constructor(
         title: string,
@@ -140,9 +139,12 @@ export class MenuPage extends HTMLElement {
         super();
         this.initStyles();
         this.hide();
+        this.append((this.container = this.createContainer()));
         this.append(this.createCloseButton());
-        this.append(this.createTitle(title));
-        this.append((this.contentWrapper = this.createContentWrapper()));
+        this.container.append(this.createTitle(title));
+        this.container.append(
+            (this.contentWrapper = this.createContentWrapper()),
+        );
     }
 
     get visible(): boolean {
@@ -157,11 +159,6 @@ export class MenuPage extends HTMLElement {
         this.style.display = 'none';
     }
 
-    resize(width: number, height: number): void {
-        this.style.width = `${width}px`;
-        this.style.height = `${height}px`;
-    }
-
     setContent(html: string | HTMLElement): void {
         if (typeof html === 'string') {
             this.contentWrapper.innerHTML = html;
@@ -171,8 +168,7 @@ export class MenuPage extends HTMLElement {
     }
 
     private initStyles(): void {
-        this.classList.add('bg-black-ierie');
-        this.style.opacity = '0.95';
+        this.classList.add('bg-transparent-black');
         this.style.position = 'absolute';
         this.style.width = '100%';
         this.style.height = '100%';
@@ -183,6 +179,12 @@ export class MenuPage extends HTMLElement {
         this.style.zIndex = '999';
     }
 
+    private createContainer(): HTMLDivElement {
+        const div = document.createElement('div');
+        div.classList.add('menu');
+        return div;
+    }
+
     private createContentWrapper(): HTMLDivElement {
         return document.createElement('div');
     }
@@ -190,9 +192,9 @@ export class MenuPage extends HTMLElement {
     private createTitle(text: string): HTMLElement {
         const element = document.createElement('h4');
         element.textContent = text;
-        element.classList.add('bg-black-ierie');
         element.style.textAlign = 'center';
         element.style.fontSize = '24px';
+        element.style.marginBottom = '16px';
         return element;
     }
 
@@ -212,19 +214,26 @@ export class Menu extends HTMLElement {
     private state: MenuState = MenuState.START;
     private prevState?: MenuState;
     private heading: HTMLHeadingElement;
+    private mainContainer: HTMLDivElement;
     private buttonContainer: HTMLElement;
     private buttons: MenuButton[] = [];
     private pages: MenuPage[] = [];
 
     constructor() {
         super();
-        this.classList.add('menu');
+        this.classList.add('block');
+
+        this.mainContainer = document.createElement('div');
+        this.append(this.mainContainer);
+        this.mainContainer.classList.add('menu');
+
         this.heading = document.createElement('h2');
-        this.append(this.heading);
+        this.mainContainer.append(this.heading);
+
         this.buttonContainer = document.createElement('div');
         this.buttonContainer.classList.add('flex-col');
-        this.append(this.buttonContainer);
         this.buttonContainer.append(...this.buttons);
+        this.mainContainer.append(this.buttonContainer);
     }
 
     get dead(): boolean {
@@ -270,14 +279,19 @@ export class Menu extends HTMLElement {
     }
 
     addPage(page: MenuPage): void {
-        // TODO: cut out dependency on this element out of menu
-        const appContainer = document.getElementById('app');
-        if (!appContainer) {
-            console.error('Expected app container to exist');
+        this.pages.push(page);
+        this.append(page);
+    }
+
+    resize(width: number, height: number): void {
+        if (!width || !height) {
+            console.error(
+                `Expected width and height to be non-zero, got width=${width}, height=${height}`,
+            );
             return;
         }
-        this.pages.push(page);
-        appContainer.append(page);
+        this.style.width = `${width}px`;
+        this.style.height = `${height}px`;
     }
 
     private setDisabled(disabled: boolean): void {
@@ -295,13 +309,13 @@ export class Menu extends HTMLElement {
         const prevState = this.state;
         this.state = state;
         if (state === MenuState.HIDDEN) {
-            this.hidden = true;
+            this.setMainVisibility(true);
             if (prevState !== MenuState.HIDDEN) {
                 this.prevState = prevState;
             }
             return;
         } else {
-            this.hidden = false;
+            this.setMainVisibility(false);
         }
         this.setHeadingByState(state);
         let focused = false;
@@ -311,6 +325,16 @@ export class Menu extends HTMLElement {
                 focused = true;
                 button.focus();
             }
+        }
+    }
+
+    private setMainVisibility(visible: boolean): void {
+        if (visible) {
+            this.mainContainer.hidden = true;
+            this.classList.remove('bg-transparent-black');
+        } else {
+            this.mainContainer.hidden = false;
+            this.classList.add('bg-transparent-black');
         }
     }
 
