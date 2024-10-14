@@ -4,6 +4,11 @@
 - [ ] Define game plan / trajectory / future development / main goal / idea
 - [ ] Setup ESLint
 - [ ] Create a separate Sprite class for static objects / non-animated
+- [ ] **Visuals**
+    - [ ] consider using [kenney.nl assets](https://kenney.nl/assets/top-down-tanks-redux)
+    - [ ] add smoke to explosions
+    - [ ] add fire effect to gun
+    - [ ] add more particles [kenney.nl](https://kenney.nl/assets/particle-pack)
 - [ ] **Sounds**
     - [x] find sounds (see [opengameart](https://opengameart.org/art-search-advanced?keys=&field_art_type_tid%5B%5D=12&sort_by=count&sort_order=DESC))
     - [x] shooting
@@ -38,6 +43,8 @@
     - [ ] spawn them randomly and draw as colored rects
     - [ ] make them affect the player and enemies
     - [ ] create assets
+- [ ] Display UI hints
+    - [ ] improve controls hints [kenney.nl](https://kenney.nl/assets/input-prompts)
 - [ ] add health and display it on top of tanks?
 - [ ] Use transformation matrices
 - [ ] implement Entity Component System (ECS)
@@ -48,6 +55,7 @@
 - [ ] Menu improvements
     - [x] fix menu UI and UX
     - [x] make menu resize with the game window
+    - [ ] use font from kenney.nl
     - [ ] freeze Death menu for a sec (so after dying you don't immediately start a new game accidentally)
 - [ ] consider using states for animations ([see](https://www.youtube.com/watch?v=e3LGFrHqqiI))
 - [ ] make movement more realistic (speed decreases over time unless entity is moving)
