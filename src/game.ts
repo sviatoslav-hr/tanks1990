@@ -71,7 +71,7 @@ export class Game {
         this.status = GameStatus.PLAYING;
     }
 
-    start(infinite = false): void {
+    start(infinite: boolean): void {
         this.infiniteMode = infinite;
         this.loadLevel();
         this.player.respawn();

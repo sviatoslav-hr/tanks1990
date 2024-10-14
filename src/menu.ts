@@ -18,7 +18,7 @@ export function initMenu(game: Game): Menu {
     menu.addButton(
         'New Game',
         () => {
-            game.start();
+            game.start(false);
             menu.hide();
         },
         [MenuState.START],
@@ -42,7 +42,7 @@ export function initMenu(game: Game): Menu {
     menu.addButton(
         'Restart',
         () => {
-            game.start();
+            game.start(game.infinite);
             menu.hide();
         },
         [MenuState.DEAD],
