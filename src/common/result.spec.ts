@@ -69,19 +69,19 @@ describe('Result', () => {
         expect(() => err.unwrap('error wrapper')).toThrow(
             wrapError('err', 'error wrapper'),
         );
-        expect(ok.unwrapOr(0)).toEqual(val);
+        expect(ok.unwrapOr()).toEqual(val);
         expect(err.unwrapOr(0)).toEqual(0);
     });
 
     it('map', () => {
         const val = 123;
-        const ok = Result.Ok(val);
+        const ok = Result.Ok<number, string>(val);
         const err = Result.Err<number, string>('err');
         const map = (v: number) => v * 2;
         expect(ok.map(map).unwrap()).toEqual(map(val));
-        expect(() => err.map(map).unwrap()).toThrow('err');
+        expect(() => err.map().unwrap()).toThrow('err');
         expect(ok.mapOr(0, map)).toEqual(map(val));
-        expect(err.mapOr(0, map)).toEqual(0);
+        expect(err.mapOr(0)).toEqual(0);
     });
 
     it('orElse', () => {
@@ -89,7 +89,7 @@ describe('Result', () => {
         const other = 456;
         const ok = Result.Ok(val);
         const err = Result.Err<number, string>('err');
-        expect(ok.orElse(() => other)).toEqual(val);
+        expect(ok.orElse()).toEqual(val);
         expect(err.orElse(() => other)).toEqual(other);
     });
 
@@ -97,7 +97,7 @@ describe('Result', () => {
         const err = Result.Err('err');
         const ctx = 'context';
         const val = 123;
-        expect(Result.Ok(val).context(ctx).unwrap()).toEqual(val);
+        expect(Result.Ok(val).context().unwrap()).toEqual(val);
         expect(() => err.context(ctx).unwrap()).toThrow(wrapError('err', ctx));
     });
 });
