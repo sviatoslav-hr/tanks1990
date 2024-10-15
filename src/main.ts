@@ -5,7 +5,7 @@ import { Game } from './game';
 import { keyboard } from './keyboard';
 import { initMenu } from './menu';
 import { Renderer, toggleFullscreen } from './renderer';
-import { preloadSounds } from './sound';
+import { preloadSounds, setVolume } from './sound';
 import { assert } from './utils';
 
 function main(): void {
@@ -13,6 +13,7 @@ function main(): void {
     assert(appElement != null, 'No app element found');
 
     preloadSounds().then(() => console.log('Sounds preloaded'));
+    setVolume(0.3);
     const renderer = new Renderer();
     appElement.append(renderer.canvas);
     const screen = {

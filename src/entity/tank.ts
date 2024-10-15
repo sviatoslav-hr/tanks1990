@@ -146,9 +146,8 @@ export abstract class Tank implements Entity {
     shoot(): void {
         if (this.shootingDelayMs > 0) return;
         this.shootingDelayMs = this.SHOOTING_PERIOD_MS;
-        if (!this.bot) {
-            playSound(SoundType.SHOOTING);
-        }
+        const volumeScale = this.bot ? 0.35 : 1;
+        playSound(SoundType.SHOOTING, volumeScale);
         const [px, py] = this.getProjectileStartPos();
         const deadProjectile = this.projectiles.find((p) => p.dead);
         if (deadProjectile) {
