@@ -6,9 +6,9 @@
 - [ ] Create a separate Sprite class for static objects / non-animated
 - [ ] **Visuals**
     - [ ] consider using [kenney.nl assets](https://kenney.nl/assets/top-down-tanks-redux)
-    - [ ] add smoke to explosions
     - [ ] add fire effect to gun
-    - [ ] add more particles [kenney.nl](https://kenney.nl/assets/particle-pack)
+    - [x] add smoke to explosions
+    - [x] add more particles [kenney.nl](https://kenney.nl/assets/particle-pack)
 - [ ] **Sounds**
     - [x] find sounds (see [opengameart](https://opengameart.org/art-search-advanced?keys=&field_art_type_tid%5B%5D=12&sort_by=count&sort_order=DESC))
     - [x] shooting
