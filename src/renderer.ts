@@ -37,6 +37,7 @@ export class Renderer {
         game.showBoundaries = getStoredShowBoundaries(storage);
         const animate = (timestamp: number): void => {
             const screen = game.screen;
+            // TODO: create Duration class/struct
             const dt = Math.min(timestamp - lastTimestamp, 1000 / 30);
             lastTimestamp = timestamp;
             this.ctx.clearScreen();

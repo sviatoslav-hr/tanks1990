@@ -1,16 +1,41 @@
-import { Color } from '../color';
 import { Context } from '../context';
 import { Rect } from '../math';
 import { assert } from '../utils';
-import { scaleMovement } from './core';
+import { getCachedImage, setCachedImage } from './sprite';
+
+const EXPLOSION_IMAGE_PATH = './assets/kenney_particle-pack/scorch_01.png';
+
+export function preloadEffectImages(): void {
+    // TODO: handle possible errors?
+    getExplosionImage();
+}
+
+function getExplosionImage(): HTMLImageElement {
+    const cached = getCachedImage(EXPLOSION_IMAGE_PATH);
+    if (cached) {
+        return cached;
+    }
+    const image = new Image();
+    image.src = EXPLOSION_IMAGE_PATH;
+    image.alt = 'Explosion';
+    setCachedImage(EXPLOSION_IMAGE_PATH, image);
+    return image;
+}
 
 export class ExplosionEffect {
-    private circleSize = 0;
+    // TODO: consider using a simpler data type for image instead of HTMLImageElement
+    private explosionImage: HTMLImageElement;
+    private animationTimeMS = 0;
+    private animationProgress = 0;
+    static readonly IMAGE_MAX_SCALE = 4;
+    static readonly ANIMATION_DURATION_MS = 1000;
 
     private constructor(
         private boundary: Rect,
         private particles: Particle[],
-    ) {}
+    ) {
+        this.explosionImage = getExplosionImage();
+    }
 
     static fromImageData(
         image: ImageData,
@@ -38,7 +63,9 @@ export class ExplosionEffect {
                     blue == null ||
                     alpha == null
                 ) {
-                    console.warn('Invalid image data');
+                    console.error(
+                        'ERROR: Invalid image data. Cannot extract color components',
+                    );
                     return null;
                 }
                 if (!alpha) continue;
@@ -55,27 +82,68 @@ export class ExplosionEffect {
                 particles.push(particle);
             }
         }
-        return new ExplosionEffect({ ...boundary }, particles);
+        boundary = {
+            x: boundary.x,
+            y: boundary.y,
+            width: width,
+            height: height,
+        };
+        return new ExplosionEffect(boundary, particles);
+    }
+
+    get isAnimationFinished(): boolean {
+        return this.animationProgress >= 1;
     }
 
     draw(ctx: Context): void {
-        const cx = this.boundary.x + this.boundary.width / 2;
-        const cy = this.boundary.y + this.boundary.height / 2;
-        ctx.ctx.shadowColor = Color.ORANGE_PHILIPPINE;
-        ctx.ctx.shadowBlur = this.circleSize;
-        ctx.setFillColor(Color.ORANGE_PHILIPPINE);
-        ctx.fillCircle(cx, cy, this.circleSize);
-        ctx.ctx.shadowColor = 'transparent';
-        ctx.ctx.shadowBlur = 0;
+        ctx.setGlobalAlpha(1 - easeOut(this.animationProgress));
+        this.drawExplosionImage(ctx);
         for (const p of this.particles) {
             p.draw(ctx);
         }
+        ctx.setGlobalAlpha(1);
+    }
+
+    private drawExplosionImage(ctx: Context): void {
+        if (!this.explosionImage.complete) {
+            // TODO: preload image
+            console.warn('WARN: Explosion image not loaded');
+            return;
+        }
+
+        const imageScale =
+            Math.min(easeOut(this.animationProgress) * 2, 1) *
+            ExplosionEffect.IMAGE_MAX_SCALE;
+
+        const xOffset =
+            (this.boundary.width * imageScale - this.boundary.width) / 2;
+        const yOffset =
+            (this.boundary.height * imageScale - this.boundary.height) / 2;
+        ctx.drawImage(
+            this.explosionImage,
+            0,
+            0,
+            this.explosionImage.width,
+            this.explosionImage.height,
+            this.boundary.x - xOffset,
+            this.boundary.y - yOffset,
+            this.boundary.width + xOffset * 2,
+            this.boundary.height + yOffset * 2,
+        );
     }
 
     update(dt: number): void {
-        this.circleSize += scaleMovement(this.boundary.width * 0.3 * 5, dt);
+        if (this.isAnimationFinished) {
+            return;
+        }
+        this.animationTimeMS += dt;
+        this.animationProgress =
+            this.animationTimeMS / ExplosionEffect.ANIMATION_DURATION_MS;
+        if (this.isAnimationFinished) {
+            return;
+        }
         for (const p of this.particles) {
-            p.update(dt);
+            p.update(dt, this.animationProgress);
         }
     }
 }
@@ -83,6 +151,9 @@ export class ExplosionEffect {
 class Particle {
     vx: number;
     vy: number;
+    velocityChangeLeftMS = Particle.VELOCITY_CHANGE_INTERVAL_MS;
+    static readonly MAX_VELOCITY = 30;
+    static readonly VELOCITY_CHANGE_INTERVAL_MS = 50;
 
     constructor(
         public x: number,
@@ -91,9 +162,8 @@ class Particle {
         public height: number,
         public color: string,
     ) {
-        const v = 100;
-        this.vx = Math.random() * v;
-        this.vy = Math.random() * v;
+        this.vx = Math.random() * Particle.MAX_VELOCITY;
+        this.vy = Math.random() * Particle.MAX_VELOCITY;
     }
 
     draw(ctx: Context): void {
@@ -101,8 +171,13 @@ class Particle {
         ctx.drawRect(this.x, this.y, this.width, this.height);
     }
 
-    update(dt: number): void {
-        this.x += scaleMovement(this.vx, dt);
-        this.y += scaleMovement(this.vy, dt);
+    update(dt: number, animationProgress: number): void {
+        const friction = 1 - easeOut(animationProgress);
+        this.x += this.vx * (dt / 1000) * friction;
+        this.y += this.vy * (dt / 1000) * friction;
     }
+}
+
+function easeOut(t: number): number {
+    return 1 - (1 - t) * (1 - t); // Basic quadratic ease-out
 }

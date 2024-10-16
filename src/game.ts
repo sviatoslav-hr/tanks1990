@@ -60,7 +60,9 @@ export class Game {
 
     private spawnEnemy(): void {
         // NOTE: push to the start because of rendering order (could be improved)
-        this.tanks.unshift(new EnemyTank(this.screen, this));
+        const enemy = new EnemyTank(this.screen, this);
+        enemy.respawn();
+        this.tanks.unshift(enemy);
     }
 
     pause(): void {
@@ -107,7 +109,11 @@ export class Game {
         for (const tank of this.tanks) {
             tank.showBoundary = showBoundary;
             tank.update(dt);
-            if (tank.dead && tank.bot) {
+            if (tank.dead && tank.bot && tank.isExplosionFinished) {
+                assert(
+                    tank instanceof EnemyTank,
+                    'Cannot respawn. Tank is not an EnemyTank',
+                );
                 tank.respawn();
             }
         }

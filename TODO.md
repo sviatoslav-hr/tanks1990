@@ -22,6 +22,7 @@
     - [ ] shooting
     - [ ] improve movement animation
     - [ ] improve explosion animation
+    - [ ] rewrite the animation system to use progress values (0-1) instead of dt updates (look into ExplosionEffect)
     - [x] **explosion on being killed (split the sprite into pieces and move them away)**
     - [x] shield
 - [ ] Static objects on map

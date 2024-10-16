@@ -7,6 +7,7 @@ import { initMenu } from './menu';
 import { Renderer, toggleFullscreen } from './renderer';
 import { preloadSounds, setVolume } from './sound';
 import { assert } from './utils';
+import { preloadEffectImages } from './entity/effect';
 
 function main(): void {
     const appElement = document.querySelector<HTMLDivElement>('#app');
@@ -14,6 +15,7 @@ function main(): void {
 
     preloadSounds().then(() => console.log('Sounds preloaded'));
     setVolume(0.3);
+    preloadEffectImages();
     const renderer = new Renderer();
     appElement.append(renderer.canvas);
     const screen = {

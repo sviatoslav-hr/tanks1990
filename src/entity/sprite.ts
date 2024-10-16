@@ -4,7 +4,19 @@ import { Transform } from '../math/transform';
 import { Vector2 } from '../math/vector';
 
 const ASSETS_URL = './assets';
+// TODO: consider using a simpler data type for images instead of HTMLImageElement
 const imageCache: Record<string, HTMLImageElement> = {};
+
+export function getCachedImage(src: string): HTMLImageElement | undefined {
+    return imageCache[src];
+}
+
+export function setCachedImage(src: string, image: HTMLImageElement): void {
+    if (imageCache[src]) {
+        console.warn(`WARN: overwriting cached image for "${src}"`);
+    }
+    imageCache[src] = image;
+}
 
 type SpriteOpts<K extends string> = {
     key: string;
@@ -34,14 +46,14 @@ export class Sprite<K extends string> {
         this.frameHeight = frameHeight;
         this.animationDelayMs = animationDelayMs ?? 100;
         const src = `${ASSETS_URL}/${key}.png`;
-        const cached = imageCache[src];
+        const cached = getCachedImage(src);
         if (cached) {
             this.image = cached;
         } else {
             this.image = new Image();
             this.image.alt = key;
             this.image.src = src;
-            imageCache[src] = this.image;
+            setCachedImage(src, this.image);
         }
         this.stateMap = {} as SpriteStateMap<K>;
         for (const [index, { name, frames }] of states.entries()) {

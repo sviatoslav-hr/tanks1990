@@ -34,8 +34,7 @@ export abstract class Tank implements Entity {
     public width = CELL_SIZE - 4;
     public height = CELL_SIZE - 4;
     public showBoundary = false;
-    public explosionTimeMs = 0;
-    public dead = true;
+    public dead = false;
     public hasShield = true;
     public projectiles: Projectile[] = [];
     public direction = Direction.UP;
@@ -44,17 +43,17 @@ export abstract class Tank implements Entity {
     protected dx = 0;
     protected dy = 0;
     protected v: number = 0;
-    protected shootingDelayMs = 0;
     protected shieldRemainingMs = 0;
     protected moving = false;
+    protected isExplostionExpected = false;
     protected explosionEffect?: ExplosionEffect | null;
     protected readonly SHOOTING_PERIOD_MS: number = 300;
     protected readonly MOVEMENT_SPEED: number = 100;
     protected readonly SHIELD_TIME_MS: number = 1000;
-    protected readonly EXPLOSION_MS: number = 300;
     protected readonly shieldSprite = createShieldSprite();
     protected abstract readonly sprite: Sprite<string>;
     protected index = Tank.index++;
+    protected shootingDelayMs = this.SHOOTING_PERIOD_MS;
 
     private static index = 0;
 
@@ -62,17 +61,30 @@ export abstract class Tank implements Entity {
         protected boundary: Rect,
         protected game: Game,
     ) {
+        // NOTE: spawn outside of the screen, expected to respawn
         this.x = -(2 * this.width);
         this.y = -(2 * this.height);
     }
 
+    get isExplosionFinished(): boolean {
+        if (this.isExplostionExpected) return false;
+        if (!this.explosionEffect) return true;
+        return this.explosionEffect.isAnimationFinished;
+    }
+
     update(dt: number): void {
-        this.explosionEffect?.update(dt);
         this.shieldSprite.update(dt);
         this.updateProjectiles(dt);
-        if (this.explosionTimeMs > 0 && this.explosionEffect) {
-            this.explosionTimeMs = Math.max(0, this.explosionTimeMs - dt);
-            return;
+        if (this.explosionEffect) {
+            if (this.explosionEffect.isAnimationFinished) {
+                this.explosionEffect = null;
+            } else {
+                assert(
+                    this.dead,
+                    'Explosion effect should only be used for dead entities',
+                );
+                this.explosionEffect.update(dt);
+            }
         }
         if (this.dead) {
             return;
@@ -108,7 +120,8 @@ export abstract class Tank implements Entity {
 
     draw(ctx: Context): void {
         this.explosionEffect?.draw(ctx);
-        if (this.explosionTimeMs && !this.explosionEffect) {
+        if (this.isExplostionExpected && !this.explosionEffect) {
+            this.isExplostionExpected = false;
             this.sprite.draw(ctx, this, this.direction);
             const particleSize = Math.floor(this.width / 16); // NOTE: 16 is single px in image
             this.explosionEffect = ExplosionEffect.fromImageData(
@@ -118,9 +131,6 @@ export abstract class Tank implements Entity {
             );
             this.explosionEffect?.draw(ctx);
             return;
-        }
-        if (!this.explosionTimeMs && this.explosionEffect) {
-            this.explosionEffect = null;
         }
         this.drawProjectiles(ctx);
         if (this.dead) return;
@@ -146,7 +156,7 @@ export abstract class Tank implements Entity {
     shoot(): void {
         if (this.shootingDelayMs > 0) return;
         this.shootingDelayMs = this.SHOOTING_PERIOD_MS;
-        const volumeScale = this.bot ? 0.35 : 1;
+        const volumeScale = this.bot ? 0.15 : 1;
         playSound(SoundType.SHOOTING, volumeScale);
         const [px, py] = this.getProjectileStartPos();
         const deadProjectile = this.projectiles.find((p) => p.dead);
@@ -171,6 +181,10 @@ export abstract class Tank implements Entity {
     }
 
     respawn(): void {
+        assert(
+            this.isExplosionFinished,
+            'Cannot respawn while explosion is in progress',
+        );
         const playerInInfinite =
             this.game.infinite && this instanceof PlayerTank;
         if (playerInInfinite) {
@@ -195,13 +209,13 @@ export abstract class Tank implements Entity {
 
     takeDamage(): boolean {
         if (this.dead) {
-            console.warn('Trying to kill a dead entity');
+            console.warn('WARN: Trying to kill a dead entity');
             return false;
         }
         const dead = !this.hasShield;
         if (dead) {
-            this.explosionTimeMs = this.EXPLOSION_MS;
             this.dead = true;
+            this.isExplostionExpected = true;
             playSound(SoundType.EXPLOSION);
         }
         return dead;
@@ -289,7 +303,6 @@ export class PlayerTank extends Tank implements Entity {
         if (game.infinite) {
             this.x = boundary.x + boundary.width / 2;
             this.y = boundary.y + boundary.height / 2;
-            console.log(this.x, this.y, boundary);
         } else {
             this.x = 0;
             this.y = 0;

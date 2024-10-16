@@ -122,6 +122,11 @@ export class Context {
         return this.ctx.measureText(text);
     }
 
+    setGlobalAlpha(alpha: number) {
+        assert(alpha >= 0 && alpha <= 1, 'Alpha should be in range [0, 1]');
+        this.ctx.globalAlpha = alpha;
+    }
+
     clearScreen(): void {
         this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
     }
