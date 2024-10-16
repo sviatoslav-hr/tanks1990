@@ -71,8 +71,9 @@ export class ExplosionEffect {
                 if (!alpha) continue;
                 const color = `rgb(${red},${green},${blue})`;
                 const particle = new Particle(
-                    x + boundary.x,
-                    y + boundary.y,
+                    x,
+                    y,
+                    boundary,
                     particleSize,
                     particleSize,
                     color,
@@ -82,12 +83,6 @@ export class ExplosionEffect {
                 particles.push(particle);
             }
         }
-        boundary = {
-            x: boundary.x,
-            y: boundary.y,
-            width: width,
-            height: height,
-        };
         return new ExplosionEffect(boundary, particles);
     }
 
@@ -158,6 +153,7 @@ class Particle {
     constructor(
         public x: number,
         public y: number,
+        public boundary: Rect,
         public width: number,
         public height: number,
         public color: string,
@@ -168,7 +164,12 @@ class Particle {
 
     draw(ctx: Context): void {
         ctx.setFillColor(this.color);
-        ctx.drawRect(this.x, this.y, this.width, this.height);
+        ctx.drawRect(
+            this.boundary.x + this.x,
+            this.boundary.y + this.y,
+            this.width,
+            this.height,
+        );
     }
 
     update(dt: number, animationProgress: number): void {
