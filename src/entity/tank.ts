@@ -31,8 +31,8 @@ import { Sprite, createShieldSprite, createTankSprite } from './sprite';
 export abstract class Tank implements Entity {
     public x = 0;
     public y = 0;
-    public width = CELL_SIZE - 6;
-    public height = CELL_SIZE - 6;
+    public width = CELL_SIZE - 8;
+    public height = CELL_SIZE - 8;
     public showBoundary = false;
     public dead = false;
     public hasShield = true;

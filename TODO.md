@@ -6,6 +6,7 @@
 - **FIXME**
     - [ ] fix player not being able to pass past two blocks even though there is a gap
     - [ ] cache best score instead of fetching it each frame
+    - [ ] fix enemy tank stuck between blocks and rotating like crazy
 - **REFACTOR**
     - [ ] move `Projectile` out of `Tank` class and make it less dependent on `Tank`
     - [ ] make `dt` be in seconds instead of milliseconds

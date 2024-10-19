@@ -14,7 +14,7 @@ import {
 import { Sprite } from './sprite';
 
 export class Projectile implements Entity {
-    public static SIZE = CELL_SIZE * 0.25;
+    public static SIZE = CELL_SIZE / 5;
     public dead = false;
     public width: number;
     public height: number;
