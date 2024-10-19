@@ -1,10 +1,19 @@
 # TODO:
 
-- [ ] Add Literal fullscreen button (in options or literally below the canvas)
-- [ ] Define game plan / trajectory / future development / main goal / idea
-- [ ] Setup ESLint
-- [ ] Create a separate Sprite class for static objects / non-animated
-- [ ] **Visuals**
+- **TODO**
+    - [ ] Define game plan / trajectory / future development / main goal / idea
+    - [ ] Define custom RNG and use it everywhere instead of `Math.random()`
+- **FIXME**
+    - [ ] fix player not being able to pass past two blocks even though there is a gap
+    - [ ] cache best score instead of fetching it each frame
+- **REFACTOR**
+    - [ ] move `Projectile` out of `Tank` class and make it less dependent on `Tank`
+    - [ ] make `dt` be in seconds instead of milliseconds
+    - [ ] revisit entire *infinite mode* implementation
+    - [ ] Use transformation matrices for calculating rotation and translation
+    - [ ] Create a separate Sprite class for static objects / non-animated
+    - [ ] consider using interface instead of class for `Vector2`
+- **Visuals**
     - [ ] consider using [kenney.nl assets](https://kenney.nl/assets/top-down-tanks-redux)
     - [ ] add fire effect to gun
     - [x] add smoke to explosions
@@ -23,19 +32,26 @@
     - [ ] improve movement animation
     - [ ] improve explosion animation
     - [ ] rewrite the animation system to use progress values (0-1) instead of dt updates (look into ExplosionEffect)
+    - [ ] consider using states for animations ([see](https://www.youtube.com/watch?v=e3LGFrHqqiI))
     - [x] **explosion on being killed (split the sprite into pieces and move them away)**
     - [x] shield
-- [ ] Static objects on map
-    - [ ] Create a static object (data type)
-    - [ ] Crate a sprite for a static objects
-    - [ ] Spawn random blocks (static objects) that cannot be passed through
-    - [ ] Update enemy ai: when enemy is facing the block, it should rotate ?
-- [ ] consider using interface instead of class for `Vector2`
-- [ ] add zoom in/out option
-- [ ] spawn random power-ups
-- [ ] **Setup map**
-    - [ ] Spawn random obstacles
-    - [ ] map editor?
+- [ ] **Movement**
+    - [ ] make movement more realistic (speed decreases over time unless entity is moving)
+- [ ] **New feature Ideas**
+    - [ ] Add Literal fullscreen button (in options or literally below the canvas)
+    - [ ] add health and display it on top of tanks?
+    - [ ] spawn random power-ups
+    - [ ] add zoom in/out option
+    - [ ] More random obstacles/more variety
+    - [ ] Separate turret from tank and make it rotate independently
+- [ ] **Improvements**
+    - [ ] Display UI hints
+        - [ ] improve controls hints [kenney.nl](https://kenney.nl/assets/input-prompts)
+    - [ ] rework the score UI
+        - [ ] display score somewhere on the screen while game is active
+        - [ ] display score on pause screen
+        - [ ] display score on the death screen
+        - [ ] display best score on the death screen
 - [ ] **Power ups**
     - [ ] about about what power ups there should be
         - [ ] time stop
@@ -44,22 +60,23 @@
     - [ ] spawn them randomly and draw as colored rects
     - [ ] make them affect the player and enemies
     - [ ] create assets
-- [ ] Display UI hints
-    - [ ] improve controls hints [kenney.nl](https://kenney.nl/assets/input-prompts)
-- [ ] add health and display it on top of tanks?
-- [ ] Use transformation matrices
-- [ ] implement Entity Component System (ECS)
-- [ ] **move the camera instead and keep the player in the center** increase boundaries of the world
-- [ ] Score improvement
-    - [ ] rework the score UI
-    - [ ] cache best score instead of fetching it each frame
 - [ ] Menu improvements
     - [x] fix menu UI and UX
     - [x] make menu resize with the game window
+    - [ ] add animation for menu showing up and exiting
     - [ ] use font from kenney.nl
     - [ ] freeze Death menu for a sec (so after dying you don't immediately start a new game accidentally)
-- [ ] consider using states for animations ([see](https://www.youtube.com/watch?v=e3LGFrHqqiI))
-- [ ] make movement more realistic (speed decreases over time unless entity is moving)
 - [ ] revisit scaling (maybe scale manually instead of relying on CSS)
+- [ ] **IDK**
+    - [ ] **move the camera instead and keep the player in the center**
+        - [ ] ??? increase boundaries of the world
+    - [ ] Setup ESLint
+    - [ ] implement Entity Component System (ECS)
 - [x] sprite for bullets
 - [x] Add options to menu
+- **DONE**
+    - [x] Static objects on map
+        - [x] Create a static object (data type)
+        - [x] Crate a sprite for a static objects
+        - [x] Spawn random blocks (static objects) that cannot be passed through
+        - [x] Update enemy ai: when enemy is facing the block, it should rotate ?

@@ -101,7 +101,6 @@ export class ExplosionEffect {
 
     private drawExplosionImage(ctx: Context): void {
         if (!this.explosionImage.complete) {
-            // TODO: preload image
             console.warn('WARN: Explosion image not loaded');
             return;
         }

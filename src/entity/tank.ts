@@ -31,8 +31,8 @@ import { Sprite, createShieldSprite, createTankSprite } from './sprite';
 export abstract class Tank implements Entity {
     public x = 0;
     public y = 0;
-    public width = CELL_SIZE - 4;
-    public height = CELL_SIZE - 4;
+    public width = CELL_SIZE - 6;
+    public height = CELL_SIZE - 6;
     public showBoundary = false;
     public dead = false;
     public hasShield = true;
@@ -48,7 +48,7 @@ export abstract class Tank implements Entity {
     protected isExplostionExpected = false;
     protected explosionEffect?: ExplosionEffect | null;
     protected readonly SHOOTING_PERIOD_MS: number = 300;
-    protected readonly MOVEMENT_SPEED: number = 100;
+    protected readonly MOVEMENT_SPEED: number = 80;
     protected readonly SHIELD_TIME_MS: number = 1000;
     protected readonly shieldSprite = createShieldSprite();
     protected abstract readonly sprite: Sprite<string>;
@@ -297,7 +297,7 @@ export class PlayerTank extends Tank implements Entity {
     public dead = true;
     public score = 0;
     public survivedMs = 0;
-    protected readonly MOVEMENT_SPEED: number = 300;
+    protected readonly MOVEMENT_SPEED: number = 160;
     protected readonly sprite = createTankSprite('tank_yellow');
 
     constructor(boundary: Rect, game: Game) {
