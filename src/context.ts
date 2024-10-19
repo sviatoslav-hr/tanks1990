@@ -123,7 +123,10 @@ export class Context {
     }
 
     setGlobalAlpha(alpha: number) {
-        assert(alpha >= 0 && alpha <= 1, 'Alpha should be in range [0, 1]');
+        assert(
+            alpha >= 0 && alpha <= 1,
+            `Alpha should be in range [0, 1]. Got: ${alpha}`,
+        );
         this.ctx.globalAlpha = alpha;
     }
 

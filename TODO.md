@@ -4,7 +4,7 @@
     - [ ] Define game plan / trajectory / future development / main goal / idea
     - [ ] Define custom RNG and use it everywhere instead of `Math.random()`
 - **FIXME**
-    - [ ] fix player not being able to pass past two blocks even though there is a gap
+    - [ ] fix sound explosion delay
     - [ ] cache best score instead of fetching it each frame
     - [ ] fix enemy tank stuck between blocks and rotating like crazy
 - **REFACTOR**
@@ -45,6 +45,9 @@
     - [ ] add zoom in/out option
     - [ ] More random obstacles/more variety
     - [ ] Separate turret from tank and make it rotate independently
+    - [ ] Show error notifications in dev mode
+        - [ ] define dev mode
+        - [ ] custom logger
 - [ ] **Improvements**
     - [ ] Display UI hints
         - [ ] improve controls hints [kenney.nl](https://kenney.nl/assets/input-prompts)
@@ -76,6 +79,8 @@
 - [x] sprite for bullets
 - [x] Add options to menu
 - **DONE**
+    - [x] Animation: polish explosion animation
+    - [x] FIXME: fix player not being able to pass past two blocks even though there is a gap
     - [x] Static objects on map
         - [x] Create a static object (data type)
         - [x] Crate a sprite for a static objects

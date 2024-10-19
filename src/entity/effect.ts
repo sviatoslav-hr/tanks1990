@@ -1,5 +1,6 @@
 import { Context } from '../context';
-import { Rect } from '../math';
+import { Rect, clamp } from '../math';
+import { Vector2 } from '../math/vector';
 import { assert } from '../utils';
 import { getCachedImage, setCachedImage } from './sprite';
 
@@ -42,17 +43,13 @@ export class ExplosionEffect {
         boundary: Rect,
         particleSize: number,
     ): ExplosionEffect | null {
-        const { width, height } = boundary;
-        assert(image.width === width);
-        assert(image.height === height);
+        assert(image.width === boundary.width);
+        assert(image.height === boundary.height);
+
         const particles: Particle[] = [];
-        // const cx = boundary.x + width / 2;
-        // const cy = boundary.y + height / 2;
-        const cx = boundary.x;
-        const cy = boundary.y;
-        for (let y = 0; y < height; y += particleSize) {
-            for (let x = 0; x < width; x += particleSize) {
-                const index = (y * width + x) * 4;
+        for (let y = 0; y < boundary.height; y += particleSize) {
+            for (let x = 0; x < boundary.width; x += particleSize) {
+                const index = (y * boundary.width + x) * 4;
                 const red = image.data[index];
                 const green = image.data[index + 1];
                 const blue = image.data[index + 2];
@@ -68,21 +65,43 @@ export class ExplosionEffect {
                     );
                     return null;
                 }
-                if (!alpha) continue;
-                const color = `rgb(${red},${green},${blue})`;
+                if (!alpha || alpha < 0) continue;
+
+                let color: string | undefined;
+                if (alpha < 255) {
+                    color = `rgba(${red},${green},${blue},${alpha / 255})`;
+                } else {
+                    color = `rgb(${red},${green},${blue})`;
+                }
                 const particle = new Particle(
-                    x,
-                    y,
-                    boundary,
-                    particleSize,
-                    particleSize,
+                    new Vector2(x, y).add(boundary),
+                    new Vector2(particleSize, particleSize),
                     color,
+                    boundary,
                 );
-                if (particle.x - width / 2 < cx) particle.vx *= -1;
-                if (particle.y - width / 2 < cy) particle.vy *= -1;
                 particles.push(particle);
             }
         }
+        let neParticles = 0;
+        let nwParticles = 0;
+        let swParticles = 0;
+        let seParticles = 0;
+        const cx = boundary.x + boundary.width / 2;
+        const cy = boundary.y + boundary.height / 2;
+        for (const p of particles) {
+            if (p.destination.x > cx && p.destination.y > cy) {
+                seParticles++;
+            } else if (p.destination.x > cx && p.destination.y < cy) {
+                neParticles++;
+            } else if (p.destination.x < cx && p.destination.y > cy) {
+                swParticles++;
+            } else {
+                nwParticles++;
+            }
+        }
+        console.log(
+            `Explosion particles: NE=${neParticles}, NW=${nwParticles}, SW=${swParticles}, SE=${seParticles}`,
+        );
         return new ExplosionEffect(boundary, particles);
     }
 
@@ -90,12 +109,15 @@ export class ExplosionEffect {
         return this.animationProgress >= 1;
     }
 
+    failedCount = 0;
+
     draw(ctx: Context): void {
-        ctx.setGlobalAlpha(1 - easeOut(this.animationProgress));
-        this.drawExplosionImage(ctx);
+        // ctx.setGlobalAlpha(1 - easeIn(this.animationProgress));
+        ctx.setGlobalAlpha(1 - easeOut2(this.animationProgress));
         for (const p of this.particles) {
             p.draw(ctx);
         }
+        this.drawExplosionImage(ctx);
         ctx.setGlobalAlpha(1);
     }
 
@@ -106,7 +128,7 @@ export class ExplosionEffect {
         }
 
         const imageScale =
-            Math.min(easeOut(this.animationProgress) * 2, 1) *
+            Math.min(easeOut2(this.animationProgress) * 2, 1) *
             ExplosionEffect.IMAGE_MAX_SCALE;
 
         const xOffset =
@@ -131,53 +153,72 @@ export class ExplosionEffect {
             return;
         }
         this.animationTimeMS += dt;
-        this.animationProgress =
-            this.animationTimeMS / ExplosionEffect.ANIMATION_DURATION_MS;
+        this.animationProgress = clamp(
+            this.animationTimeMS / ExplosionEffect.ANIMATION_DURATION_MS,
+            0,
+            1,
+        );
         if (this.isAnimationFinished) {
             return;
         }
         for (const p of this.particles) {
-            p.update(dt, this.animationProgress);
+            p.update(this.animationProgress);
         }
     }
 }
 
 class Particle {
-    vx: number;
-    vy: number;
-    velocityChangeLeftMS = Particle.VELOCITY_CHANGE_INTERVAL_MS;
-    static readonly MAX_VELOCITY = 30;
-    static readonly VELOCITY_CHANGE_INTERVAL_MS = 50;
+    public readonly destination: Vector2;
+    public initialPosition: Vector2;
 
     constructor(
-        public x: number,
-        public y: number,
-        public boundary: Rect,
-        public width: number,
-        public height: number,
-        public color: string,
+        public readonly position: Vector2,
+        public readonly size: Vector2,
+        public readonly color: string,
+        boundary: Rect,
     ) {
-        this.vx = Math.random() * Particle.MAX_VELOCITY;
-        this.vy = Math.random() * Particle.MAX_VELOCITY;
+        this.initialPosition = position.clone();
+        const boundaryCenter = new Vector2(boundary.width, boundary.height)
+            .divideScalar(2)
+            .add(boundary);
+        const travelDistance = new Vector2(
+            boundary.width / 2,
+            boundary.height / 2,
+        );
+        travelDistance.multiply({ x: Math.random(), y: Math.random() });
+        this.destination = position
+            .clone()
+            .sub(boundaryCenter)
+            .normalize()
+            .multiply(travelDistance)
+            .add(position);
     }
 
     draw(ctx: Context): void {
         ctx.setFillColor(this.color);
         ctx.drawRect(
-            this.boundary.x + this.x,
-            this.boundary.y + this.y,
-            this.width,
-            this.height,
+            this.position.x,
+            this.position.y,
+            this.size.width,
+            this.size.height,
         );
     }
 
-    update(dt: number, animationProgress: number): void {
-        const friction = 1 - easeOut(animationProgress);
-        this.x += this.vx * (dt / 1000) * friction;
-        this.y += this.vy * (dt / 1000) * friction;
+    update(animationProgress: number): void {
+        const distance = this.destination
+            .clone()
+            .sub(this.initialPosition)
+            .multiplyScalar(easeOut2(animationProgress));
+        this.position.setFrom(distance.add(this.initialPosition));
     }
 }
 
+// TODO: move to a separate file
+function easeOut2(t: number): number {
+    return easeOut(easeOut(t));
+    // return 1 - Math.pow(1 - t, 3); // Cubic ease-out, end slow
+}
+
 function easeOut(t: number): number {
-    return 1 - (1 - t) * (1 - t); // Basic quadratic ease-out
+    return 1 - (1 - t) * (1 - t); // Basic quadratic ease-out, end slow
 }
