@@ -183,6 +183,10 @@ export abstract class Tank implements Entity {
     }
 
     respawn(): void {
+        if (!this.bot) {
+            this.explosionEffect = null;
+            this.isExplostionExpected = false;
+        }
         assert(
             this.isExplosionFinished,
             'Cannot respawn while explosion is in progress',
