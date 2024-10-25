@@ -26,9 +26,11 @@ export namespace Result {
     export async function async<V>(
         source: (() => PromiseLike<V>) | PromiseLike<V>,
     ): Promise<Result<V>> {
-        const promise = typeof source === 'function' ? source() : source;
         try {
-            return Ok(await promise);
+            const promise = await (typeof source === 'function'
+                ? source()
+                : source);
+            return Ok(promise);
         } catch (e) {
             return Err(unknownErr(e));
         }

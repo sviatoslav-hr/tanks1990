@@ -1,9 +1,10 @@
 import { Context } from '../context';
 import { Rect, Vec2, clamp, isPosInsideRect, xn, yn } from '../math';
+import { Duration } from '../math/duration.ts';
 
 export type Entity = {
     dead: boolean;
-    update(dt: number): void;
+    update(dt: Duration): void;
     draw(ctx: Context): void;
 } & Rect;
 
@@ -75,6 +76,6 @@ export function getMovement(value: number, direction: Direction): Vec2 {
     return vec;
 }
 
-export function scaleMovement(movement: number, dt: number): number {
-    return movement * (dt / 1000);
+export function scaleMovement(movement: number, dt: Duration): number {
+    return movement * (dt.milliseconds / 1000);
 }

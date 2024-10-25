@@ -3,6 +3,7 @@ import { Rect, clamp } from '../math';
 import { Vector2 } from '../math/vector';
 import { assert } from '../utils';
 import { getCachedImage, setCachedImage } from './sprite';
+import {Duration} from "../math/duration.ts";
 
 const EXPLOSION_IMAGE_PATH = './assets/kenney_particle-pack/scorch_01.png';
 
@@ -26,10 +27,10 @@ function getExplosionImage(): HTMLImageElement {
 export class ExplosionEffect {
     // TODO: consider using a simpler data type for image instead of HTMLImageElement
     private explosionImage: HTMLImageElement;
-    private animationTimeMS = 0;
+    private animationTime = Duration.zero();
     private animationProgress = 0;
     static readonly IMAGE_MAX_SCALE = 4;
-    static readonly ANIMATION_DURATION_MS = 1000;
+    static readonly ANIMATION_DURATION = Duration.milliseconds(1000);
 
     private constructor(
         private boundary: Rect,
@@ -109,10 +110,7 @@ export class ExplosionEffect {
         return this.animationProgress >= 1;
     }
 
-    failedCount = 0;
-
     draw(ctx: Context): void {
-        // ctx.setGlobalAlpha(1 - easeIn(this.animationProgress));
         ctx.setGlobalAlpha(1 - easeOut2(this.animationProgress));
         for (const p of this.particles) {
             p.draw(ctx);
@@ -148,13 +146,13 @@ export class ExplosionEffect {
         );
     }
 
-    update(dt: number): void {
+    update(dt: Duration): void {
         if (this.isAnimationFinished) {
             return;
         }
-        this.animationTimeMS += dt;
+        this.animationTime.add(dt);
         this.animationProgress = clamp(
-            this.animationTimeMS / ExplosionEffect.ANIMATION_DURATION_MS,
+            this.animationTime.milliseconds / ExplosionEffect.ANIMATION_DURATION.milliseconds,
             0,
             1,
         );

@@ -1,7 +1,7 @@
 import { Color } from './color';
 import { BASE_HEIGHT, BASE_WIDTH, CELL_SIZE } from './const';
 import { Context } from './context';
-import { drawFPS, drawGrid, drawScore } from './draw';
+import { drawGrid, drawScore } from './draw';
 import { Game, GameStatus } from './game';
 import { keyboard } from './keyboard';
 import { Menu } from './menu';
@@ -13,10 +13,14 @@ import {
     setStoredShowFps,
 } from './storage';
 import { assertError, throwError } from './utils';
+import { Duration } from './math/duration.ts';
+
+type AnimationCallback = (timestamp: number) => void;
 
 export class Renderer {
     readonly canvas: HTMLCanvasElement;
     readonly ctx: Context;
+    private lastTimestamp = 0;
 
     constructor() {
         this.canvas = document.createElement('canvas');
@@ -32,42 +36,15 @@ export class Renderer {
     // it should be more abstract
     startAnimation(game: Game, menu: Menu, storage: Storage): void {
         this.resizeCanvas(window.innerWidth, window.innerHeight);
-        let lastTimestamp = performance.now();
+        this.lastTimestamp = performance.now();
         game.showFps = getStoredShowFps(storage);
         game.showBoundaries = getStoredShowBoundaries(storage);
-        const animate = (timestamp: number): void => {
-            const screen = game.screen;
-            // TODO: create Duration class/struct
-            const dt = Math.min(timestamp - lastTimestamp, 1000 / 30);
-            lastTimestamp = timestamp;
-            this.ctx.clearScreen();
-            this.ctx.setFillColor(Color.BLACK_RAISIN);
-            this.ctx.drawRect(
-                game.screen.x,
-                game.screen.y,
-                game.screen.width,
-                game.screen.height,
-            );
-            drawGrid(this.ctx, game, CELL_SIZE);
-            game.drawTanks(this.ctx);
-            if (game.showFps) drawFPS(this.ctx, dt);
-
-            if (
-                game.paused ||
-                game.dead ||
-                (game.playing && keyboard.isDown('KeyQ'))
-            ) {
-                drawScore(this.ctx, game.player, screen, storage);
-            }
-            if (game.player.dead && game.playing && !menu.dead) {
-                saveBestScore(storage, game.player.score);
-                menu.showDead();
-            }
-            game.updateTanks(dt, game.showBoundaries);
-            keyboard.reset();
-            window.requestAnimationFrame(animate);
-        };
-        window.requestAnimationFrame(animate);
+        const animationCallback = this.createAnimationCallback(
+            game,
+            menu,
+            storage,
+        );
+        window.requestAnimationFrame(animationCallback);
         // TODO: animation function shouldn't be responsible for Keyboard handling
         this.handleKeyboard(game, menu, storage);
     }
@@ -124,6 +101,46 @@ export class Renderer {
                     console.warn('Unhandled value ', game.status);
             }
         });
+    }
+
+    private createAnimationCallback(
+        game: Game,
+        menu: Menu,
+        storage: Storage,
+    ): AnimationCallback {
+        const animationCallback = (timestamp: number): void => {
+            const screen = game.screen;
+            const dt = Duration.since(this.lastTimestamp).min(1000 / 30);
+            this.lastTimestamp = timestamp;
+            this.ctx.clearScreen();
+            this.ctx.setFillColor(Color.BLACK_RAISIN);
+            this.ctx.drawRect(
+                game.screen.x,
+                game.screen.y,
+                game.screen.width,
+                game.screen.height,
+            );
+            drawGrid(this.ctx, game, CELL_SIZE);
+            game.drawTanks(this.ctx);
+            if (game.showFps) game.fps.draw(this.ctx);
+
+            if (
+                game.paused ||
+                game.dead ||
+                (game.playing && keyboard.isDown('KeyQ'))
+            ) {
+                drawScore(this.ctx, game.player, screen, storage);
+            }
+            if (game.player.dead && game.playing && !menu.dead) {
+                saveBestScore(storage, game.player.score);
+                menu.showDead();
+            }
+            game.updateTanks(dt, game.showBoundaries);
+            keyboard.reset();
+            game.fps.update(dt);
+            window.requestAnimationFrame(animationCallback);
+        };
+        return animationCallback;
     }
 }
 

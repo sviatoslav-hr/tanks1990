@@ -12,6 +12,7 @@ import {
     scaleMovement,
 } from './core';
 import { Sprite } from './sprite';
+import {Duration} from "../math/duration.ts";
 
 export class Projectile implements Entity {
     public static SIZE = CELL_SIZE / 5;
@@ -23,7 +24,7 @@ export class Projectile implements Entity {
         key: 'bullet',
         frameWidth: 16,
         frameHeight: 16,
-        animationDelayMs: 100,
+        frameDuration: Duration.milliseconds(100),
         states: [{ name: 'moving', frames: 2 }],
     });
 
@@ -40,7 +41,7 @@ export class Projectile implements Entity {
         this.height = size;
     }
 
-    update(dt: number): void {
+    update(dt: Duration): void {
         if (this.dead) {
             return;
         }

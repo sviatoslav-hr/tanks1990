@@ -3,6 +3,7 @@ import { Context } from '../context';
 import { Rect } from '../math';
 import { Entity } from './core';
 import { Sprite } from './sprite';
+import { Duration } from '../math/duration.ts';
 
 export type BlockOpts = Rect & {
     texture: Color | Sprite<'static'>;
@@ -29,7 +30,7 @@ export class Block implements Entity {
         }
     }
 
-    update(dt: number): void {
+    update(dt: Duration): void {
         this.sprite?.update(dt);
     }
 

@@ -2,6 +2,7 @@ import { Context } from '../context';
 import { Rect } from '../math';
 import { Transform } from '../math/transform';
 import { Vector2 } from '../math/vector';
+import { Duration } from '../math/duration.ts';
 
 const ASSETS_URL = './assets';
 // TODO: consider using a simpler data type for images instead of HTMLImageElement
@@ -22,7 +23,7 @@ type SpriteOpts<K extends string> = {
     key: string;
     frameWidth: number;
     frameHeight: number;
-    animationDelayMs?: number; // default 100
+    frameDuration?: Duration; // default 100
     states: { name: K; frames: number }[];
 };
 
@@ -31,20 +32,22 @@ type SpriteStateMap<K extends string> = { [Key in K]: SpriteState<Key> };
 
 export class Sprite<K extends string> {
     private frameIndex = 0;
-    private frameWidth = 0;
-    private frameHeight = 0;
-    private animationDt = 0;
+    private animationDt = Duration.zero();
     private state?: SpriteState<K>;
+    private readonly frameWidth: number = 0;
+    private readonly frameHeight: number = 0;
     private readonly stateKeys: readonly K[];
-    private readonly animationDelayMs: number;
+    private readonly frameDuration = new Duration(100);
     private readonly image: HTMLImageElement;
     private readonly stateMap: SpriteStateMap<K>;
 
     constructor(opts: SpriteOpts<K>) {
-        const { key, frameWidth, frameHeight, animationDelayMs, states } = opts;
+        const { key, frameWidth, frameHeight, frameDuration, states } = opts;
         this.frameWidth = frameWidth;
         this.frameHeight = frameHeight;
-        this.animationDelayMs = animationDelayMs ?? 100;
+        if (frameDuration) {
+            this.frameDuration.setFrom(frameDuration);
+        }
         const src = `${ASSETS_URL}/${key}.png`;
         const cached = getCachedImage(src);
         if (cached) {
@@ -66,11 +69,11 @@ export class Sprite<K extends string> {
         this.stateKeys = states.map((s) => s.name);
     }
 
-    update(dt: number): void {
-        this.animationDt += dt;
-        if (this.animationDt >= this.animationDelayMs) {
+    update(dt: Duration): void {
+        this.animationDt.add(dt);
+        if (this.animationDt.isMoreThan(this.frameDuration)) {
             this.frameIndex++;
-            this.animationDt -= this.animationDelayMs;
+            this.animationDt.sub(this.frameDuration);
         }
         const maxFrames = this.state?.frames ?? 1;
         if (this.frameIndex > maxFrames - 1) this.frameIndex = 0;
@@ -103,7 +106,7 @@ export class Sprite<K extends string> {
 
     selectState(state: K): void {
         this.state = this.stateMap[state];
-        this.animationDt = 0;
+        this.animationDt.milliseconds = 0;
         this.frameIndex = 0;
     }
 
@@ -122,7 +125,7 @@ export function createShieldSprite() {
         key: 'shield',
         frameWidth: 64,
         frameHeight: 64,
-        animationDelayMs: 100,
+        frameDuration: Duration.milliseconds(100),
         states: [{ name: 'flowing', frames: 6 }],
     });
 }
@@ -132,7 +135,7 @@ export function createTankSprite(key: 'tank_yellow' | 'tank_green') {
         key: key,
         frameWidth: 64,
         frameHeight: 64,
-        animationDelayMs: 100,
+        frameDuration: Duration.milliseconds(100),
         states: [{ name: 'moving', frames: 2 }],
     });
 }

@@ -5,26 +5,8 @@ import { BASE_FONT_SIZE, BASE_PADDING } from './const';
 import { Context } from './context';
 import { PlayerTank } from './entity';
 import { Game } from './game';
-import { Rect, numround, xn } from './math';
+import { Rect, xn } from './math';
 import { getBestScore } from './storage';
-
-// This way it's possible to have multiple independent FPS counters
-let lastFPS: string = '0';
-let fpsUpdateDelayMs = 0;
-export function drawFPS(ctx: Context, dt: number): void {
-    let fps: string = '0';
-    if (fpsUpdateDelayMs >= 0) {
-        fps = lastFPS;
-        fpsUpdateDelayMs -= dt;
-    } else {
-        fps = numround(1000 / dt).toString();
-        lastFPS = fps;
-        fpsUpdateDelayMs = 300;
-    }
-
-    ctx.setFont('200 36px Helvetica');
-    ctx.drawText(fps, { x: 10, y: 10 });
-}
 
 export function drawScore(
     ctx: Context,
@@ -36,7 +18,7 @@ export function drawScore(
     const innerPadding = BASE_PADDING / 2;
 
     const scoreText = `Score: ${player.score}`;
-    const surviveText = `Survived: ${humanDuration(player.survivedMs)}`;
+    const surviveText = `Survived: ${player.survivedFor.toHumanString()}`;
     const bestScore = getBestScore(storage);
     const bestScoreText =
         player.dead && bestScore?.score
@@ -91,19 +73,6 @@ export function drawGrid(ctx: Context, game: Game, cellSize: number): void {
             colY + 1,
         );
     }
-}
-
-function humanDuration(ms: number): string {
-    const secs = Math.floor(ms / 1000);
-    const mins = Math.floor(secs / 60);
-    if (mins) {
-        const secsRest = Math.floor(secs - mins * 60);
-        return `${mins}m ${secsRest}s`;
-    }
-    if (secs) {
-        return `${secs}s`;
-    }
-    return `${Math.floor(ms)}ms`;
 }
 
 function shortDate(date: Date): string {

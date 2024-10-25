@@ -5,6 +5,8 @@ import { Block } from './entity/block';
 import { Entity } from './entity/core';
 import { createStaticSprite } from './entity/sprite';
 import { Rect, Vec2, randomInt } from './math';
+import { FPSCounter } from './ui.ts';
+import { Duration } from './math/duration.ts';
 
 export enum GameStatus {
     INITIAL,
@@ -22,6 +24,7 @@ export class Game {
     showFps = false;
     showBoundaries = false;
     readonly worldOffset: Vec2 = { x: 0, y: 0 };
+    readonly fps = new FPSCounter();
     private infiniteMode = false;
 
     constructor(public screen: Rect) {
@@ -92,13 +95,13 @@ export class Game {
         }
     }
 
-    updateTanks(dt: number, showBoundary: boolean): void {
+    updateTanks(dt: Duration, showBoundary: boolean): void {
         if (!this.playing) {
             return;
         }
         const enemiesCount = this.tanks.length - 1;
-        // NOTE: add more enemies as score inscreases in such progression 1=2; 2=3; 4=4; 8=5; 16=6; ...
-        // TODO: find a reasonable number/function to scale enetities
+        // NOTE: add more enemies as score increases in such progression 1=2; 2=3; 4=4; 8=5; 16=6; ...
+        // TODO: find a reasonable number/function to scale entities
         const dscore = 2 ** enemiesCount;
         const shouldSpawn =
             (this.infiniteMode ? this.player.score * 20 : this.player.score) >=

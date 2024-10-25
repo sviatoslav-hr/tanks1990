@@ -9,7 +9,6 @@
     - [ ] fix enemy tank stuck between blocks and rotating like crazy
 - **REFACTOR**
     - [ ] move `Projectile` out of `Tank` class and make it less dependent on `Tank`
-    - [ ] make `dt` be in seconds instead of milliseconds
     - [ ] revisit entire *infinite mode* implementation
     - [ ] Use transformation matrices for calculating rotation and translation
     - [ ] Create a separate Sprite class for static objects / non-animated
@@ -57,7 +56,7 @@
         - [ ] display score on the death screen
         - [ ] display best score on the death screen
 - [ ] **Power ups**
-    - [ ] about about what power ups there should be
+    - [ ] think about what power ups there should be
         - [ ] time stop
         - [ ] damage increase (against stronger enemies?)
         - [ ] shield
@@ -79,6 +78,7 @@
 - [x] sprite for bullets
 - [x] Add options to menu
 - **DONE**
+    - [x] REFACTOR: make `dt` be in seconds instead of milliseconds
     - [x] Animation: polish explosion animation
     - [x] FIXME: fix player not being able to pass past two blocks even though there is a gap
     - [x] Static objects on map
