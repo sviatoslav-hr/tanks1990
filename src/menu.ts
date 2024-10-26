@@ -42,7 +42,7 @@ export function initMenu(game: Game): Menu {
     menu.addButton(
         'Restart',
         () => {
-            game.start(game.infinite);
+            game.start(game.world.isInfinite);
             menu.hide();
         },
         [MenuState.DEAD],

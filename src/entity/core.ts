@@ -1,6 +1,7 @@
 import { Context } from '../context';
-import { Rect, Vec2, clamp, isPosInsideRect, xn, yn } from '../math';
+import { Rect, clamp, isPosInsideRect, xn, yn } from '../math';
 import { Duration } from '../math/duration.ts';
+import { Vector2Like } from '../math/vector.ts';
 
 export type Entity = {
     dead: boolean;
@@ -57,8 +58,8 @@ export function moveEntity(
     entity.y += movement.y;
 }
 
-export function getMovement(value: number, direction: Direction): Vec2 {
-    const vec: Vec2 = { x: 0, y: 0 };
+export function getMovement(value: number, direction: Direction): Vector2Like {
+    const vec: Vector2Like = { x: 0, y: 0 };
     switch (direction) {
         case Direction.UP:
             vec.y -= value;

@@ -8,6 +8,7 @@ import { Renderer, toggleFullscreen } from './renderer';
 import { preloadSounds, setVolume } from './sound';
 import { assert } from './utils';
 import { preloadEffectImages } from './entity/effect';
+import { World } from './world';
 
 function main(): void {
     const appElement = document.querySelector<HTMLDivElement>('#app');
@@ -24,7 +25,8 @@ function main(): void {
         width: renderer.canvas.width,
         height: renderer.canvas.height,
     };
-    const game = new Game(screen);
+    const world = new World(screen);
+    const game = new Game(screen, world);
     const menu = initMenu(game);
     appElement.append(menu);
     menu.showMain();

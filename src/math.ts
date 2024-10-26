@@ -1,9 +1,5 @@
 import { Direction } from './entity/core';
-
-export type Vec2 = {
-    x: number;
-    y: number;
-};
+import { Vector2Like } from './math/vector';
 
 export type Rect = {
     x: number;
@@ -134,6 +130,6 @@ export function moveToRandomCorner(entity: Rect, boundary: Rect): void {
     }
 }
 
-export function distanceV2(v1: Vec2, v2: Vec2): number {
+export function distanceV2(v1: Vector2Like, v2: Vector2Like): number {
     return Math.sqrt((v1.x - v2.x) ** 2 + (v1.y - v2.y) ** 2);
 }

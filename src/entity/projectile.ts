@@ -1,8 +1,9 @@
 import { Tank } from '.';
 import { CELL_SIZE } from '../const';
 import { Context } from '../context';
-import { Game } from '../game';
 import { Rect } from '../math';
+import { Duration } from '../math/duration';
+import { World } from '../world.ts';
 import {
     Direction,
     Entity,
@@ -12,7 +13,6 @@ import {
     scaleMovement,
 } from './core';
 import { Sprite } from './sprite';
-import {Duration} from "../math/duration.ts";
 
 export class Projectile implements Entity {
     public static SIZE = CELL_SIZE / 5;
@@ -32,7 +32,7 @@ export class Projectile implements Entity {
         public x: number,
         public y: number,
         size: number,
-        private game: Game,
+        private world: World,
         private owner: Tank,
         private boundary: Rect,
         public direction: Direction,
@@ -50,7 +50,7 @@ export class Projectile implements Entity {
             this.dead = true;
         } else {
             moveEntity(this, scaleMovement(this.v, dt), this.direction);
-            for (const entity of this.game.entities) {
+            for (const entity of this.world.entities) {
                 if (entity === this || entity === this.owner || entity.dead) {
                     continue;
                 }

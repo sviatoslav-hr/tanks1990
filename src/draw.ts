@@ -54,8 +54,8 @@ export function drawScore(
 
 export function drawGrid(ctx: Context, game: Game, cellSize: number): void {
     let { x, y, width, height } = game.screen;
-    x += game.worldOffset.x % cellSize;
-    y += game.worldOffset.y % cellSize;
+    x += game.world.offset.x % cellSize;
+    y += game.world.offset.y % cellSize;
     ctx.setStrokeColor(Color.BLACK_IERIE);
     for (let colX = x; colX < x + width + cellSize; colX += cellSize) {
         ctx.drawLine(

@@ -1,7 +1,6 @@
 import { Color } from '../color';
 import { CELL_SIZE } from '../const';
 import { Context } from '../context';
-import { Game } from '../game';
 import { keyboard } from '../keyboard';
 import {
     Rect,
@@ -12,7 +11,9 @@ import {
     xn,
     yn,
 } from '../math';
+import { Duration } from '../math/duration.ts';
 import { SoundType, playSound } from '../sound';
+import { World } from '../world.ts';
 import { Block } from './block';
 import {
     Direction,
@@ -27,7 +28,6 @@ import {
 import { ExplosionEffect } from './effect';
 import { Projectile } from './projectile';
 import { Sprite, createShieldSprite, createTankSprite } from './sprite';
-import { Duration } from '../math/duration.ts';
 
 export abstract class Tank implements Entity {
     public x = 0;
@@ -60,7 +60,7 @@ export abstract class Tank implements Entity {
 
     constructor(
         protected boundary: Rect,
-        protected game: Game,
+        protected world: World,
     ) {
         // NOTE: spawn outside of the screen, expected to respawn
         this.x = -(2 * this.width);
@@ -96,12 +96,12 @@ export abstract class Tank implements Entity {
         if (this.moving) {
             this.sprite.update(dt);
         }
-        if (this.game.infinite && this instanceof PlayerTank) {
+        if (this.world.isInfinite && this instanceof PlayerTank) {
             const movement = getMovement(
                 scaleMovement(this.v, dt),
                 this.direction,
             );
-            this.game.moveWorld(movement);
+            this.world.moveWorld(movement);
         } else {
             moveEntity(this, scaleMovement(this.v, dt), this.direction);
         }
@@ -113,7 +113,7 @@ export abstract class Tank implements Entity {
             this.x = prevX;
             this.y = prevY;
         }
-        if (!this.game.infinite) {
+        if (!this.world.isInfinite) {
             clampByBoundary(this, this.boundary);
         }
         this.updateShield(dt);
@@ -157,7 +157,7 @@ export abstract class Tank implements Entity {
     shoot(): void {
         if (this.shootingDelay.positive) return;
         this.shootingDelay.setFrom(this.SHOOTING_PERIOD);
-        if (!this.game.player.dead) {
+        if (!this.world.player.dead) {
             const volumeScale = this.bot ? 0.15 : 1;
             playSound(SoundType.SHOOTING, volumeScale);
         }
@@ -175,7 +175,7 @@ export abstract class Tank implements Entity {
                 px - size / 2,
                 py - size / 2,
                 size,
-                this.game,
+                this.world,
                 this,
                 this.boundary,
                 this.direction,
@@ -193,7 +193,7 @@ export abstract class Tank implements Entity {
             'Cannot respawn while explosion is in progress',
         );
         const playerInInfinite =
-            this.game.infinite && this instanceof PlayerTank;
+            this.world.isInfinite && this instanceof PlayerTank;
         if (playerInInfinite) {
             // NOTE: in infinite mode, player is always in the center
             this.x = this.boundary.x + this.boundary.width / 2 - this.width / 2;
@@ -289,11 +289,11 @@ export abstract class Tank implements Entity {
     }
 
     findCollided(): Tank | Block | undefined {
-        const tank = this.game.tanks.find((t) => {
+        const tank = this.world.tanks.find((t) => {
             return t !== this && !t.dead && isIntesecting(this, t);
         });
         if (tank) return tank;
-        return this.game.blocks.find((b) => isIntesecting(this, b));
+        return this.world.blocks.find((b) => isIntesecting(this, b));
     }
 }
 
@@ -305,9 +305,9 @@ export class PlayerTank extends Tank implements Entity {
     protected readonly MOVEMENT_SPEED = Duration.milliseconds(160);
     protected readonly sprite = createTankSprite('tank_yellow');
 
-    constructor(boundary: Rect, game: Game) {
-        super(boundary, game);
-        if (game.infinite) {
+    constructor(boundary: Rect, world: World) {
+        super(boundary, world);
+        if (world.isInfinite) {
             this.x = boundary.x + boundary.width / 2;
             this.y = boundary.y + boundary.height / 2;
         } else {
@@ -374,7 +374,7 @@ export class EnemyTank extends Tank implements Entity {
     private collided = false;
 
     update(dt: Duration): void {
-        const player = this.game.player;
+        const player = this.world.player;
         // NOTE: is collided, don't change the direction, allowing entities to move away from each other
         if (!this.collided) {
             const dir =

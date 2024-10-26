@@ -38,7 +38,7 @@ export class Renderer {
         this.resizeCanvas(window.innerWidth, window.innerHeight);
         this.lastTimestamp = performance.now();
         game.showFps = getStoredShowFps(storage);
-        game.showBoundaries = getStoredShowBoundaries(storage);
+        game.world.showBoundary = getStoredShowBoundaries(storage);
         const animationCallback = this.createAnimationCallback(
             game,
             menu,
@@ -75,8 +75,8 @@ export class Renderer {
             setStoredShowFps(storage, game.showFps);
         });
         keyboard.onKeydown('KeyB', () => {
-            game.showBoundaries = !game.showBoundaries;
-            setStoredShowBoundaries(storage, game.showBoundaries);
+            game.world.showBoundary = !game.world.showBoundary;
+            setStoredShowBoundaries(storage, game.world.showBoundary);
         });
         keyboard.onKeydown('KeyP', () => {
             switch (game.status) {
@@ -110,6 +110,7 @@ export class Renderer {
     ): AnimationCallback {
         const animationCallback = (timestamp: number): void => {
             const screen = game.screen;
+            const world = game.world;
             const dt = Duration.since(this.lastTimestamp).min(1000 / 30);
             this.lastTimestamp = timestamp;
             this.ctx.clearScreen();
@@ -121,7 +122,7 @@ export class Renderer {
                 game.screen.height,
             );
             drawGrid(this.ctx, game, CELL_SIZE);
-            game.drawTanks(this.ctx);
+            world.draw(this.ctx);
             if (game.showFps) game.fps.draw(this.ctx);
 
             if (
@@ -129,13 +130,13 @@ export class Renderer {
                 game.dead ||
                 (game.playing && keyboard.isDown('KeyQ'))
             ) {
-                drawScore(this.ctx, game.player, screen, storage);
+                drawScore(this.ctx, world.player, screen, storage);
             }
-            if (game.player.dead && game.playing && !menu.dead) {
-                saveBestScore(storage, game.player.score);
+            if (world.player.dead && game.playing && !menu.dead) {
+                saveBestScore(storage, world.player.score);
                 menu.showDead();
             }
-            game.updateTanks(dt, game.showBoundaries);
+            world.update(dt);
             keyboard.reset();
             game.fps.update(dt);
             window.requestAnimationFrame(animationCallback);
