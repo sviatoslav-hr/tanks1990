@@ -26,7 +26,7 @@ import {
     scaleMovement,
 } from './core';
 import { ExplosionEffect } from './effect';
-import { Projectile } from './projectile';
+import { Projectile } from './projectile.ts';
 import { Sprite, createShieldSprite, createTankSprite } from './sprite';
 
 export abstract class Tank implements Entity {
@@ -37,7 +37,6 @@ export abstract class Tank implements Entity {
     public showBoundary = false;
     public dead = false;
     public hasShield = true;
-    public projectiles: Projectile[] = [];
     public direction = Direction.UP;
     public readonly bot: boolean = true;
 
@@ -75,7 +74,6 @@ export abstract class Tank implements Entity {
 
     update(dt: Duration): void {
         this.shieldSprite.update(dt);
-        this.updateProjectiles(dt);
         if (this.explosionEffect) {
             if (this.explosionEffect.isAnimationFinished) {
                 this.explosionEffect = null;
@@ -133,7 +131,6 @@ export abstract class Tank implements Entity {
             this.explosionEffect?.draw(ctx);
             return;
         }
-        this.drawProjectiles(ctx);
         if (this.dead) return;
         this.sprite.draw(ctx, this, this.direction);
         if (this.hasShield) {
@@ -162,25 +159,7 @@ export abstract class Tank implements Entity {
             playSound(SoundType.SHOOTING, volumeScale);
         }
         const [px, py] = this.getProjectileStartPos();
-        const deadProjectile = this.projectiles.find((p) => p.dead);
-        if (deadProjectile) {
-            // NOTE: reuse dead projectiles instead of creating new ones
-            deadProjectile.reviveAt(px, py);
-            deadProjectile.direction = this.direction;
-            return;
-        }
-        const size = Projectile.SIZE;
-        this.projectiles.push(
-            new Projectile(
-                px - size / 2,
-                py - size / 2,
-                size,
-                this.world,
-                this,
-                this.boundary,
-                this.direction,
-            ),
-        );
+        Projectile.spawn(this, this.world, px, py, this.direction);
     }
 
     respawn(): void {
@@ -252,28 +231,6 @@ export abstract class Tank implements Entity {
     }
 
     protected handleCollision(_target: Tank): void {}
-
-    private updateProjectiles(dt: Duration): void {
-        const garbageIndexes: number[] = [];
-        for (const [index, projectile] of this.projectiles.entries()) {
-            if (projectile.dead) {
-                garbageIndexes.push(index);
-            } else {
-                projectile.update(dt);
-            }
-        }
-        this.projectiles = this.projectiles.filter(
-            (_, i) => !garbageIndexes.includes(i),
-        );
-    }
-
-    private drawProjectiles(ctx: Context): void {
-        for (const projectile of this.projectiles) {
-            if (!projectile.dead) {
-                projectile.draw(ctx);
-            }
-        }
-    }
 
     private getProjectileStartPos(): [number, number] {
         switch (this.direction) {

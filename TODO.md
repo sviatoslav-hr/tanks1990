@@ -8,26 +8,24 @@
     - [ ] Cache best score instead of fetching it each frame
     - [ ] Fix enemy tank stuck between blocks and rotating like crazy
 - **REFACTOR**
-    - [ ] Define `World` class
+    - [ ] Should `World` contain entities or only environment?
     - [ ] Restructure coordinates system (consider defining something like `WorldPosition`)
-    - [ ] Move `Projectile` out of `Tank` class and make it less dependent on `Tank`
     - [ ] Revisit entire *infinite mode* implementation
     - [ ] Use transformation matrices for calculating rotation and translation
     - [ ] Create a separate Sprite class for static objects / non-animated
     - [ ] Consider using interface instead of class for `Vector2`
 - **Visuals**
     - [ ] Consider using [kenney.nl assets](https://kenney.nl/assets/top-down-tanks-redux)
+    - [ ] **Add projectile trail**
     - [ ] Add fire effect to gun
-    - [x] Add smoke to explosions
-    - [x] Add more particles [kenney.nl](https://kenney.nl/assets/particle-pack)
+    - [ ] Add some fire effect inside of the explosion (doesn't look like explosion otherwise)
+    - [ ] Add more particles [kenney.nl](https://kenney.nl/assets/particle-pack)
+    - [ ] Improve/replace shield sprite
 - [ ] **Sounds**
-    - [x] Find sounds (see [opengameart](https://opengameart.org/art-search-advanced?keys=&field_art_type_tid%5B%5D=12&sort_by=count&sort_order=DESC))
-    - [x] Shooting
-    - [x] Explosion on being killed
-    - [ ] Power ups?
     - [ ] Background music?
     - [ ] Main screen music?
 - [ ] **Animations**
+    - [ ] Add inertia to movement and friction
     - [ ] Use sprite image for explosion animation instead of circle
     - [ ] Spawning
     - [ ] Shooting
@@ -35,11 +33,10 @@
     - [ ] Improve explosion animation
     - [ ] Rewrite the animation system to use progress values (0-1) instead of dt updates (look into ExplosionEffect)
     - [ ] Consider using states for animations ([see](https://www.youtube.com/watch?v=e3LGFrHqqiI))
-    - [x] **explosion on being killed (split the sprite into pieces and move them away)**
-    - [x] Shield
 - [ ] **Movement**
     - [ ] Make movement more realistic (speed decreases over time unless entity is moving)
 - [ ] **New feature Ideas**
+    - [ ] Power ups?
     - [ ] Add Literal fullscreen button (in options or literally below the canvas)
     - [ ] Add health and display it on top of tanks?
     - [ ] Spawn random power-ups
@@ -80,6 +77,8 @@
 - [x] Sprite for bullets
 - [x] Add options to menu
 - **DONE**
+    - [x] REFACTOR: Move `Projectile` out of `Tank` class and make it less dependent on `Tank`
+    - [x] REFACTOR: Define `World` class
     - [x] REFACTOR: make `dt` be in seconds instead of milliseconds
     - [x] Animation: polish explosion animation
     - [x] FIXME: fix player not being able to pass past two blocks even though there is a gap
@@ -88,3 +87,9 @@
         - [x] Crate a sprite for a static objects
         - [x] Spawn random blocks (static objects) that cannot be passed through
         - [x] Update enemy ai: when enemy is facing the block, it should rotate ?
+    - [x] Add smoke to explosions
+    - [x] Find sounds (see [opengameart](https://opengameart.org/art-search-advanced?keys=&field_art_type_tid%5B%5D=12&sort_by=count&sort_order=DESC))
+    - [x] Shooting
+    - [x] Explosion on being killed
+    - [x] **explosion on being killed (split the sprite into pieces and move them away)**
+    - [x] Shield

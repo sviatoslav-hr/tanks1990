@@ -1,7 +1,6 @@
 import { Tank } from '.';
 import { CELL_SIZE } from '../const';
 import { Context } from '../context';
-import { Rect } from '../math';
 import { Duration } from '../math/duration';
 import { World } from '../world.ts';
 import {
@@ -34,11 +33,38 @@ export class Projectile implements Entity {
         size: number,
         private world: World,
         private owner: Tank,
-        private boundary: Rect,
         public direction: Direction,
     ) {
         this.width = size;
         this.height = size;
+    }
+
+    static spawn(
+        owner: Tank,
+        world: World,
+        x: number,
+        y: number,
+        direction: Direction,
+    ): Projectile {
+        const deadProjectile = world.projectiles.find((p) => p.dead);
+        if (deadProjectile) {
+            // NOTE: reuse dead projectiles instead of creating new ones
+            deadProjectile.reviveAt(owner, x, y);
+            deadProjectile.direction = direction;
+            return deadProjectile;
+        }
+        const size = Projectile.SIZE;
+        const projectile = new Projectile(
+            x - size / 2,
+            y - size / 2,
+            size,
+            world,
+            owner,
+            direction,
+        );
+        // TODO: measure if dead projectiles should be cleaned up at some point
+        world.projectiles.push(projectile);
+        return projectile;
     }
 
     update(dt: Duration): void {
@@ -46,11 +72,11 @@ export class Projectile implements Entity {
             return;
         }
         this.sprite.update(dt);
-        if (isOutsideRect(this, this.boundary)) {
+        if (isOutsideRect(this, this.world.screen)) {
             this.dead = true;
         } else {
             moveEntity(this, scaleMovement(this.v, dt), this.direction);
-            for (const entity of this.world.entities) {
+            for (const entity of this.world.iterateEntities()) {
                 if (entity === this || entity === this.owner || entity.dead) {
                     continue;
                 }
@@ -59,7 +85,7 @@ export class Projectile implements Entity {
                     if (entity instanceof Projectile) {
                         entity.dead = true;
                     }
-                    if (entity instanceof Tank && !entity.dead) {
+                    if (entity instanceof Tank) {
                         this.owner.doDamage(entity);
                     }
                 }
@@ -73,7 +99,8 @@ export class Projectile implements Entity {
         }
     }
 
-    reviveAt(x: number, y: number): void {
+    reviveAt(ownder: Tank, x: number, y: number): void {
+        this.owner = ownder;
         this.x = x;
         this.y = y;
         this.dead = false;
