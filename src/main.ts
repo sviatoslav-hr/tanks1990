@@ -9,10 +9,12 @@ import { preloadSounds, setVolume } from './sound';
 import { assert } from './utils';
 import { preloadEffectImages } from './entity/effect';
 import { World } from './world';
+import { getStoredGetMode, setStoredDevMode } from './storage';
 
 function main(): void {
     const appElement = document.querySelector<HTMLDivElement>('#app');
     assert(appElement != null, 'No app element found');
+    window.__DEV_MODE = getStoredGetMode(localStorage);
 
     preloadSounds().then(() => console.log('Sounds preloaded'));
     setVolume(0.3);
@@ -36,6 +38,11 @@ function main(): void {
     window.addEventListener('resize', () => {
         renderer.resizeCanvas(window.innerWidth, window.innerHeight);
         menu.resize(renderer.canvas.clientWidth, renderer.canvas.clientHeight);
+    });
+    keyboard.onKeydown('Semicolon', () => {
+        window.__DEV_MODE = !window.__DEV_MODE;
+        setStoredDevMode(localStorage, window.__DEV_MODE);
+        console.log(`Dev mode: ${window.__DEV_MODE ? 'ON' : 'OFF'}`);
     });
     keyboard.onKeydown('KeyF', () => {
         toggleFullscreen(appElement)

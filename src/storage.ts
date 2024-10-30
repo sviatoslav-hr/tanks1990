@@ -3,6 +3,7 @@ const BEST_SCORE_AT_KEY = 'best_score_at';
 const SHOW_FPS_KEY = 'show_fps';
 const SHOW_BOUNDARIES = 'show_boundaries';
 const GAME_VOLUME = 'game_volume';
+const DEV_MODE_KEY = 'dev_mode';
 
 type ScoreRecord = {
     score: number;
@@ -69,4 +70,12 @@ export function getStoredVolume(storage: Storage): number | null {
     if (!value) return null;
     const num = Number(value);
     return isNaN(num) ? null : Math.max(Math.min(1, num), 0);
+}
+
+export function getStoredGetMode(storage: Storage): boolean {
+    return storage.getItem(DEV_MODE_KEY) === 'true';
+}
+
+export function setStoredDevMode(storage: Storage, value: boolean): void {
+    storage.setItem(DEV_MODE_KEY, value.toString());
 }

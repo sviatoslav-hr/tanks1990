@@ -8,4 +8,5 @@ declare global {
     var assert: AssertFn;
     var assertError: AssertErrorFn;
     var panic: PanicFn;
+    var __DEV_MODE: boolean;
 }

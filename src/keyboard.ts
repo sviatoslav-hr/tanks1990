@@ -8,9 +8,11 @@ export type KeyCode =
     | 'KeyF'
     | 'KeyB'
     | 'KeyP'
+    | 'KeyO'
     | 'Backquote'
     | 'Space'
-    | 'Escape';
+    | 'Escape'
+    | 'Semicolon';
 export type KeysState = Partial<Record<KeyCode, boolean>>;
 export type KeyHandler = (event: Event, code: KeyCode) => void;
 

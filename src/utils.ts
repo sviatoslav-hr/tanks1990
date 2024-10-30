@@ -1,13 +1,15 @@
 export function assert(condition: boolean, msg?: string): asserts condition {
     if (!condition) {
-        throw new Error(msg ?? 'Assertion failed');
+        if (__DEV_MODE) {
+            debugger;
+        } else {
+            throw new Error(msg ?? 'Assertion failed');
+        }
     }
 }
 
 export function assertError(err: any): asserts err is Error {
-    if (!(err instanceof Error)) {
-        throw new Error('Assertion failed: err is not an Error');
-    }
+    assert(err instanceof Error, 'Assertion failed: err is not an Error');
 }
 
 export function throwError(msg: string): never {

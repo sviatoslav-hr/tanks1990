@@ -20,6 +20,20 @@ export function clamp(value: number, min: number, max: number): number {
     return Math.min(Math.max(value, min), max);
 }
 
+export function lerp(a: number, b: number, t: number): number {
+    assert(t >= 0 && t <= 1);
+    return a + (b - a) * t;
+}
+
+/** Parabolic curve peaking at t = 0.5 */
+export function bellCurveInterpolate(
+    min: number,
+    max: number,
+    t: number,
+): number {
+    return min + (max - min) * (4 * t * (1 - t));
+}
+
 export function rotateRect(
     rect: Rect,
     cx: number,

@@ -4,9 +4,11 @@
     - [ ] Define game plan / trajectory / future development / main goal / idea
     - [ ] Define custom RNG and use it everywhere instead of `Math.random()`
 - **FIXME**
+    - [ ] Fix projectile size (it's bigger than it visually is)
     - [ ] Fix sound explosion delay
     - [ ] Cache best score instead of fetching it each frame
     - [ ] Fix enemy tank stuck between blocks and rotating like crazy
+    - [ ] Better collision detection (see Handmade Hero series)
 - **REFACTOR**
     - [ ] Should `World` contain entities or only environment?
     - [ ] Restructure coordinates system (consider defining something like `WorldPosition`)
@@ -17,7 +19,6 @@
     - [ ] Consider using interface instead of class for `Vector2`
 - **Visuals**
     - [ ] Consider using [kenney.nl assets](https://kenney.nl/assets/top-down-tanks-redux)
-    - [ ] **Add projectile trail**
     - [ ] Add fire effect to gun
     - [ ] Add some fire effect inside of the explosion (doesn't look like explosion otherwise)
     - [ ] Add more particles [kenney.nl](https://kenney.nl/assets/particle-pack)
@@ -78,6 +79,7 @@
 - [x] Sprite for bullets
 - [x] Add options to menu
 - **DONE**
+    - [x] **Add projectile trail**
     - [x] FIXME: Pause is not pausing
     - [x] REFACTOR: Move `Projectile` out of `Tank` class and make it less dependent on `Tank`
     - [x] REFACTOR: Define `World` class

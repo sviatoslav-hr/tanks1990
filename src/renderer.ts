@@ -103,6 +103,26 @@ export class Renderer {
                     console.warn('Unhandled value ', game.status);
             }
         });
+        keyboard.onKeydown('KeyO', () => {
+            switch (game.status) {
+                case GameStatus.PLAYING: {
+                    if (game.dead) {
+                        game.init();
+                    } else {
+                        game.pause();
+                    }
+                    break;
+                }
+                case GameStatus.PAUSED: {
+                    game.resume();
+                    break;
+                }
+                case GameStatus.INITIAL:
+                    break;
+                default:
+                    console.warn('Unhandled value ', game.status);
+            }
+        });
     }
 
     private createAnimationCallback(
