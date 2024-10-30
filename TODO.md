@@ -10,6 +10,7 @@
 - **REFACTOR**
     - [ ] Should `World` contain entities or only environment?
     - [ ] Restructure coordinates system (consider defining something like `WorldPosition`)
+    - [ ] Better way to store images and sprites (how bad Image is?)
     - [ ] Revisit entire *infinite mode* implementation
     - [ ] Use transformation matrices for calculating rotation and translation
     - [ ] Create a separate Sprite class for static objects / non-animated
@@ -77,6 +78,7 @@
 - [x] Sprite for bullets
 - [x] Add options to menu
 - **DONE**
+    - [x] FIXME: Pause is not pausing
     - [x] REFACTOR: Move `Projectile` out of `Tank` class and make it less dependent on `Tank`
     - [x] REFACTOR: Define `World` class
     - [x] REFACTOR: make `dt` be in seconds instead of milliseconds

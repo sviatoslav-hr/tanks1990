@@ -12,7 +12,6 @@ import {
     setStoredShowBoundaries,
     setStoredShowFps,
 } from './storage';
-import { assertError, throwError } from './utils';
 import { Duration } from './math/duration.ts';
 
 type AnimationCallback = (timestamp: number) => void;
@@ -26,9 +25,12 @@ export class Renderer {
         this.canvas = document.createElement('canvas');
         this.canvas.width = BASE_WIDTH;
         this.canvas.height = BASE_HEIGHT;
-        const ctx2d =
-            this.canvas.getContext('2d', { willReadFrequently: true }) ??
-            throwError('Context should be available');
+        const ctx2d = this.canvas.getContext('2d', {
+            willReadFrequently: true,
+        });
+        if (!ctx2d) {
+            throw new Error('Context should be available');
+        }
         this.ctx = new Context(ctx2d);
     }
 
@@ -136,7 +138,9 @@ export class Renderer {
                 saveBestScore(storage, world.player.score);
                 menu.showDead();
             }
-            world.update(dt);
+            if (game.playing) {
+                world.update(dt);
+            }
             keyboard.reset();
             game.fps.update(dt);
             window.requestAnimationFrame(animationCallback);
@@ -155,12 +159,14 @@ export async function toggleFullscreen(
     if (document.fullscreenElement) {
         await document.exitFullscreen().catch((err) => {
             assertError(err);
-            throwError('ERROR: failed to exit Fullscreen\n' + err.message);
+            throw new Error('ERROR: failed to exit Fullscreen\n' + err.message);
         });
     } else {
         await appElement.requestFullscreen().catch((err) => {
             assertError(err);
-            throwError('ERROR: failed to enter Fullscreen\n' + err.message);
+            throw new Error(
+                'ERROR: failed to enter Fullscreen\n' + err.message,
+            );
         });
     }
 }
