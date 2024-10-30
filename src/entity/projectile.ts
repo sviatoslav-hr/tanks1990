@@ -1,4 +1,5 @@
 import { Tank } from '.';
+import { Color } from '../color.ts';
 import { CELL_SIZE } from '../const';
 import { Context } from '../context';
 import { Duration } from '../math/duration';
@@ -97,6 +98,8 @@ export class Projectile implements Entity {
         if (!this.dead) {
             this.sprite.draw(ctx, this, this.direction);
         }
+        ctx.setStrokeColor(Color.PINK);
+        ctx.drawBoundary(this, 1);
     }
 
     reviveAt(ownder: Tank, x: number, y: number): void {
