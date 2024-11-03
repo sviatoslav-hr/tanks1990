@@ -28,8 +28,8 @@ export class World {
         this.generateBlocks();
         this.player.respawn();
         this.tanks = [this.player];
-        this.spawnEnemy();
-        this.spawnEnemy();
+        // this.spawnEnemy();
+        // this.spawnEnemy();
     }
 
     draw(ctx: Context): void {
@@ -63,7 +63,6 @@ export class World {
             this.spawnEnemy();
         }
         for (const tank of this.tanks) {
-            tank.showBoundary = this.showBoundary;
             tank.update(dt);
             if (tank.dead && tank.bot && tank.isExplosionFinished) {
                 tank.respawn();

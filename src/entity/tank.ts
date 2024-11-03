@@ -23,7 +23,6 @@ import {
     isIntesecting,
     isOutsideRect,
     moveEntity,
-    scaleMovement,
 } from './core';
 import { ExplosionEffect } from './effect';
 import { Projectile } from './projectile.ts';
@@ -34,21 +33,19 @@ export abstract class Tank implements Entity {
     public y = 0;
     public width = CELL_SIZE - 8;
     public height = CELL_SIZE - 8;
-    public showBoundary = false;
     public dead = false;
     public hasShield = true;
     public direction = Direction.UP;
     public readonly bot: boolean = true;
 
-    protected dx = 0;
-    protected dy = 0;
-    protected v: number = 0;
+    protected velocity: number = 0;
+    protected acceleration = 0;
     protected shieldRemaining = Duration.zero();
     protected moving = false;
     protected isExplosionExpected = false;
     protected explosionEffect?: ExplosionEffect | null;
     protected readonly SHOOTING_PERIOD = Duration.milliseconds(300);
-    protected readonly MOVEMENT_SPEED = Duration.milliseconds(80);
+    protected readonly MOVEMENT_SPEED: number = 80;
     protected readonly SHIELD_TIME = Duration.milliseconds(1000);
     protected readonly shieldSprite = createShieldSprite();
     protected abstract readonly sprite: Sprite<string>;
@@ -94,14 +91,31 @@ export abstract class Tank implements Entity {
         if (this.moving) {
             this.sprite.update(dt);
         }
+        const dtSeconds = dt.seconds;
+        this.acceleration -= 0.5 * this.velocity;
+        // p' = 1/2*a*dt^2 + v*dt + p
+        const movement =
+            this.velocity === 0
+                ? 0
+                : 0.5 * this.acceleration * dtSeconds * dtSeconds +
+                  this.velocity * dtSeconds;
+        // v' = a*dt + v
+        const newVelocity = this.acceleration * dtSeconds + this.velocity;
+        // TODO: check if velocity should be clamped
+        // TODO: should negative values be allowed?
+        // this.acceleration = Math.max(
+        //     0,
+        //     this.acceleration - 0.5 * this.velocity,
+        // );
+        this.velocity = Math.max(0, newVelocity);
+        // this.velocity = clamp(newVelocity, 0, this.MOVEMENT_ACCELERATION);
+        // TODO: define a constant for the max velocity
+        // TODO: what actually is MOVEMENT_SPEED?
         if (this.world.isInfinite && this instanceof PlayerTank) {
-            const movement = getMovement(
-                scaleMovement(this.v, dt),
-                this.direction,
-            );
-            this.world.moveWorld(movement);
+            this.world.moveWorld(getMovement(movement, this.direction));
         } else {
-            moveEntity(this, scaleMovement(this.v, dt), this.direction);
+            moveEntity(this, movement, this.direction);
+            // moveEntity(this, scaleMovement(this.v, dt), this.direction);
         }
         const collided = this.findCollided();
         if (collided) {
@@ -110,6 +124,8 @@ export abstract class Tank implements Entity {
             }
             this.x = prevX;
             this.y = prevY;
+            this.velocity = 0;
+            this.acceleration = 0;
         }
         if (!this.world.isInfinite) {
             clampByBoundary(this, this.boundary);
@@ -136,13 +152,14 @@ export abstract class Tank implements Entity {
         if (this.hasShield) {
             this.shieldSprite.draw(ctx, this);
         }
-        if (this.showBoundary) {
+        if (this.world.showBoundary) {
             ctx.setStrokeColor(Color.PINK);
             ctx.drawBoundary(this, 1);
             ctx.setFont('400 16px Helvetica', 'center', 'middle');
             ctx.setFillColor(Color.WHITE);
             ctx.drawText(
-                `${this.index}: {${Math.floor(this.x)};${Math.floor(this.y)}}`,
+                `${this.index}: {a=${this.acceleration.toFixed(2)};v=${this.velocity.toFixed(2)}}`,
+                // `${this.index}: {${Math.floor(this.x)};${Math.floor(this.y)}}`,
                 {
                     x: this.x + this.width / 2,
                     y: this.y - this.height / 2,
@@ -259,7 +276,7 @@ export class PlayerTank extends Tank implements Entity {
     public dead = true;
     public score = 0;
     public survivedFor = Duration.zero();
-    protected readonly MOVEMENT_SPEED = Duration.milliseconds(160);
+    protected readonly MOVEMENT_SPEED = 160;
     protected readonly sprite = createTankSprite('tank_yellow');
 
     constructor(boundary: Rect, world: World) {
@@ -297,31 +314,37 @@ export class PlayerTank extends Tank implements Entity {
 
     protected handleKeyboard(): void {
         this.moving = false;
+        let direction: Direction | null = null;
+        // TODO: handle holding opposite keys
         if (keyboard.isDown('KeyA')) {
-            this.direction = Direction.LEFT;
-            this.moving = true;
+            direction = Direction.LEFT;
         }
         if (keyboard.isDown('KeyD')) {
-            this.direction = Direction.RIGHT;
-            this.moving = true;
+            direction = Direction.RIGHT;
         }
         if (keyboard.isDown('KeyW')) {
-            this.direction = Direction.UP;
-            this.moving = true;
+            direction = Direction.UP;
         }
         if (keyboard.isDown('KeyS')) {
-            this.direction = Direction.DOWN;
-            this.moving = true;
+            direction = Direction.DOWN;
         }
         if (keyboard.isDown('Space') && !this.shootingDelay.positive) {
             this.shoot();
         }
-        this.v = this.moving ? this.MOVEMENT_SPEED.milliseconds : 0;
+        if (direction && direction !== this.direction) {
+            this.velocity = 0;
+        }
+        if (direction != null) {
+            this.direction = direction;
+            this.moving = true;
+            this.acceleration = this.MOVEMENT_SPEED;
+        }
     }
 }
 
 export class EnemyTank extends Tank implements Entity {
-    protected v = this.MOVEMENT_SPEED.milliseconds;
+    protected velocity = 0;
+    protected acceleration = this.MOVEMENT_SPEED * this.MOVEMENT_SPEED;
     protected moving = true;
     protected readonly SHOOTING_PERIOD = Duration.milliseconds(1000);
     protected readonly sprite = createTankSprite('tank_green');
