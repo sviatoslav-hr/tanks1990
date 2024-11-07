@@ -147,3 +147,5 @@ export function moveToRandomCorner(entity: Rect, boundary: Rect): void {
 export function distanceV2(v1: Vector2Like, v2: Vector2Like): number {
     return Math.sqrt((v1.x - v2.x) ** 2 + (v1.y - v2.y) ** 2);
 }
+
+export const GRAVITY = 9.81; // in m/s^2

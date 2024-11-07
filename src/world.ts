@@ -16,6 +16,7 @@ export class World {
     projectiles: Projectile[] = [];
     isInfinite = false;
     showBoundary = false;
+    gravityCoef = 20;
 
     constructor(public readonly screen: Rect) {
         this.player = new PlayerTank(this.screen, this);
@@ -25,6 +26,7 @@ export class World {
 
     init(infinite: boolean): void {
         this.isInfinite = infinite;
+        this.offset.set(0, 0);
         this.generateBlocks();
         this.player.respawn();
         this.tanks = [this.player];
@@ -63,7 +65,6 @@ export class World {
             this.spawnEnemy();
         }
         for (const tank of this.tanks) {
-            tank.showBoundary = this.showBoundary;
             tank.update(dt);
             if (tank.dead && tank.bot && tank.isExplosionFinished) {
                 tank.respawn();

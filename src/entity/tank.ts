@@ -3,6 +3,7 @@ import { CELL_SIZE } from '../const';
 import { Context } from '../context';
 import { keyboard } from '../keyboard';
 import {
+    GRAVITY,
     Rect,
     distanceV2,
     moveToRandomCorner,
@@ -23,7 +24,6 @@ import {
     isIntesecting,
     isOutsideRect,
     moveEntity,
-    scaleMovement,
 } from './core';
 import { ExplosionEffect } from './effect';
 import { Projectile } from './projectile.ts';
@@ -34,21 +34,21 @@ export abstract class Tank implements Entity {
     public y = 0;
     public width = CELL_SIZE - 8;
     public height = CELL_SIZE - 8;
-    public showBoundary = false;
     public dead = false;
     public hasShield = true;
     public direction = Direction.UP;
     public readonly bot: boolean = true;
+    public readonly topSpeed = (480 * 1000) / 3600; // in m/s
+    public readonly topSpeedReachTime = Duration.milliseconds(150);
+    public readonly frictionCoef = 0.8; // rolling friction, 0.8 is a value for asphalt
 
-    protected dx = 0;
-    protected dy = 0;
-    protected v: number = 0;
+    protected velocity: number = 0;
+    protected acceleration = 0;
     protected shieldRemaining = Duration.zero();
     protected moving = false;
     protected isExplosionExpected = false;
     protected explosionEffect?: ExplosionEffect | null;
     protected readonly SHOOTING_PERIOD = Duration.milliseconds(300);
-    protected readonly MOVEMENT_SPEED = Duration.milliseconds(80);
     protected readonly SHIELD_TIME = Duration.milliseconds(1000);
     protected readonly shieldSprite = createShieldSprite();
     protected abstract readonly sprite: Sprite<string>;
@@ -70,6 +70,15 @@ export abstract class Tank implements Entity {
         if (this.isExplosionExpected) return false;
         if (!this.explosionEffect) return true;
         return this.explosionEffect.isAnimationFinished;
+    }
+
+    get deceleration(): number {
+        // NOTE: simulate friction with increasing speed (air resistance, etc.)
+        const simulatedFriction = 8 * this.velocity;
+        return (
+            this.frictionCoef * GRAVITY * this.world.gravityCoef +
+            simulatedFriction
+        );
     }
 
     update(dt: Duration): void {
@@ -94,14 +103,27 @@ export abstract class Tank implements Entity {
         if (this.moving) {
             this.sprite.update(dt);
         }
-        if (this.world.isInfinite && this instanceof PlayerTank) {
-            const movement = getMovement(
-                scaleMovement(this.v, dt),
-                this.direction,
-            );
-            this.world.moveWorld(movement);
-        } else {
-            moveEntity(this, scaleMovement(this.v, dt), this.direction);
+        {
+            let totalAcceleration = this.acceleration;
+            if (this.velocity > 0) {
+                totalAcceleration -= this.deceleration;
+            }
+            const dtSeconds = dt.seconds;
+            // p' = 1/2*a*dt^2 + v*dt + p   ==>    dp = p'-p = 1/2*a*dt^2 + v*dt
+            const movementOffset =
+                0.5 * totalAcceleration * dtSeconds * dtSeconds +
+                this.velocity * dtSeconds;
+            // v' = a*dt + v
+            const newVelocity = this.velocity + totalAcceleration * dtSeconds;
+            this.velocity = Math.min(Math.max(0, newVelocity), this.topSpeed);
+            assert(this.velocity >= 0);
+            if (this.world.isInfinite && this instanceof PlayerTank) {
+                this.world.moveWorld(
+                    getMovement(movementOffset, this.direction),
+                );
+            } else {
+                moveEntity(this, movementOffset, this.direction);
+            }
         }
         const collided = this.findCollided();
         if (collided) {
@@ -110,9 +132,17 @@ export abstract class Tank implements Entity {
             }
             this.x = prevX;
             this.y = prevY;
+            this.velocity = 0;
+            this.acceleration = 0;
         }
         if (!this.world.isInfinite) {
+            const oldX = this.x;
+            const oldY = this.y;
             clampByBoundary(this, this.boundary);
+            if (oldX !== this.x || oldY !== this.y) {
+                this.velocity = 0;
+                this.acceleration = 0;
+            }
         }
         this.updateShield(dt);
     }
@@ -136,13 +166,15 @@ export abstract class Tank implements Entity {
         if (this.hasShield) {
             this.shieldSprite.draw(ctx, this);
         }
-        if (this.showBoundary) {
+        if (this.world.showBoundary) {
             ctx.setStrokeColor(Color.PINK);
             ctx.drawBoundary(this, 1);
             ctx.setFont('400 16px Helvetica', 'center', 'middle');
             ctx.setFillColor(Color.WHITE);
+            const velocity = ((this.velocity * 3600) / 1000).toFixed(2);
             ctx.drawText(
-                `${this.index}: {${Math.floor(this.x)};${Math.floor(this.y)}}`,
+                `${this.index}: {a=${this.acceleration.toFixed(2)};v=${velocity}km/h`,
+                // `${this.index}: {${Math.floor(this.x)};${Math.floor(this.y)}}`,
                 {
                     x: this.x + this.width / 2,
                     y: this.y - this.height / 2,
@@ -255,11 +287,11 @@ export abstract class Tank implements Entity {
 }
 
 export class PlayerTank extends Tank implements Entity {
+    public readonly topSpeedReachTime = Duration.milliseconds(50); // in seconds
     public readonly bot: boolean = false;
     public dead = true;
     public score = 0;
     public survivedFor = Duration.zero();
-    protected readonly MOVEMENT_SPEED = Duration.milliseconds(160);
     protected readonly sprite = createTankSprite('tank_yellow');
 
     constructor(boundary: Rect, world: World) {
@@ -274,9 +306,9 @@ export class PlayerTank extends Tank implements Entity {
     }
 
     update(dt: Duration): void {
+        this.handleKeyboard();
         super.update(dt);
         if (this.dead) return;
-        this.handleKeyboard();
         this.survivedFor.add(dt);
     }
 
@@ -297,31 +329,48 @@ export class PlayerTank extends Tank implements Entity {
 
     protected handleKeyboard(): void {
         this.moving = false;
+        let newDirection: Direction | null = null;
         if (keyboard.isDown('KeyA')) {
-            this.direction = Direction.LEFT;
-            this.moving = true;
+            newDirection = Direction.LEFT;
         }
         if (keyboard.isDown('KeyD')) {
-            this.direction = Direction.RIGHT;
-            this.moving = true;
+            if (newDirection === Direction.LEFT) {
+                newDirection = null;
+            } else {
+                newDirection = Direction.RIGHT;
+            }
         }
         if (keyboard.isDown('KeyW')) {
-            this.direction = Direction.UP;
-            this.moving = true;
+            newDirection = Direction.UP;
         }
         if (keyboard.isDown('KeyS')) {
-            this.direction = Direction.DOWN;
-            this.moving = true;
+            if (newDirection === Direction.UP) {
+                newDirection = null;
+            } else {
+                newDirection = Direction.DOWN;
+            }
         }
         if (keyboard.isDown('Space') && !this.shootingDelay.positive) {
             this.shoot();
         }
-        this.v = this.moving ? this.MOVEMENT_SPEED.milliseconds : 0;
+        if (newDirection == null) {
+            this.acceleration = 0;
+        } else {
+            if (newDirection !== this.direction) {
+                this.velocity = 0;
+            }
+            this.direction = newDirection;
+            this.moving = true;
+            // NOTE: acceleration here is assumed without friction
+            // v=u+a*t => a=(v-u)/t
+            this.acceleration =
+                this.topSpeed / this.topSpeedReachTime.seconds +
+                this.deceleration;
+        }
     }
 }
 
 export class EnemyTank extends Tank implements Entity {
-    protected v = this.MOVEMENT_SPEED.milliseconds;
     protected moving = true;
     protected readonly SHOOTING_PERIOD = Duration.milliseconds(1000);
     protected readonly sprite = createTankSprite('tank_green');
@@ -333,12 +382,25 @@ export class EnemyTank extends Tank implements Entity {
     update(dt: Duration): void {
         const player = this.world.player;
         // NOTE: is collided, don't change the direction, allowing entities to move away from each other
+        if (this.collided) {
+            this.velocity = 0;
+        }
         if (!this.collided) {
-            const dir =
+            const newDirection =
                 this.findPlayerDirection(player, dt) ??
                 this.findDirectionIfStuck() ??
                 this.findRandomDirection(dt);
-            if (dir != null) this.direction = dir;
+            if (newDirection != null) {
+                if (newDirection !== this.direction) {
+                    this.velocity = 0;
+                }
+                this.direction = newDirection;
+                // NOTE: acceleration here is assumed without friction
+                // v=u+a*t => a=(v-u)/t
+                this.acceleration =
+                    this.topSpeed / this.topSpeedReachTime.seconds +
+                    this.deceleration;
+            }
         }
         this.collided = false;
         super.update(dt);

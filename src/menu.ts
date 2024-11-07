@@ -45,7 +45,7 @@ export function initMenu(game: Game): Menu {
             game.start(game.world.isInfinite);
             menu.hide();
         },
-        [MenuState.DEAD],
+        [MenuState.DEAD, MenuState.PAUSE],
     );
     menu.addButton(
         'Main menu',

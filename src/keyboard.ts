@@ -9,6 +9,8 @@ export type KeyCode =
     | 'KeyB'
     | 'KeyP'
     | 'KeyO'
+    | 'KeyU'
+    | 'KeyJ'
     | 'Backquote'
     | 'Space'
     | 'Escape'

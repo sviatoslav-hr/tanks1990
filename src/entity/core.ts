@@ -78,5 +78,5 @@ export function getMovement(value: number, direction: Direction): Vector2Like {
 }
 
 export function scaleMovement(movement: number, dt: Duration): number {
-    return movement * (dt.milliseconds / 1000);
+    return movement * dt.seconds;
 }

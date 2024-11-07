@@ -1,9 +1,12 @@
 # TODO:
 
 - **TODO**
+    - [ ] **Add developer panel**
     - [ ] Define game plan / trajectory / future development / main goal / idea
     - [ ] Define custom RNG and use it everywhere instead of `Math.random()`
+    - [ ] Add friction to projectile movement
 - **FIXME**
+    - [ ] **Fix enemies stuck at the blocks or at each other like dumbasses**
     - [ ] Fix projectile size (it's bigger than it visually is)
     - [ ] Fix sound explosion delay
     - [ ] Cache best score instead of fetching it each frame
@@ -27,7 +30,6 @@
     - [ ] Background music?
     - [ ] Main screen music?
 - [ ] **Animations**
-    - [ ] Add inertia to movement and friction
     - [ ] Use sprite image for explosion animation instead of circle
     - [ ] Spawning
     - [ ] Shooting
@@ -35,8 +37,6 @@
     - [ ] Improve explosion animation
     - [ ] Rewrite the animation system to use progress values (0-1) instead of dt updates (look into ExplosionEffect)
     - [ ] Consider using states for animations ([see](https://www.youtube.com/watch?v=e3LGFrHqqiI))
-- [ ] **Movement**
-    - [ ] Make movement more realistic (speed decreases over time unless entity is moving)
 - [ ] **New feature Ideas**
     - [ ] Power ups?
     - [ ] Add Literal fullscreen button (in options or literally below the canvas)
@@ -79,6 +79,7 @@
 - [x] Sprite for bullets
 - [x] Add options to menu
 - **DONE**
+    - [x] Make movement more realistic, add inertian and friction (speed decreases over time unless entity is moving)
     - [x] **Add projectile trail**
     - [x] FIXME: Pause is not pausing
     - [x] REFACTOR: Move `Projectile` out of `Tank` class and make it less dependent on `Tank`
