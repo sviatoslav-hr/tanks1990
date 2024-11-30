@@ -1,5 +1,4 @@
 import { Rect } from './math';
-import { FPSCounter } from './ui';
 import { World } from './world';
 
 export enum GameStatus {
@@ -12,8 +11,6 @@ export enum GameStatus {
 // Also it should have a reference to Menu, but Menu shouldn't have the Game ref
 export class Game {
     status = GameStatus.INITIAL;
-    showFps = false;
-    readonly fps = new FPSCounter();
     readonly world: World;
 
     constructor(

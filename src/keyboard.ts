@@ -14,7 +14,8 @@ export type KeyCode =
     | 'Backquote'
     | 'Space'
     | 'Escape'
-    | 'Semicolon';
+    | 'Semicolon'
+    | 'Backslash';
 export type KeysState = Partial<Record<KeyCode, boolean>>;
 export type KeyHandler = (event: Event, code: KeyCode) => void;
 

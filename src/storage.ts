@@ -1,6 +1,7 @@
 const BEST_SCORE_KEY = 'best_score';
 const BEST_SCORE_AT_KEY = 'best_score_at';
 const SHOW_FPS_KEY = 'show_fps';
+const SHOW_DEV_PANEL_KEY = 'show_dev_panel';
 const SHOW_BOUNDARIES = 'show_boundaries';
 const GAME_VOLUME = 'game_volume';
 const DEV_MODE_KEY = 'dev_mode';
@@ -42,11 +43,22 @@ export function getBestScore(storage: Storage): ScoreRecord | null {
     return { score, createdAt };
 }
 
-export function getStoredShowFps(storage: Storage): boolean {
+export function getStoredIsDevPanelVisible(storage: Storage): boolean {
+    return storage.getItem(SHOW_DEV_PANEL_KEY) === 'true';
+}
+
+export function setStoredIsDevPanelVisible(
+    storage: Storage,
+    value: boolean,
+): void {
+    storage.setItem(SHOW_DEV_PANEL_KEY, value.toString());
+}
+
+export function getStoredIsFPSVisible(storage: Storage): boolean {
     return storage.getItem(SHOW_FPS_KEY) === 'true';
 }
 
-export function setStoredShowFps(storage: Storage, value: boolean): void {
+export function setStoredIsFPSVisible(storage: Storage, value: boolean): void {
     storage.setItem(SHOW_FPS_KEY, value.toString());
 }
 

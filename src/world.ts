@@ -17,6 +17,7 @@ export class World {
     isInfinite = false;
     showBoundary = false;
     gravityCoef = 20;
+    frictionCoef = 8;
 
     constructor(public readonly screen: Rect) {
         this.player = new PlayerTank(this.screen, this);

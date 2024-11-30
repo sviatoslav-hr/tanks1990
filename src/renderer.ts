@@ -7,12 +7,11 @@ import { keyboard } from './keyboard';
 import { Menu } from './menu';
 import {
     getStoredShowBoundaries,
-    getStoredShowFps,
     saveBestScore,
     setStoredShowBoundaries,
-    setStoredShowFps,
 } from './storage';
-import { Duration } from './math/duration.ts';
+import { Duration } from './math/duration';
+import { DevUI, setupDevUI } from './dev-ui';
 
 type AnimationCallback = (timestamp: number) => void;
 
@@ -39,16 +38,18 @@ export class Renderer {
     startAnimation(game: Game, menu: Menu, storage: Storage): void {
         this.resizeCanvas(window.innerWidth, window.innerHeight);
         this.lastTimestamp = performance.now();
-        game.showFps = getStoredShowFps(storage);
+        const devUI = setupDevUI(game.world, storage);
         game.world.showBoundary = getStoredShowBoundaries(storage);
+
         const animationCallback = this.createAnimationCallback(
             game,
             menu,
+            devUI,
             storage,
         );
         window.requestAnimationFrame(animationCallback);
         // TODO: animation function shouldn't be responsible for Keyboard handling
-        this.handleKeyboard(game, menu, storage);
+        this.handleKeyboard(game, menu, devUI, storage);
     }
 
     resizeCanvas(width: number, height: number): [number, number] {
@@ -70,11 +71,18 @@ export class Renderer {
         }
     }
 
-    private handleKeyboard(game: Game, menu: Menu, storage: Storage): void {
+    private handleKeyboard(
+        game: Game,
+        menu: Menu,
+        devUI: DevUI,
+        storage: Storage,
+    ): void {
         keyboard.listen(document.body);
         keyboard.onKeydown('Backquote', () => {
-            game.showFps = !game.showFps;
-            setStoredShowFps(storage, game.showFps);
+            devUI.fpsMonitor.toggleVisibility(storage);
+        });
+        keyboard.onKeydown('Backslash', () => {
+            devUI.devPanel.toggleVisibility(storage);
         });
         keyboard.onKeydown('KeyB', () => {
             game.world.showBoundary = !game.world.showBoundary;
@@ -128,6 +136,7 @@ export class Renderer {
     private createAnimationCallback(
         game: Game,
         menu: Menu,
+        devUI: DevUI,
         storage: Storage,
     ): AnimationCallback {
         const animationCallback = (timestamp: number): void => {
@@ -145,8 +154,6 @@ export class Renderer {
             );
             drawGrid(this.ctx, game, CELL_SIZE);
             world.draw(this.ctx);
-            if (game.showFps) game.fps.draw(this.ctx);
-
             if (
                 game.paused ||
                 game.dead ||
@@ -162,7 +169,7 @@ export class Renderer {
                 world.update(dt);
             }
             keyboard.reset();
-            game.fps.update(dt);
+            devUI.update(dt);
             window.requestAnimationFrame(animationCallback);
         };
         return animationCallback;

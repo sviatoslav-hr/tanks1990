@@ -49,6 +49,7 @@
         - [ ] Define dev mode
         - [ ] Custom logger
 - [ ] **Improvements**
+    - [ ] Better UI for Stats (during game, pause and death)
     - [ ] Display UI hints
         - [ ] Improve controls hints [kenney.nl](https://kenney.nl/assets/input-prompts)
     - [ ] rework the score UI

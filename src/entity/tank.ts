@@ -74,7 +74,7 @@ export abstract class Tank implements Entity {
 
     get deceleration(): number {
         // NOTE: simulate friction with increasing speed (air resistance, etc.)
-        const simulatedFriction = 8 * this.velocity;
+        const simulatedFriction = this.world.frictionCoef * this.velocity;
         return (
             this.frictionCoef * GRAVITY * this.world.gravityCoef +
             simulatedFriction
