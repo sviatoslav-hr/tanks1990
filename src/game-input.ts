@@ -19,7 +19,7 @@ export type KeyCode =
 export type KeysState = Partial<Record<KeyCode, boolean>>;
 export type KeyHandler = (event: Event, code: KeyCode) => void;
 
-export class Keyboard {
+export class GameInput {
     private currentPressed: KeysState = {};
     private previousPressed: KeysState = {};
     private keydownHandlers: Partial<Record<KeyCode, KeyHandler[]>> = {};
@@ -40,6 +40,20 @@ export class Keyboard {
         return !this.currentPressed[code];
     }
 
+    tick() {
+        this.previousPressed = { ...this.currentPressed };
+    }
+
+    // TODO: remove it, use isPressed()
+    onKeydown(code: KeyCode, handler: KeyHandler): void {
+        const handlers = this.keydownHandlers[code];
+        if (handlers) {
+            handlers.push(handler);
+        } else {
+            this.keydownHandlers[code] = [handler];
+        }
+    }
+
     listen(element: HTMLElement) {
         element.addEventListener('keydown', (ev) => {
             const code = ev.code as KeyCode;
@@ -53,10 +67,6 @@ export class Keyboard {
         );
     }
 
-    reset() {
-        this.previousPressed = { ...this.currentPressed };
-    }
-
     private setPressed(code: KeyCode) {
         this.currentPressed[code] = true;
     }
@@ -64,16 +74,4 @@ export class Keyboard {
     private setReleased(code: KeyCode) {
         this.currentPressed[code] = false;
     }
-
-    // TODO: remove it, use isPressed()
-    onKeydown(code: KeyCode, handler: KeyHandler): void {
-        const handlers = this.keydownHandlers[code];
-        if (handlers) {
-            handlers.push(handler);
-        } else {
-            this.keydownHandlers[code] = [handler];
-        }
-    }
 }
-
-export const keyboard = new Keyboard();

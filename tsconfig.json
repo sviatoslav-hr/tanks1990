@@ -9,7 +9,7 @@
 
         /* Bundler mode */
         "moduleResolution": "bundler",
-        "allowImportingTsExtensions": true,
+        "allowImportingTsExtensions": false,
         "resolveJsonModule": true,
         "isolatedModules": true,
         "noEmit": true,
@@ -31,7 +31,10 @@
         "noUnusedLocals": true,
         "noUnusedParameters": true,
         "typeRoots": ["./node_modules/@types", "./src"],
-        "types": ["jest", "vite-env", "globals"]
+        "types": ["vite-env", "globals"],
+        "paths": {
+            "#/*": ["./src/*"]
+        }
     },
-    "include": ["src"]
+    "include": ["src", "vendor"]
 }

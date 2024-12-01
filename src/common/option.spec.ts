@@ -1,4 +1,6 @@
-import { Opt } from './option';
+import {describe, it, expect} from 'vitest';
+
+import {Opt} from '#/common/option';
 
 describe('Option', () => {
     it('should unwrap the value', () => {

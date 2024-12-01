@@ -51,13 +51,15 @@ export class Duration {
     }
 
     max(other: Duration | number): Duration {
-        const milliseconds = typeof other === 'number' ? other : other.milliseconds;
+        const milliseconds =
+            typeof other === 'number' ? other : other.milliseconds;
         this.milliseconds = Math.max(this.milliseconds, milliseconds);
         return this;
     }
 
     min(other: Duration | number): Duration {
-        const milliseconds = typeof other === 'number' ? other : other.milliseconds;
+        const milliseconds =
+            typeof other === 'number' ? other : other.milliseconds;
         this.milliseconds = Math.min(this.milliseconds, milliseconds);
         return this;
     }
@@ -92,5 +94,4 @@ export class Duration {
         }
         return `${Math.floor(this.milliseconds)}ms`;
     }
-
 }

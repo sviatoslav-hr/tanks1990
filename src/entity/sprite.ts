@@ -1,8 +1,8 @@
-import { Context } from '../context';
-import { Rect } from '../math';
-import { Transform } from '../math/transform';
-import { Vector2 } from '../math/vector';
-import { Duration } from '../math/duration.ts';
+import {Context} from '#/context';
+import {Rect} from '#/math';
+import {Transform} from '#/math/transform';
+import {Vector2} from '#/math/vector';
+import {Duration} from '#/math/duration';
 
 const ASSETS_URL = './assets';
 // TODO: consider using a simpler data type for images instead of HTMLImageElement
@@ -24,11 +24,11 @@ type SpriteOpts<K extends string> = {
     frameWidth: number;
     frameHeight: number;
     frameDuration?: Duration; // default 100
-    states: { name: K; frames: number }[];
+    states: {name: K; frames: number}[];
 };
 
-type SpriteState<K extends string> = { name: K; index: number; frames: number };
-type SpriteStateMap<K extends string> = { [Key in K]: SpriteState<Key> };
+type SpriteState<K extends string> = {name: K; index: number; frames: number};
+type SpriteStateMap<K extends string> = {[Key in K]: SpriteState<Key>};
 
 export class Sprite<K extends string> {
     private frameIndex = 0;
@@ -42,7 +42,7 @@ export class Sprite<K extends string> {
     private readonly stateMap: SpriteStateMap<K>;
 
     constructor(opts: SpriteOpts<K>) {
-        const { key, frameWidth, frameHeight, frameDuration, states } = opts;
+        const {key, frameWidth, frameHeight, frameDuration, states} = opts;
         this.frameWidth = frameWidth;
         this.frameHeight = frameHeight;
         if (frameDuration) {
@@ -59,8 +59,8 @@ export class Sprite<K extends string> {
             setCachedImage(src, this.image);
         }
         this.stateMap = {} as SpriteStateMap<K>;
-        for (const [index, { name, frames }] of states.entries()) {
-            const state = { name, frames, index };
+        for (const [index, {name, frames}] of states.entries()) {
+            const state = {name, frames, index};
             if (!this.state) {
                 this.state = state;
             }
@@ -126,7 +126,7 @@ export function createShieldSprite() {
         frameWidth: 64,
         frameHeight: 64,
         frameDuration: Duration.milliseconds(100),
-        states: [{ name: 'flowing', frames: 6 }],
+        states: [{name: 'flowing', frames: 6}],
     });
 }
 
@@ -136,13 +136,13 @@ export function createTankSprite(key: 'tank_yellow' | 'tank_green') {
         frameWidth: 64,
         frameHeight: 64,
         frameDuration: Duration.milliseconds(100),
-        states: [{ name: 'moving', frames: 2 }],
+        states: [{name: 'moving', frames: 2}],
     });
 }
 
 export function createStaticSprite(
     opts: Omit<SpriteOpts<'static'>, 'states'>,
 ): Sprite<'static'> {
-    const states = [{ name: 'static', frames: 1 } as const];
-    return new Sprite({ ...opts, states });
+    const states = [{name: 'static', frames: 1} as const];
+    return new Sprite({...opts, states});
 }

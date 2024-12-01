@@ -1,4 +1,4 @@
-import { Result } from './result';
+import {Result} from '#/common/result';
 
 export type Opt<T> = SomeOption<T> | NoneOption<T>;
 

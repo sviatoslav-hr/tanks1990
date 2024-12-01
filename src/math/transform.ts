@@ -1,5 +1,5 @@
-import { toRadians } from '../math';
-import { Vector2 } from './vector';
+import {toRadians} from '#/math';
+import {Vector2} from '#/math/vector';
 
 type TransformMatrix = {
     a: number;
@@ -81,7 +81,7 @@ export class Transform implements TransformMatrix {
         const b = m1.b * m2.a + m1.d * m2.b;
         const d = m1.b * m2.c + m1.d * m2.d;
         const f = m1.b * m2.e + m1.d * m2.f + m1.f;
-        return Transform.from({ a, b, c, d, e, f });
+        return Transform.from({a, b, c, d, e, f});
     }
 
     // NOTE: make sure to not overuse it, since creating a new object can get expensive
@@ -143,7 +143,7 @@ export class Transform implements TransformMatrix {
     }
 
     reset(): this {
-        return this.set({ a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 });
+        return this.set({a: 1, b: 0, c: 0, d: 1, e: 0, f: 0});
     }
 
     copy(): Transform {

@@ -1,12 +1,12 @@
-import { CustomElement, css } from './html';
-import { numround } from './math';
-import { Duration } from './math/duration';
+import {CustomElement, css} from '#/html';
+import {numround} from '#/math';
+import {Duration} from '#/math/duration';
 import {
     getStoredIsDevPanelVisible,
     getStoredIsFPSVisible,
     setStoredIsFPSVisible,
-} from './storage';
-import { World } from './world';
+} from '#/storage';
+import {World} from '#/world';
 
 interface HTMLElementOptions {
     className?: string | string[];
@@ -39,7 +39,7 @@ function applyOptionsToElement(
         element.textContent = options.textContent;
     }
     if (options?.children) {
-        const { children } = options;
+        const {children} = options;
         if (typeof children === 'string') {
             element.textContent = children;
         } else if (Array.isArray(children)) {
@@ -60,7 +60,7 @@ export abstract class ReactiveElement extends HTMLElement {
 
     constructor(options?: HTMLElementOptions) {
         super();
-        this.shadowRoot = this.attachShadow({ mode: 'open' });
+        this.shadowRoot = this.attachShadow({mode: 'open'});
         applyOptionsToElement(this, options);
         setTimeout(() => {
             const styles = this.styles();
@@ -98,7 +98,7 @@ export class DevPanel extends ReactiveElement {
         return div({
             className: ['dev-panel'],
             children: [
-                div({ textContent: 'Dev Panel: ' + (this.name ?? 'Root') }),
+                div({textContent: 'Dev Panel: ' + (this.name ?? 'Root')}),
             ],
         });
     }
@@ -152,7 +152,7 @@ export class DevPanel extends ReactiveElement {
 export class FPSMonitor extends ReactiveElement {
     private lastFPS: string = '0';
     private updateDelay = Duration.zero();
-    private textElement = div({ textContent: 'FPS: 60' });
+    private textElement = div({textContent: 'FPS: 60'});
     static readonly FPS_UPDATE_DELAY = new Duration(300);
     public visible = true;
 

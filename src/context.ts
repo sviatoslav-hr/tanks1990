@@ -1,7 +1,7 @@
-import { Color } from './color';
-import { BASE_FONT_SIZE } from './const';
-import { Rect } from './math';
-import { Transform } from './math/transform';
+import {Color} from '#/color';
+import {BASE_FONT_SIZE} from '#/const';
+import {Rect} from '#/math';
+import {Transform} from '#/math/transform';
 
 type ShadowTextOpts = {
     x: number;
@@ -13,14 +13,14 @@ type ShadowTextOpts = {
 export class Context {
     constructor(public ctx: CanvasRenderingContext2D) {}
 
-    drawBoundary({ x, y, width, height }: Rect, lineWidth = 1): void {
+    drawBoundary({x, y, width, height}: Rect, lineWidth = 1): void {
         this.drawLine(x, y, x + width, y, lineWidth);
         this.drawLine(x + width, y, x + width, y + height, lineWidth);
         this.drawLine(x + width, y + height, x, y + height, lineWidth);
         this.drawLine(x, y + height, x, y, lineWidth);
     }
 
-    drawRect2({ x, y, width, height }: Rect): void {
+    drawRect2({x, y, width, height}: Rect): void {
         this.ctx.fillRect(x, y, width, height);
     }
 
@@ -44,7 +44,7 @@ export class Context {
 
     drawText(
         text: string,
-        { x, y, color = Color.WHITE, shadowColor }: ShadowTextOpts,
+        {x, y, color = Color.WHITE, shadowColor}: ShadowTextOpts,
     ): void {
         if (shadowColor) {
             this.setFillColor(shadowColor);
@@ -58,7 +58,7 @@ export class Context {
     drawMultilineText(textRows: string[], opts: ShadowTextOpts): void {
         for (const [index, text] of textRows.entries()) {
             const lineY = opts.y + BASE_FONT_SIZE * index;
-            this.drawText(text, { ...opts, y: lineY });
+            this.drawText(text, {...opts, y: lineY});
         }
     }
 
@@ -80,7 +80,7 @@ export class Context {
     }
 
     setTransform(transform: Transform): void {
-        const { a, b, c, d, e, f } = transform;
+        const {a, b, c, d, e, f} = transform;
         this.ctx.setTransform(a, b, c, d, e, f);
     }
 

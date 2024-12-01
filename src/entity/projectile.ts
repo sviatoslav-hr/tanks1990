@@ -1,11 +1,6 @@
-import { Tank } from '.';
-import { Color } from '../color.ts';
-import { CELL_SIZE } from '../const';
-import { Context } from '../context';
-import { bellCurveInterpolate, lerp } from '../math.ts';
-import { Duration } from '../math/duration';
-import { Vector2 } from '../math/vector.ts';
-import { World } from '../world.ts';
+import {Color} from '#/color';
+import {CELL_SIZE} from '#/const';
+import {Context} from '#/context';
 import {
     Direction,
     Entity,
@@ -13,8 +8,13 @@ import {
     isOutsideRect,
     moveEntity,
     scaleMovement,
-} from './core';
-import { Sprite } from './sprite';
+} from '#/entity/core';
+import {Sprite} from '#/entity/sprite';
+import {Tank} from '#/entity/tank';
+import {bellCurveInterpolate, lerp} from '#/math';
+import {Duration} from '#/math/duration';
+import {Vector2} from '#/math/vector';
+import {World} from '#/world';
 
 export class Projectile implements Entity {
     public static SIZE = CELL_SIZE / 5;
@@ -28,7 +28,7 @@ export class Projectile implements Entity {
         frameWidth: 16,
         frameHeight: 16,
         frameDuration: Duration.milliseconds(100),
-        states: [{ name: 'moving', frames: 2 }],
+        states: [{name: 'moving', frames: 2}],
     });
     static readonly TRAIL_DISTANCE = CELL_SIZE * 2;
 

@@ -1,6 +1,6 @@
-import { Game } from './game';
-import { html } from './html';
-import { getVolume, setVolume } from './sound';
+import {Game} from '#/game';
+import {html} from '#/html';
+import {getVolume, setVolume} from '#/sound';
 
 enum MenuState {
     HIDDEN = 'hidden',

@@ -1,13 +1,14 @@
-import { CELL_SIZE } from './const';
-import { Context } from './context';
-import { EnemyTank, PlayerTank, Tank } from './entity';
-import { Block } from './entity/block';
-import { Entity } from './entity/core';
-import { Projectile } from './entity/projectile';
-import { createStaticSprite } from './entity/sprite';
-import { Rect, randomInt } from './math';
-import { Duration } from './math/duration';
-import { Vector2, Vector2Like } from './math/vector';
+import {CELL_SIZE} from '#/const';
+import {Context} from '#/context';
+import {EnemyTank, PlayerTank, Tank} from '#/entity';
+import {Block} from '#/entity/block';
+import {Entity} from '#/entity/core';
+import {Projectile} from '#/entity/projectile';
+import {createStaticSprite} from '#/entity/sprite';
+import {Rect, randomInt} from '#/math';
+import {Duration} from '#/math/duration';
+import {Vector2, Vector2Like} from '#/math/vector';
+import {GameInput} from '#/game-input';
 
 export class World {
     tanks: Tank[] = [];
@@ -19,8 +20,11 @@ export class World {
     gravityCoef = 20;
     frictionCoef = 8;
 
-    constructor(public readonly screen: Rect) {
-        this.player = new PlayerTank(this.screen, this);
+    constructor(
+        public readonly screen: Rect,
+        input: GameInput,
+    ) {
+        this.player = new PlayerTank(this.screen, this, input);
     }
 
     readonly offset = Vector2.zero();

@@ -1,4 +1,4 @@
-import { clamp } from '../math';
+import {clamp} from '#/math';
 
 export class Vector2 implements Vector2Like {
     constructor(

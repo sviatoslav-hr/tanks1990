@@ -1,12 +1,12 @@
 // TODO: maybe remove it to a class to have this state there.
 
-import { Color } from './color';
-import { BASE_FONT_SIZE, BASE_PADDING } from './const';
-import { Context } from './context';
-import { PlayerTank } from './entity';
-import { Game } from './game';
-import { Rect, xn } from './math';
-import { getBestScore } from './storage';
+import {Color} from '#/color';
+import {BASE_FONT_SIZE, BASE_PADDING} from '#/const';
+import {Context} from '#/context';
+import {PlayerTank} from '#/entity';
+import {Game} from '#/game';
+import {Rect, xn} from '#/math';
+import {getBestScore} from '#/storage';
 
 export function drawScore(
     ctx: Context,
@@ -53,7 +53,7 @@ export function drawScore(
 }
 
 export function drawGrid(ctx: Context, game: Game, cellSize: number): void {
-    let { x, y, width, height } = game.screen;
+    let {x, y, width, height} = game.screen;
     x += game.world.offset.x % cellSize;
     y += game.world.offset.y % cellSize;
     ctx.setStrokeColor(Color.BLACK_IERIE);

@@ -1,6 +1,8 @@
-import { toDegrees } from '../math';
-import { Transform } from './transform';
-import { Vector2 } from './vector';
+import {describe, it, expect} from 'vitest';
+
+import {toDegrees} from '#/math';
+import {Transform} from '#/math/transform';
+import {Vector2} from '#/math/vector';
 
 describe('Transform', () => {
     it('should multiply the matrices', () => {
@@ -34,7 +36,7 @@ describe('Transform', () => {
     });
 
     it('should translate(move) the matrix', () => {
-        const t = Transform.from({ a: 1, b: 0, c: 0, d: 1, e: 2, f: 2 });
+        const t = Transform.from({a: 1, b: 0, c: 0, d: 1, e: 2, f: 2});
         t.translate(Vector2.create(5, 9));
         expect(t.position).toEqual(Vector2.create(7, 11));
     });

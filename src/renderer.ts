@@ -1,17 +1,17 @@
-import { Color } from './color';
-import { BASE_HEIGHT, BASE_WIDTH, CELL_SIZE } from './const';
-import { Context } from './context';
-import { drawGrid, drawScore } from './draw';
-import { Game, GameStatus } from './game';
-import { keyboard } from './keyboard';
-import { Menu } from './menu';
+import {Color} from '#/color';
+import {BASE_HEIGHT, BASE_WIDTH, CELL_SIZE} from '#/const';
+import {Context} from '#/context';
+import {drawGrid, drawScore} from '#/draw';
+import {Game, GameStatus} from '#/game';
+import {Menu} from '#/menu';
 import {
     getStoredShowBoundaries,
     saveBestScore,
     setStoredShowBoundaries,
-} from './storage';
-import { Duration } from './math/duration';
-import { DevUI, setupDevUI } from './dev-ui';
+} from '#/storage';
+import {Duration} from '#/math/duration';
+import {DevUI, setupDevUI} from '#/dev-ui';
+import {GameInput} from './game-input';
 
 type AnimationCallback = (timestamp: number) => void;
 
@@ -35,7 +35,12 @@ export class Renderer {
 
     // TODO: renderer shouldn't be aware of these classes,
     // it should be more abstract
-    startAnimation(game: Game, menu: Menu, storage: Storage): void {
+    startAnimation(
+        game: Game,
+        input: GameInput,
+        menu: Menu,
+        storage: Storage,
+    ): void {
         this.resizeCanvas(window.innerWidth, window.innerHeight);
         this.lastTimestamp = performance.now();
         const devUI = setupDevUI(game.world, storage);
@@ -43,13 +48,14 @@ export class Renderer {
 
         const animationCallback = this.createAnimationCallback(
             game,
+            input,
             menu,
             devUI,
             storage,
         );
         window.requestAnimationFrame(animationCallback);
         // TODO: animation function shouldn't be responsible for Keyboard handling
-        this.handleKeyboard(game, menu, devUI, storage);
+        this.handleKeyboard(input, game, menu, devUI, storage);
     }
 
     resizeCanvas(width: number, height: number): [number, number] {
@@ -72,23 +78,24 @@ export class Renderer {
     }
 
     private handleKeyboard(
+        input: GameInput,
         game: Game,
         menu: Menu,
         devUI: DevUI,
         storage: Storage,
     ): void {
-        keyboard.listen(document.body);
-        keyboard.onKeydown('Backquote', () => {
+        input.listen(document.body);
+        input.onKeydown('Backquote', () => {
             devUI.fpsMonitor.toggleVisibility(storage);
         });
-        keyboard.onKeydown('Backslash', () => {
+        input.onKeydown('Backslash', () => {
             devUI.devPanel.toggleVisibility(storage);
         });
-        keyboard.onKeydown('KeyB', () => {
+        input.onKeydown('KeyB', () => {
             game.world.showBoundary = !game.world.showBoundary;
             setStoredShowBoundaries(storage, game.world.showBoundary);
         });
-        keyboard.onKeydown('KeyP', () => {
+        input.onKeydown('KeyP', () => {
             switch (game.status) {
                 case GameStatus.PLAYING: {
                     if (game.dead) {
@@ -111,7 +118,7 @@ export class Renderer {
                     console.warn('Unhandled value ', game.status);
             }
         });
-        keyboard.onKeydown('KeyO', () => {
+        input.onKeydown('KeyO', () => {
             switch (game.status) {
                 case GameStatus.PLAYING: {
                     if (game.dead) {
@@ -135,6 +142,7 @@ export class Renderer {
 
     private createAnimationCallback(
         game: Game,
+        input: GameInput,
         menu: Menu,
         devUI: DevUI,
         storage: Storage,
@@ -157,7 +165,7 @@ export class Renderer {
             if (
                 game.paused ||
                 game.dead ||
-                (game.playing && keyboard.isDown('KeyQ'))
+                (game.playing && input.isDown('KeyQ'))
             ) {
                 drawScore(this.ctx, world.player, screen, storage);
             }
@@ -168,7 +176,7 @@ export class Renderer {
             if (game.playing) {
                 world.update(dt);
             }
-            keyboard.reset();
+            input.tick();
             devUI.update(dt);
             window.requestAnimationFrame(animationCallback);
         };

@@ -1,9 +1,9 @@
-import { Context } from '../context';
-import { Rect, clamp } from '../math';
-import { Vector2 } from '../math/vector';
-import { assert } from '../utils';
-import { getCachedImage, setCachedImage } from './sprite';
-import {Duration} from "../math/duration.ts";
+import {Context} from '#/context';
+import {Rect, clamp} from '#/math';
+import {Vector2} from '#/math/vector';
+import {assert} from '#/utils';
+import {getCachedImage, setCachedImage} from '#/entity/sprite';
+import {Duration} from '#/math/duration';
 
 const EXPLOSION_IMAGE_PATH = './assets/kenney_particle-pack/scorch_01.png';
 
@@ -152,7 +152,8 @@ export class ExplosionEffect {
         }
         this.animationTime.add(dt);
         this.animationProgress = clamp(
-            this.animationTime.milliseconds / ExplosionEffect.ANIMATION_DURATION.milliseconds,
+            this.animationTime.milliseconds /
+                ExplosionEffect.ANIMATION_DURATION.milliseconds,
             0,
             1,
         );
@@ -183,7 +184,7 @@ class Particle {
             boundary.width / 2,
             boundary.height / 2,
         );
-        travelDistance.multiply({ x: Math.random(), y: Math.random() });
+        travelDistance.multiply({x: Math.random(), y: Math.random()});
         this.destination = position
             .clone()
             .sub(boundaryCenter)

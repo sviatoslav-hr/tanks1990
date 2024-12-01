@@ -1,6 +1,6 @@
-import { Result, wrapError } from './common';
-import { clamp } from './math';
-import { getStoredVolume, storeVolume } from './storage';
+import {Result, wrapError} from '#/common';
+import {clamp} from '#/math';
+import {getStoredVolume, storeVolume} from '#/storage';
 
 export enum SoundType {
     EXPLOSION = '8bit_bomb_explosion',

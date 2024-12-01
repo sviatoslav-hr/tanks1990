@@ -1,7 +1,20 @@
-import { Color } from '../color';
-import { CELL_SIZE } from '../const';
-import { Context } from '../context';
-import { keyboard } from '../keyboard';
+import {Color} from '#/color';
+import {CELL_SIZE} from '#/const';
+import {Context} from '#/context';
+import {Block} from '#/entity/block';
+import {
+    Direction,
+    Entity,
+    clampByBoundary,
+    getMovement,
+    isIntesecting,
+    isOutsideRect,
+    moveEntity,
+} from '#/entity/core';
+import {ExplosionEffect} from '#/entity/effect';
+import {Projectile} from '#/entity/projectile';
+import {Sprite, createShieldSprite, createTankSprite} from '#/entity/sprite';
+import {GameInput} from '#/game-input';
 import {
     GRAVITY,
     Rect,
@@ -11,23 +24,10 @@ import {
     randomFrom,
     xn,
     yn,
-} from '../math';
-import { Duration } from '../math/duration.ts';
-import { SoundType, playSound } from '../sound';
-import { World } from '../world.ts';
-import { Block } from './block';
-import {
-    Direction,
-    Entity,
-    clampByBoundary,
-    getMovement,
-    isIntesecting,
-    isOutsideRect,
-    moveEntity,
-} from './core';
-import { ExplosionEffect } from './effect';
-import { Projectile } from './projectile.ts';
-import { Sprite, createShieldSprite, createTankSprite } from './sprite';
+} from '#/math';
+import {Duration} from '#/math/duration';
+import {SoundType, playSound} from '#/sound';
+import {World} from '#/world';
 
 export abstract class Tank implements Entity {
     public x = 0;
@@ -294,7 +294,11 @@ export class PlayerTank extends Tank implements Entity {
     public survivedFor = Duration.zero();
     protected readonly sprite = createTankSprite('tank_yellow');
 
-    constructor(boundary: Rect, world: World) {
+    constructor(
+        boundary: Rect,
+        world: World,
+        private keyboard: GameInput,
+    ) {
         super(boundary, world);
         if (world.isInfinite) {
             this.x = boundary.x + boundary.width / 2;
@@ -330,6 +334,7 @@ export class PlayerTank extends Tank implements Entity {
     protected handleKeyboard(): void {
         this.moving = false;
         let newDirection: Direction | null = null;
+        const keyboard = this.keyboard;
         if (keyboard.isDown('KeyA')) {
             newDirection = Direction.LEFT;
         }

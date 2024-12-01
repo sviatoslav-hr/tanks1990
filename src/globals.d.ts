@@ -1,4 +1,4 @@
-import type { assert, assertError, throwError } from './utils';
+import type {assert, assertError, throwError} from '#/utils';
 
 type AssertFn = typeof assert;
 type AssertErrorFn = typeof assertError;

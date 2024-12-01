@@ -1,4 +1,6 @@
-import { Result, wrapError } from './result';
+import {describe, it, expect} from 'vitest';
+
+import {Result, wrapError} from '#/common/result';
 
 describe('Result', () => {
     it('Ok', () => {

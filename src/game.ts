@@ -1,5 +1,5 @@
-import { Rect } from './math';
-import { World } from './world';
+import {Rect} from '#/math';
+import {World} from '#/world';
 
 export enum GameStatus {
     INITIAL,
