@@ -1,12 +1,18 @@
 # TODO:
 
-- **TODO**
+- **IN_PROGRESS**
     - [ ] **Add developer panel**
+- **TODO**
     - [ ] Define game plan / trajectory / future development / main goal / idea
     - [ ] Define custom RNG and use it everywhere instead of `Math.random()`
     - [ ] Add friction to projectile movement
 - **FIXME**
-    - [ ] **Fix enemies stuck at the blocks or at each other like dumbasses**
+    - [ ] ***`Fix enemies stuck at the blocks or at each other like dumbasses. FIX ENEMY AI!!!`***
+    - [ ] ***`Rework the score UI!!!`***
+        - [ ] Display score somewhere on the screen while game is active
+        - [ ] Display score on pause screen
+        - [ ] Display score on the death screen
+        - [ ] Display best score on the death screen
     - [ ] Fix projectile size (it's bigger than it visually is)
     - [ ] Fix sound explosion delay
     - [ ] Cache best score instead of fetching it each frame
@@ -49,14 +55,8 @@
         - [ ] Define dev mode
         - [ ] Custom logger
 - [ ] **Improvements**
-    - [ ] Better UI for Stats (during game, pause and death)
     - [ ] Display UI hints
         - [ ] Improve controls hints [kenney.nl](https://kenney.nl/assets/input-prompts)
-    - [ ] rework the score UI
-        - [ ] Display score somewhere on the screen while game is active
-        - [ ] Display score on pause screen
-        - [ ] Display score on the death screen
-        - [ ] Display best score on the death screen
 - [ ] **Power ups**
     - [ ] Think about what power ups there should be
         - [ ] Time stop

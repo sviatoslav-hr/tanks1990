@@ -1,6 +1,8 @@
 import {Game} from '#/game';
-import {html} from '#/html';
+import {CustomElement, html} from '#/html';
 import {getVolume, setVolume} from '#/sound';
+
+// TODO: refactor menu to use new ReactiveElement
 
 enum MenuState {
     HIDDEN = 'hidden',
@@ -98,6 +100,7 @@ export function initMenu(game: Game): Menu {
     return menu;
 }
 
+@CustomElement('game-menu-button')
 class MenuButton extends HTMLElement {
     private buttonEl: HTMLButtonElement;
     constructor(
@@ -128,6 +131,7 @@ class MenuButton extends HTMLElement {
 }
 
 // TODO: update width on window resize
+@CustomElement('game-menu-page')
 export class MenuPage extends HTMLElement {
     private contentWrapper: HTMLDivElement;
     private container: HTMLDivElement;
@@ -210,6 +214,7 @@ export class MenuPage extends HTMLElement {
     }
 }
 
+@CustomElement('game-menu')
 export class Menu extends HTMLElement {
     private state: MenuState = MenuState.START;
     private prevState?: MenuState;
@@ -382,6 +387,7 @@ interface SliderConfig {
     initValue?: number;
 }
 
+@CustomElement('game-slider')
 class Slider extends HTMLElement {
     private input: HTMLInputElement;
 
@@ -419,8 +425,3 @@ class Slider extends HTMLElement {
         });
     }
 }
-
-customElements.define('game-menu', Menu);
-customElements.define('game-menu-button', MenuButton);
-customElements.define('game-menu-page', MenuPage);
-customElements.define('game-slider', Slider);

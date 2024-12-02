@@ -56,3 +56,115 @@ export function CustomElement(tagName: string): CustomElementDecorator {
         }
     };
 }
+
+export interface HTMLElementOptions {
+    id?: string;
+    className?: string | string[];
+    textContent?: string;
+    children?: HTMLElementChildren;
+}
+
+type HTMLElementChildren = string | HTMLElement | (string | HTMLElement)[];
+
+function htmlElement<K extends keyof HTMLElementTagNameMap>(
+    tagName: K,
+    options?: HTMLElementOptions,
+): HTMLElementTagNameMap[K] {
+    const element = document.createElement(tagName);
+    applyOptionsToElement(element, options);
+    return element;
+}
+
+export function div(options?: HTMLElementOptions): HTMLElement {
+    const element = htmlElement('div', options);
+    return element;
+}
+
+interface HTMLInputElementOptions extends HTMLElementOptions {
+    type?: 'number';
+    value?: string | number;
+}
+
+export function input(options?: HTMLInputElementOptions): HTMLInputElement {
+    const element = htmlElement('input', options);
+    if (options?.type) {
+        element.type = options.type;
+    }
+    if (options?.value) {
+        element.value = options.value.toString();
+    }
+    return element;
+}
+
+interface HTMLLabelElementOptions extends HTMLElementOptions {
+    for?: string;
+}
+
+export function label(options?: HTMLLabelElementOptions): HTMLLabelElement {
+    const element = htmlElement('label', options);
+    if (options?.for) {
+        element.htmlFor = options.for;
+    }
+    return element;
+}
+
+function applyOptionsToElement(
+    element: HTMLElement,
+    options?: HTMLElementOptions,
+) {
+    if (options?.className) {
+        const className = Array.isArray(options.className)
+            ? options.className.join(' ')
+            : options.className;
+        element.className = className;
+    }
+    if (options?.textContent) {
+        element.textContent = options.textContent;
+    }
+    if (options?.children) {
+        const {children} = options;
+        if (typeof children === 'string') {
+            element.textContent = children;
+        } else if (Array.isArray(children)) {
+            element.append(...children);
+        } else {
+            element.append(children);
+        }
+    }
+}
+
+export abstract class ReactiveElement extends HTMLElement {
+    readonly shadowRoot: null = null;
+    private shadow: ShadowRoot;
+
+    constructor(options?: HTMLElementOptions) {
+        super();
+        this.shadow = this.attachShadow({mode: 'open'});
+        applyOptionsToElement(this, options);
+        // HACK: this has to be executed in the next microtask since render can try to access uninitialized properties
+        setTimeout(() => {
+            const styles = this.styles();
+            if (styles) {
+                this.shadow.append(styles);
+            }
+            const elements = this.render();
+            if (Array.isArray(elements)) {
+                this.shadow.append(...elements);
+            } else {
+                this.shadow.append(elements);
+            }
+        });
+    }
+
+    protected afterRender(): void {}
+
+    append(...elements: HTMLElement[]): void {
+        setTimeout(() => {
+            this.shadow.append(...elements);
+        });
+    }
+
+    // TODO: try avoid inheritance
+    protected abstract render(): HTMLElement | HTMLElement[];
+    protected abstract styles(): HTMLStyleElement | null;
+}
