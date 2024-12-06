@@ -10,11 +10,13 @@ import {assert} from '#/utils';
 import {preloadEffectImages} from '#/entity/effect';
 import {World} from '#/world';
 import {getStoredGetMode, setStoredDevMode} from '#/storage';
+import {createDevUI} from '#/dev-ui';
 
 function main(): void {
     const appElement = document.querySelector<HTMLDivElement>('#app');
     assert(appElement != null, 'No app element found');
-    window.__DEV_MODE = getStoredGetMode(localStorage);
+    const storage: Storage = localStorage;
+    window.__DEV_MODE = getStoredGetMode(storage);
 
     preloadSounds().then(() => console.log('Sounds preloaded'));
     setVolume(0.3);
@@ -33,7 +35,9 @@ function main(): void {
     const menu = initMenu(game);
     appElement.append(menu);
     menu.showMain();
-    renderer.startAnimation(game, input, menu, localStorage);
+    const devUI = createDevUI(world, storage);
+    appElement.append(devUI);
+    renderer.startAnimation(game, input, menu, storage, devUI);
     menu.resize(renderer.canvas.clientWidth, renderer.canvas.clientHeight);
 
     window.addEventListener('resize', () => {
@@ -42,8 +46,14 @@ function main(): void {
     });
     input.onKeydown('Semicolon', () => {
         window.__DEV_MODE = !window.__DEV_MODE;
-        setStoredDevMode(localStorage, window.__DEV_MODE);
+        setStoredDevMode(storage, window.__DEV_MODE);
         console.log(`Dev mode: ${window.__DEV_MODE ? 'ON' : 'OFF'}`);
+    });
+    input.onKeydown('Backquote', () => {
+        devUI.fpsMonitor.toggleVisibility(storage);
+    });
+    input.onKeydown('Backslash', () => {
+        devUI.devPanel.toggleVisibility(storage);
     });
     input.onKeydown('KeyF', () => {
         toggleFullscreen(appElement)

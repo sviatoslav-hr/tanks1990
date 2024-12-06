@@ -10,7 +10,7 @@ import {
     setStoredShowBoundaries,
 } from '#/storage';
 import {Duration} from '#/math/duration';
-import {DevUI, setupDevUI} from '#/dev-ui';
+import {DevUI} from '#/dev-ui';
 import {GameInput} from './game-input';
 
 type AnimationCallback = (timestamp: number) => void;
@@ -40,10 +40,10 @@ export class Renderer {
         input: GameInput,
         menu: Menu,
         storage: Storage,
+        devUI: DevUI,
     ): void {
         this.resizeCanvas(window.innerWidth, window.innerHeight);
         this.lastTimestamp = performance.now();
-        const devUI = setupDevUI(game.world, storage);
         game.world.showBoundary = getStoredShowBoundaries(storage);
 
         const animationCallback = this.createAnimationCallback(
@@ -55,7 +55,7 @@ export class Renderer {
         );
         window.requestAnimationFrame(animationCallback);
         // TODO: animation function shouldn't be responsible for Keyboard handling
-        this.handleKeyboard(input, game, menu, devUI, storage);
+        this.handleKeyboard(input, game, menu, storage);
     }
 
     resizeCanvas(width: number, height: number): [number, number] {
@@ -81,16 +81,9 @@ export class Renderer {
         input: GameInput,
         game: Game,
         menu: Menu,
-        devUI: DevUI,
         storage: Storage,
     ): void {
         input.listen(document.body);
-        input.onKeydown('Backquote', () => {
-            devUI.fpsMonitor.toggleVisibility(storage);
-        });
-        input.onKeydown('Backslash', () => {
-            devUI.devPanel.toggleVisibility(storage);
-        });
         input.onKeydown('KeyB', () => {
             game.world.showBoundary = !game.world.showBoundary;
             setStoredShowBoundaries(storage, game.world.showBoundary);

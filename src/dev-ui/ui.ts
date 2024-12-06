@@ -40,7 +40,7 @@ export class DevUI extends ReactiveElement {
     }
 }
 
-export function setupDevUI(world: World, storage: Storage): DevUI {
+export function createDevUI(world: World, storage: Storage): DevUI {
     const devUI = new DevUI();
     const isFPSVisible = getStoredIsFPSVisible(storage);
     if (!isFPSVisible) {
@@ -66,6 +66,5 @@ export function setupDevUI(world: World, storage: Storage): DevUI {
         .setMax(10)
         .setStep(0.1)
         .bindValue(world, 'frictionCoef');
-    document.body.append(devUI);
     return devUI;
 }
