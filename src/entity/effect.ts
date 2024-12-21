@@ -1,9 +1,10 @@
 import {Context} from '#/context';
-import {Rect, clamp} from '#/math';
+import {Rect} from '#/math';
 import {Vector2} from '#/math/vector';
 import {assert} from '#/utils';
 import {getCachedImage, setCachedImage} from '#/entity/sprite';
 import {Duration} from '#/math/duration';
+import {Animation, easeOut2} from '#/animation';
 
 const EXPLOSION_IMAGE_PATH = './assets/kenney_particle-pack/scorch_01.png';
 
@@ -27,8 +28,10 @@ function getExplosionImage(): HTMLImageElement {
 export class ExplosionEffect {
     // TODO: consider using a simpler data type for image instead of HTMLImageElement
     private explosionImage: HTMLImageElement;
-    private animationTime = Duration.zero();
-    private animationProgress = 0;
+    readonly animation = new Animation(
+        ExplosionEffect.ANIMATION_DURATION,
+        easeOut2,
+    );
     static readonly IMAGE_MAX_SCALE = 4;
     static readonly ANIMATION_DURATION = Duration.milliseconds(1000);
 
@@ -43,7 +46,7 @@ export class ExplosionEffect {
         image: ImageData,
         boundary: Rect,
         particleSize: number,
-    ): ExplosionEffect | null {
+    ): ExplosionEffect {
         assert(image.width === boundary.width);
         assert(image.height === boundary.height);
 
@@ -55,17 +58,13 @@ export class ExplosionEffect {
                 const green = image.data[index + 1];
                 const blue = image.data[index + 2];
                 const alpha = image.data[index + 3];
-                if (
-                    red == null ||
-                    green == null ||
-                    blue == null ||
-                    alpha == null
-                ) {
-                    console.error(
-                        'ERROR: Invalid image data. Cannot extract color components',
-                    );
-                    return null;
-                }
+                assert(
+                    red != null &&
+                        green != null &&
+                        blue != null &&
+                        alpha != null,
+                    'Invalid image data. Cannot extract color components',
+                );
                 if (!alpha || alpha < 0) continue;
 
                 let color: string | undefined;
@@ -100,18 +99,11 @@ export class ExplosionEffect {
                 nwParticles++;
             }
         }
-        console.log(
-            `Explosion particles: NE=${neParticles}, NW=${nwParticles}, SW=${swParticles}, SE=${seParticles}`,
-        );
         return new ExplosionEffect(boundary, particles);
     }
 
-    get isAnimationFinished(): boolean {
-        return this.animationProgress >= 1;
-    }
-
     draw(ctx: Context): void {
-        ctx.setGlobalAlpha(1 - easeOut2(this.animationProgress));
+        ctx.setGlobalAlpha(1 - this.animation.progress);
         for (const p of this.particles) {
             p.draw(ctx);
         }
@@ -126,7 +118,7 @@ export class ExplosionEffect {
         }
 
         const imageScale =
-            Math.min(easeOut2(this.animationProgress) * 2, 1) *
+            Math.min(this.animation.progress * 2, 1) *
             ExplosionEffect.IMAGE_MAX_SCALE;
 
         const xOffset =
@@ -147,21 +139,12 @@ export class ExplosionEffect {
     }
 
     update(dt: Duration): void {
-        if (this.isAnimationFinished) {
+        if (this.animation.finished) {
             return;
         }
-        this.animationTime.add(dt);
-        this.animationProgress = clamp(
-            this.animationTime.milliseconds /
-                ExplosionEffect.ANIMATION_DURATION.milliseconds,
-            0,
-            1,
-        );
-        if (this.isAnimationFinished) {
-            return;
-        }
+        this.animation.update(dt);
         for (const p of this.particles) {
-            p.update(this.animationProgress);
+            p.update(this.animation.progress);
         }
     }
 }
@@ -207,17 +190,7 @@ class Particle {
         const distance = this.destination
             .clone()
             .sub(this.initialPosition)
-            .multiplyScalar(easeOut2(animationProgress));
+            .multiplyScalar(animationProgress);
         this.position.setFrom(distance.add(this.initialPosition));
     }
-}
-
-// TODO: move to a separate file
-function easeOut2(t: number): number {
-    return easeOut(easeOut(t));
-    // return 1 - Math.pow(1 - t, 3); // Cubic ease-out, end slow
-}
-
-function easeOut(t: number): number {
-    return 1 - (1 - t) * (1 - t); // Basic quadratic ease-out, end slow
 }

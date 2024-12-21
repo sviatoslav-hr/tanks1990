@@ -105,6 +105,9 @@ export class World {
             if (entity instanceof PlayerTank) continue;
             entity.x -= movement.x;
             entity.y -= movement.y;
+            if (entity instanceof Projectile) {
+                entity.originalPosition.sub(movement);
+            }
         }
     }
 

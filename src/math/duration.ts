@@ -46,7 +46,11 @@ export class Duration {
     }
 
     setFrom(other: Duration): Duration {
-        this.milliseconds = other.milliseconds;
+        return this.setMilliseconds(other.milliseconds);
+    }
+
+    setMilliseconds(milliseconds: number): Duration {
+        this.milliseconds = milliseconds;
         return this;
     }
 

@@ -1,4 +1,4 @@
-import {DevNumberInput} from '#/dev-ui';
+import {DevButton, DevNumberInput} from '#/dev-ui';
 import {
     CustomElement,
     HTMLElementOptions,
@@ -73,5 +73,11 @@ export class DevPanel extends ReactiveElement {
         const input = new DevNumberInput(0);
         this.append(input);
         return input;
+    }
+
+    addButton(): DevButton {
+        const button = new DevButton();
+        this.append(button);
+        return button;
     }
 }

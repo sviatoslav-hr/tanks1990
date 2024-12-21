@@ -85,6 +85,11 @@ interface HTMLInputElementOptions extends HTMLElementOptions {
     value?: string | number;
 }
 
+export function button(options?: HTMLElementOptions): HTMLButtonElement {
+    const element = htmlElement('button', options);
+    return element;
+}
+
 export function input(options?: HTMLInputElementOptions): HTMLInputElement {
     const element = htmlElement('input', options);
     if (options?.type) {

@@ -1,3 +1,4 @@
+import {Animation} from '#/animation';
 import {Color} from '#/color';
 import {CELL_SIZE} from '#/const';
 import {Context} from '#/context';
@@ -37,6 +38,7 @@ export abstract class Tank implements Entity {
     public dead = false;
     public hasShield = true;
     public direction = Direction.UP;
+    // TODO: Is this really a good idea to have this field here?
     public readonly bot: boolean = true;
     public readonly topSpeed = (480 * 1000) / 3600; // in m/s
     public readonly topSpeedReachTime = Duration.milliseconds(150);
@@ -54,6 +56,7 @@ export abstract class Tank implements Entity {
     protected abstract readonly sprite: Sprite<string>;
     protected index = Tank.index++;
     protected shootingDelay = this.SHOOTING_PERIOD.clone();
+    protected isStuck = false;
 
     private static index = 0;
 
@@ -69,7 +72,7 @@ export abstract class Tank implements Entity {
     get isExplosionFinished(): boolean {
         if (this.isExplosionExpected) return false;
         if (!this.explosionEffect) return true;
-        return this.explosionEffect.isAnimationFinished;
+        return this.explosionEffect.animation.finished;
     }
 
     get deceleration(): number {
@@ -84,7 +87,7 @@ export abstract class Tank implements Entity {
     update(dt: Duration): void {
         this.shieldSprite.update(dt);
         if (this.explosionEffect) {
-            if (this.explosionEffect.isAnimationFinished) {
+            if (this.explosionEffect.animation.finished) {
                 this.explosionEffect = null;
             } else {
                 assert(
@@ -107,6 +110,7 @@ export abstract class Tank implements Entity {
             let totalAcceleration = this.acceleration;
             if (this.velocity > 0) {
                 totalAcceleration -= this.deceleration;
+                this.isStuck = false;
             }
             const dtSeconds = dt.seconds;
             // p' = 1/2*a*dt^2 + v*dt + p   ==>    dp = p'-p = 1/2*a*dt^2 + v*dt
@@ -127,24 +131,34 @@ export abstract class Tank implements Entity {
         }
         const collided = this.findCollided();
         if (collided) {
-            if (collided instanceof Tank) {
-                this.handleCollision(collided);
-            }
+            this.handleCollision(collided);
             this.x = prevX;
             this.y = prevY;
-            this.velocity = 0;
-            this.acceleration = 0;
+            this.stopMoving();
+            this.isStuck = true;
         }
         if (!this.world.isInfinite) {
             const oldX = this.x;
             const oldY = this.y;
             clampByBoundary(this, this.boundary);
             if (oldX !== this.x || oldY !== this.y) {
-                this.velocity = 0;
-                this.acceleration = 0;
+                this.stopMoving();
+                this.isStuck = true;
             }
         }
         this.updateShield(dt);
+    }
+
+    startMoving(): void {
+        // NOTE: acceleration here is assumed without friction
+        // v=u+a*t => a=(v-u)/t
+        this.acceleration =
+            this.topSpeed / this.topSpeedReachTime.seconds + this.deceleration;
+    }
+
+    stopMoving(): void {
+        this.velocity = 0;
+        this.acceleration = 0;
     }
 
     draw(ctx: Context): void {
@@ -180,6 +194,10 @@ export abstract class Tank implements Entity {
                     y: this.y - this.height / 2,
                 },
             );
+        }
+        if (this.world.showBoundary && this.isStuck) {
+            ctx.setStrokeColor(Color.RED);
+            ctx.drawBoundary(this, 1);
         }
     }
 
@@ -239,13 +257,13 @@ export abstract class Tank implements Entity {
         return dead;
     }
 
-    private tryRespawn(limit: number): boolean {
-        if (limit <= 0) return false;
-        moveToRandomCorner(this, this.boundary);
-        if (this.findCollided()) {
-            return this.tryRespawn(limit - 1);
+    private tryRespawn(attemptLimit: number): boolean {
+        assert(attemptLimit > 0, 'Limit should be greater than 0');
+        for (let attempt = 0; attempt < attemptLimit; attempt++) {
+            moveToRandomCorner(this, this.boundary);
+            if (!this.findCollided()) return true;
         }
-        return true;
+        return false;
     }
 
     activateShield(): void {
@@ -262,7 +280,7 @@ export abstract class Tank implements Entity {
         }
     }
 
-    protected handleCollision(_target: Tank): void {}
+    protected handleCollision(_target: Entity): void {}
 
     private getProjectileStartPos(): [number, number] {
         switch (this.direction) {
@@ -278,11 +296,16 @@ export abstract class Tank implements Entity {
     }
 
     findCollided(): Tank | Block | undefined {
+        if (this.dead) return;
         const tank = this.world.tanks.find((t) => {
-            return t !== this && !t.dead && isIntesecting(this, t);
+            return !t.equals(this) && !t.dead && isIntesecting(this, t);
         });
         if (tank) return tank;
         return this.world.blocks.find((b) => isIntesecting(this, b));
+    }
+
+    equals(other: Tank): boolean {
+        return this === other;
     }
 }
 
@@ -366,11 +389,7 @@ export class PlayerTank extends Tank implements Entity {
             }
             this.direction = newDirection;
             this.moving = true;
-            // NOTE: acceleration here is assumed without friction
-            // v=u+a*t => a=(v-u)/t
-            this.acceleration =
-                this.topSpeed / this.topSpeedReachTime.seconds +
-                this.deceleration;
+            this.startMoving();
         }
     }
 }
@@ -379,10 +398,13 @@ export class EnemyTank extends Tank implements Entity {
     protected moving = true;
     protected readonly SHOOTING_PERIOD = Duration.milliseconds(1000);
     protected readonly sprite = createTankSprite('tank_green');
-    private readonly DIRECTION_CHANGE = Duration.milliseconds(2000);
+    private readonly DIRECTION_CHANGE = Duration.milliseconds(1000);
     private randomDirectionDelay = this.DIRECTION_CHANGE.clone();
     private targetDirectionDelay = this.DIRECTION_CHANGE.clone();
     private collided = false;
+    private readonly collisionAnimation = new Animation(
+        Duration.milliseconds(1000),
+    ).end();
 
     update(dt: Duration): void {
         const player = this.world.player;
@@ -391,35 +413,56 @@ export class EnemyTank extends Tank implements Entity {
             this.velocity = 0;
         }
         if (!this.collided) {
-            const newDirection =
+            let newDirection: Direction | null = null;
+            if (this.isStuck) {
+                newDirection = this.findRandomDirection(dt);
+            }
+            newDirection =
+                newDirection ??
                 this.findPlayerDirection(player, dt) ??
-                this.findDirectionIfStuck() ??
+                this.findDirectionFromCorner() ??
                 this.findRandomDirection(dt);
             if (newDirection != null) {
                 if (newDirection !== this.direction) {
                     this.velocity = 0;
                 }
                 this.direction = newDirection;
-                // NOTE: acceleration here is assumed without friction
-                // v=u+a*t => a=(v-u)/t
-                this.acceleration =
-                    this.topSpeed / this.topSpeedReachTime.seconds +
-                    this.deceleration;
+            }
+            if (!this.velocity) {
+                this.startMoving();
             }
         }
+        this.collisionAnimation.update(dt);
         this.collided = false;
         super.update(dt);
         this.shoot();
+    }
+
+    draw(ctx: Context): void {
+        super.draw(ctx);
+        if (this.dead) return;
+        if (this.world.showBoundary) {
+            if (this.collisionAnimation.active) {
+                ctx.setStrokeColor(Color.WHITE_NAVAJO);
+                ctx.drawBoundary(this, this.collisionAnimation.progress * 10);
+            }
+            if (this.isStuck) {
+                ctx.setStrokeColor(Color.RED);
+                ctx.drawBoundary(this, 1);
+            }
+        }
     }
 
     respawn(): void {
         super.respawn();
     }
 
-    protected handleCollision(target: Tank): void {
+    protected override handleCollision(target: Entity): void {
         this.collided = true;
+        this.collisionAnimation.reset();
         if (target instanceof EnemyTank) {
             target.collided = true;
+            target.collisionAnimation.reset();
             const dir = this.findDirectionTowards(target);
             if (dir != null) {
                 this.direction = oppositeDirection(dir);
@@ -428,7 +471,7 @@ export class EnemyTank extends Tank implements Entity {
         }
     }
 
-    private findDirectionIfStuck(): Direction | null {
+    private findDirectionFromCorner(): Direction | null {
         if (this.y === 0 && xn(this) >= xn(this.boundary)) {
             return Direction.DOWN;
         }
@@ -462,10 +505,13 @@ export class EnemyTank extends Tank implements Entity {
         return null;
     }
 
-    private findRandomDirection(dt: Duration, force = false): Direction | null {
+    private findRandomDirection(
+        dt: Duration,
+        ignoreDelay = false,
+    ): Direction | null {
         this.randomDirectionDelay.sub(dt).max(0);
-        if (this.randomDirectionDelay && !force) return null;
-        if (Math.random() > 0.1) {
+        if (!ignoreDelay && this.randomDirectionDelay.positive) return null;
+        if (ignoreDelay || Math.random() > 0.1) {
             this.randomDirectionDelay.setFrom(this.DIRECTION_CHANGE);
             return randomFrom(
                 Direction.UP,

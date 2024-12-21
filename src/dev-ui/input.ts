@@ -1,4 +1,12 @@
-import {CustomElement, ReactiveElement, css, div, input, label} from '#/html';
+import {
+    CustomElement,
+    ReactiveElement,
+    button,
+    css,
+    div,
+    input,
+    label,
+} from '#/html';
 
 type NumberOnChangeCallback = (value: number) => void;
 
@@ -23,6 +31,7 @@ export class DevNumberInput extends ReactiveElement {
         textContent: 'Value',
         for: this.input.id,
     });
+    // TODO: Why duplicate here and in label?
     private name?: string;
     private min!: number;
     private max!: number;
@@ -142,6 +151,41 @@ export class DevNumberInput extends ReactiveElement {
 
     onChange(callback: (value: number) => void): this {
         this.onChangeCallbacks.push(callback);
+        return this;
+    }
+}
+
+@CustomElement('dev-button')
+export class DevButton extends ReactiveElement {
+    private readonly button = button({
+        className: 'button',
+    });
+
+    protected override render(): HTMLElement {
+        return this.button;
+    }
+
+    protected override styles(): HTMLStyleElement {
+        return css`
+            .button {
+                padding: 0.5rem;
+                margin: 0.5rem 0;
+                background-color: lightblue;
+                border: none;
+                cursor: pointer;
+            }
+            .button:hover {
+                background-color: lightgreen;
+            }
+        `;
+    }
+
+    onClick(callback: () => void): void {
+        this.button.addEventListener('click', callback);
+    }
+
+    setName(name: string): this {
+        this.button.textContent = name;
         return this;
     }
 }

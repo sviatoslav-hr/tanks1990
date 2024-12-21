@@ -6,6 +6,7 @@
     - [ ] Define game plan / trajectory / future development / main goal / idea
     - [ ] Define custom RNG and use it everywhere instead of `Math.random()`
     - [ ] Add friction to projectile movement
+    - [ ] Introduce a concept of Camera so it's a separate thing
 - **FIXME**
     - [ ] ***`Fix enemies stuck at the blocks or at each other like dumbasses. FIX ENEMY AI!!!`***
     - [ ] ***`Rework the score UI!!!`***
