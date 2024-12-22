@@ -15,6 +15,7 @@ export type KeyCode =
     | 'Space'
     | 'Escape'
     | 'Semicolon'
+    | 'BracketRight'
     | 'Backslash';
 export type KeysState = Partial<Record<KeyCode, boolean>>;
 export type KeyHandler = (event: Event, code: KeyCode) => void;
@@ -41,7 +42,7 @@ export class GameInput {
     }
 
     tick() {
-        this.previousPressed = { ...this.currentPressed };
+        this.previousPressed = {...this.currentPressed};
     }
 
     // TODO: remove it, use isPressed()

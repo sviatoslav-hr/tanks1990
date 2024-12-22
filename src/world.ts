@@ -2,10 +2,10 @@ import {CELL_SIZE} from '#/const';
 import {Context} from '#/context';
 import {EnemyTank, PlayerTank, Tank} from '#/entity';
 import {Block} from '#/entity/block';
-import {Entity} from '#/entity/core';
+import {Entity, isIntesecting} from '#/entity/core';
 import {Projectile} from '#/entity/projectile';
 import {createStaticSprite} from '#/entity/sprite';
-import {Rect, randomInt} from '#/math';
+import {Rect, isPosInsideRect, randomInt} from '#/math';
 import {Duration} from '#/math/duration';
 import {Vector2, Vector2Like} from '#/math/vector';
 import {GameInput} from '#/game-input';
@@ -121,6 +121,46 @@ export class World {
         for (const b of this.blocks) {
             yield b;
         }
+    }
+
+    isOccupied(pos: Vector2Like): boolean {
+        if (!this.isInfinite) {
+            if (!isPosInsideRect(pos.x, pos.y, this.screen)) {
+                return true;
+            }
+        }
+        for (const entity of this.iterateEntities()) {
+            if (entity === this.player) continue;
+            if (isPosInsideRect(pos.x, pos.y, entity)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    isRectOccupied(rect: Rect, ignoreEntity?: Rect): boolean {
+        if (!this.isInfinite) {
+            if (!isPosInsideRect(rect.x, rect.y, this.screen)) {
+                return true;
+            }
+            if (
+                !isPosInsideRect(
+                    rect.x + rect.width,
+                    rect.y + rect.height,
+                    this.screen,
+                )
+            ) {
+                return true;
+            }
+        }
+        for (const entity of this.iterateEntities()) {
+            if (entity === this.player) continue;
+            if (ignoreEntity && entity === ignoreEntity) continue;
+            if (isIntesecting(rect, entity)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private generateBlocks(): void {

@@ -96,6 +96,12 @@ export class Vector2 implements Vector2Like {
         return this;
     }
 
+    floor(): Vector2 {
+        this.x = Math.floor(this.x);
+        this.y = Math.floor(this.y);
+        return this;
+    }
+
     clone(): Vector2 {
         return new Vector2(this.x, this.y);
     }
@@ -144,6 +150,10 @@ export class Vector2 implements Vector2Like {
 
     normalize(): Vector2 {
         return this.divideScalar(this.length() || 1);
+    }
+
+    equals(v: Vector2Like): boolean {
+        return this.x === v.x && this.y === v.y;
     }
 }
 

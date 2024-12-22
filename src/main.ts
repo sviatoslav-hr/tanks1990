@@ -35,7 +35,7 @@ function main(): void {
     const menu = initMenu(game);
     appElement.append(menu);
     menu.showMain();
-    const devUI = createDevUI(world, storage);
+    const devUI = createDevUI(game, world, storage);
     appElement.append(devUI);
     renderer.startAnimation(game, input, menu, storage, devUI);
     menu.resize(renderer.canvas.clientWidth, renderer.canvas.clientHeight);

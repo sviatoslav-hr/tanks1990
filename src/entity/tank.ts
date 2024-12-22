@@ -9,7 +9,6 @@ import {
     clampByBoundary,
     getMovement,
     isIntesecting,
-    isOutsideRect,
     moveEntity,
 } from '#/entity/core';
 import {ExplosionEffect} from '#/entity/effect';
@@ -19,16 +18,15 @@ import {GameInput} from '#/game-input';
 import {
     GRAVITY,
     Rect,
-    distanceV2,
+    isPosInsideRect,
     moveToRandomCorner,
     oppositeDirection,
-    randomFrom,
-    xn,
-    yn,
 } from '#/math';
 import {Duration} from '#/math/duration';
+import {Vector2, Vector2Like} from '#/math/vector';
 import {SoundType, playSound} from '#/sound';
 import {World} from '#/world';
+import {findPath} from './pathfinding';
 
 export abstract class Tank implements Entity {
     public x = 0;
@@ -43,6 +41,7 @@ export abstract class Tank implements Entity {
     public readonly topSpeed = (480 * 1000) / 3600; // in m/s
     public readonly topSpeedReachTime = Duration.milliseconds(150);
     public readonly frictionCoef = 0.8; // rolling friction, 0.8 is a value for asphalt
+    public readonly index = Tank.index++;
 
     protected velocity: number = 0;
     protected acceleration = 0;
@@ -54,7 +53,6 @@ export abstract class Tank implements Entity {
     protected readonly SHIELD_TIME = Duration.milliseconds(1000);
     protected readonly shieldSprite = createShieldSprite();
     protected abstract readonly sprite: Sprite<string>;
-    protected index = Tank.index++;
     protected shootingDelay = this.SHOOTING_PERIOD.clone();
     protected isStuck = false;
 
@@ -67,6 +65,14 @@ export abstract class Tank implements Entity {
         // NOTE: spawn outside of the screen, expected to respawn
         this.x = -(2 * this.width);
         this.y = -(2 * this.height);
+    }
+
+    get cx(): number {
+        return this.x + this.width / 2;
+    }
+
+    get cy(): number {
+        return this.y + this.height / 2;
     }
 
     get isExplosionFinished(): boolean {
@@ -185,10 +191,10 @@ export abstract class Tank implements Entity {
             ctx.drawBoundary(this, 1);
             ctx.setFont('400 16px Helvetica', 'center', 'middle');
             ctx.setFillColor(Color.WHITE);
-            const velocity = ((this.velocity * 3600) / 1000).toFixed(2);
+            // const velocity = ((this.velocity * 3600) / 1000).toFixed(2);
             ctx.drawText(
-                `${this.index}: {a=${this.acceleration.toFixed(2)};v=${velocity}km/h`,
-                // `${this.index}: {${Math.floor(this.x)};${Math.floor(this.y)}}`,
+                // `${this.index}: {a=${this.acceleration.toFixed(2)};v=${velocity}km/h`,
+                `${this.index}: {${Math.floor(this.x)};${Math.floor(this.y)}}`,
                 {
                     x: this.x + this.width / 2,
                     y: this.y - this.height / 2,
@@ -398,9 +404,9 @@ export class EnemyTank extends Tank implements Entity {
     protected moving = true;
     protected readonly SHOOTING_PERIOD = Duration.milliseconds(1000);
     protected readonly sprite = createTankSprite('tank_green');
-    private readonly DIRECTION_CHANGE = Duration.milliseconds(1000);
-    private randomDirectionDelay = this.DIRECTION_CHANGE.clone();
+    private readonly DIRECTION_CHANGE = Duration.milliseconds(2000);
     private targetDirectionDelay = this.DIRECTION_CHANGE.clone();
+    private path: Vector2[] = [];
     private collided = false;
     private readonly collisionAnimation = new Animation(
         Duration.milliseconds(1000),
@@ -412,20 +418,13 @@ export class EnemyTank extends Tank implements Entity {
         if (this.collided) {
             this.velocity = 0;
         }
-        if (!this.collided) {
-            let newDirection: Direction | null = null;
-            if (this.isStuck) {
-                newDirection = this.findRandomDirection(dt);
-            }
-            newDirection =
-                newDirection ??
-                this.findPlayerDirection(player, dt) ??
-                this.findDirectionFromCorner() ??
-                this.findRandomDirection(dt);
-            if (newDirection != null) {
-                if (newDirection !== this.direction) {
-                    this.velocity = 0;
-                }
+        if (!this.dead && !this.collided) {
+            // TODO: if player is dead, choose a random direction
+            let newDirection = player.dead
+                ? null
+                : this.findPlayerDirection(player, dt);
+            if (newDirection != null && newDirection !== this.direction) {
+                this.velocity = 0;
                 this.direction = newDirection;
             }
             if (!this.velocity) {
@@ -439,6 +438,9 @@ export class EnemyTank extends Tank implements Entity {
     }
 
     draw(ctx: Context): void {
+        if (this.world.showBoundary && !this.dead && !this.world.player.dead) {
+            this.drawPath(ctx);
+        }
         super.draw(ctx);
         if (this.dead) return;
         if (this.world.showBoundary) {
@@ -455,6 +457,7 @@ export class EnemyTank extends Tank implements Entity {
 
     respawn(): void {
         super.respawn();
+        this.targetDirectionDelay.setMilliseconds(0);
     }
 
     protected override handleCollision(target: Entity): void {
@@ -471,74 +474,59 @@ export class EnemyTank extends Tank implements Entity {
         }
     }
 
-    private findDirectionFromCorner(): Direction | null {
-        if (this.y === 0 && xn(this) >= xn(this.boundary)) {
-            return Direction.DOWN;
-        }
-        if (yn(this) >= yn(this.boundary) && this.x === 0) {
-            return Direction.UP;
-        }
-        if (xn(this) >= xn(this.boundary) && yn(this) >= yn(this.boundary)) {
-            return Direction.LEFT;
-        }
-        if (this.x === 0 && this.y === 0) {
-            return Direction.RIGHT;
-        }
-        if (this.y === 0 && this.direction === Direction.UP) {
-            return Direction.DOWN;
-        }
-        if (
-            yn(this) >= yn(this.boundary) &&
-            this.direction === Direction.DOWN
-        ) {
-            return Direction.UP;
-        }
-        if (
-            xn(this) >= xn(this.boundary) &&
-            this.direction === Direction.RIGHT
-        ) {
-            return Direction.LEFT;
-        }
-        if (this.x === 0 && this.direction === Direction.LEFT) {
-            return Direction.RIGHT;
-        }
-        return null;
-    }
-
-    private findRandomDirection(
-        dt: Duration,
-        ignoreDelay = false,
-    ): Direction | null {
-        this.randomDirectionDelay.sub(dt).max(0);
-        if (!ignoreDelay && this.randomDirectionDelay.positive) return null;
-        if (ignoreDelay || Math.random() > 0.1) {
-            this.randomDirectionDelay.setFrom(this.DIRECTION_CHANGE);
-            return randomFrom(
-                Direction.UP,
-                Direction.RIGHT,
-                Direction.DOWN,
-                Direction.LEFT,
-            );
-        }
-        this.randomDirectionDelay.setFrom(this.DIRECTION_CHANGE);
-        return null;
-    }
-
     private findPlayerDirection(
         player: Entity,
         dt: Duration,
     ): Direction | null {
-        const dir = this.findDirectionTowards(player);
-        if (dir == null) return dir;
-
-        // NOTE: if enemy is outside of screen, always move it towards player
-        const isOutside = !isOutsideRect(player, this.boundary);
-        if (isOutside && distanceV2(this, player) < CELL_SIZE * 5) return null;
-
         this.targetDirectionDelay.sub(dt).max(0);
-        if (this.targetDirectionDelay.positive) return null;
+        if (this.path.length && this.targetDirectionDelay.positive) {
+            const nextPoint = this.path[0];
+            if (nextPoint && this.isValidNextPoint(nextPoint)) {
+                this.path.shift();
+                return this.getDirectionToPoint(nextPoint);
+            }
+            return null;
+        }
         this.targetDirectionDelay.setFrom(this.DIRECTION_CHANGE);
+
+        const dir = this.findDirectionAndBuildPath(player);
+        if (dir == null) return dir;
         return dir;
+    }
+
+    private findDirectionAndBuildPath(entity: Entity): Direction | null {
+        this.path = findPath(this, entity, this.world, 100);
+        const next = this.path[0];
+        assert(next, 'Next point should be defined');
+        return this.getDirectionToPoint(next);
+    }
+
+    private isValidNextPoint(next: Vector2): boolean {
+        if (!isPosInsideRect(next.x, next.y, this)) {
+            return false;
+        }
+        // NOTE: Change direction only when the entity is alighned with the next point
+        const cx = Math.floor(this.cx);
+        if (cx === next.x) {
+            return true;
+        }
+        const cy = Math.floor(this.cy);
+        if (cy === next.y) {
+            return true;
+        }
+        return false;
+    }
+
+    private getDirectionToPoint(next: Vector2Like): Direction | null {
+        const dx = next.x - Math.floor(this.cx);
+        if (dx !== 0) {
+            return dx > 0 ? Direction.RIGHT : Direction.LEFT;
+        }
+        const dy = next.y - Math.floor(this.cy);
+        if (dy !== 0) {
+            return dy > 0 ? Direction.DOWN : Direction.UP;
+        }
+        return null;
     }
 
     private findDirectionTowards(entity: Entity): Direction | null {
@@ -558,5 +546,22 @@ export class EnemyTank extends Tank implements Entity {
             return dirX;
         }
         return dirY;
+    }
+
+    private drawPath(ctx: Context): void {
+        if (this.path.length < 2) {
+            console.warn('WARN: Path is too short to draw');
+            return;
+        }
+        ctx.setStrokeColor(Color.RED);
+        ctx.setFillColor(Color.RED);
+        for (let i = 0; i < this.path.length - 1; i++) {
+            const p1 = this.path[i];
+            assert(p1);
+            ctx.fillCircle(p1.x, p1.y, 2);
+            const p2 = this.path[i + 1];
+            assert(p2);
+            ctx.drawLine(p1.x, p1.y, p2.x, p2.y, 1);
+        }
     }
 }

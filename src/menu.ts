@@ -216,7 +216,7 @@ export class MenuPage extends HTMLElement {
 
 @CustomElement('game-menu')
 export class Menu extends HTMLElement {
-    private state: MenuState = MenuState.START;
+    private state?: MenuState;
     private prevState?: MenuState;
     private heading: HTMLHeadingElement;
     private mainContainer: HTMLDivElement;
@@ -311,6 +311,9 @@ export class Menu extends HTMLElement {
     }
 
     private update(state: MenuState): void {
+        if (this.state === state) {
+            return;
+        }
         const prevState = this.state;
         this.state = state;
         if (state === MenuState.HIDDEN) {

@@ -51,6 +51,9 @@ export class DevNumberInput extends ReactiveElement {
         this.setMax(max);
         this.setStep(step);
         this.input.addEventListener('change', () => {
+            if (false) {
+                console.warn('TODO: step is not implemented', this.step);
+            }
             this.setValue(Number(this.input.value));
             for (const callback of this.onChangeCallbacks) {
                 callback(this.value);
@@ -59,7 +62,6 @@ export class DevNumberInput extends ReactiveElement {
     }
 
     protected override render(): HTMLElement {
-        console.log('render', this.value, this.min, this.max, this.step);
         return div({
             className: 'number-input-container',
             children: [this.label, this.input],

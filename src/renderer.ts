@@ -2,7 +2,7 @@ import {Color} from '#/color';
 import {BASE_HEIGHT, BASE_WIDTH, CELL_SIZE} from '#/const';
 import {Context} from '#/context';
 import {drawGrid, drawScore} from '#/draw';
-import {Game, GameStatus} from '#/game';
+import {Game} from '#/game';
 import {Menu} from '#/menu';
 import {
     getStoredShowBoundaries,
@@ -88,49 +88,24 @@ export class Renderer {
             game.world.showBoundary = !game.world.showBoundary;
             setStoredShowBoundaries(storage, game.world.showBoundary);
         });
+        input.onKeydown('BracketRight', () => {
+            if (!game.paused) {
+                return;
+            }
+            menu.hide();
+            game.debugUpdateTriggered = true;
+        });
         input.onKeydown('KeyP', () => {
-            switch (game.status) {
-                case GameStatus.PLAYING: {
-                    if (game.dead) {
-                        menu.showMain();
-                        game.init();
-                    } else {
-                        menu.showPause();
-                        game.pause();
-                    }
-                    break;
-                }
-                case GameStatus.PAUSED: {
-                    menu.hide();
-                    game.resume();
-                    break;
-                }
-                case GameStatus.INITIAL:
-                    break;
-                default:
-                    console.warn('Unhandled value ', game.status);
+            if (game.dead) {
+                menu.showMain();
+            } else if (game.playing) {
+                menu.showPause();
+            } else {
+                menu.hide();
             }
+            game.togglePauseResume();
         });
-        input.onKeydown('KeyO', () => {
-            switch (game.status) {
-                case GameStatus.PLAYING: {
-                    if (game.dead) {
-                        game.init();
-                    } else {
-                        game.pause();
-                    }
-                    break;
-                }
-                case GameStatus.PAUSED: {
-                    game.resume();
-                    break;
-                }
-                case GameStatus.INITIAL:
-                    break;
-                default:
-                    console.warn('Unhandled value ', game.status);
-            }
-        });
+        input.onKeydown('KeyO', () => game.togglePauseResume());
     }
 
     private createAnimationCallback(
@@ -166,9 +141,10 @@ export class Renderer {
                 saveBestScore(storage, world.player.score);
                 menu.showDead();
             }
-            if (game.playing) {
+            if (game.playing || game.debugUpdateTriggered) {
                 world.update(dt);
             }
+            game.tick();
             input.tick();
             devUI.update(dt);
             window.requestAnimationFrame(animationCallback);

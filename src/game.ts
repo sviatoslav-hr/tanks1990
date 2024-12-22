@@ -11,6 +11,7 @@ export enum GameStatus {
 // Also it should have a reference to Menu, but Menu shouldn't have the Game ref
 export class Game {
     status = GameStatus.INITIAL;
+    debugUpdateTriggered = false;
     readonly world: World;
 
     constructor(
@@ -49,5 +50,30 @@ export class Game {
     start(infinite: boolean): void {
         this.world.init(infinite);
         this.status = GameStatus.PLAYING;
+    }
+
+    tick() {
+        this.debugUpdateTriggered = false;
+    }
+
+    togglePauseResume(): void {
+        switch (this.status) {
+            case GameStatus.PLAYING: {
+                if (this.dead) {
+                    this.init();
+                } else {
+                    this.pause();
+                }
+                break;
+            }
+            case GameStatus.PAUSED: {
+                this.resume();
+                break;
+            }
+            case GameStatus.INITIAL:
+                break;
+            default:
+                console.warn('Unhandled value ', this.status);
+        }
     }
 }

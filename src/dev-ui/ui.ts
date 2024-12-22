@@ -1,4 +1,5 @@
 import {DevPanel, FPSMonitor} from '#/dev-ui';
+import {Game} from '#/game';
 import {CustomElement, ReactiveElement, css, div} from '#/html';
 import {Duration} from '#/math/duration';
 import {getStoredIsDevPanelVisible, getStoredIsFPSVisible} from '#/storage';
@@ -40,7 +41,7 @@ export class DevUI extends ReactiveElement {
     }
 }
 
-export function createDevUI(world: World, storage: Storage): DevUI {
+export function createDevUI(game: Game, world: World, storage: Storage): DevUI {
     const devUI = new DevUI();
     const isFPSVisible = getStoredIsFPSVisible(storage);
     if (!isFPSVisible) {
@@ -51,6 +52,36 @@ export function createDevUI(world: World, storage: Storage): DevUI {
         devUI.devPanel.hide();
     }
     const devPanel = devUI.devPanel;
+    devPanel
+        .addButton()
+        .setName('Trigger Update')
+        .onClick(() => {
+            game.debugUpdateTriggered = true;
+        });
+    devPanel
+        .addButton()
+        .setName('Remove enemy')
+        .onClick(() => {
+            const enemyIndexStr = prompt('Enter enemy index to remove');
+            const enemyIndex = enemyIndexStr ? parseInt(enemyIndexStr) : NaN;
+            if (isNaN(enemyIndex)) {
+                console.error(
+                    `Invalid enemy index: ${enemyIndexStr}. Expected an integer number`,
+                );
+            }
+            const enemyArrayIndex = world.tanks.findIndex(
+                (t) => t.bot && t.index === enemyIndex,
+            );
+            if (enemyArrayIndex === -1) {
+                console.error(`Enemy with index ${enemyIndex} not found`);
+            } else {
+                world.tanks.splice(enemyArrayIndex, 1);
+            }
+        });
+    devPanel
+        .addButton()
+        .setName('Spawn enemy')
+        .onClick(() => world.spawnEnemy());
     const worldFolder = devPanel.addFolder('World');
     worldFolder
         .addNumberInput()
