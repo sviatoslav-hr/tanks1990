@@ -80,6 +80,12 @@ export function createDevUI(game: Game, world: World, storage: Storage): DevUI {
         });
     devPanel
         .addButton()
+        .setName('Remove all enemies')
+        .onClick(() => {
+            world.tanks = world.tanks.filter((t) => !t.bot);
+        });
+    devPanel
+        .addButton()
         .setName('Spawn enemy')
         .onClick(() => world.spawnEnemy());
     const worldFolder = devPanel.addFolder('World');

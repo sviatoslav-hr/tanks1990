@@ -19,7 +19,7 @@ export function findPath(
     destination: Rect,
     world: World,
     maxSteps: number,
-): Vector2[] {
+): Vector2[] | null {
     const startP = Vector2.from(entity).floor();
     startP.x += entity.width / 2;
     startP.y += entity.height / 2;
@@ -50,8 +50,10 @@ export function findPath(
             allNodes,
             entity,
         );
-        assert(allNodes.length > 0);
-        // TODO: Handle if there are nowhere to move (stuck). Although this should not happen
+        if (!allNodes.length) {
+            // NOTE: No path found, entity is blocked/stuck
+            return null;
+        }
     }
     assert(currentNode !== null);
     return createPath(currentNode);

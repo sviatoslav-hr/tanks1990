@@ -1,8 +1,9 @@
 import {Context} from '#/context';
-import {Rect} from '#/math';
 import {Transform} from '#/math/transform';
 import {Vector2} from '#/math/vector';
 import {Duration} from '#/math/duration';
+import {Camera} from '#/camera';
+import {Rect} from '#/math';
 
 const ASSETS_URL = './assets';
 // TODO: consider using a simpler data type for images instead of HTMLImageElement
@@ -79,12 +80,12 @@ export class Sprite<K extends string> {
         if (this.frameIndex > maxFrames - 1) this.frameIndex = 0;
     }
 
-    draw(ctx: Context, boundary: Rect, rotationDeg = 0): void {
+    draw(ctx: Context, boundary: Rect, camera: Camera, rotationDeg = 0): void {
         if (!this.state) return;
         // NOTE: set origin at the center of tank for proper rotation
         const translation = new Vector2(
-            boundary.x + boundary.width / 2,
-            boundary.y + boundary.height / 2,
+            boundary.x - camera.position.x + boundary.width / 2,
+            boundary.y - camera.position.y + boundary.height / 2,
         );
         ctx.setTransform(Transform.makeTranslation(translation));
         ctx.rotate(rotationDeg);

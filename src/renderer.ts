@@ -12,6 +12,7 @@ import {
 import {Duration} from '#/math/duration';
 import {DevUI} from '#/dev-ui';
 import {GameInput} from './game-input';
+import {Camera} from './camera';
 
 type AnimationCallback = (timestamp: number) => void;
 
@@ -37,6 +38,7 @@ export class Renderer {
     // it should be more abstract
     startAnimation(
         game: Game,
+        camera: Camera,
         input: GameInput,
         menu: Menu,
         storage: Storage,
@@ -48,6 +50,7 @@ export class Renderer {
 
         const animationCallback = this.createAnimationCallback(
             game,
+            camera,
             input,
             menu,
             devUI,
@@ -110,43 +113,44 @@ export class Renderer {
 
     private createAnimationCallback(
         game: Game,
+        camera: Camera,
         input: GameInput,
         menu: Menu,
         devUI: DevUI,
         storage: Storage,
     ): AnimationCallback {
         const animationCallback = (timestamp: number): void => {
-            const screen = game.screen;
             const world = game.world;
             const dt = Duration.since(this.lastTimestamp).min(1000 / 30);
             this.lastTimestamp = timestamp;
-            this.ctx.clearScreen();
             this.ctx.setFillColor(Color.BLACK_RAISIN);
-            this.ctx.drawRect(
-                game.screen.x,
-                game.screen.y,
-                game.screen.width,
-                game.screen.height,
-            );
-            drawGrid(this.ctx, game, CELL_SIZE);
-            world.draw(this.ctx);
+            this.ctx.fillScreen();
+
+            drawGrid(this.ctx, camera, CELL_SIZE);
+            world.draw(this.ctx, camera);
             if (
                 game.paused ||
                 game.dead ||
                 (game.playing && input.isDown('KeyQ'))
             ) {
-                drawScore(this.ctx, world.player, screen, storage);
+                drawScore(this.ctx, world.player, camera, storage);
             }
+
             if (world.player.dead && game.playing && !menu.dead) {
                 saveBestScore(storage, world.player.score);
                 menu.showDead();
             }
+
             if (game.playing || game.debugUpdateTriggered) {
-                world.update(dt);
+                world.update(dt, camera);
+                if (world.isInfinite) {
+                    camera.centerOn(world.player);
+                }
             }
             game.tick();
             input.tick();
             devUI.update(dt);
+
             window.requestAnimationFrame(animationCallback);
         };
         return animationCallback;

@@ -5,6 +5,7 @@ import {assert} from '#/utils';
 import {getCachedImage, setCachedImage} from '#/entity/sprite';
 import {Duration} from '#/math/duration';
 import {Animation, easeOut2} from '#/animation';
+import {Camera} from '#/camera';
 
 const EXPLOSION_IMAGE_PATH = './assets/kenney_particle-pack/scorch_01.png';
 
@@ -102,16 +103,16 @@ export class ExplosionEffect {
         return new ExplosionEffect(boundary, particles);
     }
 
-    draw(ctx: Context): void {
+    draw(ctx: Context, camera: Camera): void {
         ctx.setGlobalAlpha(1 - this.animation.progress);
+        this.drawExplosionImage(ctx, camera);
         for (const p of this.particles) {
-            p.draw(ctx);
+            p.draw(ctx, camera);
         }
-        this.drawExplosionImage(ctx);
         ctx.setGlobalAlpha(1);
     }
 
-    private drawExplosionImage(ctx: Context): void {
+    private drawExplosionImage(ctx: Context, camera: Camera): void {
         if (!this.explosionImage.complete) {
             console.warn('WARN: Explosion image not loaded');
             return;
@@ -131,8 +132,8 @@ export class ExplosionEffect {
             0,
             this.explosionImage.width,
             this.explosionImage.height,
-            this.boundary.x - xOffset,
-            this.boundary.y - yOffset,
+            this.boundary.x - xOffset - camera.position.x,
+            this.boundary.y - yOffset - camera.position.y,
             this.boundary.width + xOffset * 2,
             this.boundary.height + yOffset * 2,
         );
@@ -176,11 +177,11 @@ class Particle {
             .add(position);
     }
 
-    draw(ctx: Context): void {
+    draw(ctx: Context, camera: Camera): void {
         ctx.setFillColor(this.color);
         ctx.drawRect(
-            this.position.x,
-            this.position.y,
+            this.position.x - camera.position.x,
+            this.position.y - camera.position.y,
             this.size.width,
             this.size.height,
         );

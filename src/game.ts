@@ -1,4 +1,3 @@
-import {Rect} from '#/math';
 import {World} from '#/world';
 
 export enum GameStatus {
@@ -12,16 +11,8 @@ export enum GameStatus {
 export class Game {
     status = GameStatus.INITIAL;
     debugUpdateTriggered = false;
-    readonly world: World;
 
-    constructor(
-        public screen: Rect,
-        world: World,
-    ) {
-        // TODO: maybe give tanks just ref to a Game instead?
-        // WARN: should the player be aware of the screen?
-        this.world = world;
-    }
+    constructor(readonly world: World) {}
 
     get playing(): boolean {
         return this.status === GameStatus.PLAYING;

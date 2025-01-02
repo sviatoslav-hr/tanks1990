@@ -1,3 +1,4 @@
+import {Camera} from '#/camera';
 import {Color} from '#/color';
 import {CELL_SIZE} from '#/const';
 import {Context} from '#/context';
@@ -5,7 +6,6 @@ import {
     Direction,
     Entity,
     isIntesecting,
-    isOutsideRect,
     moveEntity,
     scaleMovement,
 } from '#/entity/core';
@@ -73,16 +73,16 @@ export class Projectile implements Entity {
         return projectile;
     }
 
-    update(dt: Duration): void {
+    update(dt: Duration, camera: Camera): void {
         if (this.dead) {
             return;
         }
-        this.sprite.update(dt);
-        if (isOutsideRect(this, this.world.screen)) {
-            // TODO: This probably should work differently for infinite mode
+        if (!camera.isEntityVisible(this)) {
             this.dead = true;
             return;
         }
+
+        this.sprite.update(dt);
         // TODO: use movement equation instead
         moveEntity(this, scaleMovement(this.v, dt), this.direction);
         for (const entity of this.world.iterateEntities()) {
@@ -101,14 +101,14 @@ export class Projectile implements Entity {
         }
     }
 
-    draw(ctx: Context): void {
+    draw(ctx: Context, camera: Camera): void {
         if (!this.dead) {
-            this.drawTrail(ctx);
-            this.sprite.draw(ctx, this, this.direction);
+            this.drawTrail(ctx, camera);
+            this.sprite.draw(ctx, this, camera, this.direction);
         }
         if (this.world.showBoundary) {
             ctx.setStrokeColor(Color.PINK);
-            ctx.drawBoundary(this, 1);
+            ctx.drawBoundary(this, 1, camera);
         }
     }
 
@@ -122,7 +122,7 @@ export class Projectile implements Entity {
         this.sprite.reset();
     }
 
-    private drawTrail(ctx: Context): void {
+    private drawTrail(ctx: Context, camera: Camera): void {
         const projectileDistance = this.originalPosition.distanceTo(this);
         const maxIterations = 15;
         const trailSizeFraction =
@@ -154,7 +154,13 @@ export class Projectile implements Entity {
                 maxThickness,
                 indexProgress,
             );
-            ctx.drawLine(start.x, start.y, endX, endY, trailThickness);
+            ctx.drawLine(
+                start.x - camera.position.x,
+                start.y - camera.position.y,
+                endX - camera.position.x,
+                endY - camera.position.y,
+                trailThickness,
+            );
             start.x = endX;
             start.y = endY;
         }

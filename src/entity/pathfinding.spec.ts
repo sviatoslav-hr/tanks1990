@@ -44,13 +44,14 @@ describe('Pathfinding', () => {
         const input = new GameInput();
         const world = new World(screen, input);
         world.blocks = blocks;
-        const enemy = new EnemyTank(screen, world);
+        const enemy = new EnemyTank(world);
         enemy.x = 107.97980493109108;
         enemy.y = 429.939880663898;
         world.player.x = 758;
         world.player.y = 532.9288808634084;
         enemy.respawn();
         const path = findPath(enemy, world.player, world, 100);
+        assert(path);
         expect(path.length).toBeGreaterThan(0);
         const lastP = path[path.length - 1]!;
         expect(isPosInsideRect(lastP.x, lastP.y, world.player)).toEqual(true);

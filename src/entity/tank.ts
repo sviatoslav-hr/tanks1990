@@ -1,4 +1,5 @@
 import {Animation} from '#/animation';
+import {Camera} from '#/camera';
 import {Color} from '#/color';
 import {CELL_SIZE} from '#/const';
 import {Context} from '#/context';
@@ -7,7 +8,6 @@ import {
     Direction,
     Entity,
     clampByBoundary,
-    getMovement,
     isIntesecting,
     moveEntity,
 } from '#/entity/core';
@@ -17,7 +17,6 @@ import {Sprite, createShieldSprite, createTankSprite} from '#/entity/sprite';
 import {GameInput} from '#/game-input';
 import {
     GRAVITY,
-    Rect,
     isPosInsideRect,
     moveToRandomCorner,
     oppositeDirection,
@@ -58,10 +57,7 @@ export abstract class Tank implements Entity {
 
     private static index = 0;
 
-    constructor(
-        protected boundary: Rect,
-        protected world: World,
-    ) {
+    constructor(protected world: World) {
         // NOTE: spawn outside of the screen, expected to respawn
         this.x = -(2 * this.width);
         this.y = -(2 * this.height);
@@ -90,7 +86,7 @@ export abstract class Tank implements Entity {
         );
     }
 
-    update(dt: Duration): void {
+    update(dt: Duration, _camera: Camera): void {
         this.shieldSprite.update(dt);
         if (this.explosionEffect) {
             if (this.explosionEffect.animation.finished) {
@@ -127,13 +123,7 @@ export abstract class Tank implements Entity {
             const newVelocity = this.velocity + totalAcceleration * dtSeconds;
             this.velocity = Math.min(Math.max(0, newVelocity), this.topSpeed);
             assert(this.velocity >= 0);
-            if (this.world.isInfinite && this instanceof PlayerTank) {
-                this.world.moveWorld(
-                    getMovement(movementOffset, this.direction),
-                );
-            } else {
-                moveEntity(this, movementOffset, this.direction);
-            }
+            moveEntity(this, movementOffset, this.direction);
         }
         const collided = this.findCollided();
         if (collided) {
@@ -146,7 +136,7 @@ export abstract class Tank implements Entity {
         if (!this.world.isInfinite) {
             const oldX = this.x;
             const oldY = this.y;
-            clampByBoundary(this, this.boundary);
+            clampByBoundary(this, this.world.boundary);
             if (oldX !== this.x || oldY !== this.y) {
                 this.stopMoving();
                 this.isStuck = true;
@@ -167,28 +157,35 @@ export abstract class Tank implements Entity {
         this.acceleration = 0;
     }
 
-    draw(ctx: Context): void {
-        this.explosionEffect?.draw(ctx);
+    draw(ctx: Context, camera: Camera): void {
+        this.explosionEffect?.draw(ctx, camera);
         if (this.isExplosionExpected && !this.explosionEffect) {
             this.isExplosionExpected = false;
-            this.sprite.draw(ctx, this, this.direction);
+            this.sprite.draw(ctx, this, camera, this.direction);
             const particleSize = Math.floor(this.width / 16); // NOTE: 16 is single px in image
             this.explosionEffect = ExplosionEffect.fromImageData(
-                ctx.ctx.getImageData(this.x, this.y, this.width, this.height),
+                ctx.ctx.getImageData(
+                    this.x - camera.position.x,
+                    this.y - camera.position.y,
+                    this.width,
+                    this.height,
+                ),
                 this,
                 particleSize,
             );
-            this.explosionEffect?.draw(ctx);
+            this.explosionEffect.draw(ctx, camera);
             return;
         }
+
         if (this.dead) return;
-        this.sprite.draw(ctx, this, this.direction);
+        this.sprite.draw(ctx, this, camera, this.direction);
         if (this.hasShield) {
-            this.shieldSprite.draw(ctx, this);
+            this.shieldSprite.draw(ctx, this, camera);
         }
+
         if (this.world.showBoundary) {
             ctx.setStrokeColor(Color.PINK);
-            ctx.drawBoundary(this, 1);
+            ctx.drawBoundary(this, 1, camera);
             ctx.setFont('400 16px Helvetica', 'center', 'middle');
             ctx.setFillColor(Color.WHITE);
             // const velocity = ((this.velocity * 3600) / 1000).toFixed(2);
@@ -196,14 +193,14 @@ export abstract class Tank implements Entity {
                 // `${this.index}: {a=${this.acceleration.toFixed(2)};v=${velocity}km/h`,
                 `${this.index}: {${Math.floor(this.x)};${Math.floor(this.y)}}`,
                 {
-                    x: this.x + this.width / 2,
-                    y: this.y - this.height / 2,
+                    x: this.x - camera.position.x + this.width / 2,
+                    y: this.y - camera.position.y - this.height / 2,
                 },
             );
         }
         if (this.world.showBoundary && this.isStuck) {
             ctx.setStrokeColor(Color.RED);
-            ctx.drawBoundary(this, 1);
+            ctx.drawBoundary(this, 1, camera);
         }
     }
 
@@ -231,9 +228,9 @@ export abstract class Tank implements Entity {
             this.world.isInfinite && this instanceof PlayerTank;
         if (playerInInfinite) {
             // NOTE: in infinite mode, player is always in the center
-            this.x = this.boundary.x + this.boundary.width / 2 - this.width / 2;
-            this.y =
-                this.boundary.y + this.boundary.height / 2 - this.height / 2;
+            const boundary = this.world.boundary;
+            this.x = boundary.x + boundary.width / 2 - this.width / 2;
+            this.y = boundary.y + boundary.height / 2 - this.height / 2;
         }
         if (playerInInfinite || this.tryRespawn(4)) {
             this.dead = false;
@@ -266,7 +263,7 @@ export abstract class Tank implements Entity {
     private tryRespawn(attemptLimit: number): boolean {
         assert(attemptLimit > 0, 'Limit should be greater than 0');
         for (let attempt = 0; attempt < attemptLimit; attempt++) {
-            moveToRandomCorner(this, this.boundary);
+            moveToRandomCorner(this, this.world.boundary);
             if (!this.findCollided()) return true;
         }
         return false;
@@ -324,23 +321,22 @@ export class PlayerTank extends Tank implements Entity {
     protected readonly sprite = createTankSprite('tank_yellow');
 
     constructor(
-        boundary: Rect,
         world: World,
         private keyboard: GameInput,
     ) {
-        super(boundary, world);
+        super(world);
         if (world.isInfinite) {
-            this.x = boundary.x + boundary.width / 2;
-            this.y = boundary.y + boundary.height / 2;
+            this.x = world.boundary.x + world.boundary.width / 2;
+            this.y = world.boundary.y + world.boundary.height / 2;
         } else {
             this.x = 0;
             this.y = 0;
         }
     }
 
-    update(dt: Duration): void {
+    update(dt: Duration, camera: Camera): void {
         this.handleKeyboard();
-        super.update(dt);
+        super.update(dt, camera);
         if (this.dead) return;
         this.survivedFor.add(dt);
     }
@@ -412,7 +408,7 @@ export class EnemyTank extends Tank implements Entity {
         Duration.milliseconds(1000),
     ).end();
 
-    update(dt: Duration): void {
+    update(dt: Duration, camera: Camera): void {
         const player = this.world.player;
         // NOTE: is collided, don't change the direction, allowing entities to move away from each other
         if (this.collided) {
@@ -433,24 +429,30 @@ export class EnemyTank extends Tank implements Entity {
         }
         this.collisionAnimation.update(dt);
         this.collided = false;
-        super.update(dt);
-        this.shoot();
+        super.update(dt, camera);
+        if (camera.isEntityVisible(this)) {
+            this.shoot();
+        }
     }
 
-    draw(ctx: Context): void {
+    draw(ctx: Context, camera: Camera): void {
         if (this.world.showBoundary && !this.dead && !this.world.player.dead) {
             this.drawPath(ctx);
         }
-        super.draw(ctx);
+        super.draw(ctx, camera);
         if (this.dead) return;
         if (this.world.showBoundary) {
             if (this.collisionAnimation.active) {
                 ctx.setStrokeColor(Color.WHITE_NAVAJO);
-                ctx.drawBoundary(this, this.collisionAnimation.progress * 10);
+                ctx.drawBoundary(
+                    this,
+                    this.collisionAnimation.progress * 10,
+                    camera,
+                );
             }
             if (this.isStuck) {
                 ctx.setStrokeColor(Color.RED);
-                ctx.drawBoundary(this, 1);
+                ctx.drawBoundary(this, 1, camera);
             }
         }
     }
@@ -495,9 +497,11 @@ export class EnemyTank extends Tank implements Entity {
     }
 
     private findDirectionAndBuildPath(entity: Entity): Direction | null {
-        this.path = findPath(this, entity, this.world, 100);
+        const path = findPath(this, entity, this.world, 100);
+        if (!path) return null;
+        this.path = path;
         const next = this.path[0];
-        assert(next, 'Next point should be defined');
+        assert(next);
         return this.getDirectionToPoint(next);
     }
 

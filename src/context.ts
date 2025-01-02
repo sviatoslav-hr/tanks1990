@@ -2,6 +2,7 @@ import {Color} from '#/color';
 import {BASE_FONT_SIZE} from '#/const';
 import {Rect} from '#/math';
 import {Transform} from '#/math/transform';
+import {Camera} from '#/camera';
 
 type ShadowTextOpts = {
     x: number;
@@ -13,7 +14,15 @@ type ShadowTextOpts = {
 export class Context {
     constructor(public ctx: CanvasRenderingContext2D) {}
 
-    drawBoundary({x, y, width, height}: Rect, lineWidth = 1): void {
+    drawBoundary(
+        {x, y, width, height}: Rect,
+        lineWidth = 1,
+        camera?: Camera,
+    ): void {
+        if (camera) {
+            x -= camera.position.x;
+            y -= camera.position.y;
+        }
         this.drawLine(x, y, x + width, y, lineWidth);
         this.drawLine(x + width, y, x + width, y + height, lineWidth);
         this.drawLine(x + width, y + height, x, y + height, lineWidth);
@@ -98,7 +107,7 @@ export class Context {
         this.ctx.textAlign = align;
     }
 
-    setStrokeColor(color: Color) {
+    setStrokeColor(color: Color | string) {
         if (this.ctx.strokeStyle !== color) {
             this.ctx.strokeStyle = color;
         }
@@ -130,7 +139,7 @@ export class Context {
         this.ctx.globalAlpha = alpha;
     }
 
-    clearScreen(): void {
-        this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+    fillScreen(): void {
+        this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
     }
 }

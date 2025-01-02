@@ -11,6 +11,8 @@ import {preloadEffectImages} from '#/entity/effect';
 import {World} from '#/world';
 import {getStoredGetMode, setStoredDevMode} from '#/storage';
 import {createDevUI} from '#/dev-ui';
+import {Camera} from '#/camera';
+import {Vector2} from '#/math/vector';
 
 function main(): void {
     const appElement = document.querySelector<HTMLDivElement>('#app');
@@ -23,22 +25,23 @@ function main(): void {
     preloadEffectImages();
     const renderer = new Renderer();
     appElement.append(renderer.canvas);
-    const screen = {
-        x: 0,
-        y: 0,
-        width: renderer.canvas.width,
-        height: renderer.canvas.height,
-    };
+
+    const camera = new Camera(
+        new Vector2(renderer.canvas.width, renderer.canvas.height),
+    );
     const input = new GameInput();
-    const world = new World(screen, input);
-    const game = new Game(screen, world);
+    const world = new World(camera.sizeRect, input);
+    const game = new Game(world);
+
     const menu = initMenu(game);
     appElement.append(menu);
     menu.showMain();
+    menu.resize(renderer.canvas.clientWidth, renderer.canvas.clientHeight);
+
     const devUI = createDevUI(game, world, storage);
     appElement.append(devUI);
-    renderer.startAnimation(game, input, menu, storage, devUI);
-    menu.resize(renderer.canvas.clientWidth, renderer.canvas.clientHeight);
+
+    renderer.startAnimation(game, camera, input, menu, storage, devUI);
 
     window.addEventListener('resize', () => {
         renderer.resizeCanvas(window.innerWidth, window.innerHeight);

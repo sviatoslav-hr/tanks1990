@@ -7,8 +7,9 @@ import {Projectile} from '#/entity/projectile';
 import {createStaticSprite} from '#/entity/sprite';
 import {Rect, isPosInsideRect, randomInt} from '#/math';
 import {Duration} from '#/math/duration';
-import {Vector2, Vector2Like} from '#/math/vector';
+import {Vector2Like} from '#/math/vector';
 import {GameInput} from '#/game-input';
+import {Camera} from '#/camera';
 
 export class World {
     tanks: Tank[] = [];
@@ -21,17 +22,14 @@ export class World {
     frictionCoef = 8;
 
     constructor(
-        public readonly screen: Rect,
+        public readonly boundary: Rect,
         input: GameInput,
     ) {
-        this.player = new PlayerTank(this.screen, this, input);
+        this.player = new PlayerTank(this, input);
     }
-
-    readonly offset = Vector2.zero();
 
     init(infinite: boolean): void {
         this.isInfinite = infinite;
-        this.offset.set(0, 0);
         this.generateBlocks();
         this.player.respawn();
         this.tanks = [this.player];
@@ -39,26 +37,26 @@ export class World {
         this.spawnEnemy();
     }
 
-    draw(ctx: Context): void {
+    draw(ctx: Context, camera: Camera): void {
         for (const b of this.blocks) {
-            b.draw(ctx);
+            b.draw(ctx, camera);
         }
         for (const t of this.tanks) {
-            t.draw(ctx);
+            t.draw(ctx, camera);
         }
         for (const projectile of this.projectiles) {
             if (!projectile.dead) {
-                projectile.draw(ctx);
+                projectile.draw(ctx, camera);
             }
         }
     }
 
-    update(dt: Duration): void {
-        this.updateTanks(dt);
-        this.updateProjectiles(dt);
+    update(dt: Duration, camera: Camera): void {
+        this.updateTanks(dt, camera);
+        this.updateProjectiles(dt, camera);
     }
 
-    private updateTanks(dt: Duration): void {
+    private updateTanks(dt: Duration, camera: Camera): void {
         const enemiesCount = this.tanks.length - 1;
         // NOTE: add more enemies as score increases in such progression 1=2; 2=3; 4=4; 8=5; 16=6; ...
         // TODO: find a reasonable number/function to scale entities
@@ -70,20 +68,20 @@ export class World {
             this.spawnEnemy();
         }
         for (const tank of this.tanks) {
-            tank.update(dt);
+            tank.update(dt, camera);
             if (tank.dead && tank.bot && tank.isExplosionFinished) {
                 tank.respawn();
             }
         }
     }
 
-    private updateProjectiles(dt: Duration): void {
+    private updateProjectiles(dt: Duration, camera: Camera): void {
         const garbageIndexes: number[] = [];
         for (const [index, projectile] of this.projectiles.entries()) {
             if (projectile.dead) {
                 garbageIndexes.push(index);
             } else {
-                projectile.update(dt);
+                projectile.update(dt, camera);
             }
         }
         // TODO: optimize this. Is it more efficient to update existing array or create a new one?
@@ -94,21 +92,9 @@ export class World {
 
     spawnEnemy(): void {
         // NOTE: push to the start because of rendering order (could be improved)
-        const enemy = new EnemyTank(this.screen, this);
+        const enemy = new EnemyTank(this);
         enemy.respawn();
         this.tanks.unshift(enemy);
-    }
-
-    moveWorld(movement: Vector2Like): void {
-        this.offset.sub(movement);
-        for (const entity of this.iterateEntities()) {
-            if (entity instanceof PlayerTank) continue;
-            entity.x -= movement.x;
-            entity.y -= movement.y;
-            if (entity instanceof Projectile) {
-                entity.originalPosition.sub(movement);
-            }
-        }
     }
 
     *iterateEntities(): Generator<Entity> {
@@ -125,7 +111,7 @@ export class World {
 
     isOccupied(pos: Vector2Like): boolean {
         if (!this.isInfinite) {
-            if (!isPosInsideRect(pos.x, pos.y, this.screen)) {
+            if (!isPosInsideRect(pos.x, pos.y, this.boundary)) {
                 return true;
             }
         }
@@ -140,14 +126,14 @@ export class World {
 
     isRectOccupied(rect: Rect, ignoreEntity?: Rect): boolean {
         if (!this.isInfinite) {
-            if (!isPosInsideRect(rect.x, rect.y, this.screen)) {
+            if (!isPosInsideRect(rect.x, rect.y, this.boundary)) {
                 return true;
             }
             if (
                 !isPosInsideRect(
                     rect.x + rect.width,
                     rect.y + rect.height,
-                    this.screen,
+                    this.boundary,
                 )
             ) {
                 return true;
@@ -170,11 +156,11 @@ export class World {
         const BLOCKS_COUNT = 9;
         for (let i = 0; i < BLOCKS_COUNT; i++) {
             const x =
-                this.screen.x +
-                randomInt(1, this.screen.width / CELL_SIZE - 1) * CELL_SIZE;
+                this.boundary.x +
+                randomInt(1, this.boundary.width / CELL_SIZE - 1) * CELL_SIZE;
             const y =
-                this.screen.y +
-                randomInt(1, this.screen.height / CELL_SIZE - 1) * CELL_SIZE;
+                this.boundary.y +
+                randomInt(1, this.boundary.height / CELL_SIZE - 1) * CELL_SIZE;
             const sprite = createStaticSprite({
                 key: 'bricks',
                 frameWidth: 64,

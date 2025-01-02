@@ -3,10 +3,11 @@
 - **IN_PROGRESS**
     - [ ] **Add developer panel**
 - **TODO**
+    - [ ] Add a centralized storage/cache system
+    - [ ] Make enemies shoot only when they see the player
     - [ ] Define game plan / trajectory / future development / main goal / idea
     - [ ] Define custom RNG and use it everywhere instead of `Math.random()`
     - [ ] Add friction to projectile movement
-    - [ ] Introduce a concept of Camera so it's a separate thing
 - **FIXME**
     - [ ] ***`Fix enemies stuck at the blocks or at each other like dumbasses. FIX ENEMY AI!!!`***
     - [ ] ***`Rework the score UI!!!`***
@@ -78,15 +79,16 @@
         - [ ] ??? Increase boundaries of the world
     - [ ] Setup ESLint
     - [ ] Implement Entity Component System (ECS)
-- [x] Sprite for bullets
-- [x] Add options to menu
 - **DONE**
+    - [x] Introduce a concept of Camera so it's a separate thing
     - [x] Make movement more realistic, add inertian and friction (speed decreases over time unless entity is moving)
     - [x] **Add projectile trail**
     - [x] FIXME: Pause is not pausing
     - [x] REFACTOR: Move `Projectile` out of `Tank` class and make it less dependent on `Tank`
     - [x] REFACTOR: Define `World` class
     - [x] REFACTOR: make `dt` be in seconds instead of milliseconds
+    - [x] Sprite for bullets
+    - [x] Add options to menu
     - [x] Animation: polish explosion animation
     - [x] FIXME: fix player not being able to pass past two blocks even though there is a gap
     - [x] Static objects on map

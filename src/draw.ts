@@ -4,14 +4,13 @@ import {Color} from '#/color';
 import {BASE_FONT_SIZE, BASE_PADDING} from '#/const';
 import {Context} from '#/context';
 import {PlayerTank} from '#/entity';
-import {Game} from '#/game';
-import {Rect, xn} from '#/math';
 import {getBestScore} from '#/storage';
+import {Camera} from '#/camera';
 
 export function drawScore(
     ctx: Context,
     player: PlayerTank,
-    boundary: Rect,
+    camera: Camera,
     storage: Storage,
 ): void {
     ctx.setFont('200 36px Helvetica', 'right', 'top');
@@ -37,7 +36,7 @@ export function drawScore(
     ctx.setStrokeColor(Color.WHITE);
     ctx.drawBoundary(
         {
-            x: xn(boundary) - BASE_PADDING - maxWidth - innerPadding,
+            x: camera.size.width - BASE_PADDING - maxWidth - innerPadding,
             y: BASE_PADDING - innerPadding,
             width: maxWidth + 2 * innerPadding,
             height: boundaryHeight + 2 * innerPadding,
@@ -46,32 +45,31 @@ export function drawScore(
     );
 
     ctx.drawMultilineText(lines, {
-        x: xn(boundary) - BASE_PADDING,
+        x: camera.size.width - BASE_PADDING,
         y: BASE_PADDING,
         shadowColor: Color.BLACK,
     });
 }
 
-export function drawGrid(ctx: Context, game: Game, cellSize: number): void {
-    let {x, y, width, height} = game.screen;
-    x += game.world.offset.x % cellSize;
-    y += game.world.offset.y % cellSize;
+export function drawGrid(ctx: Context, camera: Camera, cellSize: number): void {
+    const x0 = cellSize - (camera.position.x % cellSize);
+    const y0 = cellSize - (camera.position.y % cellSize);
+    const {width, height} = camera.size;
     ctx.setStrokeColor(Color.BLACK_IERIE);
-    for (let colX = x; colX < x + width + cellSize; colX += cellSize) {
-        ctx.drawLine(
-            colX + 1,
-            y + 1 - cellSize,
-            colX + 1,
-            y + height + 1 + cellSize,
-        );
+    const offset = 1;
+    for (let colX = x0; colX < x0 + width + cellSize; colX += cellSize) {
+        const x1 = colX + offset;
+        const y1 = offset - cellSize;
+        const x2 = x1;
+        const y2 = height + offset + cellSize;
+        ctx.drawLine(x1, y1, x2, y2);
     }
-    for (let colY = y; colY < y + height + cellSize; colY += cellSize) {
-        ctx.drawLine(
-            x + 1 - cellSize,
-            colY + 1,
-            x + width + 1 + cellSize,
-            colY + 1,
-        );
+    for (let colY = y0; colY < y0 + height + cellSize; colY += cellSize) {
+        const x1 = offset - cellSize;
+        const x2 = width + offset + cellSize;
+        const y1 = colY + offset;
+        const y2 = y1;
+        ctx.drawLine(x1, y1, x2, y2);
     }
 }
 

@@ -1,3 +1,4 @@
+import {Camera} from '#/camera';
 import {Context} from '#/context';
 import {Rect, clamp, isPosInsideRect, xn, yn} from '#/math';
 import {Duration} from '#/math/duration';
@@ -5,8 +6,8 @@ import {Vector2Like} from '#/math/vector';
 
 export type Entity = {
     dead: boolean;
-    update(dt: Duration): void;
-    draw(ctx: Context): void;
+    update(dt: Duration, camera: Camera): void;
+    draw(ctx: Context, camera: Camera): void;
 } & Rect;
 
 export enum Direction {

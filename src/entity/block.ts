@@ -1,3 +1,4 @@
+import {Camera} from '#/camera';
 import {Color} from '#/color';
 import {Context} from '#/context';
 import {Entity} from '#/entity/core';
@@ -34,12 +35,17 @@ export class Block implements Entity {
         this.sprite?.update(dt);
     }
 
-    draw(ctx: Context): void {
+    draw(ctx: Context, camera: Camera): void {
         if (this.sprite) {
-            this.sprite.draw(ctx, this);
+            this.sprite.draw(ctx, this, camera);
         } else {
             ctx.setFillColor(this.color);
-            ctx.drawRect(this.x, this.y, this.width, this.height);
+            ctx.drawRect(
+                this.x - camera.position.x,
+                this.y - camera.position.y,
+                this.width,
+                this.height,
+            );
         }
     }
 }
