@@ -1,24 +1,30 @@
-// TODO: maybe remove it to a class to have this state there.
-
+import {Camera} from '#/camera';
 import {Color} from '#/color';
 import {BASE_FONT_SIZE, BASE_PADDING} from '#/const';
 import {Context} from '#/context';
 import {PlayerTank} from '#/entity';
-import {getBestScore} from '#/storage';
-import {Camera} from '#/camera';
+import {GameStorage} from '#/storage';
+
+const BEST_SCORE_KEY = 'best_score';
+const BEST_SCORE_AT_KEY = 'best_score_at';
+
+export type ScoreRecord = {
+    score: number;
+    createdAt: Date;
+};
 
 export function drawScore(
     ctx: Context,
     player: PlayerTank,
     camera: Camera,
-    storage: Storage,
+    cache: GameStorage,
 ): void {
     ctx.setFont('200 36px Helvetica', 'right', 'top');
     const innerPadding = BASE_PADDING / 2;
 
     const scoreText = `Score: ${player.score}`;
     const surviveText = `Survived: ${player.survivedFor.toHumanString()}`;
-    const bestScore = getBestScore(storage);
+    const bestScore = getBestScore(cache);
     const bestScoreText =
         player.dead && bestScore?.score
             ? `Best Score: ${bestScore.score} - ${shortDate(bestScore.createdAt)}`
@@ -51,26 +57,27 @@ export function drawScore(
     });
 }
 
-export function drawGrid(ctx: Context, camera: Camera, cellSize: number): void {
-    const x0 = cellSize - (camera.position.x % cellSize);
-    const y0 = cellSize - (camera.position.y % cellSize);
-    const {width, height} = camera.size;
-    ctx.setStrokeColor(Color.BLACK_IERIE);
-    const offset = 1;
-    for (let colX = x0; colX < x0 + width + cellSize; colX += cellSize) {
-        const x1 = colX + offset;
-        const y1 = offset - cellSize;
-        const x2 = x1;
-        const y2 = height + offset + cellSize;
-        ctx.drawLine(x1, y1, x2, y2);
+export function saveBestScore(cache: GameStorage, score: number): void {
+    const storedScore = cache.getNumber(BEST_SCORE_KEY);
+    if (storedScore == null || score > storedScore) {
+        cache.set(BEST_SCORE_KEY, score.toString());
+        cache.set(BEST_SCORE_AT_KEY, new Date().toISOString());
     }
-    for (let colY = y0; colY < y0 + height + cellSize; colY += cellSize) {
-        const x1 = offset - cellSize;
-        const x2 = width + offset + cellSize;
-        const y1 = colY + offset;
-        const y2 = y1;
-        ctx.drawLine(x1, y1, x2, y2);
+}
+
+export function getBestScore(cache: GameStorage): ScoreRecord | null {
+    const score = cache.getNumber(BEST_SCORE_KEY);
+    if (score == null || score === 0) {
+        return null;
     }
+
+    const createdAt = cache.getDate(BEST_SCORE_AT_KEY);
+    if (createdAt == null) {
+        console.warn('WARN: Found best score, but no creation date');
+        return null;
+    }
+
+    return {score, createdAt};
 }
 
 function shortDate(date: Date): string {

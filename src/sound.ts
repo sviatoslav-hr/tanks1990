@@ -1,21 +1,24 @@
 import {Result, wrapError} from '#/common';
 import {clamp} from '#/math';
-import {getStoredVolume, storeVolume} from '#/storage';
+import {GameStorage} from '#/storage';
 
 export enum SoundType {
     EXPLOSION = '8bit_bomb_explosion',
     SHOOTING = 'cannon_fire',
 }
 
+const GAME_VOLUME_KEY = 'game_volume';
 const VOLUME_SCALE = 0.3;
 // TODO: avoid using globals
 const soundsCache = new Map<SoundType, Sound[]>();
 let currentVolume = 1 * VOLUME_SCALE;
 const audioContext = new AudioContext();
 
-export async function preloadSounds(): Promise<void> {
-    const volume = getStoredVolume(localStorage);
+// TODO: This should be a class since is has state
+export async function preloadSounds(cache: GameStorage): Promise<void> {
+    let volume = cache.getNumber(GAME_VOLUME_KEY);
     if (volume != null) {
+        volume = Math.max(Math.min(1, volume), 0);
         currentVolume = volume * VOLUME_SCALE;
     }
     const promises: Promise<Result<void>>[] = [];
@@ -61,9 +64,10 @@ export function getVolume(): number {
     return Math.min(currentVolume / VOLUME_SCALE, 1);
 }
 
-export function setVolume(volume: number): void {
+export function setVolume(volume: number, cache: GameStorage): void {
     currentVolume = volume * VOLUME_SCALE;
-    storeVolume(localStorage, volume);
+    console.log(`Setting volume to: ${currentVolume}; volume=${volume}`);
+    cache.set(GAME_VOLUME_KEY, volume.toString());
     for (const [_, sounds] of soundsCache) {
         for (const sound of sounds) {
             sound.volume = currentVolume;

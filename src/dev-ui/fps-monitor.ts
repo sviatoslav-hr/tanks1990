@@ -1,7 +1,6 @@
 import {CustomElement, ReactiveElement, css, div} from '#/html';
 import {numround} from '#/math';
 import {Duration} from '#/math/duration';
-import {setStoredIsFPSVisible} from '#/storage';
 
 @CustomElement('fps-monitor')
 export class FPSMonitor extends ReactiveElement {
@@ -39,15 +38,6 @@ export class FPSMonitor extends ReactiveElement {
                 this.textElement.textContent = `FPS: ${this.lastFPS}`;
             }
         }
-    }
-
-    toggleVisibility(storage: Storage): void {
-        if (this.visible) {
-            this.hide();
-        } else {
-            this.show();
-        }
-        setStoredIsFPSVisible(storage, this.visible);
     }
 
     show(): void {

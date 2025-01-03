@@ -1,3 +1,4 @@
+import {Camera} from '#/camera';
 import {CELL_SIZE} from '#/const';
 import {Context} from '#/context';
 import {EnemyTank, PlayerTank, Tank} from '#/entity';
@@ -5,11 +6,13 @@ import {Block} from '#/entity/block';
 import {Entity, isIntesecting} from '#/entity/core';
 import {Projectile} from '#/entity/projectile';
 import {createStaticSprite} from '#/entity/sprite';
+import {GameInput} from '#/game-input';
 import {Rect, isPosInsideRect, randomInt} from '#/math';
 import {Duration} from '#/math/duration';
 import {Vector2Like} from '#/math/vector';
-import {GameInput} from '#/game-input';
-import {Camera} from '#/camera';
+import {GameStorage} from '#/storage';
+
+const SHOW_BOUNDARIES_KEY = 'show_boundaries';
 
 export class World {
     tanks: Tank[] = [];
@@ -17,15 +20,26 @@ export class World {
     blocks: Block[] = [];
     projectiles: Projectile[] = [];
     isInfinite = false;
-    showBoundary = false;
     gravityCoef = 20;
     frictionCoef = 8;
+    private _showBoundary = false;
+
+    get showBoundary(): boolean {
+        return this._showBoundary;
+    }
+
+    set showBoundary(value: boolean) {
+        this._showBoundary = value;
+        this.cache.set(SHOW_BOUNDARIES_KEY, value);
+    }
 
     constructor(
         public readonly boundary: Rect,
+        private readonly cache: GameStorage,
         input: GameInput,
     ) {
         this.player = new PlayerTank(this, input);
+        this.showBoundary = cache.getBool(SHOW_BOUNDARIES_KEY) ?? false;
     }
 
     init(infinite: boolean): void {

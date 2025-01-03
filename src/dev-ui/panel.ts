@@ -6,7 +6,6 @@ import {
     css,
     div,
 } from '#/html';
-import {setStoredIsDevPanelVisible} from '#/storage';
 
 @CustomElement('dev-panel')
 export class DevPanel extends ReactiveElement {
@@ -52,15 +51,6 @@ export class DevPanel extends ReactiveElement {
         this.visible = false;
         this.style.opacity = '0';
         this.style.pointerEvents = 'none';
-    }
-
-    toggleVisibility(storage: Storage): void {
-        if (this.visible) {
-            this.hide();
-        } else {
-            this.show();
-        }
-        setStoredIsDevPanelVisible(storage, this.visible);
     }
 
     addFolder(name: string): DevPanel {

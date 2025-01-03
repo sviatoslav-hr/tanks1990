@@ -1,18 +1,14 @@
 import {Color} from '#/color';
 import {BASE_HEIGHT, BASE_WIDTH, CELL_SIZE} from '#/const';
 import {Context} from '#/context';
-import {drawGrid, drawScore} from '#/draw';
-import {Game} from '#/game';
-import {Menu} from '#/menu';
-import {
-    getStoredShowBoundaries,
-    saveBestScore,
-    setStoredShowBoundaries,
-} from '#/storage';
-import {Duration} from '#/math/duration';
 import {DevUI} from '#/dev-ui';
-import {GameInput} from './game-input';
+import {Game} from '#/game';
+import {Duration} from '#/math/duration';
+import {Menu} from '#/menu';
+import {drawScore, saveBestScore} from '#/score';
+import {GameStorage} from '#/storage';
 import {Camera} from './camera';
+import {GameInput} from './game-input';
 
 type AnimationCallback = (timestamp: number) => void;
 
@@ -41,12 +37,11 @@ export class Renderer {
         camera: Camera,
         input: GameInput,
         menu: Menu,
-        storage: Storage,
+        cache: GameStorage,
         devUI: DevUI,
     ): void {
         this.resizeCanvas(window.innerWidth, window.innerHeight);
         this.lastTimestamp = performance.now();
-        game.world.showBoundary = getStoredShowBoundaries(storage);
 
         const animationCallback = this.createAnimationCallback(
             game,
@@ -54,11 +49,11 @@ export class Renderer {
             input,
             menu,
             devUI,
-            storage,
+            cache,
         );
         window.requestAnimationFrame(animationCallback);
         // TODO: animation function shouldn't be responsible for Keyboard handling
-        this.handleKeyboard(input, game, menu, storage);
+        this.handleKeyboard(input, game, menu);
     }
 
     resizeCanvas(width: number, height: number): [number, number] {
@@ -80,16 +75,10 @@ export class Renderer {
         }
     }
 
-    private handleKeyboard(
-        input: GameInput,
-        game: Game,
-        menu: Menu,
-        storage: Storage,
-    ): void {
+    private handleKeyboard(input: GameInput, game: Game, menu: Menu): void {
         input.listen(document.body);
         input.onKeydown('KeyB', () => {
             game.world.showBoundary = !game.world.showBoundary;
-            setStoredShowBoundaries(storage, game.world.showBoundary);
         });
         input.onKeydown('BracketRight', () => {
             if (!game.paused) {
@@ -117,7 +106,7 @@ export class Renderer {
         input: GameInput,
         menu: Menu,
         devUI: DevUI,
-        storage: Storage,
+        cache: GameStorage,
     ): AnimationCallback {
         const animationCallback = (timestamp: number): void => {
             const world = game.world;
@@ -133,11 +122,11 @@ export class Renderer {
                 game.dead ||
                 (game.playing && input.isDown('KeyQ'))
             ) {
-                drawScore(this.ctx, world.player, camera, storage);
+                drawScore(this.ctx, world.player, camera, cache);
             }
 
             if (world.player.dead && game.playing && !menu.dead) {
-                saveBestScore(storage, world.player.score);
+                saveBestScore(cache, world.player.score);
                 menu.showDead();
             }
 
@@ -176,5 +165,27 @@ export async function toggleFullscreen(
                 'ERROR: failed to enter Fullscreen\n' + err.message,
             );
         });
+    }
+}
+
+function drawGrid(ctx: Context, camera: Camera, cellSize: number): void {
+    const x0 = cellSize - (camera.position.x % cellSize);
+    const y0 = cellSize - (camera.position.y % cellSize);
+    const {width, height} = camera.size;
+    ctx.setStrokeColor(Color.BLACK_IERIE);
+    const offset = 1;
+    for (let colX = x0; colX < x0 + width + cellSize; colX += cellSize) {
+        const x1 = colX + offset;
+        const y1 = offset - cellSize;
+        const x2 = x1;
+        const y2 = height + offset + cellSize;
+        ctx.drawLine(x1, y1, x2, y2);
+    }
+    for (let colY = y0; colY < y0 + height + cellSize; colY += cellSize) {
+        const x1 = offset - cellSize;
+        const x2 = width + offset + cellSize;
+        const y1 = colY + offset;
+        const y2 = y1;
+        ctx.drawLine(x1, y1, x2, y2);
     }
 }

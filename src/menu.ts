@@ -1,6 +1,7 @@
 import {Game} from '#/game';
 import {CustomElement, html} from '#/html';
 import {getVolume, setVolume} from '#/sound';
+import {GameStorage} from '#/storage';
 
 // TODO: refactor menu to use new ReactiveElement
 
@@ -15,7 +16,7 @@ type MenuClickCallback = (button: MenuButton) => void;
 
 const DEFAULT_MENU_STATES = [MenuState.START, MenuState.PAUSE, MenuState.DEAD];
 
-export function initMenu(game: Game): Menu {
+export function initMenu(game: Game, cache: GameStorage): Menu {
     const menu = new Menu();
     menu.addButton(
         'New Game',
@@ -69,7 +70,7 @@ export function initMenu(game: Game): Menu {
             max: MAX_VOLUME,
             initValue,
         });
-        slider.onChange((value) => setVolume(value / MAX_VOLUME));
+        slider.onChange((value) => setVolume(value / MAX_VOLUME, cache));
         wrapper.append(slider);
         optionsPage.setContent(wrapper);
     }

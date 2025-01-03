@@ -2,7 +2,7 @@ import {DevPanel, FPSMonitor} from '#/dev-ui';
 import {Game} from '#/game';
 import {CustomElement, ReactiveElement, css, div} from '#/html';
 import {Duration} from '#/math/duration';
-import {getStoredIsDevPanelVisible, getStoredIsFPSVisible} from '#/storage';
+import {GameStorage} from '#/storage';
 import {World} from '#/world';
 
 @CustomElement('dev-ui')
@@ -41,13 +41,40 @@ export class DevUI extends ReactiveElement {
     }
 }
 
-export function createDevUI(game: Game, world: World, storage: Storage): DevUI {
+const SHOW_FPS_KEY = 'show_fps';
+export function toggleFPSVisibility(fps: FPSMonitor, cache: GameStorage): void {
+    if (fps.visible) {
+        fps.hide();
+    } else {
+        fps.show();
+    }
+    cache.set(SHOW_FPS_KEY, fps.visible);
+}
+
+const SHOW_DEV_PANEL_KEY = 'show_dev_panel';
+export function toggleDevPanelVisibility(
+    panel: DevPanel,
+    cache: GameStorage,
+): void {
+    if (panel.visible) {
+        panel.hide();
+    } else {
+        panel.show();
+    }
+    cache.set(SHOW_DEV_PANEL_KEY, panel.visible);
+}
+
+export function createDevUI(
+    game: Game,
+    world: World,
+    cache: GameStorage,
+): DevUI {
     const devUI = new DevUI();
-    const isFPSVisible = getStoredIsFPSVisible(storage);
+    const isFPSVisible = cache.getBool(SHOW_FPS_KEY) ?? false;
     if (!isFPSVisible) {
         devUI.fpsMonitor.hide();
     }
-    const isDevPanelVisible = getStoredIsDevPanelVisible(storage);
+    const isDevPanelVisible = cache.getBool(SHOW_DEV_PANEL_KEY) ?? false;
     if (!isDevPanelVisible) {
         devUI.devPanel.hide();
     }

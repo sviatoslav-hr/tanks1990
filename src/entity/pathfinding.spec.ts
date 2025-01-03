@@ -7,6 +7,7 @@ import {EnemyTank} from '.';
 import {findPath} from './pathfinding';
 import {isPosInsideRect} from '#/math';
 import {isIntesecting} from './core';
+import {GameStorage} from '#/storage';
 
 vi.mock('../sound', () => {
     return {
@@ -41,8 +42,11 @@ vi.mock('../entity/sprite', () => {
 describe('Pathfinding', () => {
     it('should find a path', () => {
         const screen = {x: 0, y: 0, width: 800, height: 600};
-        const input = new GameInput();
-        const world = new World(screen, input);
+        const world = new World(
+            screen,
+            new GameStorage(localStorage),
+            new GameInput(),
+        );
         world.blocks = blocks;
         const enemy = new EnemyTank(world);
         enemy.x = 107.97980493109108;
