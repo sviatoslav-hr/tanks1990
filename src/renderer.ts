@@ -1,26 +1,23 @@
+import {Camera} from '#/camera';
 import {Color} from '#/color';
 import {BASE_HEIGHT, BASE_WIDTH, CELL_SIZE} from '#/const';
 import {Context} from '#/context';
-import {DevUI} from '#/dev-ui';
-import {Game} from '#/game';
-import {Duration} from '#/math/duration';
-import {Menu} from '#/menu';
-import {drawScore, saveBestScore} from '#/score';
+import {GameState} from '#/state';
+import {GameInput} from '#/game-input';
+import {drawScore} from '#/score';
 import {GameStorage} from '#/storage';
-import {Camera} from './camera';
-import {GameInput} from './game-input';
-
-type AnimationCallback = (timestamp: number) => void;
 
 export class Renderer {
     readonly canvas: HTMLCanvasElement;
     readonly ctx: Context;
-    private lastTimestamp = 0;
+    readonly camera: Camera;
 
     constructor() {
         this.canvas = document.createElement('canvas');
         this.canvas.width = BASE_WIDTH;
         this.canvas.height = BASE_HEIGHT;
+        this.camera = new Camera(this.canvas.width, this.canvas.height);
+
         const ctx2d = this.canvas.getContext('2d', {
             willReadFrequently: true,
         });
@@ -30,30 +27,20 @@ export class Renderer {
         this.ctx = new Context(ctx2d);
     }
 
-    // TODO: renderer shouldn't be aware of these classes,
-    // it should be more abstract
-    startAnimation(
-        game: Game,
-        camera: Camera,
-        input: GameInput,
-        menu: Menu,
-        cache: GameStorage,
-        devUI: DevUI,
-    ): void {
-        this.resizeCanvas(window.innerWidth, window.innerHeight);
-        this.lastTimestamp = performance.now();
+    render(game: GameState, input: GameInput, storage: GameStorage): void {
+        const world = game.world;
+        this.ctx.setFillColor(Color.BLACK_RAISIN);
+        this.ctx.fillScreen();
+        drawGrid(this.ctx, this.camera, CELL_SIZE);
+        world.draw(this.ctx, this.camera);
 
-        const animationCallback = this.createAnimationCallback(
-            game,
-            camera,
-            input,
-            menu,
-            devUI,
-            cache,
-        );
-        window.requestAnimationFrame(animationCallback);
-        // TODO: animation function shouldn't be responsible for Keyboard handling
-        this.handleKeyboard(input, game, menu);
+        if (
+            game.paused ||
+            game.dead ||
+            (game.playing && input.isDown('KeyQ'))
+        ) {
+            drawScore(this.ctx, world.player, this.camera, storage);
+        }
     }
 
     resizeCanvas(width: number, height: number): [number, number] {
@@ -74,81 +61,9 @@ export class Renderer {
             return [BASE_WIDTH, BASE_HEIGHT];
         }
     }
-
-    private handleKeyboard(input: GameInput, game: Game, menu: Menu): void {
-        input.listen(document.body);
-        input.onKeydown('KeyB', () => {
-            game.world.showBoundary = !game.world.showBoundary;
-        });
-        input.onKeydown('BracketRight', () => {
-            if (!game.paused) {
-                return;
-            }
-            menu.hide();
-            game.debugUpdateTriggered = true;
-        });
-        input.onKeydown('KeyP', () => {
-            if (game.dead) {
-                menu.showMain();
-            } else if (game.playing) {
-                menu.showPause();
-            } else {
-                menu.hide();
-            }
-            game.togglePauseResume();
-        });
-        input.onKeydown('KeyO', () => game.togglePauseResume());
-    }
-
-    private createAnimationCallback(
-        game: Game,
-        camera: Camera,
-        input: GameInput,
-        menu: Menu,
-        devUI: DevUI,
-        cache: GameStorage,
-    ): AnimationCallback {
-        const animationCallback = (timestamp: number): void => {
-            const world = game.world;
-            const dt = Duration.since(this.lastTimestamp).min(1000 / 30);
-            this.lastTimestamp = timestamp;
-            this.ctx.setFillColor(Color.BLACK_RAISIN);
-            this.ctx.fillScreen();
-
-            drawGrid(this.ctx, camera, CELL_SIZE);
-            world.draw(this.ctx, camera);
-            if (
-                game.paused ||
-                game.dead ||
-                (game.playing && input.isDown('KeyQ'))
-            ) {
-                drawScore(this.ctx, world.player, camera, cache);
-            }
-
-            if (world.player.dead && game.playing && !menu.dead) {
-                saveBestScore(cache, world.player.score);
-                menu.showDead();
-            }
-
-            if (game.playing || game.debugUpdateTriggered) {
-                world.update(dt, camera);
-                if (world.isInfinite) {
-                    camera.centerOn(world.player);
-                }
-            }
-            game.tick();
-            input.tick();
-            devUI.update(dt);
-
-            window.requestAnimationFrame(animationCallback);
-        };
-        return animationCallback;
-    }
 }
 
-export async function toggleFullscreen(
-    appElement: HTMLDivElement,
-): Promise<void> {
+export async function toggleFullscreen(appElement: HTMLElement): Promise<void> {
     if (!document.fullscreenEnabled) {
         console.warn('Fullscreen is either not supported or disabled');
         return;

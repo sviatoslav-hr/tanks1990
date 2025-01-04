@@ -3,12 +3,14 @@ import {Rect} from '#/math';
 
 export class Camera {
     readonly position: Vector2 = Vector2.zero();
+    readonly size: Vector2;
 
-    constructor(public readonly size: Vector2) {
-        assert(size.x > 0 && size.y > 0, 'Invalid camera size');
+    constructor(width: number, height: number) {
+        assert(width > 0 && height > 0, 'Invalid camera size');
+        this.size = new Vector2(width, height);
     }
 
-    get sizeRect(): Rect {
+    getSizeRect(): Rect {
         return {x: 0, y: 0, width: this.size.x, height: this.size.y};
     }
 

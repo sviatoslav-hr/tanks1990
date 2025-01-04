@@ -1,70 +1,118 @@
+import {DevUI, toggleDevPanelVisibility, toggleFPSVisibility} from '#/dev-ui';
+import {GameInput} from '#/game-input';
+import {Duration} from '#/math/duration';
+import {Menu} from '#/menu';
+import {saveBestScore} from '#/score';
+import {GameStorage} from '#/storage';
 import {World} from '#/world';
+import {Renderer, toggleFullscreen} from '#/renderer';
+import {GameState} from '#/state';
 
-export enum GameStatus {
-    INITIAL,
-    PLAYING,
-    PAUSED,
+export const DEV_MODE_KEY = 'dev_mode';
+
+export function runGame(
+    state: GameState,
+    world: World,
+    menu: Menu,
+    input: GameInput,
+    storage: GameStorage,
+    devUI: DevUI,
+    renderer: Renderer,
+) {
+    renderer.resizeCanvas(window.innerWidth, window.innerHeight);
+    input.listen(document.body);
+
+    window.addEventListener('resize', () => {
+        renderer.resizeCanvas(window.innerWidth, window.innerHeight);
+        menu.resize(renderer.canvas.clientWidth, renderer.canvas.clientHeight);
+    });
+
+    let lastTimestamp = 0;
+    const animationCallback = (timestamp: number): void => {
+        const dt = Duration.since(lastTimestamp).min(1000 / 30);
+        lastTimestamp = timestamp;
+        renderer.render(state, input, storage);
+
+        if (world.player.dead && state.playing && !menu.dead) {
+            menu.showDead();
+            saveBestScore(storage, world.player.score);
+        }
+
+        if (state.playing || state.debugUpdateTriggered) {
+            world.update(dt, renderer.camera);
+            if (world.isInfinite) {
+                renderer.camera.centerOn(world.player);
+            }
+        }
+
+        handleGameInput(input, renderer, state, world, menu, devUI, storage);
+        input.tick();
+        devUI.update(dt);
+        state.reset();
+        window.requestAnimationFrame(animationCallback);
+    };
+
+    window.requestAnimationFrame(animationCallback);
 }
 
-// TODO: Game/GameState should be the highest level
-// Also it should have a reference to Menu, but Menu shouldn't have the Game ref
-export class Game {
-    status = GameStatus.INITIAL;
-    debugUpdateTriggered = false;
-
-    constructor(readonly world: World) {}
-
-    get playing(): boolean {
-        return this.status === GameStatus.PLAYING;
+function handleGameInput(
+    input: GameInput,
+    renderer: Renderer,
+    state: GameState,
+    world: World,
+    menu: Menu,
+    devUI: DevUI,
+    storage: GameStorage,
+) {
+    if (input.isPressed('KeyB')) {
+        world.showBoundary = !world.showBoundary;
     }
 
-    get paused(): boolean {
-        return this.status === GameStatus.PAUSED;
+    if (state.paused && input.isPressed('BracketRight')) {
+        menu.hide();
+        state.debugUpdateTriggered = true;
     }
 
-    get dead(): boolean {
-        return this.playing && this.world.player.dead;
-    }
-
-    init(): void {
-        this.status = GameStatus.INITIAL;
-    }
-
-    pause(): void {
-        this.status = GameStatus.PAUSED;
-    }
-
-    resume(): void {
-        this.status = GameStatus.PLAYING;
-    }
-
-    start(infinite: boolean): void {
-        this.world.init(infinite);
-        this.status = GameStatus.PLAYING;
-    }
-
-    tick() {
-        this.debugUpdateTriggered = false;
-    }
-
-    togglePauseResume(): void {
-        switch (this.status) {
-            case GameStatus.PLAYING: {
-                if (this.dead) {
-                    this.init();
-                } else {
-                    this.pause();
-                }
-                break;
-            }
-            case GameStatus.PAUSED: {
-                this.resume();
-                break;
-            }
-            case GameStatus.INITIAL:
-                break;
-            default:
-                console.warn('Unhandled value ', this.status);
+    if (input.isPressed('KeyP')) {
+        if (state.dead) {
+            menu.showMain();
+        } else if (state.playing) {
+            menu.showPause();
+        } else {
+            menu.hide();
         }
+        state.togglePauseResume();
+    }
+
+    if (input.isPressed('KeyO')) {
+        state.togglePauseResume();
+    }
+
+    if (input.isPressed('Semicolon')) {
+        window.__DEV_MODE = !window.__DEV_MODE;
+        storage.set(DEV_MODE_KEY, window.__DEV_MODE);
+        console.log(`Dev mode: ${window.__DEV_MODE ? 'ON' : 'OFF'}`);
+    }
+
+    if (input.isPressed('Backquote')) {
+        toggleFPSVisibility(devUI.fpsMonitor, storage);
+    }
+
+    if (input.isPressed('Backslash')) {
+        toggleDevPanelVisibility(devUI.devPanel, storage);
+    }
+
+    if (input.isPressed('KeyF')) {
+        const appElement = renderer.canvas.parentElement;
+        assert(appElement);
+        toggleFullscreen(appElement)
+            .then(() => {
+                renderer.resizeCanvas(window.innerWidth, window.innerHeight);
+                menu.resize(
+                    renderer.canvas.clientWidth,
+                    renderer.canvas.clientHeight,
+                );
+            })
+            .catch((err) => console.error('Faile to toggle fullscreen', err));
     }
 }

@@ -1,21 +1,8 @@
-import {Game} from '#/game';
 import {CustomElement, html} from '#/html';
 import {SoundManager} from '#/sound';
+import {GameState} from '#/state';
 
-// TODO: refactor menu to use new ReactiveElement
-
-enum MenuState {
-    HIDDEN = 'hidden',
-    START = 'start',
-    PAUSE = 'pause',
-    DEAD = 'dead',
-}
-
-type MenuClickCallback = (button: MenuButton) => void;
-
-const DEFAULT_MENU_STATES = [MenuState.START, MenuState.PAUSE, MenuState.DEAD];
-
-export function initMenu(game: Game, sounds: SoundManager): Menu {
+export function initMenu(game: GameState, sounds: SoundManager): Menu {
     const menu = new Menu();
     menu.addButton(
         'New Game',
@@ -99,6 +86,19 @@ export function initMenu(game: Game, sounds: SoundManager): Menu {
     });
     return menu;
 }
+
+// TODO: refactor menu to use new ReactiveElement
+
+export enum MenuState {
+    HIDDEN = 'hidden',
+    START = 'start',
+    PAUSE = 'pause',
+    DEAD = 'dead',
+}
+
+type MenuClickCallback = (button: MenuButton) => void;
+
+const DEFAULT_MENU_STATES = [MenuState.START, MenuState.PAUSE, MenuState.DEAD];
 
 @CustomElement('game-menu-button')
 class MenuButton extends HTMLElement {
@@ -391,7 +391,7 @@ interface SliderConfig {
 }
 
 @CustomElement('game-slider')
-class Slider extends HTMLElement {
+export class Slider extends HTMLElement {
     private input: HTMLInputElement;
 
     constructor({

@@ -1,5 +1,5 @@
 import {DevPanel, FPSMonitor} from '#/dev-ui';
-import {Game} from '#/game';
+import {GameState} from '#/state';
 import {CustomElement, ReactiveElement, css, div} from '#/html';
 import {Duration} from '#/math/duration';
 import {GameStorage} from '#/storage';
@@ -65,7 +65,7 @@ export function toggleDevPanelVisibility(
 }
 
 export function createDevUI(
-    game: Game,
+    state: GameState,
     world: World,
     cache: GameStorage,
 ): DevUI {
@@ -83,7 +83,7 @@ export function createDevUI(
         .addButton()
         .setName('Trigger Update')
         .onClick(() => {
-            game.debugUpdateTriggered = true;
+            state.debugUpdateTriggered = true;
         });
     devPanel
         .addButton()

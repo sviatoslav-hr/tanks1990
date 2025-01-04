@@ -44,6 +44,7 @@ export class SoundManager {
         const promises: Promise<Result<void>>[] = [];
         for (const type of Object.values(SoundType)) {
             const sound = Sound.fromType(type, this.audioContext);
+            sound.volume = this._volume;
             this.soundsCache.set(type, [sound]);
             promises.push(sound.load());
         }
