@@ -23,7 +23,7 @@ import {
 } from '#/math';
 import {Duration} from '#/math/duration';
 import {Vector2, Vector2Like} from '#/math/vector';
-import {SoundType, playSound} from '#/sound';
+import {SoundType, SoundManager} from '#/sound';
 import {World} from '#/world';
 import {findPath} from './pathfinding';
 
@@ -57,7 +57,10 @@ export abstract class Tank implements Entity {
 
     private static index = 0;
 
-    constructor(protected world: World) {
+    constructor(
+        protected readonly world: World,
+        protected readonly sounds: SoundManager,
+    ) {
         // NOTE: spawn outside of the screen, expected to respawn
         this.x = -(2 * this.width);
         this.y = -(2 * this.height);
@@ -209,7 +212,7 @@ export abstract class Tank implements Entity {
         this.shootingDelay.setFrom(this.SHOOTING_PERIOD);
         if (!this.world.player.dead) {
             const volumeScale = this.bot ? 0.15 : 1;
-            playSound(SoundType.SHOOTING, volumeScale);
+            this.sounds.playSound(SoundType.SHOOTING, volumeScale);
         }
         const [px, py] = this.getProjectileStartPos();
         Projectile.spawn(this, this.world, px, py, this.direction);
@@ -255,7 +258,7 @@ export abstract class Tank implements Entity {
         if (dead) {
             this.dead = true;
             this.isExplosionExpected = true;
-            playSound(SoundType.EXPLOSION);
+            this.sounds.playSound(SoundType.EXPLOSION);
         }
         return dead;
     }
@@ -322,9 +325,10 @@ export class PlayerTank extends Tank implements Entity {
 
     constructor(
         world: World,
+        sounds: SoundManager,
         private keyboard: GameInput,
     ) {
-        super(world);
+        super(world, sounds);
         if (world.isInfinite) {
             this.x = world.boundary.x + world.boundary.width / 2;
             this.y = world.boundary.y + world.boundary.height / 2;

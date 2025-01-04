@@ -8,13 +8,8 @@ import {findPath} from './pathfinding';
 import {isPosInsideRect} from '#/math';
 import {isIntesecting} from './core';
 import {GameStorage} from '#/storage';
+import {SoundManager} from '#/sound';
 
-vi.mock('../sound', () => {
-    return {
-        preloadSounds: () => Promise.resolve(),
-        setVolume: () => {},
-    };
-});
 vi.mock('../entity/sprite', () => {
     return {
         createStaticSprite: () => {
@@ -40,15 +35,23 @@ vi.mock('../entity/sprite', () => {
 });
 
 describe('Pathfinding', () => {
+    const mockStorage: Storage = {
+        getItem: () => null,
+        setItem: () => {},
+        removeItem: () => {},
+        clear: () => {},
+        key: () => null,
+        length: 0,
+    };
+    const mockAudioContext: AudioContext = {} as AudioContext;
+
     it('should find a path', () => {
         const screen = {x: 0, y: 0, width: 800, height: 600};
-        const world = new World(
-            screen,
-            new GameStorage(localStorage),
-            new GameInput(),
-        );
+        const storage = new GameStorage(mockStorage);
+        const sounds = new SoundManager(storage, mockAudioContext);
+        const world = new World(screen, storage, sounds, new GameInput());
         world.blocks = blocks;
-        const enemy = new EnemyTank(world);
+        const enemy = new EnemyTank(world, sounds);
         enemy.x = 107.97980493109108;
         enemy.y = 429.939880663898;
         world.player.x = 758;

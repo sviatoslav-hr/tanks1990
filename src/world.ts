@@ -10,6 +10,7 @@ import {GameInput} from '#/game-input';
 import {Rect, isPosInsideRect, randomInt} from '#/math';
 import {Duration} from '#/math/duration';
 import {Vector2Like} from '#/math/vector';
+import {SoundManager} from '#/sound';
 import {GameStorage} from '#/storage';
 
 const SHOW_BOUNDARIES_KEY = 'show_boundaries';
@@ -30,16 +31,17 @@ export class World {
 
     set showBoundary(value: boolean) {
         this._showBoundary = value;
-        this.cache.set(SHOW_BOUNDARIES_KEY, value);
+        this.storage.set(SHOW_BOUNDARIES_KEY, value);
     }
 
     constructor(
         public readonly boundary: Rect,
-        private readonly cache: GameStorage,
+        private readonly storage: GameStorage,
+        private readonly sounds: SoundManager,
         input: GameInput,
     ) {
-        this.player = new PlayerTank(this, input);
-        this.showBoundary = cache.getBool(SHOW_BOUNDARIES_KEY) ?? false;
+        this.player = new PlayerTank(this, sounds, input);
+        this.showBoundary = storage.getBool(SHOW_BOUNDARIES_KEY) ?? false;
     }
 
     init(infinite: boolean): void {
@@ -106,7 +108,7 @@ export class World {
 
     spawnEnemy(): void {
         // NOTE: push to the start because of rendering order (could be improved)
-        const enemy = new EnemyTank(this);
+        const enemy = new EnemyTank(this, this.sounds);
         enemy.respawn();
         this.tanks.unshift(enemy);
     }

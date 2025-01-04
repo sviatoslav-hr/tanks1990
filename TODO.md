@@ -3,7 +3,6 @@
 - **IN_PROGRESS**
     - [ ] **Add developer panel**
 - **TODO**
-    - [ ] Refactor sounds from globals to a class instance
     - [ ] Make enemies shoot only when they see the player
     - [ ] Define game plan / trajectory / future development / main goal / idea
     - [ ] Define custom RNG and use it everywhere instead of `Math.random()`
@@ -81,6 +80,7 @@
     - [ ] Setup ESLint
     - [ ] Implement Entity Component System (ECS)
 - **DONE**
+    - [x] Refactor sounds from globals to a class instance
     - [x] Refactor storage, add custom wrapper
     - [x] ***`Fix enemies stuck at the blocks or at each other like dumbasses. FIX ENEMY AI!!!`***
     - [x] Introduce a concept of Camera so it's a separate thing

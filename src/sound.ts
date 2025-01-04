@@ -9,69 +9,79 @@ export enum SoundType {
 
 const GAME_VOLUME_KEY = 'game_volume';
 const VOLUME_SCALE = 0.3;
-// TODO: avoid using globals
-const soundsCache = new Map<SoundType, Sound[]>();
-let currentVolume = 1 * VOLUME_SCALE;
-const audioContext = new AudioContext();
 
-// TODO: This should be a class since is has state
-export async function preloadSounds(cache: GameStorage): Promise<void> {
-    let volume = cache.getNumber(GAME_VOLUME_KEY);
-    if (volume != null) {
-        volume = Math.max(Math.min(1, volume), 0);
-        currentVolume = volume * VOLUME_SCALE;
+export class SoundManager {
+    private _volume = 1 * VOLUME_SCALE;
+    // TODO: This should be created only after user made any action on the page.
+    private readonly soundsCache = new Map<SoundType, Sound[]>();
+
+    constructor(
+        private readonly storage: GameStorage,
+        private readonly audioContext = new AudioContext(),
+    ) {}
+
+    get volume(): number {
+        return Math.min(this._volume / VOLUME_SCALE, 1);
     }
-    const promises: Promise<Result<void>>[] = [];
-    for (const type of Object.values(SoundType)) {
-        const sound = Sound.fromType(type);
-        soundsCache.set(type, [sound]);
-        promises.push(sound.load());
-    }
-    const results = await Promise.all(promises);
-    for (const result of results) {
-        if (result.isErr()) {
-            console.error(result.context('Failed to preload sound').err);
+
+    updateVolume(volume: number) {
+        this._volume = volume * VOLUME_SCALE;
+        this.storage.set(GAME_VOLUME_KEY, volume.toString());
+
+        for (const [_, sounds] of this.soundsCache) {
+            for (const sound of sounds) {
+                sound.volume = this._volume;
+            }
         }
     }
-}
 
-export function playSound(type: SoundType, volumeScale?: number): void {
-    const cachedSounds = soundsCache.get(type);
-    const availableSound = cachedSounds?.find((sound) => !sound.isPlaying);
-    if (availableSound) {
-        availableSound.play(volumeScale ?? 1);
-        return;
-    }
-    const firstSound = cachedSounds?.[0];
-    if (firstSound) {
-        const clonedSound = firstSound.clone();
-        cachedSounds.push(clonedSound);
-        clonedSound.play(volumeScale ?? 1);
-        return;
-    }
-    const sound = Sound.fromType(type);
-    soundsCache.set(type, [sound]);
-    sound.load().then((res) => {
-        if (res.isOk()) {
-            sound.play(volumeScale ?? 1);
-        } else {
-            console.error(res.context(`Failed to play sound: ${type}`).err);
+    async loadAllSounds(): Promise<void> {
+        let volume = this.storage.getNumber(GAME_VOLUME_KEY);
+        if (volume != null) {
+            volume = Math.max(Math.min(1, volume), 0);
+            this._volume = volume * VOLUME_SCALE;
         }
-    });
-}
-
-export function getVolume(): number {
-    return Math.min(currentVolume / VOLUME_SCALE, 1);
-}
-
-export function setVolume(volume: number, cache: GameStorage): void {
-    currentVolume = volume * VOLUME_SCALE;
-    console.log(`Setting volume to: ${currentVolume}; volume=${volume}`);
-    cache.set(GAME_VOLUME_KEY, volume.toString());
-    for (const [_, sounds] of soundsCache) {
-        for (const sound of sounds) {
-            sound.volume = currentVolume;
+        const promises: Promise<Result<void>>[] = [];
+        for (const type of Object.values(SoundType)) {
+            const sound = Sound.fromType(type, this.audioContext);
+            this.soundsCache.set(type, [sound]);
+            promises.push(sound.load());
         }
+        const results = await Promise.all(promises);
+        for (const result of results) {
+            if (result.isErr()) {
+                console.error(result.context('Failed to batch load sound').err);
+            }
+        }
+    }
+
+    playSound(type: SoundType, volumeScale?: number): void {
+        const cachedSounds = this.soundsCache.get(type);
+        const availableSound = cachedSounds?.find((sound) => !sound.isPlaying);
+        if (availableSound) {
+            availableSound.play(volumeScale ?? 1);
+            return;
+        }
+
+        // NOTE: All sounds of this type are currently playing, so we need to clone one of them.
+        const firstSound = cachedSounds?.[0];
+        if (firstSound) {
+            const clonedSound = firstSound.clone();
+            cachedSounds.push(clonedSound);
+            clonedSound.play(volumeScale ?? 1);
+            return;
+        }
+
+        // NOTE: Can only happen if failed to preload the sound.
+        const sound = Sound.fromType(type, this.audioContext);
+        this.soundsCache.set(type, [sound]);
+        sound.load().then((res) => {
+            if (res.isOk()) {
+                sound.play(volumeScale ?? 1);
+            } else {
+                console.error(res.context(`Failed to play sound: ${type}`).err);
+            }
+        });
     }
 }
 
@@ -95,7 +105,7 @@ class Sound {
         private audioContext: AudioContext,
     ) {}
 
-    static fromType(type: SoundType): Sound {
+    static fromType(type: SoundType, audioContext: AudioContext): Sound {
         const src = `./sounds/${type}.wav`;
         return new Sound(src, audioContext);
     }
