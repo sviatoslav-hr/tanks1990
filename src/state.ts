@@ -41,7 +41,7 @@ export class GameState {
         this.status = GameStatus.PLAYING;
     }
 
-    reset() {
+    nextTick() {
         this.debugUpdateTriggered = false;
     }
 

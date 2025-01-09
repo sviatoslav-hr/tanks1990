@@ -1,18 +1,18 @@
 import './globals';
 import './style.css';
 
+import {BASE_HEIGHT, BASE_WIDTH, DEV_MODE_KEY} from '#/const';
 import {createDevUI} from '#/dev-ui';
 import {preloadEffectImages} from '#/entity/effect';
-import {DEV_MODE_KEY, runGame} from '#/game';
+import {runGame} from '#/game';
 import {GameInput} from '#/game-input';
+import {Rect} from '#/math';
 import {initMenu} from '#/menu';
 import {Renderer} from '#/renderer';
 import {SoundManager} from '#/sound';
 import {GameState} from '#/state';
 import {GameStorage} from '#/storage';
 import {World} from '#/world';
-import {Rect} from '#/math';
-import {BASE_HEIGHT, BASE_WIDTH} from '#/const';
 
 function main(): void {
     const appElement = document.querySelector<HTMLDivElement>('#app');
@@ -40,8 +40,6 @@ function main(): void {
 
     const menu = initMenu(gameState, sounds);
     appElement.append(menu);
-    menu.showMain();
-    menu.resize(renderer.canvas.clientWidth, renderer.canvas.clientHeight);
 
     const devUI = createDevUI(gameState, world, storage);
     appElement.append(devUI);

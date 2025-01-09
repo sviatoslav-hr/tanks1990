@@ -12,6 +12,7 @@ import {Vector2Like} from '#/math/vector';
 import {Renderer} from '#/renderer';
 import {SoundManager} from '#/sound';
 import {GameStorage} from '#/storage';
+import {Color} from './color';
 
 const SHOW_BOUNDARIES_KEY = 'show_boundaries';
 
@@ -54,6 +55,7 @@ export class World {
     }
 
     draw(renderer: Renderer): void {
+        this.drawGrid(renderer, CELL_SIZE);
         for (const b of this.blocks) {
             b.draw(renderer);
         }
@@ -64,6 +66,29 @@ export class World {
             if (!projectile.dead) {
                 projectile.draw(renderer);
             }
+        }
+    }
+
+    private drawGrid(renderer: Renderer, cellSize: number): void {
+        const camera = renderer.camera;
+        const x0 = cellSize - (camera.position.x % cellSize);
+        const y0 = cellSize - (camera.position.y % cellSize);
+        const {width, height} = camera.size;
+        renderer.setStrokeColor(Color.BLACK_IERIE);
+        const offset = 1;
+        for (let colX = x0; colX < x0 + width + cellSize; colX += cellSize) {
+            const x1 = colX + offset;
+            const y1 = offset - cellSize;
+            const x2 = x1;
+            const y2 = height + offset + cellSize;
+            renderer.drawLine(x1, y1, x2, y2);
+        }
+        for (let colY = y0; colY < y0 + height + cellSize; colY += cellSize) {
+            const x1 = offset - cellSize;
+            const x2 = width + offset + cellSize;
+            const y1 = colY + offset;
+            const y2 = y1;
+            renderer.drawLine(x1, y1, x2, y2);
         }
     }
 

@@ -41,7 +41,7 @@ export class GameInput {
         return !this.currentPressed[code];
     }
 
-    tick() {
+    nextTick() {
         this.previousPressed = {...this.currentPressed};
     }
 

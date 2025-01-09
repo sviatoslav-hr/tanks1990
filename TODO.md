@@ -1,5 +1,13 @@
 # TODO:
 
+## Current game direction:
+
+An open procedurally generated world with enemies and obstacles.
+It should also contain dungeons which are also procedurally generated with enemies and nice loot.
+
+
+## Tasks
+
 - **IN_PROGRESS**
     - [ ] **Rework the score UI!!!**
         - [ ] Allocate space on the screen for other info
