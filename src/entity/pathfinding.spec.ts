@@ -1,14 +1,14 @@
-import {describe, it, expect, vi} from 'vitest';
+import {describe, expect, it, vi} from 'vitest';
 
-import {World} from '#/world';
-import {Block} from './block';
+import {Block} from '#/entity/block';
+import {isIntesecting} from '#/entity/core';
+import {findPath} from '#/entity/pathfinding';
+import {EnemyTank} from '#/entity/tank';
 import {GameInput} from '#/game-input';
-import {EnemyTank} from '.';
-import {findPath} from './pathfinding';
 import {isPosInsideRect} from '#/math';
-import {isIntesecting} from './core';
-import {GameStorage} from '#/storage';
 import {SoundManager} from '#/sound';
+import {GameStorage} from '#/storage';
+import {World} from '#/world';
 
 vi.mock('../entity/sprite', () => {
     return {

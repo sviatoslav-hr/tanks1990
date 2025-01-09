@@ -1,15 +1,19 @@
 import {Camera} from '#/camera';
 import {Color} from '#/color';
-import {BASE_HEIGHT, BASE_WIDTH, CELL_SIZE} from '#/const';
-import {Context} from '#/context';
-import {GameState} from '#/state';
-import {GameInput} from '#/game-input';
-import {drawScore} from '#/score';
-import {GameStorage} from '#/storage';
+import {BASE_FONT_SIZE, BASE_HEIGHT, BASE_WIDTH} from '#/const';
+import {Rect} from '#/math';
+import {Transform} from '#/math/transform';
+
+type ShadowTextOpts = {
+    x: number;
+    y: number;
+    color?: Color;
+    shadowColor?: Color;
+};
 
 export class Renderer {
     readonly canvas: HTMLCanvasElement;
-    readonly ctx: Context;
+    readonly ctx: CanvasRenderingContext2D;
     readonly camera: Camera;
 
     constructor() {
@@ -24,23 +28,145 @@ export class Renderer {
         if (!ctx2d) {
             throw new Error('Context should be available');
         }
-        this.ctx = new Context(ctx2d);
+        this.ctx = ctx2d;
     }
 
-    render(game: GameState, input: GameInput, storage: GameStorage): void {
-        const world = game.world;
-        this.ctx.setFillColor(Color.BLACK_RAISIN);
-        this.ctx.fillScreen();
-        drawGrid(this.ctx, this.camera, CELL_SIZE);
-        world.draw(this.ctx, this.camera);
-
-        if (
-            game.paused ||
-            game.dead ||
-            (game.playing && input.isDown('KeyQ'))
-        ) {
-            drawScore(this.ctx, world.player, this.camera, storage);
+    drawBoundary(
+        {x, y, width, height}: Rect,
+        lineWidth = 1,
+        camera?: Camera,
+    ): void {
+        if (camera) {
+            x -= camera.position.x;
+            y -= camera.position.y;
         }
+        this.drawLine(x, y, x + width, y, lineWidth);
+        this.drawLine(x + width, y, x + width, y + height, lineWidth);
+        this.drawLine(x + width, y + height, x, y + height, lineWidth);
+        this.drawLine(x, y + height, x, y, lineWidth);
+    }
+
+    drawRect(x: number, y: number, width: number, height: number): void {
+        this.ctx.fillRect(x, y, width, height);
+    }
+
+    drawRect2({x, y, width, height}: Rect): void {
+        this.ctx.fillRect(x, y, width, height);
+    }
+
+    fillCircle(cx: number, cy: number, radius: number): void {
+        this.ctx.beginPath();
+        this.ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        this.ctx.fill();
+    }
+
+    drawLine(x0: number, y0: number, x1: number, y1: number, width = 1): void {
+        this.ctx.lineWidth = width;
+        this.ctx.beginPath();
+        this.ctx.moveTo(x0, y0);
+        this.ctx.lineTo(x1, y1);
+        this.ctx.stroke();
+    }
+
+    drawText(
+        text: string,
+        {x, y, color = Color.WHITE, shadowColor}: ShadowTextOpts,
+    ): void {
+        if (shadowColor) {
+            this.setFillColor(shadowColor);
+            const offsetX = BASE_FONT_SIZE / 10;
+            this.ctx.fillText(text, x - offsetX, y);
+        }
+        this.setFillColor(color);
+        this.ctx.fillText(text, x, y);
+    }
+
+    drawMultilineText(textRows: string[], opts: ShadowTextOpts): void {
+        for (const [index, text] of textRows.entries()) {
+            const lineY = opts.y + BASE_FONT_SIZE * index;
+            this.drawText(text, {...opts, y: lineY});
+        }
+    }
+
+    drawImage(
+        src: CanvasImageSource,
+        sx: number,
+        sy: number,
+        sw: number,
+        sh: number,
+        dx: number,
+        dy: number,
+        dw: number,
+        dh: number,
+    ): void {
+        // drawImage(image: CanvasImageSource, dx: number, dy: number): void;
+        // drawImage(image: CanvasImageSource, dx: number, dy: number, dw: number, dh: number): void;
+        // drawImage(image: CanvasImageSource, sx: number, sy: number, sw: number, sh: number, dx: number, dy: number, dw: number, dh: number): void;
+        this.ctx.drawImage(src, sx, sy, sw, sh, dx, dy, dw, dh);
+    }
+
+    getImageData(
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+    ): ImageData {
+        return this.ctx.getImageData(x, y, width, height);
+    }
+
+    setTransform(transform: Transform): void {
+        const {a, b, c, d, e, f} = transform;
+        this.ctx.setTransform(a, b, c, d, e, f);
+    }
+
+    resetTransform(): void {
+        this.setTransform(Transform.makeCrear());
+    }
+
+    setFont(
+        font: string,
+        align: CanvasTextAlign = 'start',
+        baseline: CanvasTextBaseline = 'top',
+    ): void {
+        this.ctx.font = font;
+        this.ctx.textBaseline = baseline;
+        this.ctx.textAlign = align;
+    }
+
+    setStrokeColor(color: Color | string) {
+        if (this.ctx.strokeStyle !== color) {
+            this.ctx.strokeStyle = color;
+        }
+    }
+
+    setFillColor(color: Color | string) {
+        if (this.ctx.fillStyle !== color) {
+            this.ctx.fillStyle = color;
+        }
+    }
+
+    rotate(deg: number): void {
+        this.ctx.rotate((deg * Math.PI) / 180);
+    }
+
+    scale(scaling: number): void {
+        this.ctx.scale(scaling, scaling);
+    }
+
+    measureText(text: string): TextMetrics {
+        return this.ctx.measureText(text);
+    }
+
+    setGlobalAlpha(alpha: number) {
+        assert(
+            alpha >= 0 && alpha <= 1,
+            `Alpha should be in range [0, 1]. Got: ${alpha}`,
+        );
+        this.ctx.globalAlpha = alpha;
+    }
+
+    fillScreen(): void {
+        this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
     }
 
     resizeCanvas(width: number, height: number): [number, number] {
@@ -80,27 +206,5 @@ export async function toggleFullscreen(appElement: HTMLElement): Promise<void> {
                 'ERROR: failed to enter Fullscreen\n' + err.message,
             );
         });
-    }
-}
-
-function drawGrid(ctx: Context, camera: Camera, cellSize: number): void {
-    const x0 = cellSize - (camera.position.x % cellSize);
-    const y0 = cellSize - (camera.position.y % cellSize);
-    const {width, height} = camera.size;
-    ctx.setStrokeColor(Color.BLACK_IERIE);
-    const offset = 1;
-    for (let colX = x0; colX < x0 + width + cellSize; colX += cellSize) {
-        const x1 = colX + offset;
-        const y1 = offset - cellSize;
-        const x2 = x1;
-        const y2 = height + offset + cellSize;
-        ctx.drawLine(x1, y1, x2, y2);
-    }
-    for (let colY = y0; colY < y0 + height + cellSize; colY += cellSize) {
-        const x1 = offset - cellSize;
-        const x2 = width + offset + cellSize;
-        const y1 = colY + offset;
-        const y2 = y1;
-        ctx.drawLine(x1, y1, x2, y2);
     }
 }

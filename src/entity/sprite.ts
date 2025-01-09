@@ -1,9 +1,8 @@
-import {Context} from '#/context';
 import {Transform} from '#/math/transform';
 import {Vector2} from '#/math/vector';
 import {Duration} from '#/math/duration';
-import {Camera} from '#/camera';
 import {Rect} from '#/math';
+import {Renderer} from '#/renderer';
 
 const ASSETS_URL = './assets';
 // TODO: consider using a simpler data type for images instead of HTMLImageElement
@@ -80,17 +79,17 @@ export class Sprite<K extends string> {
         if (this.frameIndex > maxFrames - 1) this.frameIndex = 0;
     }
 
-    draw(ctx: Context, boundary: Rect, camera: Camera, rotationDeg = 0): void {
+    draw(renderer: Renderer, boundary: Rect, rotationDeg = 0): void {
         if (!this.state) return;
         // NOTE: set origin at the center of tank for proper rotation
         const translation = new Vector2(
-            boundary.x - camera.position.x + boundary.width / 2,
-            boundary.y - camera.position.y + boundary.height / 2,
+            boundary.x - renderer.camera.position.x + boundary.width / 2,
+            boundary.y - renderer.camera.position.y + boundary.height / 2,
         );
-        ctx.setTransform(Transform.makeTranslation(translation));
-        ctx.rotate(rotationDeg);
+        renderer.setTransform(Transform.makeTranslation(translation));
+        renderer.rotate(rotationDeg);
         // NOTE: draw the image respecting the moved origin
-        ctx.drawImage(
+        renderer.drawImage(
             this.image,
             this.frameWidth * this.frameIndex,
             this.state.index * this.frameHeight,
@@ -101,8 +100,8 @@ export class Sprite<K extends string> {
             boundary.width,
             boundary.height,
         );
-        ctx.resetTransform();
-        ctx.rotate(0);
+        renderer.resetTransform();
+        renderer.rotate(0);
     }
 
     selectState(state: K): void {

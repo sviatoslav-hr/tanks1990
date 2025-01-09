@@ -2,13 +2,13 @@ import {DevUI, toggleDevPanelVisibility, toggleFPSVisibility} from '#/dev-ui';
 import {GameInput} from '#/game-input';
 import {Duration} from '#/math/duration';
 import {Menu} from '#/menu';
-import {saveBestScore} from '#/score';
+import {drawScore, saveBestScore} from '#/score';
 import {GameStorage} from '#/storage';
 import {World} from '#/world';
 import {Renderer, toggleFullscreen} from '#/renderer';
 import {GameState} from '#/state';
-
-export const DEV_MODE_KEY = 'dev_mode';
+import {Color} from '#/color';
+import {CELL_SIZE} from '#/const';
 
 export function runGame(
     state: GameState,
@@ -31,7 +31,20 @@ export function runGame(
     const animationCallback = (timestamp: number): void => {
         const dt = Duration.since(lastTimestamp).min(1000 / 30);
         lastTimestamp = timestamp;
-        renderer.render(state, input, storage);
+
+        renderer.setFillColor(Color.BLACK_RAISIN);
+        renderer.fillScreen();
+        drawGrid(renderer, CELL_SIZE);
+
+        world.draw(renderer);
+
+        if (
+            state.paused ||
+            state.dead ||
+            (state.playing && input.isDown('KeyQ'))
+        ) {
+            drawScore(renderer, world.player, storage);
+        }
 
         if (world.player.dead && state.playing && !menu.dead) {
             menu.showDead();
@@ -55,6 +68,32 @@ export function runGame(
     window.requestAnimationFrame(animationCallback);
 }
 
+function drawGrid(renderer: Renderer, cellSize: number): void {
+    const camera = renderer.camera;
+    const x0 = cellSize - (camera.position.x % cellSize);
+    const y0 = cellSize - (camera.position.y % cellSize);
+    const {width, height} = camera.size;
+    renderer.setStrokeColor(Color.BLACK_IERIE);
+    const offset = 1;
+    for (let colX = x0; colX < x0 + width + cellSize; colX += cellSize) {
+        const x1 = colX + offset;
+        const y1 = offset - cellSize;
+        const x2 = x1;
+        const y2 = height + offset + cellSize;
+        renderer.drawLine(x1, y1, x2, y2);
+    }
+    for (let colY = y0; colY < y0 + height + cellSize; colY += cellSize) {
+        const x1 = offset - cellSize;
+        const x2 = width + offset + cellSize;
+        const y1 = colY + offset;
+        const y2 = y1;
+        renderer.drawLine(x1, y1, x2, y2);
+    }
+}
+
+export const DEV_MODE_KEY = 'dev_mode';
+
+// TODO: Probably all keys handling should be here so it's centralized.
 function handleGameInput(
     input: GameInput,
     renderer: Renderer,

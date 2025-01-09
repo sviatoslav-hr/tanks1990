@@ -1,7 +1,6 @@
 import {Camera} from '#/camera';
 import {Color} from '#/color';
 import {CELL_SIZE} from '#/const';
-import {Context} from '#/context';
 import {
     Direction,
     Entity,
@@ -14,6 +13,7 @@ import {Tank} from '#/entity/tank';
 import {bellCurveInterpolate, lerp} from '#/math';
 import {Duration} from '#/math/duration';
 import {Vector2} from '#/math/vector';
+import {Renderer} from '#/renderer';
 import {World} from '#/world';
 
 export class Projectile implements Entity {
@@ -101,14 +101,14 @@ export class Projectile implements Entity {
         }
     }
 
-    draw(ctx: Context, camera: Camera): void {
+    draw(renderer: Renderer): void {
         if (!this.dead) {
-            this.drawTrail(ctx, camera);
-            this.sprite.draw(ctx, this, camera, this.direction);
+            this.drawTrail(renderer);
+            this.sprite.draw(renderer, this, this.direction);
         }
         if (this.world.showBoundary) {
-            ctx.setStrokeColor(Color.PINK);
-            ctx.drawBoundary(this, 1, camera);
+            renderer.setStrokeColor(Color.PINK);
+            renderer.drawBoundary(this, 1, renderer.camera);
         }
     }
 
@@ -122,7 +122,7 @@ export class Projectile implements Entity {
         this.sprite.reset();
     }
 
-    private drawTrail(ctx: Context, camera: Camera): void {
+    private drawTrail(renderer: Renderer): void {
         const projectileDistance = this.originalPosition.distanceTo(this);
         const maxIterations = 15;
         const trailSizeFraction =
@@ -146,24 +146,24 @@ export class Projectile implements Entity {
             const dt = lerp(distanceRestFraction, 1, indexProgress);
             const endX = origin.x + diff.x * dt;
             const endY = origin.y + diff.y * dt;
-            ctx.setStrokeColor(Color.GRAY);
+            renderer.setStrokeColor(Color.GRAY);
             const alpha = lerp(0.0, 0.3, indexProgress);
-            ctx.setGlobalAlpha(alpha);
+            renderer.setGlobalAlpha(alpha);
             const trailThickness = bellCurveInterpolate(
                 minThickness,
                 maxThickness,
                 indexProgress,
             );
-            ctx.drawLine(
-                start.x - camera.position.x,
-                start.y - camera.position.y,
-                endX - camera.position.x,
-                endY - camera.position.y,
+            renderer.drawLine(
+                start.x - renderer.camera.position.x,
+                start.y - renderer.camera.position.y,
+                endX - renderer.camera.position.x,
+                endY - renderer.camera.position.y,
                 trailThickness,
             );
             start.x = endX;
             start.y = endY;
         }
-        ctx.setGlobalAlpha(1);
+        renderer.setGlobalAlpha(1);
     }
 }

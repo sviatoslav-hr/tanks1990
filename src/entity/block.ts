@@ -1,10 +1,9 @@
-import {Camera} from '#/camera';
 import {Color} from '#/color';
-import {Context} from '#/context';
 import {Entity} from '#/entity/core';
 import {Sprite} from '#/entity/sprite';
 import {Rect} from '#/math';
 import {Duration} from '#/math/duration';
+import {Renderer} from '#/renderer';
 
 export type BlockOpts = Rect & {
     texture: Color | Sprite<'static'>;
@@ -35,14 +34,14 @@ export class Block implements Entity {
         this.sprite?.update(dt);
     }
 
-    draw(ctx: Context, camera: Camera): void {
+    draw(renderer: Renderer): void {
         if (this.sprite) {
-            this.sprite.draw(ctx, this, camera);
+            this.sprite.draw(renderer, this);
         } else {
-            ctx.setFillColor(this.color);
-            ctx.drawRect(
-                this.x - camera.position.x,
-                this.y - camera.position.y,
+            renderer.setFillColor(this.color);
+            renderer.drawRect(
+                this.x - renderer.camera.position.x,
+                this.y - renderer.camera.position.y,
                 this.width,
                 this.height,
             );

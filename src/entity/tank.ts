@@ -2,7 +2,6 @@ import {Animation} from '#/animation';
 import {Camera} from '#/camera';
 import {Color} from '#/color';
 import {CELL_SIZE} from '#/const';
-import {Context} from '#/context';
 import {Block} from '#/entity/block';
 import {
     Direction,
@@ -12,6 +11,7 @@ import {
     moveEntity,
 } from '#/entity/core';
 import {ExplosionEffect} from '#/entity/effect';
+import {findPath} from '#/entity/pathfinding';
 import {Projectile} from '#/entity/projectile';
 import {Sprite, createShieldSprite, createTankSprite} from '#/entity/sprite';
 import {GameInput} from '#/game-input';
@@ -23,9 +23,9 @@ import {
 } from '#/math';
 import {Duration} from '#/math/duration';
 import {Vector2, Vector2Like} from '#/math/vector';
-import {SoundType, SoundManager} from '#/sound';
+import {Renderer} from '#/renderer';
+import {SoundManager, SoundType} from '#/sound';
 import {World} from '#/world';
-import {findPath} from './pathfinding';
 
 export abstract class Tank implements Entity {
     public x = 0;
@@ -160,50 +160,50 @@ export abstract class Tank implements Entity {
         this.acceleration = 0;
     }
 
-    draw(ctx: Context, camera: Camera): void {
-        this.explosionEffect?.draw(ctx, camera);
+    draw(renderer: Renderer): void {
+        this.explosionEffect?.draw(renderer);
         if (this.isExplosionExpected && !this.explosionEffect) {
             this.isExplosionExpected = false;
-            this.sprite.draw(ctx, this, camera, this.direction);
+            this.sprite.draw(renderer, this, this.direction);
             const particleSize = Math.floor(this.width / 16); // NOTE: 16 is single px in image
             this.explosionEffect = ExplosionEffect.fromImageData(
-                ctx.ctx.getImageData(
-                    this.x - camera.position.x,
-                    this.y - camera.position.y,
+                renderer.getImageData(
+                    this.x - renderer.camera.position.x,
+                    this.y - renderer.camera.position.y,
                     this.width,
                     this.height,
                 ),
                 this,
                 particleSize,
             );
-            this.explosionEffect.draw(ctx, camera);
+            this.explosionEffect.draw(renderer);
             return;
         }
 
         if (this.dead) return;
-        this.sprite.draw(ctx, this, camera, this.direction);
+        this.sprite.draw(renderer, this, this.direction);
         if (this.hasShield) {
-            this.shieldSprite.draw(ctx, this, camera);
+            this.shieldSprite.draw(renderer, this);
         }
 
         if (this.world.showBoundary) {
-            ctx.setStrokeColor(Color.PINK);
-            ctx.drawBoundary(this, 1, camera);
-            ctx.setFont('400 16px Helvetica', 'center', 'middle');
-            ctx.setFillColor(Color.WHITE);
+            renderer.setStrokeColor(Color.PINK);
+            renderer.drawBoundary(this, 1, renderer.camera);
+            renderer.setFont('400 16px Helvetica', 'center', 'middle');
+            renderer.setFillColor(Color.WHITE);
             // const velocity = ((this.velocity * 3600) / 1000).toFixed(2);
-            ctx.drawText(
+            renderer.drawText(
                 // `${this.index}: {a=${this.acceleration.toFixed(2)};v=${velocity}km/h`,
                 `${this.index}: {${Math.floor(this.x)};${Math.floor(this.y)}}`,
                 {
-                    x: this.x - camera.position.x + this.width / 2,
-                    y: this.y - camera.position.y - this.height / 2,
+                    x: this.x - renderer.camera.position.x + this.width / 2,
+                    y: this.y - renderer.camera.position.y - this.height / 2,
                 },
             );
         }
         if (this.world.showBoundary && this.isStuck) {
-            ctx.setStrokeColor(Color.RED);
-            ctx.drawBoundary(this, 1, camera);
+            renderer.setStrokeColor(Color.RED);
+            renderer.drawBoundary(this, 1, renderer.camera);
         }
     }
 
@@ -439,24 +439,24 @@ export class EnemyTank extends Tank implements Entity {
         }
     }
 
-    draw(ctx: Context, camera: Camera): void {
+    draw(renderer: Renderer): void {
         if (this.world.showBoundary && !this.dead && !this.world.player.dead) {
-            this.drawPath(ctx);
+            this.drawPath(renderer);
         }
-        super.draw(ctx, camera);
+        super.draw(renderer);
         if (this.dead) return;
         if (this.world.showBoundary) {
             if (this.collisionAnimation.active) {
-                ctx.setStrokeColor(Color.WHITE_NAVAJO);
-                ctx.drawBoundary(
+                renderer.setStrokeColor(Color.WHITE_NAVAJO);
+                renderer.drawBoundary(
                     this,
                     this.collisionAnimation.progress * 10,
-                    camera,
+                    renderer.camera,
                 );
             }
             if (this.isStuck) {
-                ctx.setStrokeColor(Color.RED);
-                ctx.drawBoundary(this, 1, camera);
+                renderer.setStrokeColor(Color.RED);
+                renderer.drawBoundary(this, 1, renderer.camera);
             }
         }
     }
@@ -556,20 +556,20 @@ export class EnemyTank extends Tank implements Entity {
         return dirY;
     }
 
-    private drawPath(ctx: Context): void {
+    private drawPath(renderer: Renderer): void {
         if (this.path.length < 2) {
             console.warn('WARN: Path is too short to draw');
             return;
         }
-        ctx.setStrokeColor(Color.RED);
-        ctx.setFillColor(Color.RED);
+        renderer.setStrokeColor(Color.RED);
+        renderer.setFillColor(Color.RED);
         for (let i = 0; i < this.path.length - 1; i++) {
             const p1 = this.path[i];
             assert(p1);
-            ctx.fillCircle(p1.x, p1.y, 2);
+            renderer.fillCircle(p1.x, p1.y, 2);
             const p2 = this.path[i + 1];
             assert(p2);
-            ctx.drawLine(p1.x, p1.y, p2.x, p2.y, 1);
+            renderer.drawLine(p1.x, p1.y, p2.x, p2.y, 1);
         }
     }
 }

@@ -1,11 +1,10 @@
-import {Context} from '#/context';
 import {Rect} from '#/math';
 import {Vector2} from '#/math/vector';
 import {assert} from '#/utils';
 import {getCachedImage, setCachedImage} from '#/entity/sprite';
 import {Duration} from '#/math/duration';
 import {Animation, easeOut2} from '#/animation';
-import {Camera} from '#/camera';
+import {Renderer} from '#/renderer';
 
 const EXPLOSION_IMAGE_PATH = './assets/kenney_particle-pack/scorch_01.png';
 
@@ -103,16 +102,16 @@ export class ExplosionEffect {
         return new ExplosionEffect(boundary, particles);
     }
 
-    draw(ctx: Context, camera: Camera): void {
-        ctx.setGlobalAlpha(1 - this.animation.progress);
-        this.drawExplosionImage(ctx, camera);
+    draw(renderer: Renderer): void {
+        renderer.setGlobalAlpha(1 - this.animation.progress);
+        this.drawExplosionImage(renderer);
         for (const p of this.particles) {
-            p.draw(ctx, camera);
+            p.draw(renderer);
         }
-        ctx.setGlobalAlpha(1);
+        renderer.setGlobalAlpha(1);
     }
 
-    private drawExplosionImage(ctx: Context, camera: Camera): void {
+    private drawExplosionImage(renderer: Renderer): void {
         if (!this.explosionImage.complete) {
             console.warn('WARN: Explosion image not loaded');
             return;
@@ -126,14 +125,14 @@ export class ExplosionEffect {
             (this.boundary.width * imageScale - this.boundary.width) / 2;
         const yOffset =
             (this.boundary.height * imageScale - this.boundary.height) / 2;
-        ctx.drawImage(
+        renderer.drawImage(
             this.explosionImage,
             0,
             0,
             this.explosionImage.width,
             this.explosionImage.height,
-            this.boundary.x - xOffset - camera.position.x,
-            this.boundary.y - yOffset - camera.position.y,
+            this.boundary.x - xOffset - renderer.camera.position.x,
+            this.boundary.y - yOffset - renderer.camera.position.y,
             this.boundary.width + xOffset * 2,
             this.boundary.height + yOffset * 2,
         );
@@ -177,11 +176,11 @@ class Particle {
             .add(position);
     }
 
-    draw(ctx: Context, camera: Camera): void {
-        ctx.setFillColor(this.color);
-        ctx.drawRect(
-            this.position.x - camera.position.x,
-            this.position.y - camera.position.y,
+    draw(renderer: Renderer): void {
+        renderer.setFillColor(this.color);
+        renderer.drawRect(
+            this.position.x - renderer.camera.position.x,
+            this.position.y - renderer.camera.position.y,
             this.size.width,
             this.size.height,
         );

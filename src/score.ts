@@ -1,9 +1,8 @@
-import {Camera} from '#/camera';
 import {Color} from '#/color';
 import {BASE_FONT_SIZE, BASE_PADDING} from '#/const';
-import {Context} from '#/context';
 import {PlayerTank} from '#/entity';
 import {GameStorage} from '#/storage';
+import {Renderer} from '#/renderer';
 
 const BEST_SCORE_KEY = 'best_score';
 const BEST_SCORE_AT_KEY = 'best_score_at';
@@ -14,12 +13,11 @@ export type ScoreRecord = {
 };
 
 export function drawScore(
-    ctx: Context,
+    renderer: Renderer,
     player: PlayerTank,
-    camera: Camera,
     cache: GameStorage,
 ): void {
-    ctx.setFont('200 36px Helvetica', 'right', 'top');
+    renderer.setFont('200 36px Helvetica', 'right', 'top');
     const innerPadding = BASE_PADDING / 2;
 
     const scoreText = `Score: ${player.score}`;
@@ -34,13 +32,16 @@ export function drawScore(
         text += `\n${bestScoreText}`;
     }
     const lines = text.split('\n');
-    const maxWidth = Math.max(...lines.map((l) => ctx.measureText(l).width));
+    const maxWidth = Math.max(
+        ...lines.map((l) => renderer.measureText(l).width),
+    );
 
+    const camera = renderer.camera;
     const boundaryHeight = bestScoreText
         ? BASE_FONT_SIZE * 3
         : BASE_FONT_SIZE * 2;
-    ctx.setStrokeColor(Color.WHITE);
-    ctx.drawBoundary(
+    renderer.setStrokeColor(Color.WHITE);
+    renderer.drawBoundary(
         {
             x: camera.size.width - BASE_PADDING - maxWidth - innerPadding,
             y: BASE_PADDING - innerPadding,
@@ -50,7 +51,7 @@ export function drawScore(
         2,
     );
 
-    ctx.drawMultilineText(lines, {
+    renderer.drawMultilineText(lines, {
         x: camera.size.width - BASE_PADDING,
         y: BASE_PADDING,
         shadowColor: Color.BLACK,

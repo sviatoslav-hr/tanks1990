@@ -1,18 +1,19 @@
 # TODO:
 
 - **IN_PROGRESS**
-    - [ ] **Add developer panel**
+    - [ ] **Rework the score UI!!!**
+        - [ ] Allocate space on the screen for other info
+        - [ ] Display score somewhere on the screen while game is active
+        - [ ] Display score on pause screen
+        - [ ] Display score on the death screen
+        - [ ] Display best score on the death screen
 - **TODO**
     - [ ] Make enemies shoot only when they see the player
     - [ ] Define game plan / trajectory / future development / main goal / idea
     - [ ] Define custom RNG and use it everywhere instead of `Math.random()`
     - [ ] Add friction to projectile movement
+    - [ ] Hot reload for development?
 - **FIXME**
-    - [ ] **Rework the score UI!!!**
-        - [ ] Display score somewhere on the screen while game is active
-        - [ ] Display score on pause screen
-        - [ ] Display score on the death screen
-        - [ ] Display best score on the death screen
     - [ ] Fix projectile size (it's bigger than it visually is)
     - [ ] Fix sound explosion delay
     - [ ] Cache best score instead of fetching it each frame
@@ -20,7 +21,7 @@
     - [ ] Better collision detection (see Handmade Hero series)
     - [ ] Fix: `The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page.` on page load
 - **REFACTOR**
-    - [ ] Move logic code out of `Renderer`
+    - [ ] Should just every entity have the `Renderer` reference as a field?
     - [ ] Should `World` contain entities or only environment?
     - [ ] Restructure coordinates system (consider defining something like `WorldPosition`)
     - [ ] Better way to store images and sprites (how bad Image is?)
@@ -80,10 +81,12 @@
     - [ ] Setup ESLint
     - [ ] Implement Entity Component System (ECS)
 - **DONE**
+    - [x] Merge `Renderer` and `Context` classes. Remove game-specific code from `Renderer`.
     - [x] Refactor sounds from globals to a class instance
     - [x] Refactor storage, add custom wrapper
-    - [x] ***`Fix enemies stuck at the blocks or at each other like dumbasses. FIX ENEMY AI!!!`***
     - [x] Introduce a concept of Camera so it's a separate thing
+    - [x] ***`Fix enemies stuck at the blocks or at each other like dumbasses. FIX ENEMY AI!!!`***
+    - [x] **Add developer panel**
     - [x] Make movement more realistic, add inertian and friction (speed decreases over time unless entity is moving)
     - [x] **Add projectile trail**
     - [x] FIXME: Pause is not pausing

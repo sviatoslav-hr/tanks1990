@@ -11,6 +11,8 @@ import {SoundManager} from '#/sound';
 import {GameState} from '#/state';
 import {GameStorage} from '#/storage';
 import {World} from '#/world';
+import {Rect} from '#/math';
+import {BASE_HEIGHT, BASE_WIDTH} from '#/const';
 
 function main(): void {
     const appElement = document.querySelector<HTMLDivElement>('#app');
@@ -25,10 +27,15 @@ function main(): void {
 
     const renderer = new Renderer();
     appElement.append(renderer.canvas);
-    const camera = renderer.camera;
 
     const input = new GameInput();
-    const world = new World(camera.getSizeRect(), storage, sounds, input);
+    const worldBoundary: Rect = {
+        x: 0,
+        y: 0,
+        width: BASE_WIDTH,
+        height: BASE_HEIGHT,
+    };
+    const world = new World(worldBoundary, storage, sounds, input);
     const gameState = new GameState(world);
 
     const menu = initMenu(gameState, sounds);

@@ -1,6 +1,5 @@
 import {Camera} from '#/camera';
 import {CELL_SIZE} from '#/const';
-import {Context} from '#/context';
 import {EnemyTank, PlayerTank, Tank} from '#/entity';
 import {Block} from '#/entity/block';
 import {Entity, isIntesecting} from '#/entity/core';
@@ -10,6 +9,7 @@ import {GameInput} from '#/game-input';
 import {Rect, isPosInsideRect, randomInt} from '#/math';
 import {Duration} from '#/math/duration';
 import {Vector2Like} from '#/math/vector';
+import {Renderer} from '#/renderer';
 import {SoundManager} from '#/sound';
 import {GameStorage} from '#/storage';
 
@@ -53,16 +53,16 @@ export class World {
         this.spawnEnemy();
     }
 
-    draw(ctx: Context, camera: Camera): void {
+    draw(renderer: Renderer): void {
         for (const b of this.blocks) {
-            b.draw(ctx, camera);
+            b.draw(renderer);
         }
         for (const t of this.tanks) {
-            t.draw(ctx, camera);
+            t.draw(renderer);
         }
         for (const projectile of this.projectiles) {
             if (!projectile.dead) {
-                projectile.draw(ctx, camera);
+                projectile.draw(renderer);
             }
         }
     }
