@@ -7,8 +7,8 @@ import {World} from '#/world';
 
 @CustomElement('dev-ui')
 export class DevUI extends ReactiveElement {
-    readonly devPanel = new DevPanel();
-    readonly fpsMonitor = new FPSMonitor();
+    readonly devPanel = new DevPanel({className: 'dev-panel'});
+    readonly fpsMonitor = new FPSMonitor({className: 'fps-monitor'});
 
     protected override render(): HTMLElement {
         return div({
@@ -28,10 +28,16 @@ export class DevUI extends ReactiveElement {
                 width: 100vw;
                 height: 0;
                 box-sizing: border-box;
-                display: flex;
-                flex-direction: row;
-                justify-content: space-between;
-                align-items: flex-start;
+            }
+            .fps-monitor {
+                position: absolute;
+                top: 0;
+                left: 0;
+            }
+            .dev-panel {
+                position: absolute;
+                top: 0;
+                right: 0;
             }
         `;
     }
