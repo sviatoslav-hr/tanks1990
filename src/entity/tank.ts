@@ -167,12 +167,8 @@ export abstract class Tank implements Entity {
             this.sprite.draw(renderer, this, this.direction);
             const particleSize = Math.floor(this.width / 16); // NOTE: 16 is single px in image
             this.explosionEffect = ExplosionEffect.fromImageData(
-                renderer.getImageData(
-                    this.x - renderer.camera.position.x,
-                    this.y - renderer.camera.position.y,
-                    this.width,
-                    this.height,
-                ),
+                // FIXME: This probably won't work if the tank is outside of the screen
+                renderer.getImageData(this.x, this.y, this.width, this.height),
                 this,
                 particleSize,
             );
@@ -188,22 +184,22 @@ export abstract class Tank implements Entity {
 
         if (this.world.showBoundary) {
             renderer.setStrokeColor(Color.PINK);
-            renderer.drawBoundary(this, 1, renderer.camera);
+            renderer.drawBoundary(this, 1);
             renderer.setFont('400 16px Helvetica', 'center', 'middle');
             renderer.setFillColor(Color.WHITE);
             // const velocity = ((this.velocity * 3600) / 1000).toFixed(2);
-            renderer.drawText(
+            renderer.fillText(
                 // `${this.index}: {a=${this.acceleration.toFixed(2)};v=${velocity}km/h`,
                 `${this.index}: {${Math.floor(this.x)};${Math.floor(this.y)}}`,
                 {
-                    x: this.x - renderer.camera.position.x + this.width / 2,
-                    y: this.y - renderer.camera.position.y - this.height / 2,
+                    x: this.x + this.width / 2,
+                    y: this.y - this.height / 2,
                 },
             );
         }
         if (this.world.showBoundary && this.isStuck) {
             renderer.setStrokeColor(Color.RED);
-            renderer.drawBoundary(this, 1, renderer.camera);
+            renderer.drawBoundary(this, 1);
         }
     }
 
@@ -451,12 +447,11 @@ export class EnemyTank extends Tank implements Entity {
                 renderer.drawBoundary(
                     this,
                     this.collisionAnimation.progress * 10,
-                    renderer.camera,
                 );
             }
             if (this.isStuck) {
                 renderer.setStrokeColor(Color.RED);
-                renderer.drawBoundary(this, 1, renderer.camera);
+                renderer.drawBoundary(this, 1);
             }
         }
     }
@@ -569,7 +564,7 @@ export class EnemyTank extends Tank implements Entity {
             renderer.fillCircle(p1.x, p1.y, 2);
             const p2 = this.path[i + 1];
             assert(p2);
-            renderer.drawLine(p1.x, p1.y, p2.x, p2.y, 1);
+            renderer.strokeLine(p1.x, p1.y, p2.x, p2.y, 1);
         }
     }
 }

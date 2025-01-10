@@ -79,13 +79,15 @@ export function createDevUI(
         devUI.devPanel.hide();
     }
     const devPanel = devUI.devPanel;
-    devPanel
+
+    const entitiesFolder = devPanel.addFolder('Entities');
+    entitiesFolder
         .addButton()
         .setName('Trigger Update')
         .onClick(() => {
             state.debugUpdateTriggered = true;
         });
-    devPanel
+    entitiesFolder
         .addButton()
         .setName('Remove enemy')
         .onClick(() => {
@@ -105,16 +107,17 @@ export function createDevUI(
                 world.tanks.splice(enemyArrayIndex, 1);
             }
         });
-    devPanel
+    entitiesFolder
         .addButton()
         .setName('Remove all enemies')
         .onClick(() => {
             world.tanks = world.tanks.filter((t) => !t.bot);
         });
-    devPanel
+    entitiesFolder
         .addButton()
         .setName('Spawn enemy')
         .onClick(() => world.spawnEnemy());
+
     const worldFolder = devPanel.addFolder('World');
     worldFolder
         .addNumberInput()

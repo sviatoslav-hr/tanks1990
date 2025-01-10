@@ -83,8 +83,8 @@ export class Sprite<K extends string> {
         if (!this.state) return;
         // NOTE: set origin at the center of tank for proper rotation
         const translation = new Vector2(
-            boundary.x - renderer.camera.position.x + boundary.width / 2,
-            boundary.y - renderer.camera.position.y + boundary.height / 2,
+            boundary.x + boundary.width / 2,
+            boundary.y + boundary.height / 2,
         );
         renderer.setTransform(Transform.makeTranslation(translation));
         renderer.rotate(rotationDeg);

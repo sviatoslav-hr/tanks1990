@@ -5,7 +5,7 @@ import {GameState} from '#/state';
 export function initMenu(game: GameState, sounds: SoundManager): Menu {
     const menu = new Menu();
     menu.addButton(
-        'New Game',
+        'NEW GAME',
         () => {
             game.start(false);
             menu.hide();
@@ -13,7 +13,7 @@ export function initMenu(game: GameState, sounds: SoundManager): Menu {
         [MenuState.START],
     );
     menu.addButton(
-        'Infinite Game',
+        'INFINITE GAME',
         () => {
             game.start(true);
             menu.hide();
@@ -21,7 +21,7 @@ export function initMenu(game: GameState, sounds: SoundManager): Menu {
         [MenuState.START],
     );
     menu.addButton(
-        'Resume',
+        'RESUME',
         () => {
             game.resume();
             menu.hide();
@@ -29,7 +29,7 @@ export function initMenu(game: GameState, sounds: SoundManager): Menu {
         [MenuState.PAUSE],
     );
     menu.addButton(
-        'Restart',
+        'RESTART',
         () => {
             game.start(game.world.isInfinite);
             menu.hide();
@@ -37,14 +37,14 @@ export function initMenu(game: GameState, sounds: SoundManager): Menu {
         [MenuState.DEAD, MenuState.PAUSE],
     );
     menu.addButton(
-        'Main menu',
+        'MAIN MENU',
         () => {
             game.init();
             menu.showMain();
         },
         [MenuState.PAUSE, MenuState.DEAD],
     );
-    const optionsPage = new MenuPage('Options', menu);
+    const optionsPage = new MenuPage('OPTIONS', menu);
     {
         const wrapper = document.createElement('div');
         wrapper.className = 'mx-auto w-fit p-4';
@@ -61,11 +61,11 @@ export function initMenu(game: GameState, sounds: SoundManager): Menu {
         optionsPage.setContent(wrapper);
     }
     menu.addPage(optionsPage);
-    menu.addButton('Options', () => {
+    menu.addButton('OPTIONS', () => {
         optionsPage.show();
         menu.hide();
     });
-    const controlsPage = new MenuPage('Controls', menu);
+    const controlsPage = new MenuPage('CONTROLS', menu);
     controlsPage.setContent(html`
         <ul class="mx-auto w-fit hints">
             <li>
@@ -80,7 +80,7 @@ export function initMenu(game: GameState, sounds: SoundManager): Menu {
         </ul>
     `);
     menu.addPage(controlsPage);
-    menu.addButton('Controls', () => {
+    menu.addButton('CONTROLS', () => {
         controlsPage.show();
         menu.hide();
     });
@@ -236,13 +236,17 @@ export class Menu extends HTMLElement {
         this.mainContainer.append(this.heading);
 
         this.buttonContainer = document.createElement('div');
-        this.buttonContainer.classList.add('flex-col');
+        this.buttonContainer.classList.add('flex-col', 'w-full');
         this.buttonContainer.append(...this.buttons);
         this.mainContainer.append(this.buttonContainer);
     }
 
     get dead(): boolean {
         return this.state === MenuState.DEAD;
+    }
+
+    get visible(): boolean {
+        return !!this.state && this.state !== MenuState.HIDDEN;
     }
 
     showMain(): void {

@@ -1,6 +1,6 @@
 import {Camera} from '#/camera';
 import {Color} from '#/color';
-import {BASE_FONT_SIZE, BASE_HEIGHT, BASE_WIDTH} from '#/const';
+import {APP_ELEMENT_ID, BASE_FONT_SIZE, BASE_HEIGHT, BASE_WIDTH} from '#/const';
 import {Rect} from '#/math';
 import {Transform} from '#/math/transform';
 
@@ -15,6 +15,7 @@ export class Renderer {
     readonly canvas: HTMLCanvasElement;
     readonly ctx: CanvasRenderingContext2D;
     readonly camera: Camera;
+    private usingCameraCoords = false;
 
     constructor() {
         this.canvas = document.createElement('canvas');
@@ -31,36 +32,51 @@ export class Renderer {
         this.ctx = ctx2d;
     }
 
-    drawBoundary(
-        {x, y, width, height}: Rect,
-        lineWidth = 1,
-        camera?: Camera,
-    ): void {
-        if (camera) {
-            x -= camera.position.x;
-            y -= camera.position.y;
-        }
-        this.drawLine(x, y, x + width, y, lineWidth);
-        this.drawLine(x + width, y, x + width, y + height, lineWidth);
-        this.drawLine(x + width, y + height, x, y + height, lineWidth);
-        this.drawLine(x, y + height, x, y, lineWidth);
+    // NOTE: Most stuff is drawn in world coordinates, but some stuff (like UI) should be drawn in screen(camera) coordinates
+    useCameraCoords(value: boolean): void {
+        this.usingCameraCoords = value;
     }
 
-    drawRect(x: number, y: number, width: number, height: number): void {
+    drawBoundary({x, y, width, height}: Rect, lineWidth = 1): void {
+        x = this.offsetXByCamera(x);
+        y = this.offsetYByCamera(y);
+        this.strokeLine(x, y, x + width, y, lineWidth);
+        this.strokeLine(x + width, y, x + width, y + height, lineWidth);
+        this.strokeLine(x + width, y + height, x, y + height, lineWidth);
+        this.strokeLine(x, y + height, x, y, lineWidth);
+    }
+
+    fillRect(x: number, y: number, width: number, height: number): void {
+        x = this.offsetXByCamera(x);
+        y = this.offsetYByCamera(y);
         this.ctx.fillRect(x, y, width, height);
     }
 
-    drawRect2({x, y, width, height}: Rect): void {
+    fillRect2({x, y, width, height}: Rect): void {
+        x = this.offsetXByCamera(x);
+        y = this.offsetYByCamera(y);
         this.ctx.fillRect(x, y, width, height);
     }
 
     fillCircle(cx: number, cy: number, radius: number): void {
+        cx = this.offsetXByCamera(cx);
+        cy = this.offsetYByCamera(cy);
         this.ctx.beginPath();
         this.ctx.arc(cx, cy, radius, 0, Math.PI * 2);
         this.ctx.fill();
     }
 
-    drawLine(x0: number, y0: number, x1: number, y1: number, width = 1): void {
+    strokeLine(
+        x0: number,
+        y0: number,
+        x1: number,
+        y1: number,
+        width = 1,
+    ): void {
+        x0 = this.offsetXByCamera(x0);
+        x1 = this.offsetXByCamera(x1);
+        y0 = this.offsetYByCamera(y0);
+        y1 = this.offsetYByCamera(y1);
         this.ctx.lineWidth = width;
         this.ctx.beginPath();
         this.ctx.moveTo(x0, y0);
@@ -68,10 +84,12 @@ export class Renderer {
         this.ctx.stroke();
     }
 
-    drawText(
+    fillText(
         text: string,
         {x, y, color = Color.WHITE, shadowColor}: ShadowTextOpts,
     ): void {
+        x = this.offsetXByCamera(x);
+        y = this.offsetYByCamera(y);
         if (shadowColor) {
             this.setFillColor(shadowColor);
             const offsetX = BASE_FONT_SIZE / 10;
@@ -81,10 +99,10 @@ export class Renderer {
         this.ctx.fillText(text, x, y);
     }
 
-    drawMultilineText(textRows: string[], opts: ShadowTextOpts): void {
+    fillMultilineText(textRows: string[], opts: ShadowTextOpts): void {
         for (const [index, text] of textRows.entries()) {
             const lineY = opts.y + BASE_FONT_SIZE * index;
-            this.drawText(text, {...opts, y: lineY});
+            this.fillText(text, {...opts, y: lineY});
         }
     }
 
@@ -102,6 +120,8 @@ export class Renderer {
         // drawImage(image: CanvasImageSource, dx: number, dy: number): void;
         // drawImage(image: CanvasImageSource, dx: number, dy: number, dw: number, dh: number): void;
         // drawImage(image: CanvasImageSource, sx: number, sy: number, sw: number, sh: number, dx: number, dy: number, dw: number, dh: number): void;
+        dx = this.offsetXByCamera(dx);
+        dy = this.offsetYByCamera(dy);
         this.ctx.drawImage(src, sx, sy, sw, sh, dx, dy, dw, dh);
     }
 
@@ -111,6 +131,8 @@ export class Renderer {
         width: number,
         height: number,
     ): ImageData {
+        x = this.offsetXByCamera(x);
+        y = this.offsetYByCamera(y);
         return this.ctx.getImageData(x, y, width, height);
     }
 
@@ -170,6 +192,7 @@ export class Renderer {
     }
 
     resizeCanvas(width: number, height: number): [number, number] {
+        // TODO: Probably the camera should also be adjusted
         const shouldScale = width < BASE_WIDTH || height < BASE_HEIGHT;
         if (document.fullscreenElement || shouldScale) {
             const padding = 20;
@@ -187,24 +210,37 @@ export class Renderer {
             return [BASE_WIDTH, BASE_HEIGHT];
         }
     }
-}
 
-export async function toggleFullscreen(appElement: HTMLElement): Promise<void> {
-    if (!document.fullscreenEnabled) {
-        console.warn('Fullscreen is either not supported or disabled');
-        return;
+    async toggleFullscreen(): Promise<void> {
+        if (!document.fullscreenEnabled) {
+            console.warn('Fullscreen is either not supported or disabled');
+            return;
+        }
+        if (document.fullscreenElement) {
+            await document.exitFullscreen().catch((err) => {
+                assertError(err);
+                throw new Error(
+                    'ERROR: failed to exit Fullscreen\n' + err.message,
+                );
+            });
+        } else {
+            const appElement = document.getElementById(APP_ELEMENT_ID);
+            assert(appElement);
+            await appElement.requestFullscreen().catch((err) => {
+                assertError(err);
+                throw new Error(
+                    'ERROR: failed to enter Fullscreen\n' + err.message,
+                );
+            });
+        }
+        this.resizeCanvas(window.innerWidth, window.innerHeight);
     }
-    if (document.fullscreenElement) {
-        await document.exitFullscreen().catch((err) => {
-            assertError(err);
-            throw new Error('ERROR: failed to exit Fullscreen\n' + err.message);
-        });
-    } else {
-        await appElement.requestFullscreen().catch((err) => {
-            assertError(err);
-            throw new Error(
-                'ERROR: failed to enter Fullscreen\n' + err.message,
-            );
-        });
+
+    private offsetXByCamera(x: number): number {
+        return this.usingCameraCoords ? x : x - this.camera.position.x;
+    }
+
+    private offsetYByCamera(y: number): number {
+        return this.usingCameraCoords ? y : y - this.camera.position.y;
     }
 }

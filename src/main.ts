@@ -1,7 +1,7 @@
 import './globals';
 import './style.css';
 
-import {BASE_HEIGHT, BASE_WIDTH, DEV_MODE_KEY} from '#/const';
+import {APP_ELEMENT_ID, BASE_HEIGHT, BASE_WIDTH, DEV_MODE_KEY} from '#/const';
 import {createDevUI} from '#/dev-ui';
 import {preloadEffectImages} from '#/entity/effect';
 import {runGame} from '#/game';
@@ -15,7 +15,7 @@ import {GameStorage} from '#/storage';
 import {World} from '#/world';
 
 function main(): void {
-    const appElement = document.querySelector<HTMLDivElement>('#app');
+    const appElement = document.getElementById(APP_ELEMENT_ID);
     assert(appElement, 'No app element found');
 
     const storage = new GameStorage(localStorage);

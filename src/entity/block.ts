@@ -39,12 +39,7 @@ export class Block implements Entity {
             this.sprite.draw(renderer, this);
         } else {
             renderer.setFillColor(this.color);
-            renderer.drawRect(
-                this.x - renderer.camera.position.x,
-                this.y - renderer.camera.position.y,
-                this.width,
-                this.height,
-            );
+            renderer.fillRect(this.x, this.y, this.width, this.height);
         }
     }
 }

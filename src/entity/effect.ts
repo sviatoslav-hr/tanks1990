@@ -131,8 +131,8 @@ export class ExplosionEffect {
             0,
             this.explosionImage.width,
             this.explosionImage.height,
-            this.boundary.x - xOffset - renderer.camera.position.x,
-            this.boundary.y - yOffset - renderer.camera.position.y,
+            this.boundary.x - xOffset,
+            this.boundary.y - yOffset,
             this.boundary.width + xOffset * 2,
             this.boundary.height + yOffset * 2,
         );
@@ -178,9 +178,9 @@ class Particle {
 
     draw(renderer: Renderer): void {
         renderer.setFillColor(this.color);
-        renderer.drawRect(
-            this.position.x - renderer.camera.position.x,
-            this.position.y - renderer.camera.position.y,
+        renderer.fillRect(
+            this.position.x,
+            this.position.y,
             this.size.width,
             this.size.height,
         );

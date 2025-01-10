@@ -75,21 +75,23 @@ export class World {
         const y0 = cellSize - (camera.position.y % cellSize);
         const {width, height} = camera.size;
         renderer.setStrokeColor(Color.BLACK_IERIE);
+        renderer.useCameraCoords(true);
         const offset = 1;
         for (let colX = x0; colX < x0 + width + cellSize; colX += cellSize) {
             const x1 = colX + offset;
             const y1 = offset - cellSize;
             const x2 = x1;
             const y2 = height + offset + cellSize;
-            renderer.drawLine(x1, y1, x2, y2);
+            renderer.strokeLine(x1, y1, x2, y2);
         }
         for (let colY = y0; colY < y0 + height + cellSize; colY += cellSize) {
             const x1 = offset - cellSize;
             const x2 = width + offset + cellSize;
             const y1 = colY + offset;
             const y2 = y1;
-            renderer.drawLine(x1, y1, x2, y2);
+            renderer.strokeLine(x1, y1, x2, y2);
         }
+        renderer.useCameraCoords(false);
     }
 
     update(dt: Duration, camera: Camera): void {

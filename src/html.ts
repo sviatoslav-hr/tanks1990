@@ -61,6 +61,7 @@ export interface HTMLElementOptions {
     id?: string;
     className?: string | string[];
     textContent?: string;
+    onClick?: (event: MouseEvent) => void;
     children?: HTMLElementChildren;
 }
 
@@ -136,11 +137,15 @@ function applyOptionsToElement(
             element.append(children);
         }
     }
+    if (options?.onClick) {
+        element.addEventListener('click', options.onClick);
+    }
 }
 
 export abstract class ReactiveElement extends HTMLElement {
     readonly shadowRoot: null = null;
-    private shadow: ShadowRoot;
+    protected rendered = false;
+    protected shadow: ShadowRoot;
 
     constructor(options?: HTMLElementOptions) {
         super();
@@ -158,6 +163,7 @@ export abstract class ReactiveElement extends HTMLElement {
             } else {
                 this.shadow.append(elements);
             }
+            this.rendered = true;
         });
     }
 

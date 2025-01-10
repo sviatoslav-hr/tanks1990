@@ -108,7 +108,7 @@ export class Projectile implements Entity {
         }
         if (this.world.showBoundary) {
             renderer.setStrokeColor(Color.PINK);
-            renderer.drawBoundary(this, 1, renderer.camera);
+            renderer.drawBoundary(this, 1);
         }
     }
 
@@ -154,13 +154,7 @@ export class Projectile implements Entity {
                 maxThickness,
                 indexProgress,
             );
-            renderer.drawLine(
-                start.x - renderer.camera.position.x,
-                start.y - renderer.camera.position.y,
-                endX - renderer.camera.position.x,
-                endY - renderer.camera.position.y,
-                trailThickness,
-            );
+            renderer.strokeLine(start.x, start.y, endX, endY, trailThickness);
             start.x = endX;
             start.y = endY;
         }

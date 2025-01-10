@@ -63,9 +63,9 @@ export class GameInput {
                 handler(ev, code);
             }
         });
-        element.addEventListener('keyup', (ev) =>
-            this.setReleased(ev.code as KeyCode),
-        );
+        element.addEventListener('keyup', (ev) => {
+            this.setReleased(ev.code as KeyCode);
+        });
     }
 
     private setPressed(code: KeyCode) {

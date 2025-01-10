@@ -41,6 +41,7 @@ export function drawScore(
         ? BASE_FONT_SIZE * 3
         : BASE_FONT_SIZE * 2;
     renderer.setStrokeColor(Color.WHITE);
+    renderer.useCameraCoords(true);
     renderer.drawBoundary(
         {
             x: camera.size.width - BASE_PADDING - maxWidth - innerPadding,
@@ -51,11 +52,12 @@ export function drawScore(
         2,
     );
 
-    renderer.drawMultilineText(lines, {
+    renderer.fillMultilineText(lines, {
         x: camera.size.width - BASE_PADDING,
         y: BASE_PADDING,
         shadowColor: Color.BLACK,
     });
+    renderer.useCameraCoords(false);
 }
 
 export function saveBestScore(cache: GameStorage, score: number): void {

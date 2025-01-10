@@ -171,13 +171,12 @@ export class DevButton extends ReactiveElement {
         return css`
             .button {
                 padding: 0.5rem;
-                margin: 0.5rem 0;
-                background-color: lightblue;
-                border: none;
+                border: 1px solid #00ff00;
+                background-color: transparent;
                 cursor: pointer;
             }
             .button:hover {
-                background-color: lightgreen;
+                border-color: #00fff0;
             }
         `;
     }

@@ -12,6 +12,10 @@ export class GameState {
 
     constructor(readonly world: World) {}
 
+    get initial(): boolean {
+        return this.status === GameStatus.INITIAL;
+    }
+
     get playing(): boolean {
         return this.status === GameStatus.PLAYING;
     }
@@ -48,14 +52,13 @@ export class GameState {
     togglePauseResume(): void {
         switch (this.status) {
             case GameStatus.PLAYING: {
-                if (this.dead) {
-                    this.init();
-                } else {
+                if (!this.dead) {
                     this.pause();
                 }
                 break;
             }
             case GameStatus.PAUSED: {
+                assert(!this.dead, 'Cannot die while paused');
                 this.resume();
                 break;
             }

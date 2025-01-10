@@ -1,9 +1,13 @@
+    /** TODO: look into using there colors */
+    /* border-image-source: linear-gradient(to left, #00C853, #B2FF59); */
 :root {
     --black-raisin: #242424;
     --black-eirie: #191919;
-    --gray-granite: #616161;
+    --gray-granite: #777777;
+    /* --gray-granite: #616161; */
     --white: rgba(255, 255, 255, 0.87);
     --red-carnelian: #b71c1c;
+    /** TODO: Pick a better font (for menu mostly) */
     font-family: Helvetica, Arial, sans-serif;
     line-height: 1.5;
     font-weight: 400;
@@ -65,8 +69,8 @@ game-menu {
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    background-color: var(--black-eirie);
-    min-width: 256px;
+    background-color: var(--black-raisin);
+    min-width: 360px;
     padding: 24px;
     border-radius: 12px;
     display: flex;
@@ -81,35 +85,43 @@ game-menu {
 
 .menu h2 {
     margin-bottom: 32px;
-    font-size: 32px;
+    font-size: 36px;
     font-weight: 600;
     text-transform: uppercase;
 }
 
 .menu .button {
-    min-width: 156px;
+    min-width: 200px;
 }
 
 .button {
-    background-color: var(--black-raisin);
-    box-shadow: 0 0 0 var(--black-raisin);
-    border: none;
+    /* background-color: var(--black-raisin); */
+    background: linear-gradient(180deg, #383838, var(--black-eirie));
+    box-shadow: 0 0 0 var(--gray-granite);
+    border: 5px solid var(--gray-granite);
     border-radius: 4px;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 600;
-    padding: 12px;
-    border: 2px solid var(--gray-granite);
-    transition-property: box-shadow, background-color, color;
+    padding: 16px 24px;
+    transition-property: box-shadow, background-color, color, transform;
     transition-timing-function: ease-in-out;
-    transition-duration: 0.3s;
+    transition-duration: 0.2s;
     cursor: pointer;
     text-align: center;
     color: var(--white);
 }
 
 .button:focus-visible:not(:disabled), .button:hover:not(:disabled) {
-    box-shadow: 0 0 10px var(--gray-granite);
+    /* box-shadow: inset 0 0 10px var(--gray-granite), 0 0 10px var(--gray-granite); */
+    /* transform: scale(1.05); */
+    /* box-shadow: inset 0 0 4px 1px var(--gray-granite), 0 0 4px 1px var(--gray-granite); */
+    /* box-shadow: 0 0 10px 1px var(--gray-granite); */
+    border-color: var(--white);
     outline: none;
+}
+
+.button:active:not(:disabled) {
+    transform: none;
 }
 
 .text-red {
@@ -120,6 +132,10 @@ game-menu {
 .mx-auto {
     margin-left: auto;
     margin-right: auto;
+}
+
+.w-full {
+    width: 100%;
 }
 
 .w-fit {

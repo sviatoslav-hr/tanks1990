@@ -43,11 +43,13 @@ export class FPSMonitor extends ReactiveElement {
     show(): void {
         this.visible = true;
         this.style.opacity = '1';
+        this.style.visibility = 'visible';
         this.style.pointerEvents = 'auto';
     }
 
     hide(): void {
         this.visible = false;
+        this.style.visibility = 'hidden';
         this.style.opacity = '0';
         this.style.pointerEvents = 'none';
     }

@@ -2,12 +2,14 @@ import {DEV_MODE_KEY} from '#/const';
 import {DevUI, toggleDevPanelVisibility, toggleFPSVisibility} from '#/dev-ui';
 import {GameInput} from '#/game-input';
 import {Menu} from '#/menu';
-import {Renderer, toggleFullscreen} from '#/renderer';
+import {Renderer} from '#/renderer';
 import {GameState} from '#/state';
 import {GameStorage} from '#/storage';
 import {World} from '#/world';
 
 // TODO: Probably all keys handling should be here so it's centralized.
+// TODO: At some point the key bindings should be separated from the specifics of the key handling.
+// (e.g. Bindings code could fire events that are handled somewhere else)
 export function handleGameInputTick(
     input: GameInput,
     renderer: Renderer,
@@ -17,28 +19,42 @@ export function handleGameInputTick(
     devUI: DevUI,
     storage: GameStorage,
 ) {
-    if (input.isPressed('KeyB')) {
-        world.showBoundary = !world.showBoundary;
+    if (input.isPressed('KeyF')) {
+        renderer
+            .toggleFullscreen()
+            .then(() => {
+                menu.resize(
+                    renderer.canvas.clientWidth,
+                    renderer.canvas.clientHeight,
+                );
+            })
+            .catch((err) => console.error('Faile to toggle fullscreen', err));
     }
 
-    if (state.paused && input.isPressed('BracketRight')) {
-        menu.hide();
-        state.debugUpdateTriggered = true;
-    }
-
-    if (input.isPressed('KeyP')) {
-        if (state.dead) {
-            menu.showMain();
-        } else if (state.playing) {
-            menu.showPause();
-        } else {
-            menu.hide();
+    if (input.isPressed('KeyP') || input.isPressed('Escape')) {
+        if (!state.initial && !world.player.dead) {
+            if (state.playing) {
+                menu.showPause();
+            } else {
+                menu.hide();
+            }
         }
         state.togglePauseResume();
     }
 
     if (input.isPressed('KeyO')) {
         state.togglePauseResume();
+    }
+
+    if (state.paused && input.isDown('BracketRight')) {
+        if (menu.visible) {
+            menu.hide();
+        }
+        state.debugUpdateTriggered = true;
+    }
+
+    if (input.isPressed('KeyB')) {
+        world.showBoundary = !world.showBoundary;
     }
 
     if (input.isPressed('Semicolon')) {
@@ -53,19 +69,5 @@ export function handleGameInputTick(
 
     if (input.isPressed('Backslash')) {
         toggleDevPanelVisibility(devUI.devPanel, storage);
-    }
-
-    if (input.isPressed('KeyF')) {
-        const appElement = renderer.canvas.parentElement;
-        assert(appElement);
-        toggleFullscreen(appElement)
-            .then(() => {
-                renderer.resizeCanvas(window.innerWidth, window.innerHeight);
-                menu.resize(
-                    renderer.canvas.clientWidth,
-                    renderer.canvas.clientHeight,
-                );
-            })
-            .catch((err) => console.error('Faile to toggle fullscreen', err));
     }
 }
