@@ -16,7 +16,8 @@ Camera:
 ## IN_PROGRESS
 - [ ] Improve Camera handling
     - [x] Renderer should render stuff based on the camera position
-    - [ ] Add the ability to move the camera
+    - [x] Add the ability to move the camera
+    - [ ] Make the canvas the size of the whole page
     - [ ] Add the ability to zoom in/out
 - [ ] **Rework the score UI!!!**
     - [ ] Allocate space on the screen for other info

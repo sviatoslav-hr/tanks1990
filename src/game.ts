@@ -22,7 +22,7 @@ export function runGame(
     renderer.resizeCanvas(window.innerWidth, window.innerHeight);
     menu.resize(renderer.canvas.clientWidth, renderer.canvas.clientHeight);
     menu.showMain();
-    input.listen(document.body);
+    input.listen(document.body, renderer.canvas);
 
     window.addEventListener('resize', () => {
         renderer.resizeCanvas(window.innerWidth, window.innerHeight);

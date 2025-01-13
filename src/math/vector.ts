@@ -52,6 +52,34 @@ export class Vector2 implements Vector2Like {
         return this;
     }
 
+    min(v: Vector2Like): Vector2;
+    min(x: number, y: number): Vector2;
+    min(vOrX: Vector2Like | number, y?: number): Vector2 {
+        if (typeof vOrX === 'number') {
+            assert(typeof y === 'number');
+            this.x = Math.min(this.x, vOrX);
+            this.y = Math.min(this.y, y);
+            return this;
+        }
+        this.x = Math.min(this.x, vOrX.x);
+        this.y = Math.min(this.y, vOrX.y);
+        return this;
+    }
+
+    max(v: Vector2Like): Vector2;
+    max(x: number, y: number): Vector2;
+    max(vOrX: Vector2Like | number, y?: number): Vector2 {
+        if (typeof vOrX === 'number') {
+            assert(typeof y === 'number');
+            this.x = Math.max(this.x, vOrX);
+            this.y = Math.max(this.y, y);
+            return this;
+        }
+        this.x = Math.max(this.x, vOrX.x);
+        this.y = Math.max(this.y, vOrX.y);
+        return this;
+    }
+
     add(v: Vector2Like): Vector2 {
         this.x += v.x;
         this.y += v.y;
@@ -154,6 +182,10 @@ export class Vector2 implements Vector2Like {
 
     equals(v: Vector2Like): boolean {
         return this.x === v.x && this.y === v.y;
+    }
+
+    toString(): string {
+        return `Vector2(${this.x};${this.y})`;
     }
 }
 

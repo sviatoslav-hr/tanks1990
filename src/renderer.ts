@@ -40,10 +40,12 @@ export class Renderer {
     drawBoundary({x, y, width, height}: Rect, lineWidth = 1): void {
         x = this.offsetXByCamera(x);
         y = this.offsetYByCamera(y);
+        this.useCameraCoords(true);
         this.strokeLine(x, y, x + width, y, lineWidth);
         this.strokeLine(x + width, y, x + width, y + height, lineWidth);
         this.strokeLine(x + width, y + height, x, y + height, lineWidth);
         this.strokeLine(x, y + height, x, y, lineWidth);
+        this.useCameraCoords(false);
     }
 
     fillRect(x: number, y: number, width: number, height: number): void {

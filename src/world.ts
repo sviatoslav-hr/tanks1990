@@ -56,6 +56,7 @@ export class World {
 
     draw(renderer: Renderer): void {
         this.drawGrid(renderer, CELL_SIZE);
+        this.drawWorldBoundary(renderer);
         for (const b of this.blocks) {
             b.draw(renderer);
         }
@@ -92,6 +93,20 @@ export class World {
             renderer.strokeLine(x1, y1, x2, y2);
         }
         renderer.useCameraCoords(false);
+    }
+
+    private drawWorldBoundary(renderer: Renderer): void {
+        renderer.setStrokeColor(Color.BLACK);
+        const boundaryThickness = 10;
+        renderer.drawBoundary(
+            {
+                x: this.boundary.x - boundaryThickness / 2,
+                y: this.boundary.y - boundaryThickness / 2,
+                width: this.boundary.width + boundaryThickness,
+                height: this.boundary.height + boundaryThickness,
+            },
+            boundaryThickness,
+        );
     }
 
     update(dt: Duration, camera: Camera): void {

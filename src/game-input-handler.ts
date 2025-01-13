@@ -70,4 +70,9 @@ export function handleGameInputTick(
     if (input.isPressed('Backslash')) {
         toggleDevPanelVisibility(devUI.devPanel, storage);
     }
+
+    if (__DEV_MODE && input.isDown('MouseMiddle')) {
+        const mouseDelta = input.getMouseDelta();
+        renderer.camera.position.sub(mouseDelta);
+    }
 }

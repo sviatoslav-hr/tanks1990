@@ -81,10 +81,11 @@ export class Sprite<K extends string> {
 
     draw(renderer: Renderer, boundary: Rect, rotationDeg = 0): void {
         if (!this.state) return;
+        renderer.useCameraCoords(true); // NOTE: It's easier to rotate in camera coords
         // NOTE: set origin at the center of tank for proper rotation
         const translation = new Vector2(
-            boundary.x + boundary.width / 2,
-            boundary.y + boundary.height / 2,
+            boundary.x - renderer.camera.position.x + boundary.width / 2,
+            boundary.y - renderer.camera.position.y + boundary.height / 2,
         );
         renderer.setTransform(Transform.makeTranslation(translation));
         renderer.rotate(rotationDeg);
@@ -102,6 +103,7 @@ export class Sprite<K extends string> {
         );
         renderer.resetTransform();
         renderer.rotate(0);
+        renderer.useCameraCoords(false);
     }
 
     selectState(state: K): void {
