@@ -121,6 +121,7 @@ export class Transform implements TransformMatrix {
     scale(s: number): this;
     scale(sx: number, sy: number): this;
     scale(sx: number, sy = sx): this {
+        if (sx === 1 && sy === 1) return this;
         return this.premultiply(Transform.makeScale(sx, sy));
     }
 
