@@ -430,7 +430,7 @@ export class EnemyTank extends Tank implements Entity {
         this.collisionAnimation.update(dt);
         this.collided = false;
         super.update(dt, camera);
-        if (camera.isEntityVisible(this)) {
+        if (camera.isRectVisible(this)) {
             this.shoot();
         }
     }

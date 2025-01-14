@@ -38,29 +38,58 @@ export class Renderer {
     }
 
     drawBoundary({x, y, width, height}: Rect, lineWidth = 1): void {
+        if (
+            !this.usingCameraCoords &&
+            !this.camera.isRectVisible(x, y, width, height)
+        ) {
+            return;
+        }
         x = this.offsetXByCamera(x);
         y = this.offsetYByCamera(y);
-        this.useCameraCoords(true);
+        const usingCameraCoords = this.usingCameraCoords;
+        if (!usingCameraCoords) {
+            this.useCameraCoords(true);
+        }
         this.strokeLine(x, y, x + width, y, lineWidth);
         this.strokeLine(x + width, y, x + width, y + height, lineWidth);
         this.strokeLine(x + width, y + height, x, y + height, lineWidth);
         this.strokeLine(x, y + height, x, y, lineWidth);
-        this.useCameraCoords(false);
+        if (!usingCameraCoords) {
+            this.useCameraCoords(false);
+        }
     }
 
     fillRect(x: number, y: number, width: number, height: number): void {
+        if (
+            !this.usingCameraCoords &&
+            !this.camera.isRectVisible(x, y, width, height)
+        ) {
+            return;
+        }
         x = this.offsetXByCamera(x);
         y = this.offsetYByCamera(y);
         this.ctx.fillRect(x, y, width, height);
     }
 
     fillRect2({x, y, width, height}: Rect): void {
+        if (
+            !this.usingCameraCoords &&
+            !this.camera.isRectVisible(x, y, width, height)
+        ) {
+            return;
+        }
         x = this.offsetXByCamera(x);
         y = this.offsetYByCamera(y);
         this.ctx.fillRect(x, y, width, height);
     }
 
     fillCircle(cx: number, cy: number, radius: number): void {
+        if (
+            !this.usingCameraCoords &&
+            !this.camera.isCircleVisible(cx, cy, radius)
+        ) {
+            return;
+        }
         cx = this.offsetXByCamera(cx);
         cy = this.offsetYByCamera(cy);
         this.ctx.beginPath();
@@ -75,6 +104,12 @@ export class Renderer {
         y1: number,
         width = 1,
     ): void {
+        if (
+            !this.usingCameraCoords &&
+            !this.camera.isLineVisible(x0, y0, x1, y1, width)
+        ) {
+            return;
+        }
         x0 = this.offsetXByCamera(x0);
         x1 = this.offsetXByCamera(x1);
         y0 = this.offsetYByCamera(y0);
@@ -119,6 +154,12 @@ export class Renderer {
         dw: number,
         dh: number,
     ): void {
+        if (
+            !this.usingCameraCoords &&
+            !this.camera.isRectVisible(dx, dy, dw, dh)
+        ) {
+            return;
+        }
         // drawImage(image: CanvasImageSource, dx: number, dy: number): void;
         // drawImage(image: CanvasImageSource, dx: number, dy: number, dw: number, dh: number): void;
         // drawImage(image: CanvasImageSource, sx: number, sy: number, sw: number, sh: number, dx: number, dy: number, dw: number, dh: number): void;

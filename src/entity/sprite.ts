@@ -81,6 +81,7 @@ export class Sprite<K extends string> {
 
     draw(renderer: Renderer, boundary: Rect, rotationDeg = 0): void {
         if (!this.state) return;
+        if (!renderer.camera.isRectVisible(boundary)) return;
         renderer.useCameraCoords(true); // NOTE: It's easier to rotate in camera coords
         // NOTE: set origin at the center of tank for proper rotation
         const translation = new Vector2(

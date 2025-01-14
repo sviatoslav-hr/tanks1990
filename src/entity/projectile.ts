@@ -77,7 +77,7 @@ export class Projectile implements Entity {
         if (this.dead) {
             return;
         }
-        if (!camera.isEntityVisible(this)) {
+        if (!camera.isRectVisible(this)) {
             this.dead = true;
             return;
         }

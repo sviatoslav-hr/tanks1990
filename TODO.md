@@ -17,8 +17,13 @@ Camera:
 - [ ] Improve Camera handling
     - [x] Renderer should render stuff based on the camera position
     - [x] Add the ability to move the camera
+    - [x] Don't draw stuff that is not visible on the screen
     - [ ] Make the canvas the size of the whole page
     - [ ] Add the ability to zoom in/out
+    - [ ] When camera follows the player, it should move a bit in front of the player to allow the player to see what's ahead
+    - [ ] Screenshake when player dies?
+- [ ] World boundaries
+    - [ ] Determine based on max numbers in js what are the limitations of the world (boundaries)
 - [ ] **Rework the score UI!!!**
     - [ ] Allocate space on the screen for other info
     - [ ] Display score somewhere on the screen while game is active
