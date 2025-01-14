@@ -46,10 +46,13 @@ export class Renderer {
         }
         x = this.offsetXByCamera(x);
         y = this.offsetYByCamera(y);
+        width = this.offsetSizeByCamera(width);
+        height = this.offsetSizeByCamera(height);
         const usingCameraCoords = this.usingCameraCoords;
         if (!usingCameraCoords) {
             this.useCameraCoords(true);
         }
+        lineWidth = this.offsetSizeByCamera(lineWidth);
         this.strokeLine(x, y, x + width, y, lineWidth);
         this.strokeLine(x + width, y, x + width, y + height, lineWidth);
         this.strokeLine(x + width, y + height, x, y + height, lineWidth);
@@ -68,6 +71,8 @@ export class Renderer {
         }
         x = this.offsetXByCamera(x);
         y = this.offsetYByCamera(y);
+        width = this.offsetSizeByCamera(width);
+        height = this.offsetSizeByCamera(height);
         this.ctx.fillRect(x, y, width, height);
     }
 
@@ -80,6 +85,8 @@ export class Renderer {
         }
         x = this.offsetXByCamera(x);
         y = this.offsetYByCamera(y);
+        width = this.offsetSizeByCamera(width);
+        height = this.offsetSizeByCamera(height);
         this.ctx.fillRect(x, y, width, height);
     }
 
@@ -92,6 +99,7 @@ export class Renderer {
         }
         cx = this.offsetXByCamera(cx);
         cy = this.offsetYByCamera(cy);
+        radius = this.offsetSizeByCamera(radius);
         this.ctx.beginPath();
         this.ctx.arc(cx, cy, radius, 0, Math.PI * 2);
         this.ctx.fill();
@@ -114,6 +122,7 @@ export class Renderer {
         x1 = this.offsetXByCamera(x1);
         y0 = this.offsetYByCamera(y0);
         y1 = this.offsetYByCamera(y1);
+        width = this.offsetSizeByCamera(width);
         this.ctx.lineWidth = width;
         this.ctx.beginPath();
         this.ctx.moveTo(x0, y0);
@@ -280,10 +289,21 @@ export class Renderer {
     }
 
     private offsetXByCamera(x: number): number {
-        return this.usingCameraCoords ? x : x - this.camera.position.x;
+        return this.usingCameraCoords
+            ? x
+            : (x - this.camera.position.x) * this.camera.scale;
     }
 
     private offsetYByCamera(y: number): number {
-        return this.usingCameraCoords ? y : y - this.camera.position.y;
+        return this.usingCameraCoords
+            ? y
+            : (y - this.camera.position.y) * this.camera.scale;
+    }
+
+    private offsetSizeByCamera(size: number): number {
+        if (this.usingCameraCoords) {
+            return size;
+        }
+        return size * this.camera.scale;
     }
 }

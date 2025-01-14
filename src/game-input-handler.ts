@@ -75,4 +75,8 @@ export function handleGameInputTick(
         const mouseDelta = input.getMouseDelta();
         renderer.camera.position.sub(mouseDelta);
     }
+    if (__DEV_MODE && input.getMouseWheelDelta()) {
+        const wheelDelta = input.getMouseWheelDelta();
+        renderer.camera.scale -= wheelDelta * 0.001;
+    }
 }

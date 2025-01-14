@@ -72,9 +72,11 @@ export class World {
 
     private drawGrid(renderer: Renderer, cellSize: number): void {
         const camera = renderer.camera;
-        const x0 = cellSize - (camera.position.x % cellSize);
-        const y0 = cellSize - (camera.position.y % cellSize);
-        const {width, height} = camera.size;
+        cellSize *= camera.scale;
+        const x0 = cellSize - ((camera.position.x * camera.scale) % cellSize);
+        const y0 = cellSize - ((camera.position.y * camera.scale) % cellSize);
+        const width = camera.size.width * camera.scale;
+        const height = camera.size.height * camera.scale;
         renderer.setStrokeColor(Color.BLACK_IERIE);
         renderer.useCameraCoords(true);
         const offset = 1;

@@ -88,7 +88,9 @@ export class Sprite<K extends string> {
             boundary.x - renderer.camera.position.x + boundary.width / 2,
             boundary.y - renderer.camera.position.y + boundary.height / 2,
         );
-        renderer.setTransform(Transform.makeTranslation(translation));
+        renderer.setTransform(
+            Transform.makeTranslation(translation).scale(renderer.camera.scale),
+        );
         renderer.rotate(rotationDeg);
         // NOTE: draw the image respecting the moved origin
         renderer.drawImage(

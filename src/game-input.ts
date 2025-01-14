@@ -28,6 +28,8 @@ export type KeyHandler = (event: Event, code: KeyCode) => void;
 export interface MouseState {
     currentPosition: Vector2;
     previousPosition: Vector2;
+    currentWheenDelta: number;
+    previousWheelDelta: number;
 }
 
 export class GameInput {
@@ -36,6 +38,8 @@ export class GameInput {
     private mouse: MouseState = {
         currentPosition: Vector2.zero(),
         previousPosition: Vector2.zero(),
+        currentWheenDelta: 0,
+        previousWheelDelta: 0,
     };
 
     isPressed(code: KeyCode): boolean {
@@ -73,9 +77,8 @@ export class GameInput {
             .sub(this.mouse.previousPosition);
     }
 
-    nextTick() {
-        this.previousPressed = {...this.currentPressed};
-        this.mouse.previousPosition.setFrom(this.mouse.currentPosition);
+    getMouseWheelDelta(): number {
+        return this.mouse.currentWheenDelta;
     }
 
     listen(element: HTMLElement, canvas: HTMLCanvasElement) {
@@ -122,6 +125,16 @@ export class GameInput {
                 .max(0, 0)
                 .min(canvas.offsetWidth, canvas.offsetHeight);
         });
+        element.addEventListener('wheel', (ev) => {
+            this.mouse.currentWheenDelta = ev.deltaY;
+        });
+    }
+
+    nextTick() {
+        this.previousPressed = {...this.currentPressed};
+        this.mouse.previousPosition.setFrom(this.mouse.currentPosition);
+        this.mouse.previousWheelDelta = this.mouse.currentWheenDelta;
+        this.mouse.currentWheenDelta = 0;
     }
 
     private setPressed(code: KeyCode) {

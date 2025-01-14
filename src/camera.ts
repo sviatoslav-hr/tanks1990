@@ -4,6 +4,7 @@ import {Rect} from '#/math';
 export class Camera {
     readonly position: Vector2 = Vector2.zero();
     readonly size: Vector2;
+    scale = 1;
 
     constructor(width: number, height: number) {
         assert(width > 0 && height > 0, 'Invalid camera size');
