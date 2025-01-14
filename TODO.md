@@ -18,8 +18,10 @@ Camera:
     - [x] Renderer should render stuff based on the camera position
     - [x] Add the ability to move the camera
     - [x] Don't draw stuff that is not visible on the screen
+    - [x] Add the ability to zoom in/out
     - [ ] Make the canvas the size of the whole page
-    - [ ] Add the ability to zoom in/out
+    - [ ] Zoom towards the mouse position
+    - [ ] Add smooth zooming in and out
     - [ ] When camera follows the player, it should move a bit in front of the player to allow the player to see what's ahead
     - [ ] Screenshake when player dies?
 - [ ] World boundaries
