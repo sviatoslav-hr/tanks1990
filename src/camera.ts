@@ -21,6 +21,11 @@ export class Camera {
         this.position.set(x - this.size.x / 2, y - this.size.y / 2);
     }
 
+    reset(): void {
+        this.position.set(0, 0);
+        this.scale = 1;
+    }
+
     isRectVisible(x: number, y: number, width: number, height: number): boolean;
     isRectVisible(rect: Rect): boolean;
     isRectVisible(

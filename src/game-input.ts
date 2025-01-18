@@ -19,6 +19,7 @@ export type KeyCode =
     | 'Semicolon'
     | 'BracketRight'
     | 'Backslash'
+    | 'Digit0'
     | 'MouseLeft'
     | 'MouseMiddle'
     | 'MouseRight';
