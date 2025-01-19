@@ -247,7 +247,9 @@ export class Renderer {
     }
 
     resizeCanvasByWindow(window: Window): void {
-        this.resizeCanvas(window.innerWidth, window.innerHeight);
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        this.resizeCanvas(width, height);
     }
 
     private resizeCanvas(width: number, height: number): void {
@@ -265,27 +267,21 @@ export class Renderer {
             return;
         }
         if (document.fullscreenElement) {
-            await document
-                .exitFullscreen()
-                .catch((err) => {
-                    assertError(err);
-                    throw new Error(
-                        'ERROR: failed to exit Fullscreen\n' + err.message,
-                    );
-                })
-                .then(() => this.resizeCanvasByWindow(window));
+            await document.exitFullscreen().catch((err) => {
+                assertError(err);
+                throw new Error(
+                    'ERROR: failed to exit Fullscreen\n' + err.message,
+                );
+            });
         } else {
             const appElement = document.getElementById(APP_ELEMENT_ID);
             assert(appElement);
-            await appElement
-                .requestFullscreen()
-                .catch((err) => {
-                    assertError(err);
-                    throw new Error(
-                        'ERROR: failed to enter Fullscreen\n' + err.message,
-                    );
-                })
-                .then(() => this.resizeCanvasByWindow(window));
+            await appElement.requestFullscreen().catch((err) => {
+                assertError(err);
+                throw new Error(
+                    'ERROR: failed to enter Fullscreen\n' + err.message,
+                );
+            });
         }
     }
 

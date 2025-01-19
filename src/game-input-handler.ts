@@ -22,13 +22,6 @@ export function handleGameInputTick(
     if (input.isPressed('KeyF')) {
         renderer
             .toggleFullscreen(window)
-            .then(() => {
-                menu.resize(
-                    renderer.canvas.clientWidth,
-                    renderer.canvas.clientHeight,
-                );
-                renderer.camera.focusOnRect(world.boundary);
-            })
             .catch((err) => console.error('Faile to toggle fullscreen', err));
     }
 

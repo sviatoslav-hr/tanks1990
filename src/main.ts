@@ -69,6 +69,7 @@ function runGame(
 
     window.addEventListener('resize', () => {
         renderer.resizeCanvasByWindow(window);
+        renderer.camera.focusOnRect(world.boundary);
         menu.resize(renderer.canvas.clientWidth, renderer.canvas.clientHeight);
     });
 
