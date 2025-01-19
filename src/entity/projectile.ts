@@ -4,6 +4,7 @@ import {CELL_SIZE} from '#/const';
 import {
     Direction,
     Entity,
+    isInside,
     isIntesecting,
     moveEntity,
     scaleMovement,
@@ -85,6 +86,10 @@ export class Projectile implements Entity {
         this.sprite.update(dt);
         // TODO: use movement equation instead
         moveEntity(this, scaleMovement(this.v, dt), this.direction);
+        if (!isInside(this, this.world.boundary)) {
+            this.dead = true;
+            return;
+        }
         for (const entity of this.world.iterateEntities()) {
             if (entity === this || entity === this.owner || entity.dead) {
                 continue;

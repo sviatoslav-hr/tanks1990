@@ -36,6 +36,16 @@ export function isIntesecting(rect: Rect, other: Rect): boolean {
     );
 }
 
+export function isInside(rect: Rect, bounds: Rect): boolean {
+    // NOTE: checks if any corner of `rect` is inside of `other`
+    return (
+        isPosInsideRect(rect.x, rect.y, bounds) &&
+        isPosInsideRect(xn(rect), rect.y, bounds) &&
+        isPosInsideRect(rect.x, yn(rect), bounds) &&
+        isPosInsideRect(xn(rect), yn(rect), bounds)
+    );
+}
+
 export function clampByBoundary(entity: Rect, boundary: Rect): void {
     entity.x = clamp(
         entity.x,

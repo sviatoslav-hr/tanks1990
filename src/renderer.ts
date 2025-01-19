@@ -46,11 +46,11 @@ export class Renderer {
         y = this.offsetYByCamera(y);
         width = this.offsetSizeByCamera(width);
         height = this.offsetSizeByCamera(height);
+        lineWidth = this.offsetSizeByCamera(lineWidth);
         const usingCameraCoords = this.usingCameraCoords;
         if (!usingCameraCoords) {
             this.useCameraCoords(true);
         }
-        lineWidth = this.offsetSizeByCamera(lineWidth);
         this.strokeLine(x, y, x + width, y, lineWidth);
         this.strokeLine(x + width, y, x + width, y + height, lineWidth);
         this.strokeLine(x + width, y + height, x, y + height, lineWidth);

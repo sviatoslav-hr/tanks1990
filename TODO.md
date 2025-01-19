@@ -19,7 +19,8 @@ Camera:
     - [x] Add the ability to move the camera
     - [x] Don't draw stuff that is not visible on the screen
     - [x] Add the ability to zoom in/out
-    - [ ] Make the canvas the size of the whole page
+    - [x] Make the canvas the size of the whole page
+    - [ ] Split camera into Player camera and Dev Camera
     - [ ] Zoom towards the mouse position
     - [ ] Add smooth zooming in and out
     - [ ] When camera follows the player, it should move a bit in front of the player to allow the player to see what's ahead
