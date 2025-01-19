@@ -12,6 +12,10 @@ export function xn(rect: Rect): number {
     return rect.x + rect.width;
 }
 
+export function fmod(x: number, y: number): number {
+    return x - y * Math.floor(x / y);
+}
+
 export function yn(rect: Rect): number {
     return rect.y + rect.height;
 }

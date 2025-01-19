@@ -50,7 +50,7 @@ canvas {
 #app {
     position: relative;
     width: 100%;
-    padding: 24px;
+    padding: 0;
     background-color: var(--black-raisin);
     display: flex;
     justify-content: center;

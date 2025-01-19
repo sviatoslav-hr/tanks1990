@@ -1,14 +1,34 @@
 import {Vector2} from '#/math/vector';
 import {Rect} from '#/math';
 
+// TODO: Have 2 Cameras: dev and player
+
 export class Camera {
-    readonly position: Vector2 = Vector2.zero();
+    // NOTE: Offset of the center of the camera from the center of the world
+    readonly offset: Vector2 = Vector2.zero();
     readonly size: Vector2;
-    scale = 1;
+    readonly pixelRatio: number;
+    visibleScale = 1;
+    lastAutoScale = 1;
+    manualMode = false;
 
     constructor(width: number, height: number) {
         assert(width > 0 && height > 0, 'Invalid camera size');
         this.size = new Vector2(width, height);
+        // NOTE: This is affected by the scaling settings of the OS.
+        this.pixelRatio = window.devicePixelRatio;
+    }
+
+    get x0(): number {
+        return this.offset.x - this.size.width / 2;
+    }
+
+    get y0(): number {
+        return this.offset.y - this.size.height / 2;
+    }
+
+    get scale() {
+        return this.visibleScale;
     }
 
     getSizeRect(): Rect {
@@ -16,14 +36,36 @@ export class Camera {
     }
 
     centerOn(entity: Rect): void {
-        const x = entity.x + entity.width / 2;
-        const y = entity.y + entity.height / 2;
-        this.position.set(x - this.size.x / 2, y - this.size.y / 2);
+        const entityCenterX = entity.x + entity.width / 2;
+        const entityCenterY = entity.y + entity.height / 2;
+        this.offset
+            .set(entityCenterX, entityCenterY)
+            .multiplyScalar(this.scale); // TODO: Is this needed?
+    }
+
+    setScale(scale: number): void {
+        // this.visibleScale = 1;
+        const prevScale = this.visibleScale;
+        this.visibleScale = scale;
+        this.offset.multiplyScalar(scale / prevScale);
+        if (!this.manualMode) {
+            this.lastAutoScale = this.visibleScale;
+        }
+    }
+
+    focusOnRect(rect: Rect): void {
+        const scaleX = this.size.width / rect.width;
+        const scaleY = this.size.height / rect.height;
+        // const scaleX = (rect.width / this.size.width) * 4;
+        // const scaleY = (rect.height / this.size.height) * 4;
+        this.setScale(Math.min(scaleX, scaleY));
+        this.centerOn(rect);
     }
 
     reset(): void {
-        this.position.set(0, 0);
-        this.scale = 1;
+        this.offset.set(0, 0);
+        this.visibleScale = this.lastAutoScale;
+        this.manualMode = false;
     }
 
     isRectVisible(x: number, y: number, width: number, height: number): boolean;
@@ -40,17 +82,17 @@ export class Camera {
                 'Invalid arguments',
             );
             return (
-                rectOrX + width > this.position.x &&
-                rectOrX < this.position.x + this.size.x &&
-                y + height > this.position.y &&
-                y < this.position.y + this.size.y
+                rectOrX + width > this.x0 &&
+                rectOrX < this.x0 + this.size.x &&
+                y + height > this.y0 &&
+                y < this.y0 + this.size.y
             );
         }
         return (
-            rectOrX.x + rectOrX.width > this.position.x &&
-            rectOrX.x < this.position.x + this.size.x &&
-            rectOrX.y + rectOrX.height > this.position.y &&
-            rectOrX.y < this.position.y + this.size.y
+            rectOrX.x + rectOrX.width > this.x0 &&
+            rectOrX.x < this.x0 + this.size.x &&
+            rectOrX.y + rectOrX.height > this.y0 &&
+            rectOrX.y < this.y0 + this.size.y
         );
     }
 

@@ -21,12 +21,13 @@ export function handleGameInputTick(
 ) {
     if (input.isPressed('KeyF')) {
         renderer
-            .toggleFullscreen()
+            .toggleFullscreen(window)
             .then(() => {
                 menu.resize(
                     renderer.canvas.clientWidth,
                     renderer.canvas.clientHeight,
                 );
+                renderer.camera.focusOnRect(world.boundary);
             })
             .catch((err) => console.error('Faile to toggle fullscreen', err));
     }
@@ -73,13 +74,22 @@ export function handleGameInputTick(
 
     if (__DEV_MODE && input.isDown('MouseMiddle')) {
         const mouseDelta = input.getMouseDelta();
-        renderer.camera.position.sub(mouseDelta);
+        renderer.camera.manualMode = true;
+        renderer.camera.offset.sub(mouseDelta);
     }
     if (__DEV_MODE && input.getMouseWheelDelta()) {
         const wheelDelta = input.getMouseWheelDelta();
-        renderer.camera.scale -= wheelDelta * 0.001;
+        renderer.camera.manualMode = true;
+        renderer.camera.setScale(renderer.camera.scale - wheelDelta * 0.001);
     }
     if (__DEV_MODE && input.isPressed('Digit0')) {
         renderer.camera.reset();
+        renderer.camera.centerOn(
+            world.isInfinite ? world.player : world.boundary,
+        );
+    }
+    if (__DEV_MODE && input.isPressed('Digit1')) {
+        renderer.camera.manualMode = true;
+        renderer.camera.setScale(1);
     }
 }

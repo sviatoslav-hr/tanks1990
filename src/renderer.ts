@@ -1,6 +1,6 @@
 import {Camera} from '#/camera';
 import {Color} from '#/color';
-import {APP_ELEMENT_ID, BASE_FONT_SIZE, BASE_HEIGHT, BASE_WIDTH} from '#/const';
+import {APP_ELEMENT_ID, BASE_FONT_SIZE} from '#/const';
 import {Rect} from '#/math';
 import {Transform} from '#/math/transform';
 
@@ -19,8 +19,6 @@ export class Renderer {
 
     constructor() {
         this.canvas = document.createElement('canvas');
-        this.canvas.width = BASE_WIDTH;
-        this.canvas.height = BASE_HEIGHT;
         this.camera = new Camera(this.canvas.width, this.canvas.height);
 
         const ctx2d = this.canvas.getContext('2d', {
@@ -37,7 +35,7 @@ export class Renderer {
         this.usingCameraCoords = value;
     }
 
-    drawBoundary({x, y, width, height}: Rect, lineWidth = 1): void {
+    strokeBoundary({x, y, width, height}: Rect, lineWidth = 1): void {
         if (
             !this.usingCameraCoords &&
             !this.camera.isRectVisible(x, y, width, height)
@@ -174,6 +172,8 @@ export class Renderer {
         // drawImage(image: CanvasImageSource, sx: number, sy: number, sw: number, sh: number, dx: number, dy: number, dw: number, dh: number): void;
         dx = this.offsetXByCamera(dx);
         dy = this.offsetYByCamera(dy);
+        dw = this.offsetSizeByCamera(dw);
+        dh = this.offsetSizeByCamera(dh);
         this.ctx.drawImage(src, sx, sy, sw, sh, dx, dy, dw, dh);
     }
 
@@ -185,6 +185,9 @@ export class Renderer {
     ): ImageData {
         x = this.offsetXByCamera(x);
         y = this.offsetYByCamera(y);
+        // TODO: this should be fixed
+        // width = this.offsetSizeByCamera(width);
+        // height = this.offsetSizeByCamera(height);
         return this.ctx.getImageData(x, y, width, height);
     }
 
@@ -243,67 +246,70 @@ export class Renderer {
         this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
     }
 
-    resizeCanvas(width: number, height: number): [number, number] {
-        // TODO: Probably the camera should also be adjusted
-        const shouldScale = width < BASE_WIDTH || height < BASE_HEIGHT;
-        if (document.fullscreenElement || shouldScale) {
-            const padding = 20;
-            const sx = (width - padding) / BASE_WIDTH;
-            const sy = (height - padding) / BASE_HEIGHT;
-            const sMin = Math.min(sx, sy);
-            const resWidth = BASE_WIDTH * sMin;
-            const resHeight = BASE_HEIGHT * sMin;
-            this.canvas.style.width = resWidth + 'px';
-            this.canvas.style.height = resHeight + 'px';
-            return [resWidth, resHeight];
-        } else {
-            this.canvas.style.width = '';
-            this.canvas.style.height = '';
-            return [BASE_WIDTH, BASE_HEIGHT];
-        }
+    resizeCanvasByWindow(window: Window): void {
+        this.resizeCanvas(window.innerWidth, window.innerHeight);
     }
 
-    async toggleFullscreen(): Promise<void> {
+    private resizeCanvas(width: number, height: number): void {
+        this.canvas.style.width = '';
+        this.canvas.style.height = '';
+        this.canvas.width = width;
+        this.canvas.height = height;
+        this.camera.size.set(width, height);
+    }
+
+    async toggleFullscreen(window: Window): Promise<void> {
+        const document = window.document;
         if (!document.fullscreenEnabled) {
             console.warn('Fullscreen is either not supported or disabled');
             return;
         }
         if (document.fullscreenElement) {
-            await document.exitFullscreen().catch((err) => {
-                assertError(err);
-                throw new Error(
-                    'ERROR: failed to exit Fullscreen\n' + err.message,
-                );
-            });
+            await document
+                .exitFullscreen()
+                .catch((err) => {
+                    assertError(err);
+                    throw new Error(
+                        'ERROR: failed to exit Fullscreen\n' + err.message,
+                    );
+                })
+                .then(() => this.resizeCanvasByWindow(window));
         } else {
             const appElement = document.getElementById(APP_ELEMENT_ID);
             assert(appElement);
-            await appElement.requestFullscreen().catch((err) => {
-                assertError(err);
-                throw new Error(
-                    'ERROR: failed to enter Fullscreen\n' + err.message,
-                );
-            });
+            await appElement
+                .requestFullscreen()
+                .catch((err) => {
+                    assertError(err);
+                    throw new Error(
+                        'ERROR: failed to enter Fullscreen\n' + err.message,
+                    );
+                })
+                .then(() => this.resizeCanvasByWindow(window));
         }
-        this.resizeCanvas(window.innerWidth, window.innerHeight);
     }
 
     private offsetXByCamera(x: number): number {
-        return this.usingCameraCoords
-            ? x
-            : (x - this.camera.position.x) * this.camera.scale;
+        if (this.usingCameraCoords) return x;
+        const result =
+            (x - this.camera.offset.x) * this.camera.scale +
+            this.camera.size.width / 2;
+        return result;
     }
 
     private offsetYByCamera(y: number): number {
-        return this.usingCameraCoords
-            ? y
-            : (y - this.camera.position.y) * this.camera.scale;
+        if (this.usingCameraCoords) return y;
+        const result =
+            (y - this.camera.offset.y) * this.camera.scale +
+            this.camera.size.height / 2;
+        return result;
     }
 
     private offsetSizeByCamera(size: number): number {
         if (this.usingCameraCoords) {
             return size;
         }
-        return size * this.camera.scale;
+        const result = size * this.camera.scale;
+        return result;
     }
 }

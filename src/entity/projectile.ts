@@ -102,13 +102,14 @@ export class Projectile implements Entity {
     }
 
     draw(renderer: Renderer): void {
-        if (!this.dead) {
-            this.drawTrail(renderer);
-            this.sprite.draw(renderer, this, this.direction);
+        if (this.dead) {
+            return;
         }
+        this.drawTrail(renderer);
+        this.sprite.draw(renderer, this, this.direction);
         if (this.world.showBoundary) {
             renderer.setStrokeColor(Color.PINK);
-            renderer.drawBoundary(this, 1);
+            renderer.strokeBoundary(this, 1);
         }
     }
 

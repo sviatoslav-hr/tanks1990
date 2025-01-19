@@ -84,9 +84,15 @@ export class Sprite<K extends string> {
         if (!renderer.camera.isRectVisible(boundary)) return;
         renderer.useCameraCoords(true); // NOTE: It's easier to rotate in camera coords
         // NOTE: set origin at the center of tank for proper rotation
+        const boundaryCenterX = boundary.x + boundary.width / 2;
+        const boundaryCenterY = boundary.y + boundary.height / 2;
         const translation = new Vector2(
-            boundary.x - renderer.camera.position.x + boundary.width / 2,
-            boundary.y - renderer.camera.position.y + boundary.height / 2,
+            boundaryCenterX -
+                renderer.camera.offset.x +
+                renderer.camera.size.width / 2 / renderer.camera.scale,
+            boundaryCenterY -
+                renderer.camera.offset.y +
+                renderer.camera.size.height / 2 / renderer.camera.scale,
         );
         renderer.setTransform(
             Transform.makeTranslation(translation).scale(renderer.camera.scale),

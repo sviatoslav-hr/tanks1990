@@ -35,8 +35,8 @@ function main(): void {
 
     const input = new GameInput();
     const worldBoundary: Rect = {
-        x: 0,
-        y: 0,
+        x: -BASE_WIDTH / 2,
+        y: -BASE_HEIGHT / 2,
         width: BASE_WIDTH,
         height: BASE_HEIGHT,
     };
@@ -61,13 +61,14 @@ function runGame(
     devUI: DevUI,
     renderer: Renderer,
 ) {
-    renderer.resizeCanvas(window.innerWidth, window.innerHeight);
-    menu.resize(renderer.canvas.clientWidth, renderer.canvas.clientHeight);
+    renderer.resizeCanvasByWindow(window);
+    renderer.camera.focusOnRect(world.boundary);
+    menu.resize(renderer.canvas.offsetWidth, renderer.canvas.offsetHeight);
     menu.showMain();
     input.listen(document.body, renderer.canvas);
 
     window.addEventListener('resize', () => {
-        renderer.resizeCanvas(window.innerWidth, window.innerHeight);
+        renderer.resizeCanvasByWindow(window);
         menu.resize(renderer.canvas.clientWidth, renderer.canvas.clientHeight);
     });
 

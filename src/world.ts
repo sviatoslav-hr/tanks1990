@@ -6,7 +6,7 @@ import {Entity, isIntesecting} from '#/entity/core';
 import {Projectile} from '#/entity/projectile';
 import {createStaticSprite} from '#/entity/sprite';
 import {GameInput} from '#/game-input';
-import {Rect, isPosInsideRect, randomInt} from '#/math';
+import {Rect, fmod, isPosInsideRect, randomInt} from '#/math';
 import {Duration} from '#/math/duration';
 import {Vector2Like} from '#/math/vector';
 import {Renderer} from '#/renderer';
@@ -64,32 +64,31 @@ export class World {
             t.draw(renderer);
         }
         for (const projectile of this.projectiles) {
-            if (!projectile.dead) {
-                projectile.draw(renderer);
-            }
+            projectile.draw(renderer);
         }
     }
 
     private drawGrid(renderer: Renderer, cellSize: number): void {
         const camera = renderer.camera;
         cellSize *= camera.scale;
-        const x0 = cellSize - ((camera.position.x * camera.scale) % cellSize);
-        const y0 = cellSize - ((camera.position.y * camera.scale) % cellSize);
-        const width = camera.size.width * camera.scale;
-        const height = camera.size.height * camera.scale;
+        const x0 = cellSize - fmod(camera.x0, cellSize);
+        const y0 = cellSize - fmod(camera.y0, cellSize);
+
         renderer.setStrokeColor(Color.BLACK_IERIE);
         renderer.useCameraCoords(true);
         const offset = 1;
-        for (let colX = x0; colX < x0 + width + cellSize; colX += cellSize) {
+        const maxX = x0 + camera.size.width + cellSize;
+        for (let colX = x0; colX < maxX; colX += cellSize) {
             const x1 = colX + offset;
             const y1 = offset - cellSize;
             const x2 = x1;
-            const y2 = height + offset + cellSize;
+            const y2 = camera.size.height + offset + cellSize;
             renderer.strokeLine(x1, y1, x2, y2);
         }
-        for (let colY = y0; colY < y0 + height + cellSize; colY += cellSize) {
+        const maxY = y0 + camera.size.height + cellSize;
+        for (let colY = y0; colY < maxY; colY += cellSize) {
             const x1 = offset - cellSize;
-            const x2 = width + offset + cellSize;
+            const x2 = camera.size.width + offset + cellSize;
             const y1 = colY + offset;
             const y2 = y1;
             renderer.strokeLine(x1, y1, x2, y2);
@@ -99,8 +98,9 @@ export class World {
 
     private drawWorldBoundary(renderer: Renderer): void {
         renderer.setStrokeColor(Color.BLACK);
+        // FIXME: Why does this not scale properly?
         const boundaryThickness = 10;
-        renderer.drawBoundary(
+        renderer.strokeBoundary(
             {
                 x: this.boundary.x - boundaryThickness / 2,
                 y: this.boundary.y - boundaryThickness / 2,

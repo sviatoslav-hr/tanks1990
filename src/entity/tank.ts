@@ -184,7 +184,7 @@ export abstract class Tank implements Entity {
 
         if (this.world.showBoundary) {
             renderer.setStrokeColor(Color.PINK);
-            renderer.drawBoundary(this, 1);
+            renderer.strokeBoundary(this, 1);
             renderer.setFont('400 16px Helvetica', 'center', 'middle');
             renderer.setFillColor(Color.WHITE);
             // const velocity = ((this.velocity * 3600) / 1000).toFixed(2);
@@ -199,7 +199,7 @@ export abstract class Tank implements Entity {
         }
         if (this.world.showBoundary && this.isStuck) {
             renderer.setStrokeColor(Color.RED);
-            renderer.drawBoundary(this, 1);
+            renderer.strokeBoundary(this, 1);
         }
     }
 
@@ -444,14 +444,14 @@ export class EnemyTank extends Tank implements Entity {
         if (this.world.showBoundary) {
             if (this.collisionAnimation.active) {
                 renderer.setStrokeColor(Color.WHITE_NAVAJO);
-                renderer.drawBoundary(
+                renderer.strokeBoundary(
                     this,
                     this.collisionAnimation.progress * 10,
                 );
             }
             if (this.isStuck) {
                 renderer.setStrokeColor(Color.RED);
-                renderer.drawBoundary(this, 1);
+                renderer.strokeBoundary(this, 1);
             }
         }
     }

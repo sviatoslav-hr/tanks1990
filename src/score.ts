@@ -42,7 +42,7 @@ export function drawScore(
         : BASE_FONT_SIZE * 2;
     renderer.setStrokeColor(Color.WHITE);
     renderer.useCameraCoords(true);
-    renderer.drawBoundary(
+    renderer.strokeBoundary(
         {
             x: camera.size.width - BASE_PADDING - maxWidth - innerPadding,
             y: BASE_PADDING - innerPadding,
