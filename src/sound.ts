@@ -14,11 +14,19 @@ export class SoundManager {
     private _volume = 1 * VOLUME_SCALE;
     // TODO: This should be created only after user made any action on the page.
     private readonly soundsCache = new Map<SoundType, Sound[]>();
+    private static self?: SoundManager;
 
     constructor(
         private readonly storage: GameStorage,
         private readonly audioContext = new AudioContext(),
     ) {}
+
+    static get instance(): SoundManager {
+        if (!SoundManager.self) {
+            throw new Error('SoundManager not initialized');
+        }
+        return SoundManager.self;
+    }
 
     get volume(): number {
         return Math.min(this._volume / VOLUME_SCALE, 1);

@@ -9,20 +9,30 @@ import {
     moveEntity,
     scaleMovement,
 } from '#/entity/core';
+import {EntityId} from '#/entity/id';
 import {Sprite} from '#/entity/sprite';
-import {Tank} from '#/entity/tank';
+import {EnemyTank, PlayerTank} from '#/entity/tank';
 import {bellCurveInterpolate, lerp} from '#/math';
 import {Duration} from '#/math/duration';
 import {Vector2} from '#/math/vector';
 import {Renderer} from '#/renderer';
-import {World} from '#/world';
+import {EntityManager, isSameEntity} from './manager';
 
-export class Projectile implements Entity {
+interface CreateProjectileOpts {
+    x: number;
+    y: number;
+    size: number;
+    ownerId: EntityId;
+    direction: Direction;
+}
+
+export class Projectile extends Entity {
     public static SIZE = CELL_SIZE / 5;
-    public dead = false;
     public originalPosition: Vector2;
-    public width: number;
-    public height: number;
+    public ownerId: EntityId;
+    private direction: Direction;
+    private shotByPlayer: boolean;
+
     private readonly v = 600;
     private readonly sprite = new Sprite({
         key: 'bullet',
@@ -33,45 +43,16 @@ export class Projectile implements Entity {
     });
     static readonly TRAIL_DISTANCE = CELL_SIZE * 2;
 
-    constructor(
-        public x: number,
-        public y: number,
-        size: number,
-        private world: World,
-        private owner: Tank,
-        public direction: Direction,
-    ) {
-        this.width = size;
-        this.height = size;
-        this.originalPosition = new Vector2(x, y);
-    }
-
-    static spawn(
-        owner: Tank,
-        world: World,
-        x: number,
-        y: number,
-        direction: Direction,
-    ): Projectile {
-        const deadProjectile = world.projectiles.find((p) => p.dead);
-        if (deadProjectile) {
-            // NOTE: reuse dead projectiles instead of creating new ones
-            deadProjectile.reviveAt(owner, x, y);
-            deadProjectile.direction = direction;
-            return deadProjectile;
-        }
-        const size = Projectile.SIZE;
-        const projectile = new Projectile(
-            x - size / 2,
-            y - size / 2,
-            size,
-            world,
-            owner,
-            direction,
-        );
-        // TODO: measure if dead projectiles should be cleaned up at some point
-        world.projectiles.push(projectile);
-        return projectile;
+    constructor(manager: EntityManager, opts: CreateProjectileOpts) {
+        super(manager);
+        this.x = opts.x;
+        this.y = opts.y;
+        this.width = opts.size;
+        this.height = opts.size;
+        this.originalPosition = new Vector2(this.x, this.y);
+        this.ownerId = opts.ownerId;
+        this.direction = opts.direction;
+        this.shotByPlayer = manager.player.id === opts.ownerId;
     }
 
     update(dt: Duration, camera: Camera): void {
@@ -86,12 +67,17 @@ export class Projectile implements Entity {
         this.sprite.update(dt);
         // TODO: use movement equation instead
         moveEntity(this, scaleMovement(this.v, dt), this.direction);
-        if (!isInside(this, this.world.boundary)) {
+        if (!isInside(this, this.manager.env.boundary)) {
             this.dead = true;
             return;
         }
-        for (const entity of this.world.iterateEntities()) {
-            if (entity === this || entity === this.owner || entity.dead) {
+
+        for (const entity of this.manager.iterateEntities()) {
+            if (
+                isSameEntity(entity, this) ||
+                entity.id === this.ownerId ||
+                entity.dead
+            ) {
                 continue;
             }
             if (isIntesecting(this, entity)) {
@@ -99,8 +85,12 @@ export class Projectile implements Entity {
                 if (entity instanceof Projectile) {
                     entity.dead = true;
                 }
-                if (entity instanceof Tank) {
-                    this.owner.doDamage(entity);
+                // NOTE: Player can only kill enemies and vice versa
+                if (
+                    (this.shotByPlayer && entity instanceof EnemyTank) ||
+                    (!this.shotByPlayer && entity instanceof PlayerTank)
+                ) {
+                    entity.takeDamage();
                 }
             }
         }
@@ -112,19 +102,24 @@ export class Projectile implements Entity {
         }
         this.drawTrail(renderer);
         this.sprite.draw(renderer, this, this.direction);
-        if (this.world.showBoundary) {
+        if (this.manager.env.showBoundary) {
             renderer.setStrokeColor(Color.PINK);
             renderer.strokeBoundary(this, 1);
         }
     }
 
-    reviveAt(ownder: Tank, x: number, y: number): void {
-        this.owner = ownder;
+    reviveAt(
+        ownerId: EntityId,
+        x: number,
+        y: number,
+        direction: Direction,
+    ): void {
+        this.ownerId = ownerId;
         this.originalPosition.set(x, y);
         this.x = x;
         this.y = y;
         this.dead = false;
-        this.direction = Direction.UP;
+        this.direction = direction;
         this.sprite.reset();
     }
 

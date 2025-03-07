@@ -1,14 +1,11 @@
 import {describe, expect, it, vi} from 'vitest';
 
-import {Block} from '#/entity/block';
 import {isIntesecting} from '#/entity/core';
 import {findPath} from '#/entity/pathfinding';
-import {EnemyTank} from '#/entity/tank';
-import {GameInput} from '#/game-input';
 import {isPosInsideRect} from '#/math';
-import {SoundManager} from '#/sound';
-import {GameStorage} from '#/storage';
-import {World} from '#/world';
+import {EntityManager} from '#/entity/manager';
+import {Block} from '#/entity/block';
+import {EnemyTank} from './tank';
 
 vi.mock('../entity/sprite', () => {
     return {
@@ -35,37 +32,30 @@ vi.mock('../entity/sprite', () => {
 });
 
 describe('Pathfinding', () => {
-    const mockStorage: Storage = {
-        getItem: () => null,
-        setItem: () => {},
-        removeItem: () => {},
-        clear: () => {},
-        key: () => null,
-        length: 0,
-    };
-    const mockAudioContext: AudioContext = {} as AudioContext;
-
     it('should find a path', () => {
-        const screen = {x: 0, y: 0, width: 800, height: 600};
-        const storage = new GameStorage(mockStorage);
-        const sounds = new SoundManager(storage, mockAudioContext);
-        const world = new World(screen, storage, sounds, new GameInput());
-        world.blocks = blocks;
-        const enemy = new EnemyTank(world, sounds);
+        const manager = new EntityManager();
+        manager.env.boundary.x = 0;
+        manager.env.boundary.y = 0;
+        manager.env.boundary.width = 800;
+        manager.env.boundary.height = 600;
+        manager.blocks = generateBlocks(manager);
+        const enemy = new EnemyTank(manager);
+        enemy.respawnDelay.setMilliseconds(0);
         enemy.x = 107.97980493109108;
         enemy.y = 429.939880663898;
-        world.player.x = 758;
-        world.player.y = 532.9288808634084;
+        manager.player.x = 758;
+        manager.player.y = 532.9288808634084;
         enemy.respawn();
-        const path = findPath(enemy, world.player, world, 100);
+        const path = findPath(enemy, manager.player, manager, 100);
         assert(path);
         expect(path.length).toBeGreaterThan(0);
+        console.log(path.length);
         const lastP = path[path.length - 1]!;
-        expect(isPosInsideRect(lastP.x, lastP.y, world.player)).toEqual(true);
+        expect(isPosInsideRect(lastP.x, lastP.y, manager.player)).toEqual(true);
 
         for (const p of path) {
-            for (const e of world.iterateEntities()) {
-                if (e === world.player) continue;
+            for (const e of manager.iterateEntities()) {
+                if (e === manager.player) continue;
                 if (e === enemy) continue;
                 expect(
                     isPosInsideRect(p.x, p.y, e),
@@ -86,68 +76,71 @@ describe('Pathfinding', () => {
     });
 });
 
-const blocks = [
-    {
-        x: 650,
-        y: 100,
-        width: 50,
-        height: 50,
-        dead: false,
-    },
-    {
-        x: 400,
-        y: 500,
-        width: 50,
-        height: 50,
-        dead: false,
-    },
-    {
-        x: 450,
-        y: 100,
-        width: 50,
-        height: 50,
-        dead: false,
-    },
-    {
-        x: 400,
-        y: 300,
-        width: 50,
-        height: 50,
-        dead: false,
-    },
-    {
-        x: 150,
-        y: 400,
-        width: 50,
-        height: 50,
-        dead: false,
-    },
-    {
-        x: 600,
-        y: 350,
-        width: 50,
-        height: 50,
-        dead: false,
-    },
-    {
-        x: 100,
-        y: 100,
-        width: 50,
-        height: 50,
-        dead: false,
-    },
-    {
-        x: 200,
-        y: 50,
-        width: 50,
-        height: 50,
-        dead: false,
-    },
-    {
-        x: 700,
-        y: 500,
-        width: 50,
-        height: 50,
-        dead: false,
-    },
-].map((b) => new Block({...b, texture: 'red' as any}));
+function generateBlocks(manager: EntityManager) {
+    const blocks = [
+        {
+            x: 650,
+            y: 100,
+            width: 50,
+            height: 50,
+            dead: false,
+        },
+        {
+            x: 400,
+            y: 500,
+            width: 50,
+            height: 50,
+            dead: false,
+        },
+        {
+            x: 450,
+            y: 100,
+            width: 50,
+            height: 50,
+            dead: false,
+        },
+        {
+            x: 400,
+            y: 300,
+            width: 50,
+            height: 50,
+            dead: false,
+        },
+        {
+            x: 150,
+            y: 400,
+            width: 50,
+            height: 50,
+            dead: false,
+        },
+        {
+            x: 600,
+            y: 350,
+            width: 50,
+            height: 50,
+            dead: false,
+        },
+        {
+            x: 100,
+            y: 100,
+            width: 50,
+            height: 50,
+            dead: false,
+        },
+        {
+            x: 200,
+            y: 50,
+            width: 50,
+            height: 50,
+            dead: false,
+        },
+        {
+            x: 700,
+            y: 500,
+            width: 50,
+            height: 50,
+            dead: false,
+        },
+    ].map((b) => new Block(manager, {...b, texture: 'red' as any}));
+    return blocks;
+}

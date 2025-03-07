@@ -35,6 +35,7 @@ Camera:
     - [ ] Display best score on the death screen
 
 ## TODO
+- [ ] On default settings camera should have some space around the target to see the boundaries
 - [ ] Make enemies shoot only when they see the player
 - [ ] Define game plan / trajectory / future development / main goal / idea
 - [ ] Define custom RNG and use it everywhere instead of `Math.random()`
@@ -42,6 +43,9 @@ Camera:
 - [ ] Hot reload for development?
 
 ## FIXME
+- [ ] When the camera is manually moved, either the grid of the entities are not positioned correctly
+- [ ] Enemy explosion effect is gray instead of green (cannot reproduce)
+- [ ] Explosion effect image data may grab some black pixels from the boundary
 - [ ] Enemies sometimes stuck when they need to move around the block (probably because of the collision detection and precision issues)
 - [ ] Fix projectile size (it's bigger than it visually is)
 - [ ] Fix sound explosion delay

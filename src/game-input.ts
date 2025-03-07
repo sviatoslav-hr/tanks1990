@@ -23,7 +23,9 @@ export type KeyCode =
     | 'Digit0'
     | 'MouseLeft'
     | 'MouseMiddle'
-    | 'MouseRight';
+    | 'MouseRight'
+    | 'ControlLeft'
+    | 'MetaLeft';
 export type KeysState = Partial<Record<KeyCode, boolean>>;
 export type KeyHandler = (event: Event, code: KeyCode) => void;
 

@@ -186,9 +186,10 @@ export class Renderer {
         x = this.offsetXByCamera(x);
         y = this.offsetYByCamera(y);
         // TODO: this should be fixed
-        // width = this.offsetSizeByCamera(width);
-        // height = this.offsetSizeByCamera(height);
-        return this.ctx.getImageData(x, y, width, height);
+        width = this.offsetSizeByCamera(width);
+        height = this.offsetSizeByCamera(height);
+        const imageData = this.ctx.getImageData(x, y, width, height);
+        return imageData;
     }
 
     setTransform(transform: Transform): void {
@@ -290,6 +291,7 @@ export class Renderer {
         const result =
             (x - this.camera.offset.x) * this.camera.scale +
             this.camera.size.width / 2;
+        assert(!isNaN(result));
         return result;
     }
 

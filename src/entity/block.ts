@@ -1,24 +1,58 @@
 import {Color} from '#/color';
+import {CELL_SIZE} from '#/const';
 import {Entity} from '#/entity/core';
-import {Sprite} from '#/entity/sprite';
-import {Rect} from '#/math';
+import {Sprite, createStaticSprite} from '#/entity/sprite';
+import {Rect, randomInt} from '#/math';
 import {Duration} from '#/math/duration';
 import {Renderer} from '#/renderer';
+import {EntityManager} from './manager';
+
+export function generateBlocks(manager: EntityManager): Block[] {
+    const env = manager.env;
+    // NOTE: no blocks in inifinite mode for now.
+    if (env.isInfinite) return [];
+
+    const blocks: Block[] = [];
+    const BLOCKS_COUNT = 9;
+    for (let i = 0; i < BLOCKS_COUNT; i++) {
+        const x =
+            env.boundary.x +
+            randomInt(1, env.boundary.width / CELL_SIZE - 1) * CELL_SIZE;
+        const y =
+            env.boundary.y +
+            randomInt(1, env.boundary.height / CELL_SIZE - 1) * CELL_SIZE;
+        const sprite = createStaticSprite({
+            key: 'bricks',
+            frameWidth: 64,
+            frameHeight: 64,
+        });
+        const block = new Block(manager, {
+            x,
+            y,
+            width: CELL_SIZE,
+            height: CELL_SIZE,
+            texture: sprite,
+        });
+        blocks.push(block);
+    }
+
+    return blocks;
+}
 
 export type BlockOpts = Rect & {
     texture: Color | Sprite<'static'>;
 };
 
-export class Block implements Entity {
-    public x = 0;
-    public y = 0;
-    public width = 50;
-    public height = 50;
+export class Block extends Entity {
     public readonly dead = false;
     private readonly color: Color = Color.WHITE;
     private readonly sprite?: Sprite<string>;
 
-    constructor({x, y, width, height, texture}: BlockOpts) {
+    constructor(
+        manager: EntityManager,
+        {x, y, width, height, texture}: BlockOpts,
+    ) {
+        super(manager);
         this.x = x;
         this.y = y;
         this.width = width;

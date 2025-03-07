@@ -1,6 +1,8 @@
 import {Rect, isPosInsideRect} from '#/math';
 import {Vector2} from '#/math/vector';
-import {World} from '#/world';
+import {isRectOccupied} from '#/environment';
+import {EntityManager} from '#/entity/manager';
+import {Entity} from '#/entity/core';
 
 type Node = {
     pos: Vector2;
@@ -15,9 +17,9 @@ type Node = {
 };
 
 export function findPath(
-    entity: Rect,
+    entity: Entity,
     destination: Rect,
-    world: World,
+    manager: EntityManager,
     maxSteps: number,
 ): Vector2[] | null {
     const startP = Vector2.from(entity).floor();
@@ -46,8 +48,8 @@ export function findPath(
             currentNode?.pos ?? startP,
             currentNode,
             endP,
-            world,
             allNodes,
+            manager,
             entity,
         );
         if (!allNodes.length) {
@@ -63,12 +65,12 @@ function fillSurrondingNodes(
     pos: Vector2,
     parent: Node | null,
     end: Vector2,
-    world: World,
     nodes: Node[],
-    entity: Rect,
+    manager: EntityManager,
+    entity: Entity,
 ): void {
     // TODO: This could be optimized
-    const neighbors = getNeighbors(pos, parent, end, world, entity);
+    const neighbors = getNeighbors(pos, parent, end, manager, entity);
     const filteredNeighbors = neighbors.filter((n) => {
         return !nodes.some((node) => node.pos.equals(n.pos));
     });
@@ -108,8 +110,8 @@ function getNeighbors(
     pos: Vector2,
     parent: Node | null,
     end: Vector2,
-    world: World,
-    entity: Rect,
+    manager: EntityManager,
+    entity: Entity,
 ): Node[] {
     const neighbors = new Array<Node>();
     const offsetX = entity.width / 3;
@@ -129,7 +131,7 @@ function getNeighbors(
             width: entity.width,
             height: entity.height,
         };
-        if (world.isRectOccupied(rect, entity)) {
+        if (isRectOccupied(rect, manager, entity)) {
             continue;
         }
         neighbors.push(createNode(neighbor, parent, pos, end));

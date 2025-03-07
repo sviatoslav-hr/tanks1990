@@ -78,6 +78,11 @@ export class Duration {
         return this;
     }
 
+    mul(factor: number) {
+        this.milliseconds *= factor;
+        return this;
+    }
+
     isMoreThan(other: Duration): boolean {
         return this.milliseconds > other.milliseconds;
     }

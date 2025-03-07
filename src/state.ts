@@ -1,16 +1,13 @@
-import {World} from '#/world';
-
 export enum GameStatus {
     INITIAL,
     PLAYING,
     PAUSED,
+    DEAD,
 }
 
 export class GameState {
     status = GameStatus.INITIAL;
     debugUpdateTriggered = false;
-
-    constructor(readonly world: World) {}
 
     get initial(): boolean {
         return this.status === GameStatus.INITIAL;
@@ -25,7 +22,7 @@ export class GameState {
     }
 
     get dead(): boolean {
-        return this.playing && this.world.player.dead;
+        return this.status === GameStatus.DEAD;
     }
 
     init(): void {
@@ -40,9 +37,12 @@ export class GameState {
         this.status = GameStatus.PLAYING;
     }
 
-    start(infinite: boolean): void {
-        this.world.init(infinite);
+    start(): void {
         this.status = GameStatus.PLAYING;
+    }
+
+    markDead(): void {
+        this.status = GameStatus.DEAD;
     }
 
     nextTick() {

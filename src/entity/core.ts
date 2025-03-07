@@ -1,20 +1,29 @@
-import {Camera} from '#/camera';
+import {EntityId, newEntityId} from '#/entity/id';
 import {Rect, clamp, isPosInsideRect, xn, yn} from '#/math';
 import {Duration} from '#/math/duration';
 import {Vector2Like} from '#/math/vector';
-import {Renderer} from '#/renderer';
+import {EntityManager} from '#/entity/manager';
 
-export type Entity = {
-    dead: boolean;
-    update(dt: Duration, camera: Camera): void;
-    draw(renderer: Renderer): void;
-} & Rect;
+export class Entity implements Rect {
+    readonly id: EntityId = newEntityId();
+    public dead = false;
+    public x = 0;
+    public y = 0;
+    public width = 0;
+    public height = 0;
+
+    constructor(protected manager: EntityManager) {}
+
+    equals(other: Entity): boolean {
+        return this.id === other.id;
+    }
+}
 
 export enum Direction {
-    UP = 0,
-    RIGHT = 90,
-    DOWN = 180,
-    LEFT = 270,
+    NORTH = 0,
+    EAST = 90,
+    SOUTH = 180,
+    WEST = 270,
 }
 
 export function isOutsideRect(entity: Rect, boundary: Rect): boolean {
@@ -72,16 +81,16 @@ export function moveEntity(
 export function getMovement(value: number, direction: Direction): Vector2Like {
     const vec: Vector2Like = {x: 0, y: 0};
     switch (direction) {
-        case Direction.UP:
+        case Direction.NORTH:
             vec.y -= value;
             break;
-        case Direction.DOWN:
+        case Direction.SOUTH:
             vec.y += value;
             break;
-        case Direction.RIGHT:
+        case Direction.EAST:
             vec.x += value;
             break;
-        case Direction.LEFT:
+        case Direction.WEST:
             vec.x -= value;
             break;
     }

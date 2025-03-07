@@ -41,6 +41,7 @@ export class GameStorage {
 function stringifyUnknown(value: unknown): string {
     switch (typeof value) {
         case 'string':
+            return value;
         case 'number':
         case 'boolean':
             return value.toString();

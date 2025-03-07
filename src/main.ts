@@ -2,12 +2,12 @@ import './globals';
 import './style.css';
 
 import {Color} from '#/color';
-import {APP_ELEMENT_ID, BASE_HEIGHT, BASE_WIDTH, DEV_MODE_KEY} from '#/const';
+import {APP_ELEMENT_ID, DEV_MODE_KEY} from '#/const';
 import {createDevUI, DevUI} from '#/dev-ui';
 import {preloadEffectImages} from '#/entity/effect';
+import {EntityManager} from '#/entity/manager';
 import {GameInput} from '#/game-input';
 import {handleGameInputTick} from '#/game-input-handler';
-import {Rect} from '#/math';
 import {Duration} from '#/math/duration';
 import {initMenu, Menu} from '#/menu';
 import {Renderer} from '#/renderer';
@@ -15,7 +15,8 @@ import {drawScore, saveBestScore} from '#/score';
 import {SoundManager} from '#/sound';
 import {GameState} from '#/state';
 import {GameStorage} from '#/storage';
-import {World} from '#/world';
+import {handleGameEvents} from './events-handler';
+import {eventQueue} from '#/events';
 
 main();
 
@@ -34,42 +35,38 @@ function main(): void {
     appElement.append(renderer.canvas);
 
     const input = new GameInput();
-    const worldBoundary: Rect = {
-        x: -BASE_WIDTH / 2,
-        y: -BASE_HEIGHT / 2,
-        width: BASE_WIDTH,
-        height: BASE_HEIGHT,
-    };
-    const world = new World(worldBoundary, storage, sounds, input);
-    const gameState = new GameState(world);
+    const gameState = new GameState();
+    const manager = new EntityManager();
+    manager.env.load(storage);
 
-    const menu = initMenu(gameState, sounds);
+    const menu = initMenu(gameState, manager, sounds);
     appElement.append(menu);
 
-    const devUI = createDevUI(gameState, world, storage);
+    const devUI = createDevUI(gameState, manager, storage);
     appElement.append(devUI);
 
-    runGame(gameState, world, menu, input, storage, devUI, renderer);
+    runGame(gameState, manager, menu, input, storage, devUI, renderer, sounds);
 }
 
 function runGame(
     state: GameState,
-    world: World,
+    manager: EntityManager,
     menu: Menu,
     input: GameInput,
     storage: GameStorage,
     devUI: DevUI,
     renderer: Renderer,
+    sounds: SoundManager,
 ) {
     renderer.resizeCanvasByWindow(window);
-    renderer.camera.focusOnRect(world.boundary);
+    renderer.camera.focusOnRect(manager.env.boundary);
     menu.resize(renderer.canvas.offsetWidth, renderer.canvas.offsetHeight);
     menu.showMain();
     input.listen(document.body, renderer.canvas);
 
     window.addEventListener('resize', () => {
         renderer.resizeCanvasByWindow(window);
-        renderer.camera.focusOnRect(world.boundary);
+        renderer.camera.focusOnRect(manager.env.boundary);
         menu.resize(renderer.canvas.clientWidth, renderer.canvas.clientHeight);
     });
 
@@ -79,16 +76,20 @@ function runGame(
         lastTimestamp = timestamp;
 
         try {
-            handleGameTick(dt, state, world, menu, input, storage, renderer);
+            handleGameTick(dt, state, manager, menu, input, storage, renderer);
             handleGameInputTick(
                 input,
                 renderer,
                 state,
-                world,
+                manager,
                 menu,
                 devUI,
                 storage,
             );
+            handleGameEvents(eventQueue, state, manager, sounds);
+            if (manager.env.needsSaving) {
+                manager.env.save(storage);
+            }
             devUI.update(dt);
             input.nextTick();
             state.nextTick();
@@ -105,7 +106,7 @@ function runGame(
 function handleGameTick(
     dt: Duration,
     state: GameState,
-    world: World,
+    manager: EntityManager,
     menu: Menu,
     input: GameInput,
     storage: GameStorage,
@@ -114,21 +115,27 @@ function handleGameTick(
     renderer.setFillColor(Color.BLACK_RAISIN);
     renderer.fillScreen();
 
-    world.draw(renderer);
+    manager.drawAllEntities(renderer);
+    const player = manager.player;
 
     if (state.paused || state.dead || (state.playing && input.isDown('KeyQ'))) {
-        drawScore(renderer, world.player, storage);
+        drawScore(renderer, player, storage);
     }
 
-    if (world.player.dead && state.playing && !menu.dead) {
+    if (state.playing && player.dead) {
+        state.markDead();
+    }
+
+    if (state.dead && !menu.dead) {
         menu.showDead();
-        saveBestScore(storage, world.player.score);
+        saveBestScore(storage, player.score);
     }
 
-    if (state.playing || state.debugUpdateTriggered) {
-        world.update(dt, renderer.camera);
-        if (world.isInfinite) {
-            renderer.camera.centerOn(world.player);
+    if (state.playing || state.dead || state.debugUpdateTriggered) {
+        manager.updateEffects(dt);
+        manager.updateAllEntities(dt, renderer.camera);
+        if (manager.env.isInfinite) {
+            renderer.camera.centerOn(player);
         }
     }
 }

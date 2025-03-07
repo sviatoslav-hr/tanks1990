@@ -44,7 +44,7 @@ export class Camera {
     }
 
     setScale(scale: number): void {
-        // this.visibleScale = 1;
+        assert(!isNaN(scale) && scale > 0 && Number.isFinite(scale));
         const prevScale = this.visibleScale;
         this.visibleScale = scale;
         this.offset.multiplyScalar(scale / prevScale);

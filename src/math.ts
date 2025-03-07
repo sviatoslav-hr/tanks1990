@@ -64,26 +64,28 @@ export function rotateRect(
 }
 
 export function isPosInsideRect(x: number, y: number, rect: Rect): boolean {
-    x = Math.floor(x);
-    y = Math.floor(y);
-    return (
-        Math.floor(rect.x) <= x &&
-        x <= Math.floor(xn(rect)) &&
-        Math.floor(rect.y) <= y &&
-        y <= Math.floor(yn(rect))
-    );
+    // TODO: Why flooring it?
+    // x = Math.floor(x);
+    // y = Math.floor(y);
+    // return (
+    //     Math.floor(rect.x) <= x &&
+    //     x <= Math.floor(xn(rect)) &&
+    //     Math.floor(rect.y) <= y &&
+    //     y <= Math.floor(yn(rect))
+    // );
+    return rect.x <= x && x <= xn(rect) && rect.y <= y && y <= yn(rect);
 }
 
 export function oppositeDirection(dir: Direction): Direction {
     switch (dir) {
-        case Direction.UP:
-            return Direction.DOWN;
-        case Direction.RIGHT:
-            return Direction.LEFT;
-        case Direction.DOWN:
-            return Direction.UP;
-        case Direction.LEFT:
-            return Direction.RIGHT;
+        case Direction.NORTH:
+            return Direction.SOUTH;
+        case Direction.EAST:
+            return Direction.WEST;
+        case Direction.SOUTH:
+            return Direction.NORTH;
+        case Direction.WEST:
+            return Direction.EAST;
     }
 }
 

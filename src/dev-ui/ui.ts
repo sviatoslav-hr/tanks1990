@@ -3,7 +3,7 @@ import {GameState} from '#/state';
 import {CustomElement, ReactiveElement, css, div} from '#/html';
 import {Duration} from '#/math/duration';
 import {GameStorage} from '#/storage';
-import {World} from '#/world';
+import {EntityManager} from '#/entity/manager';
 
 @CustomElement('dev-ui')
 export class DevUI extends ReactiveElement {
@@ -72,7 +72,7 @@ export function toggleDevPanelVisibility(
 
 export function createDevUI(
     state: GameState,
-    world: World,
+    manager: EntityManager,
     cache: GameStorage,
 ): DevUI {
     const devUI = new DevUI();
@@ -97,47 +97,49 @@ export function createDevUI(
         .addButton()
         .setName('Remove enemy')
         .onClick(() => {
-            const enemyIndexStr = prompt('Enter enemy index to remove');
-            const enemyIndex = enemyIndexStr ? parseInt(enemyIndexStr) : NaN;
-            if (isNaN(enemyIndex)) {
+            const enemyId = parseInt(prompt('Enter enemy id to remove')!);
+            if (isNaN(enemyId)) {
                 console.error(
-                    `Invalid enemy index: ${enemyIndexStr}. Expected an integer number`,
+                    `Invalid enemy ID: ${enemyId}. Expected an integer number`,
                 );
             }
-            const enemyArrayIndex = world.tanks.findIndex(
-                (t) => t.bot && t.index === enemyIndex,
+            const enemyArrayIndex = manager.tanks.findIndex(
+                (t) => t.bot && t.id === enemyId,
             );
             if (enemyArrayIndex === -1) {
-                console.error(`Enemy with index ${enemyIndex} not found`);
+                console.error(`Enemy with index ${enemyId} not found`);
             } else {
-                world.tanks.splice(enemyArrayIndex, 1);
+                manager.tanks.splice(enemyArrayIndex, 1);
             }
         });
     entitiesFolder
         .addButton()
         .setName('Remove all enemies')
         .onClick(() => {
-            world.tanks = world.tanks.filter((t) => !t.bot);
+            manager.tanks = manager.tanks.filter((t) => !t.bot);
         });
     entitiesFolder
         .addButton()
         .setName('Spawn enemy')
-        .onClick(() => world.spawnEnemy());
+        .onClick(() => manager.spawnEnemy());
 
-    const worldFolder = devPanel.addFolder('World');
-    worldFolder
+    const env = manager.env;
+    const envFolder = devPanel.addFolder('Environment');
+    envFolder
         .addNumberInput()
         .setName('Gravity')
         .setMin(0.1)
         .setMax(100)
         .setStep(0.1)
-        .bindValue(world, 'gravityCoef');
-    worldFolder
+        .bindValue(env, 'gravityCoef')
+        .onChange(() => env.markDirty());
+    envFolder
         .addNumberInput()
         .setName('Friction')
         .setMin(0.1)
         .setMax(10)
         .setStep(0.1)
-        .bindValue(world, 'frictionCoef');
+        .bindValue(env, 'frictionCoef')
+        .onChange(() => env.markDirty());
     return devUI;
 }

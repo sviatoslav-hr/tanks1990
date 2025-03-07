@@ -26,34 +26,43 @@ function getExplosionImage(): HTMLImageElement {
 }
 
 export class ExplosionEffect {
+    static readonly IMAGE_MAX_SCALE = 4;
+    static readonly ANIMATION_DURATION = Duration.milliseconds(1000);
+
     // TODO: consider using a simpler data type for image instead of HTMLImageElement
     private explosionImage: HTMLImageElement;
     readonly animation = new Animation(
         ExplosionEffect.ANIMATION_DURATION,
         easeOut2,
     );
-    static readonly IMAGE_MAX_SCALE = 4;
-    static readonly ANIMATION_DURATION = Duration.milliseconds(1000);
 
     private constructor(
-        private boundary: Rect,
+        public boundary: Rect,
         private particles: Particle[],
+        private sourceImageData: ImageData,
     ) {
         this.explosionImage = getExplosionImage();
     }
 
-    static fromImageData(
+    static fromImageData(image: ImageData, boundary: Rect): ExplosionEffect {
+        const particles = ExplosionEffect.generateParticles(image, boundary);
+        return new ExplosionEffect(boundary, particles, image);
+    }
+
+    private static generateParticles(
         image: ImageData,
         boundary: Rect,
-        particleSize: number,
-    ): ExplosionEffect {
-        assert(image.width === boundary.width);
-        assert(image.height === boundary.height);
+    ): Particle[] {
+        assert(boundary.width > 0);
+        assert(boundary.height > 0);
 
+        const xScale = boundary.width / image.width;
+        const yScale = boundary.height / image.height;
+        const particleSize = Math.floor(boundary.width / xScale / 16); // NOTE: 16 is single px in image
         const particles: Particle[] = [];
-        for (let y = 0; y < boundary.height; y += particleSize) {
-            for (let x = 0; x < boundary.width; x += particleSize) {
-                const index = (y * boundary.width + x) * 4;
+        for (let y = 0; y < image.height; y += particleSize) {
+            for (let x = 0; x < image.width; x += particleSize) {
+                const index = (y * image.width + x) * 4;
                 const red = image.data[index];
                 const green = image.data[index + 1];
                 const blue = image.data[index + 2];
@@ -74,7 +83,7 @@ export class ExplosionEffect {
                     color = `rgb(${red},${green},${blue})`;
                 }
                 const particle = new Particle(
-                    new Vector2(x, y).add(boundary),
+                    new Vector2(x * xScale, y * yScale).add(boundary),
                     new Vector2(particleSize, particleSize),
                     color,
                     boundary,
@@ -99,7 +108,8 @@ export class ExplosionEffect {
                 nwParticles++;
             }
         }
-        return new ExplosionEffect(boundary, particles);
+
+        return particles;
     }
 
     draw(renderer: Renderer): void {
@@ -146,6 +156,20 @@ export class ExplosionEffect {
         for (const p of this.particles) {
             p.update(this.animation.progress);
         }
+    }
+
+    clone(boundary: Rect = this.boundary): ExplosionEffect {
+        const particles = ExplosionEffect.generateParticles(
+            this.sourceImageData,
+            boundary,
+        );
+        const clone = new ExplosionEffect(
+            boundary,
+            particles,
+            this.sourceImageData,
+        );
+        clone.animation.progress = 0;
+        return clone;
     }
 }
 

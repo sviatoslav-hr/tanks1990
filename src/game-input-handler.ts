@@ -5,7 +5,7 @@ import {Menu} from '#/menu';
 import {Renderer} from '#/renderer';
 import {GameState} from '#/state';
 import {GameStorage} from '#/storage';
-import {World} from '#/world';
+import {EntityManager} from '#/entity/manager';
 
 // TODO: Probably all keys handling should be here so it's centralized.
 // TODO: At some point the key bindings should be separated from the specifics of the key handling.
@@ -14,11 +14,14 @@ export function handleGameInputTick(
     input: GameInput,
     renderer: Renderer,
     state: GameState,
-    world: World,
+    manager: EntityManager,
     menu: Menu,
     devUI: DevUI,
     storage: GameStorage,
 ) {
+    if (state.playing) {
+        manager.player.handleKeyboard(input);
+    }
     if (input.isPressed('KeyF')) {
         renderer
             .toggleFullscreen(window)
@@ -26,7 +29,7 @@ export function handleGameInputTick(
     }
 
     if (input.isPressed('KeyP') || input.isPressed('Escape')) {
-        if (!state.initial && !world.player.dead) {
+        if (!state.initial && !manager.player.dead) {
             if (state.playing) {
                 menu.showPause();
             } else {
@@ -48,7 +51,7 @@ export function handleGameInputTick(
     }
 
     if (input.isPressed('KeyB')) {
-        world.showBoundary = !world.showBoundary;
+        manager.env.showBoundary = !manager.env.showBoundary;
     }
 
     if (input.isPressed('Semicolon')) {
@@ -70,6 +73,16 @@ export function handleGameInputTick(
         renderer.camera.manualMode = true;
         renderer.camera.offset.sub(mouseDelta);
     }
+    // NOTE: Same as MouseMiddle but for touchpad
+    if (
+        __DEV_MODE &&
+        (input.isDown('ControlLeft') || input.isDown('MetaLeft')) &&
+        input.isDown('MouseLeft')
+    ) {
+        const mouseDelta = input.getMouseDelta();
+        renderer.camera.manualMode = true;
+        renderer.camera.offset.sub(mouseDelta);
+    }
     if (__DEV_MODE && input.getMouseWheelDelta()) {
         const wheelDelta = input.getMouseWheelDelta();
         renderer.camera.manualMode = true;
@@ -78,7 +91,7 @@ export function handleGameInputTick(
     if (__DEV_MODE && input.isPressed('Digit0')) {
         renderer.camera.reset();
         renderer.camera.centerOn(
-            world.isInfinite ? world.player : world.boundary,
+            manager.env.isInfinite ? manager.player : manager.env.boundary,
         );
     }
     if (__DEV_MODE && input.isPressed('Digit1')) {

@@ -1,13 +1,19 @@
 import {CustomElement, html} from '#/html';
 import {SoundManager} from '#/sound';
 import {GameState} from '#/state';
+import {EntityManager} from '#/entity/manager';
 
-export function initMenu(game: GameState, sounds: SoundManager): Menu {
+export function initMenu(
+    game: GameState,
+    manager: EntityManager,
+    sounds: SoundManager,
+): Menu {
     const menu = new Menu();
     menu.addButton(
         'NEW GAME',
         () => {
-            game.start(false);
+            game.start();
+            manager.init({infiniteWorld: false});
             menu.hide();
         },
         [MenuState.START],
@@ -15,7 +21,8 @@ export function initMenu(game: GameState, sounds: SoundManager): Menu {
     menu.addButton(
         'INFINITE GAME',
         () => {
-            game.start(true);
+            game.start();
+            manager.init({infiniteWorld: true});
             menu.hide();
         },
         [MenuState.START],
@@ -31,7 +38,8 @@ export function initMenu(game: GameState, sounds: SoundManager): Menu {
     menu.addButton(
         'RESTART',
         () => {
-            game.start(game.world.isInfinite);
+            manager.init({infiniteWorld: manager.env.isInfinite});
+            game.start();
             menu.hide();
         },
         [MenuState.DEAD, MenuState.PAUSE],
