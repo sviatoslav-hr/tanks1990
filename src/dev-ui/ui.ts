@@ -122,6 +122,10 @@ export function createDevUI(
         .addButton()
         .setName('Spawn enemy')
         .onClick(() => manager.spawnEnemy());
+    entitiesFolder
+        .addButton()
+        .setName('Open Assets')
+        .onClick(() => window.open('/assets.html', '_blank'));
 
     const env = manager.env;
     const envFolder = devPanel.addFolder('Environment');
