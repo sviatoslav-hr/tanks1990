@@ -258,7 +258,7 @@ export class Renderer {
         this.canvas.style.height = '';
         this.canvas.width = width;
         this.canvas.height = height;
-        this.camera.size.set(width, height);
+        this.camera.screenSize.set(width, height);
     }
 
     async toggleFullscreen(window: Window): Promise<void> {
@@ -269,19 +269,13 @@ export class Renderer {
         }
         if (document.fullscreenElement) {
             await document.exitFullscreen().catch((err) => {
-                assertError(err);
-                throw new Error(
-                    'ERROR: failed to exit Fullscreen\n' + err.message,
-                );
+                throw wrapError(err, 'ERROR: failed to exit Fullscreen');
             });
         } else {
             const appElement = document.getElementById(APP_ELEMENT_ID);
             assert(appElement);
             await appElement.requestFullscreen().catch((err) => {
-                assertError(err);
-                throw new Error(
-                    'ERROR: failed to enter Fullscreen\n' + err.message,
-                );
+                throw wrapError(err, 'ERROR: failed to enter Fullscreen');
             });
         }
     }
@@ -289,8 +283,8 @@ export class Renderer {
     private offsetXByCamera(x: number): number {
         if (this.usingCameraCoords) return x;
         const result =
-            (x - this.camera.offset.x) * this.camera.scale +
-            this.camera.size.width / 2;
+            (x - this.camera.worldOffset.x) * this.camera.scale +
+            this.camera.screenSize.width / 2;
         assert(!isNaN(result));
         return result;
     }
@@ -298,8 +292,9 @@ export class Renderer {
     private offsetYByCamera(y: number): number {
         if (this.usingCameraCoords) return y;
         const result =
-            (y - this.camera.offset.y) * this.camera.scale +
-            this.camera.size.height / 2;
+            (y - this.camera.worldOffset.y) * this.camera.scale +
+            this.camera.screenSize.height / 2;
+        assert(!isNaN(result));
         return result;
     }
 

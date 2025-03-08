@@ -71,19 +71,18 @@ export function handleGameInputTick(
     if (__DEV_MODE && input.isDown('MouseMiddle')) {
         const mouseDelta = input.getMouseDelta();
         renderer.camera.manualMode = true;
-        renderer.camera.offset.sub(mouseDelta);
+        renderer.camera.worldOffset.sub(mouseDelta);
     }
+    const ctrlDevDown =
+        __DEV_MODE && (input.isDown('ControlLeft') || input.isDown('MetaLeft'));
+
     // NOTE: Same as MouseMiddle but for touchpad
-    if (
-        __DEV_MODE &&
-        (input.isDown('ControlLeft') || input.isDown('MetaLeft')) &&
-        input.isDown('MouseLeft')
-    ) {
+    if (ctrlDevDown && input.isDown('MouseLeft')) {
         const mouseDelta = input.getMouseDelta();
         renderer.camera.manualMode = true;
-        renderer.camera.offset.sub(mouseDelta);
+        renderer.camera.worldOffset.sub(mouseDelta);
     }
-    if (__DEV_MODE && input.getMouseWheelDelta()) {
+    if (ctrlDevDown && input.getMouseWheelDelta()) {
         const wheelDelta = input.getMouseWheelDelta();
         renderer.camera.manualMode = true;
         renderer.camera.setScale(renderer.camera.scale - wheelDelta * 0.001);
@@ -97,5 +96,9 @@ export function handleGameInputTick(
     if (__DEV_MODE && input.isPressed('Digit1')) {
         renderer.camera.manualMode = true;
         renderer.camera.setScale(1);
+    }
+    if (__DEV_MODE && input.isPressed('Digit2')) {
+        renderer.camera.manualMode = true;
+        renderer.camera.setScale(2);
     }
 }

@@ -5,26 +5,30 @@ import {Rect} from '#/math';
 
 export class Camera {
     // NOTE: Offset of the center of the camera from the center of the world
-    readonly offset: Vector2 = Vector2.zero();
-    readonly size: Vector2;
-    readonly pixelRatio: number;
+    readonly worldOffset: Vector2 = Vector2.zero();
+    // NOTE: Size of the screen in pixels
+    readonly screenSize: Vector2;
+    // NOTE: This is affected by the scaling settings of the OS.
+    readonly pixelRatio: number = window.devicePixelRatio;
     visibleScale = 1;
     lastAutoScale = 1;
     manualMode = false;
 
-    constructor(width: number, height: number) {
-        assert(width > 0 && height > 0, 'Invalid camera size');
-        this.size = new Vector2(width, height);
-        // NOTE: This is affected by the scaling settings of the OS.
-        this.pixelRatio = window.devicePixelRatio;
+    constructor(screenWidth: number, screenHeight: number) {
+        assert(screenWidth > 0 && screenHeight > 0, 'Invalid camera size');
+        this.screenSize = new Vector2(screenWidth, screenHeight);
     }
 
     get x0(): number {
-        return this.offset.x - this.size.width / 2;
+        return (
+            this.worldOffset.x - this.screenSize.width / 2 / this.visibleScale
+        );
     }
 
     get y0(): number {
-        return this.offset.y - this.size.height / 2;
+        return (
+            this.worldOffset.y - this.screenSize.height / 2 / this.visibleScale
+        );
     }
 
     get scale() {
@@ -32,38 +36,37 @@ export class Camera {
     }
 
     getSizeRect(): Rect {
-        return {x: 0, y: 0, width: this.size.x, height: this.size.y};
+        return {
+            x: 0,
+            y: 0,
+            width: this.screenSize.x,
+            height: this.screenSize.y,
+        };
     }
 
     centerOn(entity: Rect): void {
         const entityCenterX = entity.x + entity.width / 2;
         const entityCenterY = entity.y + entity.height / 2;
-        this.offset
-            .set(entityCenterX, entityCenterY)
-            .multiplyScalar(this.scale); // TODO: Is this needed?
+        this.worldOffset.set(entityCenterX, entityCenterY);
     }
 
     setScale(scale: number): void {
         assert(!isNaN(scale) && scale > 0 && Number.isFinite(scale));
-        const prevScale = this.visibleScale;
         this.visibleScale = scale;
-        this.offset.multiplyScalar(scale / prevScale);
         if (!this.manualMode) {
             this.lastAutoScale = this.visibleScale;
         }
     }
 
     focusOnRect(rect: Rect): void {
-        const scaleX = this.size.width / rect.width;
-        const scaleY = this.size.height / rect.height;
-        // const scaleX = (rect.width / this.size.width) * 4;
-        // const scaleY = (rect.height / this.size.height) * 4;
+        const scaleX = this.screenSize.width / rect.width;
+        const scaleY = this.screenSize.height / rect.height;
         this.setScale(Math.min(scaleX, scaleY));
         this.centerOn(rect);
     }
 
     reset(): void {
-        this.offset.set(0, 0);
+        this.worldOffset.set(0, 0);
         this.visibleScale = this.lastAutoScale;
         this.manualMode = false;
     }
@@ -83,16 +86,16 @@ export class Camera {
             );
             return (
                 rectOrX + width > this.x0 &&
-                rectOrX < this.x0 + this.size.x &&
+                rectOrX < this.x0 + this.screenSize.x &&
                 y + height > this.y0 &&
-                y < this.y0 + this.size.y
+                y < this.y0 + this.screenSize.y
             );
         }
         return (
             rectOrX.x + rectOrX.width > this.x0 &&
-            rectOrX.x < this.x0 + this.size.x &&
+            rectOrX.x < this.x0 + this.screenSize.x &&
             rectOrX.y + rectOrX.height > this.y0 &&
-            rectOrX.y < this.y0 + this.size.y
+            rectOrX.y < this.y0 + this.screenSize.y
         );
     }
 
@@ -112,7 +115,7 @@ export class Camera {
     }
 
     isCircleVisible(cx: number, cy: number, radius: number): boolean {
-        // TODO: Add better collision detection
+        // TODO: Add better visibility check (corner cases)
         return this.isRectVisible(
             cx - radius,
             cy - radius,

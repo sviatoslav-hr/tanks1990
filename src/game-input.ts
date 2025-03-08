@@ -20,6 +20,7 @@ export type KeyCode =
     | 'BracketRight'
     | 'Backslash'
     | 'Digit1'
+    | 'Digit2'
     | 'Digit0'
     | 'MouseLeft'
     | 'MouseMiddle'

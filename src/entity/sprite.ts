@@ -88,11 +88,11 @@ export class Sprite<K extends string> {
         const boundaryCenterY = boundary.y + boundary.height / 2;
         const translation = new Vector2(
             boundaryCenterX -
-                renderer.camera.offset.x +
-                renderer.camera.size.width / 2 / renderer.camera.scale,
+                renderer.camera.worldOffset.x +
+                renderer.camera.screenSize.width / 2 / renderer.camera.scale,
             boundaryCenterY -
-                renderer.camera.offset.y +
-                renderer.camera.size.height / 2 / renderer.camera.scale,
+                renderer.camera.worldOffset.y +
+                renderer.camera.screenSize.height / 2 / renderer.camera.scale,
         );
         renderer.setTransform(
             Transform.makeTranslation(translation).scale(renderer.camera.scale),

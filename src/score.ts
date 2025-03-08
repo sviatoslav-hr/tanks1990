@@ -44,7 +44,7 @@ export function drawScore(
     renderer.useCameraCoords(true);
     renderer.strokeBoundary(
         {
-            x: camera.size.width - BASE_PADDING - maxWidth - innerPadding,
+            x: camera.screenSize.width - BASE_PADDING - maxWidth - innerPadding,
             y: BASE_PADDING - innerPadding,
             width: maxWidth + 2 * innerPadding,
             height: boundaryHeight + 2 * innerPadding,
@@ -53,7 +53,7 @@ export function drawScore(
     );
 
     renderer.fillMultilineText(lines, {
-        x: camera.size.width - BASE_PADDING,
+        x: camera.screenSize.width - BASE_PADDING,
         y: BASE_PADDING,
         shadowColor: Color.BLACK,
     });

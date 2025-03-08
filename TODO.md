@@ -43,7 +43,7 @@ Camera:
 - [ ] Hot reload for development?
 
 ## FIXME
-- [ ] When the camera is manually moved, either the grid of the entities are not positioned correctly
+- [ ] Sometimes after moving the camera manually, after trying to reset it, it's not zoomed correctly (slightly zoomed out so the world border is visible)
 - [ ] Enemy explosion effect is gray instead of green (cannot reproduce)
 - [ ] Explosion effect image data may grab some black pixels from the boundary
 - [ ] Enemies sometimes stuck when they need to move around the block (probably because of the collision detection and precision issues)

@@ -1,5 +1,4 @@
 import {Entity, isIntesecting} from '#/entity/core';
-import {Projectile} from '#/entity/projectile';
 import {Rect, fmod, isPosInsideRect} from '#/math';
 import {Vector2Like} from '#/math/vector';
 import {Renderer} from '#/renderer';
@@ -31,24 +30,28 @@ export class Environment {
     drawGrid(renderer: Renderer, cellSize: number): void {
         const camera = renderer.camera;
         cellSize *= camera.scale;
-        const x0 = cellSize - fmod(camera.x0, cellSize);
-        const y0 = cellSize - fmod(camera.y0, cellSize);
+        const cameraX =
+            camera.worldOffset.x * camera.scale - camera.screenSize.width / 2;
+        const cameraY =
+            camera.worldOffset.y * camera.scale - camera.screenSize.height / 2;
+        const x0 = cellSize - fmod(cameraX, cellSize);
+        const y0 = cellSize - fmod(cameraY, cellSize);
 
         renderer.setStrokeColor(Color.BLACK_IERIE);
         renderer.useCameraCoords(true);
         const offset = 1;
-        const maxX = x0 + camera.size.width + cellSize;
+        const maxX = x0 + camera.screenSize.width + cellSize;
         for (let colX = x0; colX < maxX; colX += cellSize) {
             const x1 = colX + offset;
             const y1 = offset - cellSize;
             const x2 = x1;
-            const y2 = camera.size.height + offset + cellSize;
+            const y2 = camera.screenSize.height + offset + cellSize;
             renderer.strokeLine(x1, y1, x2, y2);
         }
-        const maxY = y0 + camera.size.height + cellSize;
+        const maxY = y0 + camera.screenSize.height + cellSize;
         for (let colY = y0; colY < maxY; colY += cellSize) {
             const x1 = offset - cellSize;
-            const x2 = camera.size.width + offset + cellSize;
+            const x2 = camera.screenSize.width + offset + cellSize;
             const y1 = colY + offset;
             const y2 = y1;
             renderer.strokeLine(x1, y1, x2, y2);
@@ -69,6 +72,15 @@ export class Environment {
             },
             boundaryThickness,
         );
+        if (this.showBoundary && !this.isInfinite) {
+            renderer.setStrokeColor(Color.RED);
+            renderer.strokeBoundary({
+                x: this.boundary.x,
+                y: this.boundary.y,
+                width: this.boundary.width,
+                height: this.boundary.height,
+            });
+        }
     }
 
     markDirty(): void {
@@ -150,19 +162,14 @@ export function isRectOccupied(
         if (!isPosInsideRect(rect.x, rect.y, env.boundary)) {
             return true;
         }
-        if (
-            !isPosInsideRect(
-                rect.x + rect.width,
-                rect.y + rect.height,
-                env.boundary,
-            )
-        ) {
+        const xn = rect.x + rect.width;
+        const yn = rect.y + rect.height;
+        if (!isPosInsideRect(xn, yn, env.boundary)) {
             return true;
         }
     }
 
-    for (const entity of entityManager.iterateEntities()) {
-        if (entity instanceof Projectile) continue;
+    for (const entity of entityManager.iterateCollidable()) {
         if (isSameEntity(entity, entityManager.player)) continue;
         if (ignoreEntity && isSameEntity(entity, ignoreEntity)) continue;
         if (isIntesecting(rect, entity)) {

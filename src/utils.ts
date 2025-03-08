@@ -15,3 +15,8 @@ export function assertError(err: any): asserts err is Error {
 export function throwError(msg: string): never {
     throw new Error(msg);
 }
+
+export function wrapError(err: any, msg: string): Error {
+    assertError(err);
+    return new Error(msg, {cause: err});
+}
