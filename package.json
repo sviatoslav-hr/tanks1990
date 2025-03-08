@@ -11,12 +11,18 @@
         "lint": "tsc",
         "lint:watch": "tsc --watch",
         "test": "vitest --config .config/vitest.config.js",
-        "test:watch": "vitest --config .config/vitest.config.js --watch"
+        "test:watch": "vitest --config .config/vitest.config.js --watch",
+        "gen:assets": "node .scripts/gen-assets.cjs"
     },
     "devDependencies": {
         "ts-node": "^10.9.2",
         "typescript": "^5.8.2",
         "vite": "^6.2.0",
         "vitest": "^3.0.7"
+    },
+    "pnpm": {
+        "onlyBuiltDependencies": [
+            "esbuild"
+        ]
     }
 }

@@ -1,6 +1,7 @@
 <html>
     <head>
         <title>Tanks Assets</title>
+        <link rel="icon" type="image/x-icon" href="./tanks1990.ico" />
         <style>
             * {
                 margin: 0;
@@ -62,214 +63,173 @@
                 max-width: 100%;
                 max-height: 100%;
             }
+            #bread {
+                margin-bottom: 16px;
+                padding: 8px;
+                display: inline-flex;
+                gap: 8px;
+                border: 1px solid #fcfcfc;
+            }
+            #bread a:not(:last-child)::after {
+                content: '/';
+                display: inline-block;
+                margin-left: 8px;
+            }
+            #bread a:last-child {
+                text-decoration: none;
+                cursor: default;
+            }
         </style>
     </head>
     <body style="background-color: #181818; color: #fcfcfc">
         <h1>Assets</h1>
+        <div id="bread"></div>
         <ul id="list">
             <!-- <li><a href="./assets/bricks.png">bricks.png</a></li> -->
         </ul>
 
-        <h1>Code</h1>
         <script language="javascript" type="text/javascript">
-            const folders = {
-                'assets/': [
-                    'kenney_particle-pack/',
-                    'bricks.png',
-                    'bullet.png',
-                    'shield.png',
-                    'tank_green.png',
-                    'tank_yellow.png',
-                ],
-                'kenney_particle-pack/': [
-                    'Rotated/',
-                    'circle_01.png',
-                    'circle_02.png',
-                    'circle_03.png',
-                    'circle_04.png',
-                    'circle_05.png',
-                    'dirt_01.png',
-                    'dirt_02.png',
-                    'dirt_03.png',
-                    'fire_01.png',
-                    'fire_02.png',
-                    'flame_01.png',
-                    'flame_02.png',
-                    'flame_03.png',
-                    'flame_04.png',
-                    'flame_05.png',
-                    'flame_06.png',
-                    'flare_01.png',
-                    'light_01.png',
-                    'light_02.png',
-                    'light_03.png',
-                    'magic_01.png',
-                    'magic_02.png',
-                    'magic_03.png',
-                    'magic_04.png',
-                    'magic_05.png',
-                    'muzzle_01.png',
-                    'muzzle_02.png',
-                    'muzzle_03.png',
-                    'muzzle_04.png',
-                    'muzzle_05.png',
-                    'scorch_01.png',
-                    'scorch_02.png',
-                    'scorch_03.png',
-                    'scratch_01.png',
-                    'slash_01.png',
-                    'slash_02.png',
-                    'slash_03.png',
-                    'slash_04.png',
-                    'smoke_01.png',
-                    'smoke_02.png',
-                    'smoke_03.png',
-                    'smoke_04.png',
-                    'smoke_05.png',
-                    'smoke_06.png',
-                    'smoke_07.png',
-                    'smoke_08.png',
-                    'smoke_09.png',
-                    'smoke_10.png',
-                    'spark_01.png',
-                    'spark_02.png',
-                    'spark_03.png',
-                    'spark_04.png',
-                    'spark_05.png',
-                    'spark_06.png',
-                    'spark_07.png',
-                    'star_01.png',
-                    'star_02.png',
-                    'star_03.png',
-                    'star_04.png',
-                    'star_05.png',
-                    'star_06.png',
-                    'star_07.png',
-                    'star_08.png',
-                    'star_09.png',
-                    'symbol_01.png',
-                    'symbol_02.png',
-                    'trace_01.png',
-                    'trace_02.png',
-                    'trace_03.png',
-                    'trace_04.png',
-                    'trace_05.png',
-                    'trace_06.png',
-                    'trace_07.png',
-                    'twirl_01.png',
-                    'twirl_02.png',
-                    'twirl_03.png',
-                    'window_01.png',
-                    'window_02.png',
-                    'window_03.png',
-                    'window_04.png',
-                ],
-                'Rotated/': [
-                    'flame_05_rotated.png',
-                    'flame_06_rotated.png',
-                    'muzzle_01_rotated.png',
-                    'muzzle_02_rotated.png',
-                    'muzzle_03_rotated.png',
-                    'muzzle_04_rotated.png',
-                    'muzzle_05_rotated.png',
-                    'spark_05_rotated.png',
-                    'spark_06_rotated.png',
-                    'trace_01_rotated.png',
-                    'trace_02_rotated.png',
-                    'trace_03_rotated.png',
-                    'trace_04_rotated.png',
-                    'trace_05_rotated.png',
-                    'trace_06_rotated.png',
-                    'trace_07_rotated.png',
-                ],
-            };
-
+            const imageExtensions = ['.png', '.jpg', '.jpeg', '.svg'];
             const list = document.getElementById('list');
-            const rootPrefix = '__root=';
+            const bread = document.getElementById('bread');
+
             let currentPath = [];
+            let rootDir = null;
+            fetch('./list.json').then(response => response.json()).then(result => {
+                rootDir = result;
+                console.log('List loaded:', rootDir);
+                selectDirectory();
+            }).catch(err => console.error('Error loading list.json:', err));
 
-            displayFolder('assets/');
-
-            function displayFolder(foldername) {
-                if (!isFolder(foldername)) {
-                    console.error(`Not a folder: ${foldername}`);
-                    return;
+            function selectDirectory(dirPath) {
+                let dir = rootDir;
+                if (dirPath?.length) {
+                    dir = findDirectory(dirPath);
+                    currentPath = dirPath;
+                    if (!dir) return;
+                } else {
+                    currentPath = [];
                 }
-                currentPath.push(foldername);
-                const folderFiles = folders[foldername];
-                if (!folderFiles) {
-                    console.error(`Folder not found: ${foldername}`);
+                // TODO: Put the currentPath in the URL query
+                renderBreadcrumbs(dirPath || []);
+                renderDirectoryContent(dir);
+            }
+
+            function findDirectory(dirPath) {
+                if (!dirPath) {
+                    console.error('No directory path provided');
+                    return null;
+                }
+                let dir = rootDir;
+                let pathStr = '';
+                for (const path of dirPath) {
+                    pathStr += path + '/';
+                    const pathDir = dir[path];
+                    if (!pathDir) {
+                        // TODO: Toast or alert messages instead of console.error
+                        console.error(`Directory not found: path: ${pathStr}`);
+                        return null;
+                    }
+                    dir = pathDir;
+                }
+                return dir;
+            }
+
+            function renderDirectoryContent(dir) {
+                if (!dir) {
+                    console.error('No directory provided');
                     return;
                 }
                 list.innerHTML = '';
-                addRootLink();
-                for (const file of folderFiles) {
-                    if (isFolder(file)) {
-                        addFolder(file);
+                const dirContent = Object.entries(dir);
+                if (!dirContent.length) {
+                    const li = document.createElement('li');
+                    li.textContent = 'Empty directory';
+                    list.appendChild(li);
+                    return;
+                }
+                dirContent.sort((a, b) => {
+                    if (typeof a[1] === 'object' && typeof b[1] !== 'object') return -1;
+                    if (typeof a[1] !== 'object' && typeof b[1] === 'object') return 1;
+                    return a[0].localeCompare(b[0]);
+                });
+                for (const [fileName, fileContent] of dirContent) {
+                    if (typeof fileContent === 'object') {
+                        renderDirectoryCard(fileName);
                     } else {
-                        addFile(file);
+                        renderFileCard(fileName, fileContent);
                     }
                 }
             }
 
-            function addRootLink() {
-                const rootName = currentPath[currentPath.length - 2];
-                if (!rootName) return;
+            function renderDirectoryCard(dirName) {
                 const li = document.createElement('li');
                 const a = document.createElement('a');
-                a.onclick = ev => {
-                    ev.preventDefault();
-                    currentPath.pop();
-                    currentPath.pop();
-                    displayFolder(rootName);
-                };
-                a.textContent = `.. (${rootName})`;
-                const rootUrl = currentPath.slice(0,currentPath.length - 1).join('');
-                a.href = rootUrl;
-                li.appendChild(a);
-                list.appendChild(li);
-            }
-
-            function addFolder(filename) {
-                const li = document.createElement('li');
-                const a = document.createElement('a');
-                const url = `./${currentPath.join('')}${filename}`;
+                const url = `./${currentPath.join('')}${dirName}`;
                 a.href = url;
-                a.textContent = filename;
+                a.textContent = dirName + '/';
                 a.onclick = ev => {
                     ev.preventDefault();
-                    displayFolder(filename);
+                    selectDirectory([...currentPath, dirName]);
                 };
                 li.appendChild(a);
                 list.appendChild(li);
             }
 
-            function addFile(filename) {
+            function renderFileCard(fileName, filePath) {
                 const li = document.createElement('li');
                 const a = document.createElement('a');
-                const url = `./${currentPath.join('')}${filename}`;
+                const url = `/${filePath}`;
                 a.href = url;
-                if (isImage(filename)) {
+                if (isImage(fileName)) {
                     const p = document.createElement('p');
-                    p.textContent = filename;
+                    p.textContent = fileName;
                     const img = document.createElement('img');
                     img.src = url;
                     img.onload = () => {
-                        p.textContent = `${filename} (${img.width}x${img.height})`;
+                        p.textContent = `${fileName} (${img.width}x${img.height})`;
                     };
                     a.appendChild(img);
                     li.appendChild(p);
                 } else {
-                    a.textContent = filename;
+                    a.textContent = fileName;
                 }
                 li.appendChild(a);
                 list.appendChild(li);
             }
 
-            function isImage(filename) {
-                return filename.endsWith('.png') || filename.endsWith('.jpg') || filename.endsWith('.jpeg');
+            function renderBreadcrumbs(dirPath) {
+                if (!dirPath) {
+                    console.error('No directory path provided');
+                    return;
+                }
+                bread.innerHTML = '';
+                const a = document.createElement('a');
+                a.href = '/';
+                a.textContent = 'Public';
+                a.onclick = ev => {
+                    ev.preventDefault();
+                    selectDirectory([]);
+                };
+                bread.appendChild(a);
+                for (const [dirIndex, dirName] of dirPath.entries()) {
+                    const a = document.createElement('a');
+                    a.textContent = dirName;
+                    const currentDirPath = dirPath.slice(0, dirIndex + 1);
+                    a.href = `/${currentDirPath.join('/')}`;
+                    a.onclick = ev => {
+                        ev.preventDefault();
+                        if (dirIndex === dirPath.length - 1) return;
+                        selectDirectory(currentDirPath);
+                    };
+                    bread.appendChild(a);
+                }
             }
-            function isFolder(filename) {
+
+            function isImage(filename) {
+                return imageExtensions.some(ext => filename.endsWith(ext));
+            }
+            function isDirectory(filename) {
                 return filename.endsWith('/');
             }
         </script>
