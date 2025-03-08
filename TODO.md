@@ -14,6 +14,12 @@ Camera:
 
 
 ## IN_PROGRESS
+- [ ] **Rework the score UI!!!**
+    - [ ] Allocate space on the screen for other info
+    - [ ] Display score somewhere on the screen while game is active
+    - [ ] Display score on pause screen
+    - [ ] Display score on the death screen
+    - [ ] Display best score on the death screen
 - [ ] Improve Camera handling
     - [x] Renderer should render stuff based on the camera position
     - [x] Add the ability to move the camera
@@ -27,12 +33,6 @@ Camera:
     - [ ] Screenshake when player dies?
 - [ ] World boundaries
     - [ ] Determine based on max numbers in js what are the limitations of the world (boundaries)
-- [ ] **Rework the score UI!!!**
-    - [ ] Allocate space on the screen for other info
-    - [ ] Display score somewhere on the screen while game is active
-    - [ ] Display score on pause screen
-    - [ ] Display score on the death screen
-    - [ ] Display best score on the death screen
 
 ## TODO
 - [ ] Make enemies shoot only when they see the player
@@ -68,7 +68,6 @@ Camera:
 - [ ] Add fire effect to gun
 - [ ] Add some fire effect inside of the explosion (doesn't look like explosion otherwise)
 - [ ] Add more particles [kenney.nl](https://kenney.nl/assets/particle-pack)
-- [ ] Improve/replace shield sprite
 
 ## Sounds
 - [ ] Background music?
