@@ -30,12 +30,14 @@ export class Environment {
     drawGrid(renderer: Renderer, cellSize: number): void {
         const camera = renderer.camera;
         cellSize *= camera.scale;
-        const cameraX =
+        // NOTE: Find top-left position of the camera in camera coordinates
+        const cameraX0 =
             camera.worldOffset.x * camera.scale - camera.screenSize.width / 2;
-        const cameraY =
+        const cameraY0 =
             camera.worldOffset.y * camera.scale - camera.screenSize.height / 2;
-        const x0 = cellSize - fmod(cameraX, cellSize);
-        const y0 = cellSize - fmod(cameraY, cellSize);
+        // NOTE: Find first visible line on the screen for each axis
+        const x0 = cellSize - fmod(cameraX0, cellSize);
+        const y0 = cellSize - fmod(cameraY0, cellSize);
 
         renderer.setStrokeColor(Color.BLACK_IERIE);
         renderer.useCameraCoords(true);
