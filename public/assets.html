@@ -92,16 +92,19 @@
             const imageExtensions = ['.png', '.jpg', '.jpeg', '.svg'];
             const list = document.getElementById('list');
             const bread = document.getElementById('bread');
+            window.addEventListener('popstate', () => {
+                selectDirectory(parsePathFromQuery(), true);
+            });
 
-            let currentPath = [];
+            let currentPath = parsePathFromQuery();
             let rootDir = null;
             fetch('./list.json').then(response => response.json()).then(result => {
                 rootDir = result;
                 console.log('List loaded:', rootDir);
-                selectDirectory();
+                selectDirectory(currentPath);
             }).catch(err => console.error('Error loading list.json:', err));
 
-            function selectDirectory(dirPath) {
+            function selectDirectory(dirPath, skipQuery) {
                 let dir = rootDir;
                 if (dirPath?.length) {
                     dir = findDirectory(dirPath);
@@ -110,7 +113,9 @@
                 } else {
                     currentPath = [];
                 }
-                // TODO: Put the currentPath in the URL query
+                if (!skipQuery) {
+                    updateURLQuery();
+                }
                 renderBreadcrumbs(dirPath || []);
                 renderDirectoryContent(dir);
             }
@@ -231,6 +236,28 @@
             }
             function isDirectory(filename) {
                 return filename.endsWith('/');
+            }
+
+            function updateURLQuery() {
+                const url = new URL(window.location);
+                if (currentPath.length) {
+                    const pathStr = currentPath.join('/');
+                    const pathEncoded = encodeURIComponent(pathStr);
+                    url.searchParams.set('p', pathEncoded);
+                } else {
+                    url.searchParams.delete('p');
+                }
+                window.history.pushState({}, "", url);
+            }
+
+            function parsePathFromQuery() {
+                const query = window.location.search;
+                if (!query) return [];
+                const params = new URLSearchParams(query);
+                const pathEncoded = params.get('p');
+                if (!pathEncoded) return [];
+                const pathStr = decodeURIComponent(pathEncoded);
+                return pathStr.split('/');
             }
         </script>
     </body>
