@@ -404,6 +404,8 @@ interface SliderConfig {
 
 @CustomElement('game-slider')
 export class Slider extends HTMLElement {
+    static index = 0;
+    private index: number;
     private input: HTMLInputElement;
 
     constructor({
@@ -417,12 +419,15 @@ export class Slider extends HTMLElement {
         super();
         const labelElement = document.createElement('label');
         labelElement.textContent = label;
-        labelElement.htmlFor = name;
+        this.index = Slider.index++;
+        const id = `slider-${this.index}`;
+        labelElement.htmlFor = id;
         labelElement.style.marginRight = '16px';
         this.style.display = 'flex';
         this.style.alignItems = 'center';
         this.style.justifyContent = 'center';
         this.input = document.createElement('input');
+        this.input.id = id;
         this.input.type = 'range';
         this.input.name = name;
         this.input.min = min.toString();

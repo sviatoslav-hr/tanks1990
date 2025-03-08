@@ -118,6 +118,9 @@ function applyOptionsToElement(
     element: HTMLElement,
     options?: HTMLElementOptions,
 ) {
+    if (options?.id) {
+        element.id = options.id;
+    }
     if (options?.className) {
         const className = Array.isArray(options.className)
             ? options.className.join(' ')

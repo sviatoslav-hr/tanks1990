@@ -35,7 +35,15 @@ export abstract class Tank extends Entity {
     protected moving = false;
     protected readonly SHOOTING_PERIOD = Duration.milliseconds(300);
     protected readonly SHIELD_TIME = Duration.milliseconds(1000);
+    // TODO: Reuse shield sprite for all tanks (since it's the same)
     protected readonly shieldSprite = createShieldSprite();
+    private readonly shieldBoundary = {
+        x: this.x - this.width / 2,
+        y: this.y - this.height / 2,
+        width: this.width * 2,
+        height: this.height * 2,
+    };
+
     protected abstract readonly sprite: Sprite<string>;
     protected shootingDelay = this.SHOOTING_PERIOD.clone();
     protected isStuck = false;
@@ -58,7 +66,6 @@ export abstract class Tank extends Entity {
     }
 
     update(dt: Duration): void {
-        this.shieldSprite.update(dt);
         if (this.dead) {
             return;
         }
@@ -125,7 +132,7 @@ export abstract class Tank extends Entity {
         if (this.dead) return;
         this.sprite.draw(renderer, this, this.direction);
         if (this.hasShield) {
-            this.shieldSprite.draw(renderer, this);
+            this.shieldSprite.draw(renderer, this.shieldBoundary);
         }
 
         if (this.manager.env.showBoundary) {
@@ -215,7 +222,12 @@ export abstract class Tank extends Entity {
     }
 
     protected updateShield(dt: Duration): void {
+        this.shieldSprite.update(dt);
         if (this.shieldRemaining.positive || this.hasShield) {
+            this.shieldBoundary.x = this.x - this.width / 2;
+            this.shieldBoundary.y = this.y - this.height / 2;
+            this.shieldBoundary.width = this.width * 2;
+            this.shieldBoundary.height = this.height * 2;
             this.shieldRemaining.sub(dt).max(0);
             if (!this.shieldRemaining.positive) {
                 this.hasShield = false;

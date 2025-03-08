@@ -254,6 +254,9 @@
                     p.textContent = filename;
                     const img = document.createElement('img');
                     img.src = url;
+                    img.onload = () => {
+                        p.textContent = `${filename} (${img.width}x${img.height})`;
+                    };
                     a.appendChild(img);
                     li.appendChild(p);
                 } else {

@@ -38,6 +38,8 @@ export class DevUI extends ReactiveElement {
                 position: absolute;
                 top: 0;
                 right: 0;
+                overflow-y: auto;
+                max-height: 100vh;
             }
         `;
     }

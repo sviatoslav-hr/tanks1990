@@ -21,6 +21,7 @@ export function setCachedImage(src: string, image: HTMLImageElement): void {
 
 type SpriteOpts<K extends string> = {
     key: string;
+    colorOverlay?: string;
     frameWidth: number;
     frameHeight: number;
     frameDuration?: Duration; // default 100
@@ -133,11 +134,10 @@ export class Sprite<K extends string> {
 
 export function createShieldSprite() {
     return new Sprite({
-        key: 'shield',
-        frameWidth: 64,
-        frameHeight: 64,
-        frameDuration: Duration.milliseconds(100),
-        states: [{name: 'flowing', frames: 6}],
+        key: 'circle_shield_blue',
+        frameWidth: 512,
+        frameHeight: 512,
+        states: [{name: 'static', frames: 1}],
     });
 }
 
