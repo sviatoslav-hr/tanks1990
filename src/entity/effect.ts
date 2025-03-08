@@ -58,7 +58,8 @@ export class ExplosionEffect {
 
         const xScale = boundary.width / image.width;
         const yScale = boundary.height / image.height;
-        const particleSize = Math.floor(boundary.width / xScale / 16); // NOTE: 16 is single px in image
+        const scale = Math.min(xScale, yScale);
+        const particleSize = Math.floor((boundary.width * scale) / 8); // NOTE: 16 is single px in image
         const particles: Particle[] = [];
         for (let y = 0; y < image.height; y += particleSize) {
             for (let x = 0; x < image.width; x += particleSize) {

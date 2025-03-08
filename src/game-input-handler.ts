@@ -25,7 +25,7 @@ export function handleGameInputTick(
     if (input.isPressed('KeyF')) {
         renderer
             .toggleFullscreen(window)
-            .catch((err) => console.error('Faile to toggle fullscreen', err));
+            .catch((err) => console.error('Failed to toggle fullscreen', err));
     }
 
     if (input.isPressed('KeyP') || input.isPressed('Escape')) {

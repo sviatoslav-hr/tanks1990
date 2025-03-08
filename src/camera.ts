@@ -58,9 +58,10 @@ export class Camera {
         }
     }
 
-    focusOnRect(rect: Rect): void {
-        const scaleX = this.screenSize.width / rect.width;
-        const scaleY = this.screenSize.height / rect.height;
+    focusOnRect(rect: Rect, offsetFraction = 0.05): void {
+        const rectScale = 1 + offsetFraction;
+        const scaleX = this.screenSize.width / (rect.width * rectScale);
+        const scaleY = this.screenSize.height / (rect.height * rectScale);
         this.setScale(Math.min(scaleX, scaleY));
         this.centerOn(rect);
     }

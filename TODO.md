@@ -35,7 +35,6 @@ Camera:
     - [ ] Display best score on the death screen
 
 ## TODO
-- [ ] On default settings camera should have some space around the target to see the boundaries
 - [ ] Make enemies shoot only when they see the player
 - [ ] Define game plan / trajectory / future development / main goal / idea
 - [ ] Define custom RNG and use it everywhere instead of `Math.random()`
