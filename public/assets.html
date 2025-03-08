@@ -89,7 +89,7 @@
         </ul>
 
         <script language="javascript" type="text/javascript">
-            const imageExtensions = ['.png', '.jpg', '.jpeg', '.svg'];
+            const imageExtensions = ['.png', '.jpg', '.jpeg', '.svg', '.ico'];
             const list = document.getElementById('list');
             const bread = document.getElementById('bread');
             window.addEventListener('popstate', () => {
@@ -97,6 +97,7 @@
             });
 
             let currentPath = parsePathFromQuery();
+            let currentPathStr = currentPath?.length ? `./${currentPath.join('/')}` : './';
             let rootDir = null;
             fetch('./list.json').then(response => response.json()).then(result => {
                 rootDir = result;
@@ -109,9 +110,11 @@
                 if (dirPath?.length) {
                     dir = findDirectory(dirPath);
                     currentPath = dirPath;
+                    currentPathStr = `./${currentPath.join('/')}/`;
                     if (!dir) return;
                 } else {
                     currentPath = [];
+                    currentPathStr = './';
                 }
                 if (!skipQuery) {
                     updateURLQuery();
@@ -170,7 +173,7 @@
             function renderDirectoryCard(dirName) {
                 const li = document.createElement('li');
                 const a = document.createElement('a');
-                const url = `./${currentPath.join('/')}/${dirName}`;
+                const url = `${currentPathStr}${dirName}`;
                 a.href = url;
                 a.textContent = dirName + '/';
                 a.onclick = ev => {
@@ -181,10 +184,10 @@
                 list.appendChild(li);
             }
 
-            function renderFileCard(fileName, filePath) {
+            function renderFileCard(fileName) {
                 const li = document.createElement('li');
                 const a = document.createElement('a');
-                const url = `./${filePath}`;
+                const url = `${currentPathStr}${fileName}`;
                 a.href = url;
                 if (isImage(fileName)) {
                     const p = document.createElement('p');
