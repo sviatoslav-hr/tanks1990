@@ -3,57 +3,40 @@
         <title>Tanks Assets</title>
         <link rel="icon" type="image/x-icon" href="./tanks1990.ico" />
         <style>
+            :root {
+                --white: #fcfcfc;
+                --black: #181818;
+                --fg: var(--white);
+                --bg: var(--black);
+                --border: var(--white);
+                --padding-inner: 0.5rem;
+                --padding-outer: 1.5rem;
+            }
             * {
                 margin: 0;
                 padding: 0;
                 box-sizing: border-box;
             }
+            html {
+                height: 100%;
+            }
             body {
                 font-family: Arial, sans-serif;
-                padding: 24px;
+                height: 100%;
             }
             h1 {
-                margin: 0 0 32px;
-                padding: 0;
-                font-size: 1.5em;
+                padding: var(--padding-outer);
+                font-size: 1.5rem;
             }
             ul {
                 list-style-type: none;
-                padding: 0;
-                display: flex;
-                flex-wrap: wrap;
-                justify-content: flex-start;
-                align-items: flex-start;
-                gap: 24px;
-            }
-            li {
-                margin: 0;
-                padding: 8px;
-                border: 1px solid #fcfcfc;
-                min-width: 200px;
-            }
-            .block {
-                display: block;
-            }
-            .w-100 {
-                width: 100%;
-            }
-            .text-center {
-                text-align: center;
-            }
-            li p {
-                margin: 0;
-                padding: 8px;
-                width: 100%;
-                border: 1px solid #fcfcfc;
-                margin-bottom: 8px;
             }
             li a {
                 display: inline-block;
                 width: 100%;
             }
             a {
-                color: #fcfcfc;
+                color: var(--fg);
                 text-decoration: none;
             }
             a:hover {
@@ -64,34 +47,114 @@
                 max-height: 100%;
             }
             #bread {
-                margin-bottom: 16px;
-                padding: 8px;
+                margin: var(--padding-outer) var(--padding-outer);
+                padding: var(--padding-inner);
                 display: inline-flex;
-                gap: 8px;
-                border: 1px solid #fcfcfc;
+                gap: var(--padding-inner);
+                border: 1px solid var(--border);
             }
             #bread a:not(:last-child)::after {
                 content: '/';
                 display: inline-block;
-                margin-left: 8px;
+                margin-left: var(--padding-inner);
             }
             #bread a:last-child {
+                font-weight: bold;
                 text-decoration: none;
                 cursor: default;
             }
+            #fileview {
+                height: calc(calc(100% - 2rem) - calc(2*var(--padding-outer)));
+                display: flex;
+                flex-direction: row;
+                gap: var(--padding-outer);
+                border-top: 1px solid var(--border);
+                padding: 0 var(--padding-outer);
+            }
+            #fileview__list {
+                display: inline-flex;
+                flex-wrap: wrap;
+                justify-content: flex-start;
+                align-items: flex-start;
+                align-content: flex-start;
+                gap: var(--padding-outer);
+                height: 100%;
+                overflow-y: auto;
+                padding: var(--padding-outer) 0;
+                min-width: 50%;
+            }
+            #fileview__list li a {
+                padding: var(--padding-inner);
+                border: 1px solid var(--border);
+                max-width: 200px;
+                width: 200px;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                gap: var(--padding-inner);
+            }
+            #fileview__list li a .icon {
+                min-width: 100%;
+                max-height: 200px;
+                width: 100%;
+                object-fit: cover;
+            }
+            #fileview__list li p {
+                max-width: 100%;
+                padding: var(--padding-inner);
+                word-wrap: break-word;
+                font-size: 1.5rem;
+            }
+            #fileview__details {
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                border-left: 1px solid var(--border);
+                min-width: 50%;
+                padding: var(--padding-outer);
+            }
+            #fileview__details img {
+                min-width: 100%;
+                max-height: 100%;
+                image-rendering: pixelated;
+            }
+            img.icon {
+                image-rendering: pixelated;
+            }
+            [hidden] {
+                display: none !important;
+            }
+            svg.icon {
+                fill: var(--fg);
+            }
         </style>
     </head>
-    <body style="background-color: #181818; color: #fcfcfc">
-        <h1>Assets</h1>
+    <body style="background-color: var(--bg); color: var(--fg)">
+        <h1 hidden>Assets</h1>
         <div id="bread"></div>
-        <ul id="list">
-            <!-- <li><a href="./assets/bricks.png">bricks.png</a></li> -->
-        </ul>
+        <div id="fileview">
+            <ul id="fileview__list">
+                <!-- <li><a href="./assets/bricks.png">bricks.png</a></li> -->
+            </ul>
+            <div id="fileview__details">
+            </div>
+        </div>
+
+        <svg id="icon--directory" hidden xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M3.75 4.5a.25.25 0 00-.25.25v14.5c0 .138.112.25.25.25h16.5a.25.25 0 00.25-.25V7.687a.25.25 0 00-.25-.25h-8.471a1.75 1.75 0 01-1.447-.765L8.928 4.61a.25.25 0 00-.208-.11H3.75zM2 4.75C2 3.784 2.784 3 3.75 3h4.971c.58 0 1.12.286 1.447.765l1.404 2.063a.25.25 0 00.207.11h8.471c.966 0 1.75.783 1.75 1.75V19.25A1.75 1.75 0 0120.25 21H3.75A1.75 1.75 0 012 19.25V4.75z"/></svg>
+        <svg id="icon--file" hidden xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M5 2.5a.5.5 0 00-.5.5v18a.5.5 0 00.5.5h14a.5.5 0 00.5-.5V8.5h-4a2 2 0 01-2-2v-4H5zm10 0v4a.5.5 0 00.5.5h4a.5.5 0 00-.146-.336l-4.018-4.018A.5.5 0 0015 2.5zM3 3a2 2 0 012-2h9.982a2 2 0 011.414.586l4.018 4.018A2 2 0 0121 7.018V21a2 2 0 01-2 2H5a2 2 0 01-2-2V3z"/></svg>
+
 
         <script language="javascript" type="text/javascript">
             const imageExtensions = ['.png', '.jpg', '.jpeg', '.svg', '.ico'];
-            const list = document.getElementById('list');
+            const list = document.getElementById('fileview__list');
             const bread = document.getElementById('bread');
+            const fileView = document.getElementById('fileview');
+            const fileDetails = document.getElementById('fileview__details');
+            const iconDirectory = document.getElementById('icon--directory');
+            const iconFile = document.getElementById('icon--file');
+            fileDetails.hidden = true;
             window.addEventListener('popstate', () => {
                 selectDirectory(parsePathFromQuery(), true);
             });
@@ -117,6 +180,7 @@
                     currentPathStr = './';
                 }
                 if (!skipQuery) {
+                    // TODO: Store previewed file in URL query and update on url change
                     updateURLQuery();
                 }
                 renderBreadcrumbs(dirPath || []);
@@ -172,14 +236,18 @@
 
             function renderDirectoryCard(dirName) {
                 const li = document.createElement('li');
+                li.title = dirName + '/';
                 const a = document.createElement('a');
                 const url = `${currentPathStr}${dirName}`;
                 a.href = url;
-                a.textContent = dirName + '/';
                 a.onclick = ev => {
                     ev.preventDefault();
                     selectDirectory([...currentPath, dirName]);
                 };
+                a.appendChild(createIcon('directory'));
+                const p = document.createElement('p');
+                p.textContent = dirName + '/';
+                a.appendChild(p);
                 li.appendChild(a);
                 list.appendChild(li);
             }
@@ -189,19 +257,26 @@
                 const a = document.createElement('a');
                 const url = `${currentPathStr}${fileName}`;
                 a.href = url;
+                li.title = fileName;
                 if (isImage(fileName)) {
-                    const p = document.createElement('p');
-                    p.textContent = fileName;
                     const img = document.createElement('img');
                     img.src = url;
                     img.onload = () => {
-                        p.textContent = `${fileName} (${img.width}x${img.height})`;
+                        li.title = `${fileName} (${img.width}x${img.height})`;
                     };
+                    img.alt = fileName;
+                    img.classList.add('icon');
                     a.appendChild(img);
-                    li.appendChild(p);
                 } else {
-                    a.textContent = fileName;
+                    a.appendChild(createIcon('file'));
                 }
+                a.onclick = ev => {
+                    ev.preventDefault();
+                    renderFileDetails(url);
+                };
+                const p = document.createElement('p');
+                p.textContent = fileName;
+                a.appendChild(p);
                 li.appendChild(a);
                 list.appendChild(li);
             }
@@ -234,8 +309,61 @@
                 }
             }
 
+            function renderFileDetails(fileUrl) {
+                if (!fileUrl) {
+                    console.error('No fileUrl provided');
+                    return;
+                }
+                fileDetails.removeAttribute('hidden');
+                fileDetails.innerHTML = '';
+                if (isImage(fileUrl)) {
+                    const img = document.createElement('img');
+                    img.src = fileUrl;
+                    fileDetails.appendChild(img);
+                } else if (isAudio(fileUrl)) {
+                    const audio = document.createElement('audio');
+                    audio.controls = true;
+                    const source = document.createElement('source');
+                    source.src = fileUrl;
+                    audio.appendChild(source);
+                    fileDetails.appendChild(audio);
+                } else {
+                    const p = document.createElement('pre');
+                    p.textContent = 'Loading file...';
+                    fileDetails.appendChild(p);
+                    fetch(fileUrl).then(response => response.text()).then(text => {
+                        p.textContent = text;
+                    }).catch(err => {
+                        console.error('Error loading file:', err);
+                        p.textContent = 'Error loading file';
+                    });
+                }
+            }
+
+            function createIcon(iconName) {
+                let icon
+                switch (iconName) {
+                    case 'directory':
+                        icon = iconDirectory.cloneNode(true);
+                        break;
+                    case 'file':
+                        icon = iconFile.cloneNode(true);
+                        break;
+                    default:
+                        console.error('Invalid icon name:', iconName);
+                        return null;
+                }
+                icon.removeAttribute('hidden');
+                icon.id = null;
+                icon.classList.add('icon');
+                return icon;
+            }
+
             function isImage(filename) {
                 return imageExtensions.some(ext => filename.endsWith(ext));
+            }
+            function isAudio(filename) {
+                return filename.endsWith('.mp3') || filename.endsWith('.wav') || filename.endsWith('.ogg');
             }
             function isDirectory(filename) {
                 return filename.endsWith('/');
