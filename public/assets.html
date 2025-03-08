@@ -170,7 +170,7 @@
             function renderDirectoryCard(dirName) {
                 const li = document.createElement('li');
                 const a = document.createElement('a');
-                const url = `./${currentPath.join('')}${dirName}`;
+                const url = `./${currentPath.join('/')}/${dirName}`;
                 a.href = url;
                 a.textContent = dirName + '/';
                 a.onclick = ev => {
@@ -184,7 +184,7 @@
             function renderFileCard(fileName, filePath) {
                 const li = document.createElement('li');
                 const a = document.createElement('a');
-                const url = `/${filePath}`;
+                const url = `./${filePath}`;
                 a.href = url;
                 if (isImage(fileName)) {
                     const p = document.createElement('p');
