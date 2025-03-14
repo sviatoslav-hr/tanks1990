@@ -13,8 +13,6 @@ const ENV_CONFIG_KEY = 'env_config';
 
 export class Environment {
     isInfinite = false;
-    gravityCoef = 20;
-    frictionCoef = 8;
     showBoundary = false;
     readonly boundary: Rect = {
         x: -BASE_WIDTH / 2,
@@ -129,8 +127,6 @@ export class Environment {
 
     serialize(): string {
         return JSON.stringify({
-            g: this.gravityCoef,
-            f: this.frictionCoef,
             b: this.showBoundary,
             inf: this.isInfinite,
             bx: this.boundary.x,
@@ -150,8 +146,6 @@ export class Environment {
 
     deserialize(data: string): void {
         const parser = new JSONObjectParser(data);
-        this.gravityCoef = parser.getNumber('g') ?? 20;
-        this.frictionCoef = parser.getNumber('f') ?? 8;
         this.showBoundary = parser.getBoolean('b') ?? false;
         this.isInfinite = parser.getBoolean('inf') ?? false;
         const bx = parser.getNumber('bx');

@@ -29,7 +29,7 @@ export function drawScoreMini(
         const bestScore = getBestScore(cache);
         const bestScoreText =
             'Best Score: ' +
-            (bestScore ? `${bestScore.score} - ${shortDate(bestScore.createdAt)}` : '-');
+            (bestScore ? `${bestScore.score} (${shortDate(bestScore.createdAt)})` : '-');
         const x = camera.screenSize.width / 2 - (env.boundary.width * camera.scale) / 2;
         const y = padding;
         renderer.setFont('200 20px Helvetica', 'start', 'top');
@@ -46,7 +46,7 @@ export function drawScoreMini(
     }
 
     {
-        const surviveText = `Survived: ${player.survivedFor.toHumanString()}`;
+        const surviveText = `Survived for ${player.survivedFor.toHumanString()}`;
         const x = camera.screenSize.width / 2 + (env.boundary.width * camera.scale) / 2;
         const y = padding;
         renderer.setFont('200 20px Helvetica', 'right', 'top');
@@ -61,11 +61,11 @@ export function drawScoreOverlay(renderer: Renderer, player: PlayerTank, cache: 
     const innerPadding = BASE_PADDING / 2;
 
     const scoreText = `Score: ${player.score}`;
-    const surviveText = `Survived: ${player.survivedFor.toHumanString()}`;
+    const surviveText = `Survived for ${player.survivedFor.toHumanString()}`;
     const bestScore = getBestScore(cache);
     const bestScoreText =
         player.dead && bestScore?.score
-            ? `Best Score: ${bestScore.score} - ${shortDate(bestScore.createdAt)}`
+            ? `Best Score: ${bestScore.score} (${shortDate(bestScore.createdAt)})`
             : null;
     let text = `${scoreText}\n${surviveText}`;
     if (bestScoreText) {

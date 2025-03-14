@@ -60,10 +60,7 @@ export function toggleFPSVisibility(fps: FPSMonitor, cache: GameStorage): void {
 }
 
 const SHOW_DEV_PANEL_KEY = 'show_dev_panel';
-export function toggleDevPanelVisibility(
-    panel: DevPanel,
-    cache: GameStorage,
-): void {
+export function toggleDevPanelVisibility(panel: DevPanel, cache: GameStorage): void {
     if (panel.visible) {
         panel.hide();
     } else {
@@ -72,11 +69,7 @@ export function toggleDevPanelVisibility(
     cache.set(SHOW_DEV_PANEL_KEY, panel.visible);
 }
 
-export function createDevUI(
-    state: GameState,
-    manager: EntityManager,
-    cache: GameStorage,
-): DevUI {
+export function createDevUI(state: GameState, manager: EntityManager, cache: GameStorage): DevUI {
     const devUI = new DevUI();
     const isFPSVisible = cache.getBool(SHOW_FPS_KEY) ?? false;
     if (!isFPSVisible) {
@@ -101,13 +94,9 @@ export function createDevUI(
         .onClick(() => {
             const enemyId = parseInt(prompt('Enter enemy id to remove')!);
             if (isNaN(enemyId)) {
-                console.error(
-                    `Invalid enemy ID: ${enemyId}. Expected an integer number`,
-                );
+                console.error(`Invalid enemy ID: ${enemyId}. Expected an integer number`);
             }
-            const enemyArrayIndex = manager.tanks.findIndex(
-                (t) => t.bot && t.id === enemyId,
-            );
+            const enemyArrayIndex = manager.tanks.findIndex((t) => t.bot && t.id === enemyId);
             if (enemyArrayIndex === -1) {
                 console.error(`Enemy with index ${enemyId} not found`);
             } else {
@@ -129,23 +118,7 @@ export function createDevUI(
         .setName('Open Assets')
         .onClick(() => window.open('./assets.html', '_blank'));
 
-    const env = manager.env;
-    const envFolder = devPanel.addFolder('Environment');
-    envFolder
-        .addNumberInput()
-        .setName('Gravity')
-        .setMin(0.1)
-        .setMax(100)
-        .setStep(0.1)
-        .bindValue(env, 'gravityCoef')
-        .onChange(() => env.markDirty());
-    envFolder
-        .addNumberInput()
-        .setName('Friction')
-        .setMin(0.1)
-        .setMax(10)
-        .setStep(0.1)
-        .bindValue(env, 'frictionCoef')
-        .onChange(() => env.markDirty());
+    // const envFolder = devPanel.addFolder('Environment');
+    // TODO: Checkboxes to show/hide boundary, grid, etc.
     return devUI;
 }
