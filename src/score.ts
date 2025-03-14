@@ -3,6 +3,7 @@ import {BASE_FONT_SIZE, BASE_PADDING} from '#/const';
 import {PlayerTank} from '#/entity';
 import {GameStorage} from '#/storage';
 import {Renderer} from '#/renderer';
+import {EntityManager} from './entity/manager';
 
 const BEST_SCORE_KEY = 'best_score';
 const BEST_SCORE_AT_KEY = 'best_score_at';
@@ -12,11 +13,50 @@ export type ScoreRecord = {
     createdAt: Date;
 };
 
-export function drawScore(
+export function drawScoreMini(
     renderer: Renderer,
-    player: PlayerTank,
+    manager: EntityManager,
     cache: GameStorage,
 ): void {
+    renderer.setStrokeColor(Color.WHITE);
+    renderer.useCameraCoords(true);
+    const player = manager.player;
+    const env = manager.env;
+    const camera = renderer.camera;
+    const padding = BASE_PADDING / 2;
+
+    {
+        const bestScore = getBestScore(cache);
+        const bestScoreText =
+            'Best Score: ' +
+            (bestScore ? `${bestScore.score} - ${shortDate(bestScore.createdAt)}` : '-');
+        const x = camera.screenSize.width / 2 - (env.boundary.width * camera.scale) / 2;
+        const y = padding;
+        renderer.setFont('200 20px Helvetica', 'start', 'top');
+        renderer.fillText(bestScoreText, {x, y});
+    }
+
+    {
+        const scoreText = `Score: ${player.score}`;
+        const m = renderer.measureText(scoreText);
+        const x = camera.screenSize.width / 2 - m.width / 2;
+        const y = padding;
+        renderer.setFont('200 20px Helvetica', 'start', 'top');
+        renderer.fillText(scoreText, {x, y});
+    }
+
+    {
+        const surviveText = `Survived: ${player.survivedFor.toHumanString()}`;
+        const x = camera.screenSize.width / 2 + (env.boundary.width * camera.scale) / 2;
+        const y = padding;
+        renderer.setFont('200 20px Helvetica', 'right', 'top');
+        renderer.fillText(surviveText, {x, y});
+    }
+    renderer.useCameraCoords(false);
+}
+
+// TODO: This probably should be replaced with a custom component (like a Menu)
+export function drawScoreOverlay(renderer: Renderer, player: PlayerTank, cache: GameStorage): void {
     renderer.setFont('200 36px Helvetica', 'right', 'top');
     const innerPadding = BASE_PADDING / 2;
 
@@ -32,14 +72,10 @@ export function drawScore(
         text += `\n${bestScoreText}`;
     }
     const lines = text.split('\n');
-    const maxWidth = Math.max(
-        ...lines.map((l) => renderer.measureText(l).width),
-    );
+    const maxWidth = Math.max(...lines.map((l) => renderer.measureText(l).width));
 
     const camera = renderer.camera;
-    const boundaryHeight = bestScoreText
-        ? BASE_FONT_SIZE * 3
-        : BASE_FONT_SIZE * 2;
+    const boundaryHeight = bestScoreText ? BASE_FONT_SIZE * 3 : BASE_FONT_SIZE * 2;
     renderer.setStrokeColor(Color.WHITE);
     renderer.useCameraCoords(true);
     renderer.strokeBoundary(

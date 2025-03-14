@@ -6,18 +6,21 @@ import {GameState} from '#/state';
 export function handleGameEvents(
     eventQueue: EventQueue,
     game: GameState,
-    entityManager: EntityManager,
+    manager: EntityManager,
     sounds: SoundManager,
 ): void {
     let event: GameEvent | undefined;
     while ((event = eventQueue.pop())) {
         switch (event.type) {
             case 'shot': {
-                handleShotEvent(event, game, entityManager, sounds);
+                handleShotEvent(event, game, manager, sounds);
                 break;
             }
             case 'tank-destroyed': {
-                entityManager.spawnExplosionEffect(event.entityId);
+                manager.spawnExplosionEffect(event.entityId);
+                if (event.bot) {
+                    manager.player.score += 1;
+                }
                 sounds.playSound(SoundType.EXPLOSION);
                 break;
             }
@@ -36,9 +39,5 @@ function handleShotEvent(
         const volumeScale = event.bot ? 0.15 : 1;
         sounds.playSound(SoundType.SHOOTING, volumeScale);
     }
-    entityManager.spawnProjectile(
-        event.entityId,
-        event.origin,
-        event.direction,
-    );
+    entityManager.spawnProjectile(event.entityId, event.origin, event.direction);
 }

@@ -10,7 +10,7 @@ import {handleGameInputTick} from '#/game-input-handler';
 import {Duration} from '#/math/duration';
 import {initMenu, Menu} from '#/menu';
 import {Renderer} from '#/renderer';
-import {drawScore, saveBestScore} from '#/score';
+import {drawScoreOverlay, drawScoreMini, saveBestScore} from '#/score';
 import {SoundManager} from '#/sound';
 import {GameState} from '#/state';
 import {GameStorage} from '#/storage';
@@ -111,8 +111,10 @@ function handleGameTick(
     manager.drawAllEntities(renderer);
     const player = manager.player;
 
-    if (state.paused || state.dead || (state.playing && input.isDown('KeyQ'))) {
-        drawScore(renderer, player, storage);
+    if (menu.paused || menu.dead || (state.playing && input.isDown('KeyQ'))) {
+        drawScoreOverlay(renderer, player, storage);
+    } else if (state.playing || (state.paused && !menu.visible)) {
+        drawScoreMini(renderer, manager, storage);
     }
 
     if (state.playing && player.dead) {

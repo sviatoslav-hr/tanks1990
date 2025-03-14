@@ -3,11 +3,7 @@ import {SoundManager} from '#/sound';
 import {GameState} from '#/state';
 import {EntityManager} from '#/entity/manager';
 
-export function initMenu(
-    game: GameState,
-    manager: EntityManager,
-    sounds: SoundManager,
-): Menu {
+export function initMenu(game: GameState, manager: EntityManager, sounds: SoundManager): Menu {
     const menu = new Menu();
     menu.addButton(
         'NEW GAME',
@@ -76,14 +72,10 @@ export function initMenu(
     const controlsPage = new MenuPage('CONTROLS', menu);
     controlsPage.setContent(html`
         <ul class="mx-auto w-fit hints">
-            <li>
-                Use <code>W</code> <code>S</code> <code>A</code>
-                <code>D</code> to move
-            </li>
+            <li>Use <code>W</code> <code>S</code> <code>A</code> <code>D</code> to move</li>
             <li>Press <code>Space</code> to shoot</li>
             <li><code>P</code> to pause</li>
             <li><code>\`</code> to toggle FPS</li>
-            <li><code>B</code> to display boundaries</li>
             <li><code>F</code> to toggle Fullscreen</li>
         </ul>
     `);
@@ -154,9 +146,7 @@ export class MenuPage extends HTMLElement {
         this.append((this.container = this.createContainer()));
         this.append(this.createCloseButton());
         this.container.append(this.createTitle(title));
-        this.container.append(
-            (this.contentWrapper = this.createContentWrapper()),
-        );
+        this.container.append((this.contentWrapper = this.createContentWrapper()));
     }
 
     get visible(): boolean {
@@ -257,6 +247,10 @@ export class Menu extends HTMLElement {
         return !!this.state && this.state !== MenuState.HIDDEN;
     }
 
+    get paused(): boolean {
+        return this.state === MenuState.PAUSE;
+    }
+
     showMain(): void {
         this.update(MenuState.START);
     }
@@ -281,16 +275,8 @@ export class Menu extends HTMLElement {
         }
     }
 
-    addButton(
-        text: string,
-        onClick: MenuClickCallback,
-        states?: MenuState[],
-    ): void {
-        const button = new MenuButton(
-            text,
-            this.createButtonCallback(onClick),
-            states,
-        );
+    addButton(text: string, onClick: MenuClickCallback, states?: MenuState[]): void {
+        const button = new MenuButton(text, this.createButtonCallback(onClick), states);
         this.buttons.push(button);
         this.buttonContainer.append(button);
     }
@@ -358,9 +344,7 @@ export class Menu extends HTMLElement {
         }
     }
 
-    private createButtonCallback(
-        callback: MenuClickCallback,
-    ): MenuClickCallback {
+    private createButtonCallback(callback: MenuClickCallback): MenuClickCallback {
         return (button) => {
             if (this.state === MenuState.HIDDEN) {
                 button.blur();
@@ -408,14 +392,7 @@ export class Slider extends HTMLElement {
     private index: number;
     private input: HTMLInputElement;
 
-    constructor({
-        name,
-        label = name,
-        min = 0,
-        max = 50,
-        step = 1,
-        initValue = 0,
-    }: SliderConfig) {
+    constructor({name, label = name, min = 0, max = 50, step = 1, initValue = 0}: SliderConfig) {
         super();
         const labelElement = document.createElement('label');
         labelElement.textContent = label;

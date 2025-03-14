@@ -188,7 +188,7 @@ export abstract class Tank extends Entity {
         if (dead) {
             this.dead = true;
             this.onDied();
-            eventQueue.push({type: 'tank-destroyed', entityId: this.id});
+            eventQueue.push({type: 'tank-destroyed', entityId: this.id, bot: this.bot});
         }
         return dead;
     }

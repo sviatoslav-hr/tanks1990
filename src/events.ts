@@ -13,6 +13,7 @@ export type ShotEvent = {
 export type TankDestroyedEvent = {
     type: 'tank-destroyed';
     entityId: EntityId;
+    bot: boolean;
 };
 
 export type GameEvent = ShotEvent | TankDestroyedEvent;

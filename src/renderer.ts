@@ -238,7 +238,7 @@ export class Renderer {
         }
     }
 
-    private offsetAndScaleX(x: number): number {
+    offsetAndScaleX(x: number): number {
         if (this.#usingCameraCoords) return x;
         const result =
             (x - this.camera.worldOffset.x) * this.camera.scale + this.camera.screenSize.width / 2;
@@ -246,7 +246,7 @@ export class Renderer {
         return result;
     }
 
-    private offsetAndScaleY(y: number): number {
+    offsetAndScaleY(y: number): number {
         if (this.#usingCameraCoords) return y;
         const result =
             (y - this.camera.worldOffset.y) * this.camera.scale + this.camera.screenSize.height / 2;
@@ -254,7 +254,7 @@ export class Renderer {
         return result;
     }
 
-    private scaleSize(size: number): number {
+    scaleSize(size: number): number {
         if (this.#usingCameraCoords) {
             return size;
         }

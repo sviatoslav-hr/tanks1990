@@ -15,8 +15,8 @@ Camera:
 
 ## IN_PROGRESS
 - [ ] **Rework the score UI!!!**
-    - [ ] Allocate space on the screen for other info
-    - [ ] Display score somewhere on the screen while game is active
+    - [x] Allocate space on the screen for other info
+    - [x] Display score somewhere on the screen while game is active
     - [ ] Display score on pause screen
     - [ ] Display score on the death screen
     - [ ] Display best score on the death screen
@@ -42,6 +42,7 @@ Camera:
 - [ ] Hot reload for development?
 
 ## FIXME
+- [ ] Sometimes the shield if visible in the wrong position right before enemy respawns.
 - [ ] Sometimes after moving the camera manually, after trying to reset it, it's not zoomed correctly (slightly zoomed out so the world border is visible)
 - [ ] Enemy explosion effect is gray instead of green (cannot reproduce)
 - [ ] Explosion effect image data may grab some black pixels from the boundary
