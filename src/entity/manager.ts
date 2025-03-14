@@ -36,8 +36,8 @@ export class EntityManager {
         this.player.respawn();
         this.spawnEnemy();
         this.spawnEnemy();
-        this.spawnEnemy();
-        this.spawnEnemy();
+        // this.spawnEnemy();
+        // this.spawnEnemy();
     }
 
     // TODO: Entity manager should not be responsible for drawing

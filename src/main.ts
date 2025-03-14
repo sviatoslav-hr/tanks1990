@@ -72,25 +72,19 @@ function runGame(
 
     let lastTimestamp = 0;
     const animationCallback = (timestamp: number): void => {
-        const dt = Duration.since(lastTimestamp).min(1000 / 30);
+        const dt = Duration.since(lastTimestamp);
+        const preciseDt = dt.clone();
+        dt.min(1000 / 60); // NOTE: Cap the delta time to 60fps
         lastTimestamp = timestamp;
 
         try {
             handleGameTick(dt, state, manager, menu, input, storage, renderer);
-            handleGameInputTick(
-                input,
-                renderer,
-                state,
-                manager,
-                menu,
-                devUI,
-                storage,
-            );
+            handleGameInputTick(input, renderer, state, manager, menu, devUI, storage);
             handleGameEvents(eventQueue, state, manager, sounds);
             if (manager.env.needsSaving) {
                 manager.env.save(storage);
             }
-            devUI.update(dt);
+            devUI.update(preciseDt);
             input.nextTick();
             state.nextTick();
         } catch (err) {
@@ -112,7 +106,7 @@ function handleGameTick(
     storage: GameStorage,
     renderer: Renderer,
 ) {
-    renderer.setFillColor(Color.BLACK_RAISIN);
+    renderer.setFillColor(manager.env.bgColor);
     renderer.fillScreen();
 
     manager.drawAllEntities(renderer);

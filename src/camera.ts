@@ -20,15 +20,11 @@ export class Camera {
     }
 
     get x0(): number {
-        return (
-            this.worldOffset.x - this.screenSize.width / 2 / this.visibleScale
-        );
+        return this.worldOffset.x - this.screenSize.width / 2 / this.visibleScale;
     }
 
     get y0(): number {
-        return (
-            this.worldOffset.y - this.screenSize.height / 2 / this.visibleScale
-        );
+        return this.worldOffset.y - this.screenSize.height / 2 / this.visibleScale;
     }
 
     get scale() {
@@ -74,17 +70,9 @@ export class Camera {
 
     isRectVisible(x: number, y: number, width: number, height: number): boolean;
     isRectVisible(rect: Rect): boolean;
-    isRectVisible(
-        rectOrX: Rect | number,
-        y?: number,
-        width?: number,
-        height?: number,
-    ): boolean {
+    isRectVisible(rectOrX: Rect | number, y?: number, width?: number, height?: number): boolean {
         if (typeof rectOrX === 'number') {
-            assert(
-                y != null && width != null && height != null,
-                'Invalid arguments',
-            );
+            assert(y != null && width != null && height != null, 'Invalid arguments');
             return (
                 rectOrX + width > this.x0 &&
                 rectOrX < this.x0 + this.screenSize.x &&
@@ -100,13 +88,7 @@ export class Camera {
         );
     }
 
-    isLineVisible(
-        x1: number,
-        y1: number,
-        x2: number,
-        y2: number,
-        lineWidth: number,
-    ): boolean {
+    isLineVisible(x1: number, y1: number, x2: number, y2: number, lineWidth: number): boolean {
         return this.isRectVisible(
             Math.min(x1, x2) - lineWidth,
             Math.min(y1, y2) - lineWidth,
@@ -117,11 +99,19 @@ export class Camera {
 
     isCircleVisible(cx: number, cy: number, radius: number): boolean {
         // TODO: Add better visibility check (corner cases)
-        return this.isRectVisible(
-            cx - radius,
-            cy - radius,
-            radius * 2,
-            radius * 2,
-        );
+        return this.isRectVisible(cx - radius, cy - radius, radius * 2, radius * 2);
+    }
+
+    toWorldX(screenX: number): number {
+        // (wx - woy)*s + sw/2 = sx`  =>  `wx = (sx - sw/2)/s + woy`
+        return (screenX - this.screenSize.width / 2) / this.scale + this.worldOffset.x;
+    }
+
+    toWorldY(screenY: number): number {
+        return (screenY - this.screenSize.height / 2) / this.scale + this.worldOffset.y;
+    }
+
+    toWorldSize(screenSize: number): number {
+        return screenSize / this.scale;
     }
 }

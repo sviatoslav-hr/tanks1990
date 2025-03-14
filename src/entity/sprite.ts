@@ -22,6 +22,8 @@ export function setCachedImage(src: string, image: HTMLImageElement): void {
 type SpriteOpts<K extends string> = {
     key: string;
     colorOverlay?: string;
+    offsetX?: number;
+    offsetY?: number;
     frameWidth: number;
     frameHeight: number;
     frameDuration?: Duration; // default 100
@@ -37,6 +39,7 @@ export class Sprite<K extends string> {
     private state?: SpriteState<K>;
     private readonly frameWidth: number = 0;
     private readonly frameHeight: number = 0;
+    private readonly offset: Vector2;
     private readonly stateKeys: readonly K[];
     private readonly frameDuration = new Duration(100);
     private readonly image: HTMLImageElement;
@@ -68,6 +71,7 @@ export class Sprite<K extends string> {
             this.stateMap[name] = state;
         }
         this.stateKeys = states.map((s) => s.name);
+        this.offset = new Vector2(opts.offsetX ?? 0, opts.offsetY ?? 0);
     }
 
     update(dt: Duration): void {
@@ -83,7 +87,8 @@ export class Sprite<K extends string> {
     draw(renderer: Renderer, boundary: Rect, rotationDeg = 0): void {
         if (!this.state) return;
         if (!renderer.camera.isRectVisible(boundary)) return;
-        renderer.useCameraCoords(true); // NOTE: It's easier to rotate in camera coords
+        const alreadyInCameraCoords = renderer.usingCameraCoords;
+        if (!alreadyInCameraCoords) renderer.useCameraCoords(true); // NOTE: It's easier to rotate in camera coords
         // NOTE: set origin at the center of tank for proper rotation
         const boundaryCenterX = boundary.x + boundary.width / 2;
         const boundaryCenterY = boundary.y + boundary.height / 2;
@@ -95,25 +100,27 @@ export class Sprite<K extends string> {
                 renderer.camera.worldOffset.y +
                 renderer.camera.screenSize.height / 2 / renderer.camera.scale,
         );
-        renderer.setTransform(
-            Transform.makeTranslation(translation).scale(renderer.camera.scale),
-        );
+        renderer.setTransform(Transform.makeTranslation(translation).scale(renderer.camera.scale));
         renderer.rotate(rotationDeg);
         // NOTE: draw the image respecting the moved origin
-        renderer.drawImage(
-            this.image,
-            this.frameWidth * this.frameIndex,
-            this.state.index * this.frameHeight,
-            this.frameWidth,
-            this.frameHeight,
-            -boundary.width / 2,
-            -boundary.height / 2,
-            boundary.width,
-            boundary.height,
-        );
+        try {
+            renderer.drawImage(
+                this.image,
+                this.frameWidth * this.frameIndex + this.offset.x,
+                this.state.index * this.frameHeight + this.offset.y,
+                this.frameWidth,
+                this.frameHeight,
+                -boundary.width / 2,
+                -boundary.height / 2,
+                boundary.width,
+                boundary.height,
+            );
+        } catch (e) {
+            assert(false);
+        }
         renderer.resetTransform();
         renderer.rotate(0);
-        renderer.useCameraCoords(false);
+        if (!alreadyInCameraCoords) renderer.useCameraCoords(false);
     }
 
     selectState(state: K): void {
@@ -141,7 +148,33 @@ export function createShieldSprite() {
     });
 }
 
-export function createTankSprite(key: 'tank_yellow' | 'tank_green') {
+export function createTileSprite() {
+    return new Sprite({
+        key: 'dirt',
+        // key: 'sand',
+        frameWidth: 128,
+        frameHeight: 128,
+        states: [{name: 'static', frames: 1}],
+    });
+    // return new Sprite({
+    //     key: 'roguelikeDungeon_transparent',
+    //     frameWidth: 16,
+    //     frameHeight: 16,
+    //     offsetX: 152,
+    //     offsetY: 33, // 152,
+    //     states: [{name: 'static', frames: 1}],
+    // });
+    // return new Sprite({
+    //     key: 'tileSand1',
+    //     frameWidth: 72,
+    //     frameHeight: 72,
+    //     states: [{name: 'static', frames: 1}],
+    // });
+}
+
+export function createTankSprite(type: 'player' | 'enemy') {
+    const key = type === 'player' ? 'tank_green' : 'tank_yellow';
+    // const key = type === 'player' ? 'tank_green_darker' : 'tank_yellow_darker';
     return new Sprite({
         key: key,
         frameWidth: 64,
@@ -151,9 +184,7 @@ export function createTankSprite(key: 'tank_yellow' | 'tank_green') {
     });
 }
 
-export function createStaticSprite(
-    opts: Omit<SpriteOpts<'static'>, 'states'>,
-): Sprite<'static'> {
+export function createStaticSprite(opts: Omit<SpriteOpts<'static'>, 'states'>): Sprite<'static'> {
     const states = [{name: 'static', frames: 1} as const];
     return new Sprite({...opts, states});
 }

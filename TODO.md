@@ -42,7 +42,6 @@ Camera:
 - [ ] Hot reload for development?
 
 ## FIXME
-- [ ] After ~30s of playing, all tanks gain too much speed and start moving like crazy
 - [ ] Sometimes after moving the camera manually, after trying to reset it, it's not zoomed correctly (slightly zoomed out so the world border is visible)
 - [ ] Enemy explosion effect is gray instead of green (cannot reproduce)
 - [ ] Explosion effect image data may grab some black pixels from the boundary
@@ -117,6 +116,8 @@ Camera:
 - [ ] Implement Entity Component System (ECS)
 
 ## DONE
+- [x] FIX: After ~30s of playing, all tanks gain too much speed and start moving like crazy
+      It was happening when frame rate dropped to about 30fps. It looks like the acceleration was frame rate dependent. Change the implementation of the acceleration so we can now specify the stopping time.
 - [x] Define dev mode
 - [x] Merge `Renderer` and `Context` classes. Remove game-specific code from `Renderer`.
 - [x] Refactor sounds from globals to a class instance

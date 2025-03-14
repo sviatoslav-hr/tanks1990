@@ -105,20 +105,54 @@
                 word-wrap: break-word;
                 font-size: 1.5rem;
             }
-            #fileview__details {
+            #fileview__preview {
+                position: relative;
                 height: 100%;
                 display: flex;
                 flex-direction: column;
-                justify-content: center;
+                justify-content: space-between;
                 align-items: center;
                 border-left: 1px solid var(--border);
                 min-width: 50%;
+                gap: var(--padding-inner);
                 padding: var(--padding-outer);
             }
-            #fileview__details img {
+            #fileview__preview img {
                 min-width: 100%;
                 max-height: 100%;
                 image-rendering: pixelated;
+                object-fit: cover;
+                cursor: pointer;
+            }
+            #fileview__preview .preview__image {
+                min-width: 100%;
+                max-height: calc(100% - 2rem);
+                overflow: auto;
+                padding: var(--padding-inner);
+                border: 1px solid var(--border);
+            }
+            .btn--close {
+                position: absolute;
+                top: 0.5rem;
+                right: 0.5rem;
+                padding: 0.5rem;
+                font-size: 1.5rem;
+                line-height: 1;
+                background-color: var(--bg);
+                color: var(--fg);
+                border: 1px solid var(--border);
+                border-radius: 0.5rem;
+                cursor: pointer;
+                opacity: 0;
+            }
+            #fileview__preview:hover .btn--close {
+                opacity: 1;
+            }
+            #fileview__preview.preview--fullscreen .btn--close {
+                display: none;
+            }
+            #fileview__preview.preview--fullscreen .btn--fullscreen {
+                display: inline-block;
             }
             img.icon {
                 image-rendering: pixelated;
@@ -138,7 +172,11 @@
             <ul id="fileview__list">
                 <!-- <li><a href="./assets/bricks.png">bricks.png</a></li> -->
             </ul>
-            <div id="fileview__details">
+            <div id="fileview__preview">
+                <button class="btn--close btn--preview">✖️</button>
+                <button class="btn--close btn--fullscreen">✖️</button>
+                <div class="preview__image"></div>
+                <div class="preview__details"></div>
             </div>
         </div>
 
@@ -151,10 +189,15 @@
             const list = document.getElementById('fileview__list');
             const bread = document.getElementById('bread');
             const fileView = document.getElementById('fileview');
-            const fileDetails = document.getElementById('fileview__details');
+            const filePreview = document.getElementById('fileview__preview');
+            const btnCloseFullscreen = filePreview.querySelector('.btn--fullscreen');
+            btnCloseFullscreen.onclick = (ev) => {
+                ev.preventDefault();
+                document.exitFullscreen();
+            };
             const iconDirectory = document.getElementById('icon--directory');
             const iconFile = document.getElementById('icon--file');
-            fileDetails.hidden = true;
+            filePreview.hidden = true;
             window.addEventListener('popstate', () => {
                 selectDirectory(parsePathFromQuery(), true);
             });
@@ -263,16 +306,17 @@
                     img.src = url;
                     img.onload = () => {
                         li.title = `${fileName} (${img.width}x${img.height})`;
+                        // NOTE: Append after setting title to have actual sizes
+                        a.appendChild(img);
                     };
                     img.alt = fileName;
                     img.classList.add('icon');
-                    a.appendChild(img);
                 } else {
                     a.appendChild(createIcon('file'));
                 }
                 a.onclick = ev => {
                     ev.preventDefault();
-                    renderFileDetails(url);
+                    renderFilePreview(url);
                 };
                 const p = document.createElement('p');
                 p.textContent = fileName;
@@ -309,28 +353,44 @@
                 }
             }
 
-            function renderFileDetails(fileUrl) {
+            function renderFilePreview(fileUrl) {
                 if (!fileUrl) {
                     console.error('No fileUrl provided');
                     return;
                 }
-                fileDetails.removeAttribute('hidden');
-                fileDetails.innerHTML = '';
+                filePreview.removeAttribute('hidden');
+                const closeBtn = filePreview.querySelector('.btn--close.btn--preview');
+                const previewImage = filePreview.querySelector('.preview__image');
+                previewImage.innerHTML = '';
+                const previewDetails = filePreview.querySelector('.preview__details');
                 if (isImage(fileUrl)) {
                     const img = document.createElement('img');
                     img.src = fileUrl;
-                    fileDetails.appendChild(img);
+                    img.onload = () => {
+                        const title = `${fileUrl} (${img.width}x${img.height})`;
+                        previewImage.title = title;
+                        previewDetails.textContent = title;
+                        previewImage.appendChild(img);
+                    };
+                    img.onclick = () => {
+                        filePreview.classList.toggle('preview--fullscreen');
+                        if (document.fullscreenElement) {
+                            document.exitFullscreen();
+                        } else {
+                            filePreview.requestFullscreen();
+                        }
+                    };
                 } else if (isAudio(fileUrl)) {
                     const audio = document.createElement('audio');
                     audio.controls = true;
                     const source = document.createElement('source');
                     source.src = fileUrl;
                     audio.appendChild(source);
-                    fileDetails.appendChild(audio);
+                    previewImage.appendChild(audio);
                 } else {
                     const p = document.createElement('pre');
                     p.textContent = 'Loading file...';
-                    fileDetails.appendChild(p);
+                    previewImage.appendChild(p);
                     fetch(fileUrl).then(response => response.text()).then(text => {
                         p.textContent = text;
                     }).catch(err => {
@@ -338,6 +398,11 @@
                         p.textContent = 'Error loading file';
                     });
                 }
+                closeBtn.onclick = () => {
+                    filePreview.hidden = true;
+                    previewImage.innerHTML = '';
+                    previewDetails.textContent = '';
+                };
             }
 
             function createIcon(iconName) {

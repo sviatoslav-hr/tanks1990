@@ -15,7 +15,7 @@ export class Renderer {
     readonly canvas: HTMLCanvasElement;
     readonly ctx: CanvasRenderingContext2D;
     readonly camera: Camera;
-    private usingCameraCoords = false;
+    #usingCameraCoords = false;
 
     constructor() {
         this.canvas = document.createElement('canvas');
@@ -32,95 +32,67 @@ export class Renderer {
 
     // NOTE: Most stuff is drawn in world coordinates, but some stuff (like UI) should be drawn in screen(camera) coordinates
     useCameraCoords(value: boolean): void {
-        this.usingCameraCoords = value;
+        this.#usingCameraCoords = value;
+    }
+
+    get usingCameraCoords(): boolean {
+        return this.#usingCameraCoords;
     }
 
     strokeBoundary({x, y, width, height}: Rect, lineWidth = 1): void {
-        if (
-            !this.usingCameraCoords &&
-            !this.camera.isRectVisible(x, y, width, height)
-        ) {
+        if (!this.#usingCameraCoords && !this.camera.isRectVisible(x, y, width, height)) {
             return;
         }
-        x = this.offsetXByCamera(x);
-        y = this.offsetYByCamera(y);
-        width = this.offsetSizeByCamera(width);
-        height = this.offsetSizeByCamera(height);
-        lineWidth = this.offsetSizeByCamera(lineWidth);
-        const usingCameraCoords = this.usingCameraCoords;
-        if (!usingCameraCoords) {
-            this.useCameraCoords(true);
-        }
-        this.strokeLine(x, y, x + width, y, lineWidth);
+        const halfLW = lineWidth / 2;
+        this.strokeLine(x - halfLW, y, x + width + halfLW, y, lineWidth);
         this.strokeLine(x + width, y, x + width, y + height, lineWidth);
-        this.strokeLine(x + width, y + height, x, y + height, lineWidth);
+        this.strokeLine(x - halfLW, y + height, x + width + halfLW, y + height, lineWidth);
         this.strokeLine(x, y + height, x, y, lineWidth);
-        if (!usingCameraCoords) {
-            this.useCameraCoords(false);
-        }
     }
 
     fillRect(x: number, y: number, width: number, height: number): void {
-        if (
-            !this.usingCameraCoords &&
-            !this.camera.isRectVisible(x, y, width, height)
-        ) {
+        if (!this.#usingCameraCoords && !this.camera.isRectVisible(x, y, width, height)) {
             return;
         }
-        x = this.offsetXByCamera(x);
-        y = this.offsetYByCamera(y);
-        width = this.offsetSizeByCamera(width);
-        height = this.offsetSizeByCamera(height);
+        x = this.offsetAndScaleX(x);
+        y = this.offsetAndScaleY(y);
+        width = this.scaleSize(width);
+        height = this.scaleSize(height);
         this.ctx.fillRect(x, y, width, height);
     }
 
     fillRect2({x, y, width, height}: Rect): void {
-        if (
-            !this.usingCameraCoords &&
-            !this.camera.isRectVisible(x, y, width, height)
-        ) {
+        if (!this.#usingCameraCoords && !this.camera.isRectVisible(x, y, width, height)) {
             return;
         }
-        x = this.offsetXByCamera(x);
-        y = this.offsetYByCamera(y);
-        width = this.offsetSizeByCamera(width);
-        height = this.offsetSizeByCamera(height);
+        x = this.offsetAndScaleX(x);
+        y = this.offsetAndScaleY(y);
+        width = this.scaleSize(width);
+        height = this.scaleSize(height);
         this.ctx.fillRect(x, y, width, height);
     }
 
     fillCircle(cx: number, cy: number, radius: number): void {
-        if (
-            !this.usingCameraCoords &&
-            !this.camera.isCircleVisible(cx, cy, radius)
-        ) {
+        if (!this.#usingCameraCoords && !this.camera.isCircleVisible(cx, cy, radius)) {
             return;
         }
-        cx = this.offsetXByCamera(cx);
-        cy = this.offsetYByCamera(cy);
-        radius = this.offsetSizeByCamera(radius);
+        cx = this.offsetAndScaleX(cx);
+        cy = this.offsetAndScaleY(cy);
+        radius = this.scaleSize(radius);
         this.ctx.beginPath();
         this.ctx.arc(cx, cy, radius, 0, Math.PI * 2);
         this.ctx.fill();
     }
 
-    strokeLine(
-        x0: number,
-        y0: number,
-        x1: number,
-        y1: number,
-        width = 1,
-    ): void {
-        if (
-            !this.usingCameraCoords &&
-            !this.camera.isLineVisible(x0, y0, x1, y1, width)
-        ) {
+    strokeLine(x0: number, y0: number, x1: number, y1: number, width = 1): void {
+        if (!this.#usingCameraCoords && !this.camera.isLineVisible(x0, y0, x1, y1, width)) {
             return;
         }
-        x0 = this.offsetXByCamera(x0);
-        x1 = this.offsetXByCamera(x1);
-        y0 = this.offsetYByCamera(y0);
-        y1 = this.offsetYByCamera(y1);
-        width = this.offsetSizeByCamera(width);
+        x0 = this.offsetAndScaleX(x0);
+        x1 = this.offsetAndScaleX(x1);
+        y0 = this.offsetAndScaleY(y0);
+        y1 = this.offsetAndScaleY(y1);
+        width = this.scaleSize(width);
         this.ctx.lineWidth = width;
         this.ctx.beginPath();
         this.ctx.moveTo(x0, y0);
@@ -128,12 +100,9 @@ export class Renderer {
         this.ctx.stroke();
     }
 
-    fillText(
-        text: string,
-        {x, y, color = Color.WHITE, shadowColor}: ShadowTextOpts,
-    ): void {
-        x = this.offsetXByCamera(x);
-        y = this.offsetYByCamera(y);
+    fillText(text: string, {x, y, color = Color.WHITE, shadowColor}: ShadowTextOpts): void {
+        x = this.offsetAndScaleX(x);
+        y = this.offsetAndScaleY(y);
         if (shadowColor) {
             this.setFillColor(shadowColor);
             const offsetX = BASE_FONT_SIZE / 10;
@@ -161,33 +130,25 @@ export class Renderer {
         dw: number,
         dh: number,
     ): void {
-        if (
-            !this.usingCameraCoords &&
-            !this.camera.isRectVisible(dx, dy, dw, dh)
-        ) {
+        if (!this.#usingCameraCoords && !this.camera.isRectVisible(dx, dy, dw, dh)) {
             return;
         }
         // drawImage(image: CanvasImageSource, dx: number, dy: number): void;
         // drawImage(image: CanvasImageSource, dx: number, dy: number, dw: number, dh: number): void;
         // drawImage(image: CanvasImageSource, sx: number, sy: number, sw: number, sh: number, dx: number, dy: number, dw: number, dh: number): void;
-        dx = this.offsetXByCamera(dx);
-        dy = this.offsetYByCamera(dy);
-        dw = this.offsetSizeByCamera(dw);
-        dh = this.offsetSizeByCamera(dh);
+        dx = this.offsetAndScaleX(dx);
+        dy = this.offsetAndScaleY(dy);
+        dw = this.scaleSize(dw);
+        dh = this.scaleSize(dh);
         this.ctx.drawImage(src, sx, sy, sw, sh, dx, dy, dw, dh);
     }
 
-    getImageData(
-        x: number,
-        y: number,
-        width: number,
-        height: number,
-    ): ImageData {
-        x = this.offsetXByCamera(x);
-        y = this.offsetYByCamera(y);
+    getImageData(x: number, y: number, width: number, height: number): ImageData {
+        x = this.offsetAndScaleX(x);
+        y = this.offsetAndScaleY(y);
         // TODO: this should be fixed
-        width = this.offsetSizeByCamera(width);
-        height = this.offsetSizeByCamera(height);
+        width = this.scaleSize(width);
+        height = this.scaleSize(height);
         const imageData = this.ctx.getImageData(x, y, width, height);
         return imageData;
     }
@@ -236,10 +197,7 @@ export class Renderer {
     }
 
     setGlobalAlpha(alpha: number) {
-        assert(
-            alpha >= 0 && alpha <= 1,
-            `Alpha should be in range [0, 1]. Got: ${alpha}`,
-        );
+        assert(alpha >= 0 && alpha <= 1, `Alpha should be in range [0, 1]. Got: ${alpha}`);
         this.ctx.globalAlpha = alpha;
     }
 
@@ -280,29 +238,28 @@ export class Renderer {
         }
     }
 
-    private offsetXByCamera(x: number): number {
-        if (this.usingCameraCoords) return x;
+    private offsetAndScaleX(x: number): number {
+        if (this.#usingCameraCoords) return x;
         const result =
-            (x - this.camera.worldOffset.x) * this.camera.scale +
-            this.camera.screenSize.width / 2;
+            (x - this.camera.worldOffset.x) * this.camera.scale + this.camera.screenSize.width / 2;
         assert(!isNaN(result));
         return result;
     }
 
-    private offsetYByCamera(y: number): number {
-        if (this.usingCameraCoords) return y;
+    private offsetAndScaleY(y: number): number {
+        if (this.#usingCameraCoords) return y;
         const result =
-            (y - this.camera.worldOffset.y) * this.camera.scale +
-            this.camera.screenSize.height / 2;
+            (y - this.camera.worldOffset.y) * this.camera.scale + this.camera.screenSize.height / 2;
         assert(!isNaN(result));
         return result;
     }
 
-    private offsetSizeByCamera(size: number): number {
-        if (this.usingCameraCoords) {
+    private scaleSize(size: number): number {
+        if (this.#usingCameraCoords) {
             return size;
         }
         const result = size * this.camera.scale;
+        assert(!isNaN(result));
         return result;
     }
 }

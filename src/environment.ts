@@ -5,8 +5,9 @@ import {Renderer} from '#/renderer';
 import {Color} from '#/color';
 import {EntityManager, isSameEntity} from '#/entity/manager';
 import {JSONObjectParser} from '#/json';
-import {BASE_HEIGHT, BASE_WIDTH} from './const';
+import {BASE_HEIGHT, BASE_WIDTH, CELL_SIZE} from './const';
 import {GameStorage} from './storage';
+import {createTileSprite} from './entity/sprite';
 
 const ENV_CONFIG_KEY = 'env_config';
 
@@ -22,24 +23,57 @@ export class Environment {
         height: BASE_HEIGHT,
     };
     #valuesDirty = false; // NOTE: Used to mark for saving
+    private tileSprite = createTileSprite();
+    readonly bgColor = Color.BLACK_RAISIN;
+    readonly gridColor = Color.BLACK_IERIE;
+    readonly boundaryColor = Color.BLACK_IERIE;
+    readonly boundaryThickness = 0.1 * CELL_SIZE;
 
     get needsSaving(): boolean {
         return this.#valuesDirty;
     }
 
-    drawGrid(renderer: Renderer, cellSize: number): void {
+    drawTiles(renderer: Renderer, cellSize: number): void {
         const camera = renderer.camera;
         cellSize *= camera.scale;
         // NOTE: Find top-left position of the camera in camera coordinates
-        const cameraX0 =
-            camera.worldOffset.x * camera.scale - camera.screenSize.width / 2;
-        const cameraY0 =
-            camera.worldOffset.y * camera.scale - camera.screenSize.height / 2;
+        const cameraX0 = camera.worldOffset.x * camera.scale - camera.screenSize.width / 2;
+        const cameraY0 = camera.worldOffset.y * camera.scale - camera.screenSize.height / 2;
+        // NOTE: Find first visible line on the screen for each axis
+        const x0 = cellSize - fmod(cameraX0, cellSize) - cellSize;
+        const y0 = cellSize - fmod(cameraY0, cellSize) - cellSize;
+
+        renderer.useCameraCoords(true);
+        const maxX = x0 + camera.screenSize.width + cellSize;
+        const maxY = y0 + camera.screenSize.height + cellSize;
+        // NOTE: Should be converted to world coordinates since sprite converts them back
+        const worldSize = cellSize * camera.scale;
+        for (let colX = x0; colX < maxX; colX += cellSize) {
+            for (let colY = y0; colY < maxY; colY += cellSize) {
+                this.tileSprite.draw(renderer, {
+                    x: camera.toWorldX(colX),
+                    y: camera.toWorldY(colY),
+                    width: worldSize,
+                    height: worldSize,
+                });
+            }
+        }
+        renderer.useCameraCoords(false);
+    }
+
+    drawGrid(renderer: Renderer, cellSize: number): void {
+        // this.drawTiles(renderer, cellSize);
+        // return;
+        const camera = renderer.camera;
+        cellSize *= camera.scale;
+        // NOTE: Find top-left position of the camera in camera coordinates
+        const cameraX0 = camera.worldOffset.x * camera.scale - camera.screenSize.width / 2;
+        const cameraY0 = camera.worldOffset.y * camera.scale - camera.screenSize.height / 2;
         // NOTE: Find first visible line on the screen for each axis
         const x0 = cellSize - fmod(cameraX0, cellSize);
         const y0 = cellSize - fmod(cameraY0, cellSize);
 
-        renderer.setStrokeColor(Color.BLACK_IERIE);
+        renderer.setStrokeColor(this.gridColor);
         renderer.useCameraCoords(true);
         const offset = 1;
         const maxX = x0 + camera.screenSize.width + cellSize;
@@ -62,17 +96,15 @@ export class Environment {
     }
 
     drawWorldBoundary(renderer: Renderer): void {
-        renderer.setStrokeColor(Color.BLACK);
-        // FIXME: Why does this not scale properly?
-        const boundaryThickness = 10;
+        renderer.setStrokeColor(this.boundaryColor);
         renderer.strokeBoundary(
             {
-                x: this.boundary.x - boundaryThickness / 2,
-                y: this.boundary.y - boundaryThickness / 2,
-                width: this.boundary.width + boundaryThickness,
-                height: this.boundary.height + boundaryThickness,
+                x: this.boundary.x - 0.5 * this.boundaryThickness,
+                y: this.boundary.y - 0.5 * this.boundaryThickness,
+                width: this.boundary.width + this.boundaryThickness,
+                height: this.boundary.height + this.boundaryThickness,
             },
-            boundaryThickness,
+            this.boundaryThickness,
         );
         if (this.showBoundary && !this.isInfinite) {
             renderer.setStrokeColor(Color.RED);

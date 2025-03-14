@@ -4,6 +4,7 @@
     "bullet.png": "assets/bullet.png",
     "circle_shield.png": "assets/circle_shield.png",
     "circle_shield_blue.png": "assets/circle_shield_blue.png",
+    "dirt.png": "assets/dirt.png",
     "kenney_particle-pack": {
       "Rotated": {
         "flame_05_rotated.png": "assets/kenney_particle-pack/Rotated/flame_05_rotated.png",
@@ -103,6 +104,18 @@
       "window_02.png": "assets/kenney_particle-pack/window_02.png",
       "window_03.png": "assets/kenney_particle-pack/window_03.png",
       "window_04.png": "assets/kenney_particle-pack/window_04.png"
+    },
+    "kenney_roguelike-caves-dungeons": {
+      "Donate.url": "assets/kenney_roguelike-caves-dungeons/Donate.url",
+      "Facebook.url": "assets/kenney_roguelike-caves-dungeons/Facebook.url",
+      "License.txt": "assets/kenney_roguelike-caves-dungeons/License.txt",
+      "Preview.png": "assets/kenney_roguelike-caves-dungeons/Preview.png",
+      "Sample.png": "assets/kenney_roguelike-caves-dungeons/Sample.png",
+      "Spritesheet": {
+        "roguelikeDungeon_magenta.png": "assets/kenney_roguelike-caves-dungeons/Spritesheet/roguelikeDungeon_magenta.png",
+        "roguelikeDungeon_transparent.png": "assets/kenney_roguelike-caves-dungeons/Spritesheet/roguelikeDungeon_transparent.png",
+        "spritesheetInfo.txt": "assets/kenney_roguelike-caves-dungeons/Spritesheet/spritesheetInfo.txt"
+      }
     },
     "kenney_top-down-tanks-redux": {
       "License.txt": "assets/kenney_top-down-tanks-redux/License.txt",
@@ -318,9 +331,16 @@
       "Visit Kenney.url": "assets/kenney_top-down-tanks-redux/Visit Kenney.url",
       "Visit Patreon.url": "assets/kenney_top-down-tanks-redux/Visit Patreon.url"
     },
+    "roguelikeDungeon_transparent.png": "assets/roguelikeDungeon_transparent.png",
+    "sand.png": "assets/sand.png",
     "shield.png": "assets/shield.png",
     "tank_green.png": "assets/tank_green.png",
-    "tank_yellow.png": "assets/tank_yellow.png"
+    "tank_green_darker.png": "assets/tank_green_darker.png",
+    "tank_yellow.png": "assets/tank_yellow.png",
+    "tank_yellow_darker.png": "assets/tank_yellow_darker.png",
+    "tileGrass1.png": "assets/tileGrass1.png",
+    "tileSand1.png": "assets/tileSand1.png",
+    "tileSand2.png": "assets/tileSand2.png"
   },
   "sounds": {
     "8bit_bomb_explosion.wav": "sounds/8bit_bomb_explosion.wav",
