@@ -1,7 +1,6 @@
 import './globals';
 import './style.css';
 
-import {Color} from '#/color';
 import {APP_ELEMENT_ID, DEV_MODE_KEY} from '#/const';
 import {createDevUI, DevUI} from '#/dev-ui';
 import {preloadEffectImages} from '#/entity/effect';

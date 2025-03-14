@@ -10,6 +10,7 @@ export class Camera {
     readonly screenSize: Vector2;
     // NOTE: This is affected by the scaling settings of the OS.
     readonly pixelRatio: number = window.devicePixelRatio;
+    readonly focusPaddingInPixels = 32;
     visibleScale = 1;
     lastAutoScale = 1;
     manualMode = false;
@@ -54,10 +55,10 @@ export class Camera {
         }
     }
 
-    focusOnRect(rect: Rect, offsetFraction = 0.05): void {
-        const rectScale = 1 + offsetFraction;
-        const scaleX = this.screenSize.width / (rect.width * rectScale);
-        const scaleY = this.screenSize.height / (rect.height * rectScale);
+    focusOnRect(rect: Rect, padding = this.focusPaddingInPixels): void {
+        const rectScale = 1;
+        const scaleX = (this.screenSize.width - padding * 2) / (rect.width * rectScale);
+        const scaleY = (this.screenSize.height - padding * 2) / (rect.height * rectScale);
         this.setScale(Math.min(scaleX, scaleY));
         this.centerOn(rect);
     }
