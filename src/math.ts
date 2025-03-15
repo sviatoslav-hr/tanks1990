@@ -29,21 +29,16 @@ export function lerp(a: number, b: number, t: number): number {
     return a + (b - a) * t;
 }
 
+export function sameSign(a: number, b: number): boolean {
+    return (a ^ b) >= 0;
+}
+
 /** Parabolic curve peaking at t = 0.5 */
-export function bellCurveInterpolate(
-    min: number,
-    max: number,
-    t: number,
-): number {
+export function bellCurveInterpolate(min: number, max: number, t: number): number {
     return min + (max - min) * (4 * t * (1 - t));
 }
 
-export function rotateRect(
-    rect: Rect,
-    cx: number,
-    cy: number,
-    deg: 0 | 90 | 180 | 270,
-): Rect {
+export function rotateRect(rect: Rect, cx: number, cy: number, deg: 0 | 90 | 180 | 270): Rect {
     if (deg === 0) {
         return rect;
     }
@@ -89,13 +84,7 @@ export function oppositeDirection(dir: Direction): Direction {
     }
 }
 
-function rotatePoint(
-    x: number,
-    y: number,
-    cx: number,
-    cy: number,
-    deg: number,
-): [number, number] {
+function rotatePoint(x: number, y: number, cx: number, cy: number, deg: number): [number, number] {
     const radians = toRadians(deg),
         cos = Math.cos(radians),
         sin = Math.sin(radians),

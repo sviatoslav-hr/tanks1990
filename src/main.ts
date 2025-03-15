@@ -73,7 +73,8 @@ function runGame(
     const animationCallback = (timestamp: number): void => {
         const dt = Duration.since(lastTimestamp);
         const preciseDt = dt.clone();
-        dt.min(1000 / 60); // NOTE: Cap the delta time to 60fps
+        // NOTE: Cap the delta time to 60fps. Otherwise the movement gets too during low FPS
+        dt.min(1000 / 60);
         lastTimestamp = timestamp;
 
         try {

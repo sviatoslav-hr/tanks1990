@@ -109,11 +109,7 @@ export class EntityManager {
         return enemy;
     }
 
-    spawnProjectile(
-        ownerId: EntityId,
-        origin: Vector2Like,
-        direction: Direction,
-    ): void {
+    spawnProjectile(ownerId: EntityId, origin: Vector2Like, direction: Direction): void {
         const deadProjectile = this.projectiles.find((p) => p.dead);
         if (deadProjectile) {
             // NOTE: reuse dead projectiles instead of creating new ones
@@ -135,17 +131,9 @@ export class EntityManager {
 
     spawnExplosionEffect(sourceId: EntityId): void {
         const tank = this.findTank(sourceId);
-        assert(
-            tank,
-            `Tank with id ${sourceId} not found for explostion effect`,
-        );
-        const cachedEffect = tank.bot
-            ? this.cachedBotExplosion
-            : this.cachedPlayerExplosion;
-        assert(
-            cachedEffect,
-            `Cached explosion effect not found, bot=${tank.bot}`,
-        );
+        assert(tank, `Tank with id ${sourceId} not found for explostion effect`);
+        const cachedEffect = tank.bot ? this.cachedBotExplosion : this.cachedPlayerExplosion;
+        assert(cachedEffect, `Cached explosion effect not found, bot=${tank.bot}`);
         const effect = cachedEffect.clone(tank);
         this.effects.push(effect);
     }
@@ -156,9 +144,7 @@ export class EntityManager {
         // TODO: find a reasonable number/function to scale entities
         const dscore = 2 ** enemiesCount;
         const shouldSpawn =
-            (this.env.isInfinite
-                ? this.player.score * 20
-                : this.player.score) >= dscore;
+            (this.env.isInfinite ? this.player.score * 20 : this.player.score) >= dscore;
         if (enemiesCount && shouldSpawn) {
             this.spawnEnemy();
         }
@@ -180,42 +166,25 @@ export class EntityManager {
             }
         }
         // TODO: optimize this. Is it more efficient to update existing array or create a new one?
-        this.projectiles = this.projectiles.filter(
-            (_, i) => !garbageIndexes.includes(i),
-        );
+        this.projectiles = this.projectiles.filter((_, i) => !garbageIndexes.includes(i));
     }
 
     private cacheExplosions(renderer: Renderer): void {
         if (!this.cachedBotExplosion) {
             const t = this.tanks.find((t) => t.bot && !t.dead && !t.hasShield);
             if (t) {
-                const imageData = renderer.getImageData(
-                    t.x,
-                    t.y,
-                    t.width,
-                    t.height,
-                );
-                this.cachedBotExplosion = ExplosionEffect.fromImageData(
-                    imageData,
-                    t,
-                );
+                const imageData = renderer.getImageData(t.x, t.y, t.width, t.height);
+                this.cachedBotExplosion = ExplosionEffect.fromImageData(imageData, t);
             }
         }
-        if (
-            !this.cachedPlayerExplosion &&
-            !this.player.dead &&
-            !this.player.hasShield
-        ) {
+        if (!this.cachedPlayerExplosion && !this.player.dead && !this.player.hasShield) {
             const imageData = renderer.getImageData(
                 this.player.x,
                 this.player.y,
                 this.player.width,
                 this.player.height,
             );
-            this.cachedPlayerExplosion = ExplosionEffect.fromImageData(
-                imageData,
-                this.player,
-            );
+            this.cachedPlayerExplosion = ExplosionEffect.fromImageData(imageData, this.player);
         }
     }
 
