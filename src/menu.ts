@@ -2,6 +2,9 @@ import {CustomElement, html} from '#/html';
 import {SoundManager} from '#/sound';
 import {GameState} from '#/state';
 import {EntityManager} from '#/entity/manager';
+import {ScoreOverlay} from '#/score';
+
+// TODO: refactor menu into ReactiveElement
 
 export function initMenu(game: GameState, manager: EntityManager, sounds: SoundManager): Menu {
     const menu = new Menu();
@@ -86,8 +89,6 @@ export function initMenu(game: GameState, manager: EntityManager, sounds: SoundM
     });
     return menu;
 }
-
-// TODO: refactor menu to use new ReactiveElement
 
 export enum MenuState {
     HIDDEN = 'hidden',
@@ -221,6 +222,7 @@ export class Menu extends HTMLElement {
     private buttonContainer: HTMLElement;
     private buttons: MenuButton[] = [];
     private pages: MenuPage[] = [];
+    readonly score: ScoreOverlay;
 
     constructor() {
         super();
@@ -237,6 +239,20 @@ export class Menu extends HTMLElement {
         this.buttonContainer.classList.add('flex-col', 'w-full');
         this.buttonContainer.append(...this.buttons);
         this.mainContainer.append(this.buttonContainer);
+
+        this.score = new ScoreOverlay({
+            style: {
+                position: 'absolute',
+                top: '25%',
+                left: '4rem',
+                display: 'block',
+            },
+        });
+        this.append(this.score);
+    }
+
+    get isMain(): boolean {
+        return this.state === MenuState.START;
     }
 
     get dead(): boolean {
@@ -337,9 +353,11 @@ export class Menu extends HTMLElement {
     private setMainVisibility(visible: boolean): void {
         if (visible) {
             this.mainContainer.hidden = true;
+            this.score.hidden = true;
             this.classList.remove('bg-transparent-black');
         } else {
             this.mainContainer.hidden = false;
+            this.score.hidden = false;
             this.classList.add('bg-transparent-black');
         }
     }

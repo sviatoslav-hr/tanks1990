@@ -10,7 +10,7 @@ import {handleGameInputTick} from '#/game-input-handler';
 import {Duration} from '#/math/duration';
 import {initMenu, Menu} from '#/menu';
 import {Renderer} from '#/renderer';
-import {drawScoreOverlay, drawScoreMini, saveBestScore} from '#/score';
+import {updateScoreInMenu, drawScoreMini, saveBestScore} from '#/score';
 import {SoundManager} from '#/sound';
 import {GameState} from '#/state';
 import {GameStorage} from '#/storage';
@@ -77,7 +77,7 @@ function runGame(
         lastTimestamp = timestamp;
 
         try {
-            handleGameTick(dt, state, manager, menu, input, storage, renderer);
+            handleGameTick(dt, state, manager, menu, storage, renderer);
             handleGameInputTick(input, renderer, state, manager, menu, devUI, storage);
             handleGameEvents(eventQueue, state, manager, sounds);
             if (manager.env.needsSaving) {
@@ -101,7 +101,6 @@ function handleGameTick(
     state: GameState,
     manager: EntityManager,
     menu: Menu,
-    input: GameInput,
     storage: GameStorage,
     renderer: Renderer,
 ) {
@@ -111,10 +110,10 @@ function handleGameTick(
     manager.drawAllEntities(renderer);
     const player = manager.player;
 
-    if (menu.paused || menu.dead || (state.playing && input.isDown('KeyQ'))) {
-        drawScoreOverlay(renderer, player, storage);
-    } else if (state.playing || (state.paused && !menu.visible)) {
+    if (state.playing || (state.paused && !menu.visible)) {
         drawScoreMini(renderer, manager, storage);
+    } else if (menu.visible) {
+        updateScoreInMenu(menu, player, storage);
     }
 
     if (state.playing && player.dead) {

@@ -1,9 +1,11 @@
-import {Color} from '#/color';
-import {BASE_FONT_SIZE, BASE_PADDING} from '#/const';
+import {BASE_PADDING} from '#/const';
 import {PlayerTank} from '#/entity';
 import {GameStorage} from '#/storage';
 import {Renderer} from '#/renderer';
 import {EntityManager} from './entity/manager';
+import {css, CustomElement, div, ReactiveElement} from './html';
+import {Duration} from './math/duration';
+import {Menu} from './menu';
 
 const BEST_SCORE_KEY = 'best_score';
 const BEST_SCORE_AT_KEY = 'best_score_at';
@@ -18,7 +20,6 @@ export function drawScoreMini(
     manager: EntityManager,
     cache: GameStorage,
 ): void {
-    renderer.setStrokeColor(Color.WHITE);
     renderer.useCameraCoords(true);
     const player = manager.player;
     const env = manager.env;
@@ -55,45 +56,102 @@ export function drawScoreMini(
     renderer.useCameraCoords(false);
 }
 
-// TODO: This probably should be replaced with a custom component (like a Menu)
-export function drawScoreOverlay(renderer: Renderer, player: PlayerTank, cache: GameStorage): void {
-    renderer.setFont('200 36px Helvetica', 'right', 'top');
-    const innerPadding = BASE_PADDING / 2;
+interface ScoreState {
+    bestScoreOnly: boolean;
+    currentScore: number;
+    bestScore: ScoreRecord | null;
+    survivedFor: Duration;
+}
 
-    const scoreText = `Score: ${player.score}`;
-    const surviveText = `Survived for ${player.survivedFor.toHumanString()}`;
-    const bestScore = getBestScore(cache);
-    const bestScoreText =
-        player.dead && bestScore?.score
-            ? `Best Score: ${bestScore.score} (${shortDate(bestScore.createdAt)})`
-            : null;
-    let text = `${scoreText}\n${surviveText}`;
-    if (bestScoreText) {
-        text += `\n${bestScoreText}`;
+function bestScoreEquals(a: ScoreRecord | null, b: ScoreRecord | null): boolean {
+    if (a === b) {
+        return true;
     }
-    const lines = text.split('\n');
-    const maxWidth = Math.max(...lines.map((l) => renderer.measureText(l).width));
+    if (a == null || b == null) {
+        return false;
+    }
+    return a.score === b.score && a.createdAt.getTime() === b.createdAt.getTime();
+}
 
-    const camera = renderer.camera;
-    const boundaryHeight = bestScoreText ? BASE_FONT_SIZE * 3 : BASE_FONT_SIZE * 2;
-    renderer.setStrokeColor(Color.WHITE);
-    renderer.useCameraCoords(true);
-    renderer.strokeBoundary(
-        {
-            x: camera.screenSize.width - BASE_PADDING - maxWidth - innerPadding,
-            y: BASE_PADDING - innerPadding,
-            width: maxWidth + 2 * innerPadding,
-            height: boundaryHeight + 2 * innerPadding,
-        },
-        2,
-    );
+@CustomElement('g-score-overlay')
+export class ScoreOverlay extends ReactiveElement {
+    bestScoreOnly = true;
+    currentScore = 0;
+    bestScore: ScoreRecord | null = null;
+    survivedFor = Duration.zero();
 
-    renderer.fillMultilineText(lines, {
-        x: camera.screenSize.width - BASE_PADDING,
-        y: BASE_PADDING,
-        shadowColor: Color.BLACK,
+    updateState(state: ScoreState): void {
+        let stateChanged = false;
+        if (this.bestScoreOnly !== state.bestScoreOnly) {
+            this.bestScoreOnly = state.bestScoreOnly;
+            stateChanged = true;
+        }
+        if (this.currentScore !== state.currentScore) {
+            this.currentScore = state.currentScore;
+            stateChanged = true;
+        }
+        if (!bestScoreEquals(this.bestScore, state.bestScore)) {
+            this.bestScore = state.bestScore;
+            stateChanged = true;
+        }
+        if (!this.survivedFor.equals(state.survivedFor)) {
+            this.survivedFor.setFrom(state.survivedFor);
+            stateChanged = true;
+        }
+        if (stateChanged) {
+            console.log('updateState > rerender');
+            this.rerender();
+        }
+    }
+
+    protected override render(): HTMLElement {
+        const bestScoreText = this.bestScore
+            ? `Best Score: ${this.bestScore.score} (${shortDate(this.bestScore.createdAt)})`
+            : null;
+        return div({
+            className: ['score-overlay', this.bestScoreOnly ? 'score-overlay--best' : ''],
+            children: [
+                !this.bestScoreOnly && div({textContent: `Score: ${this.currentScore}`}),
+                !this.bestScoreOnly &&
+                    div({textContent: `Survived for ${this.survivedFor.toHumanString()}`}),
+                bestScoreText && div({textContent: bestScoreText}),
+            ],
+        });
+    }
+
+    protected override styles(): HTMLStyleElement | null {
+        return css`
+            .score-overlay {
+                position: relative;
+                padding: 0.5rem;
+                color: white;
+                font: 500 1.5rem Helvetica;
+                width: 100%;
+                margin: 0 auto;
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-start;
+                gap: 2rem;
+            }
+            .score-overlay--best {
+                font-size: 2rem;
+            }
+            .score-overlay div {
+                white-space: nowrap;
+                text-shadow: #fc0 1px 0 5px;
+            }
+        `;
+    }
+}
+
+export function updateScoreInMenu(menu: Menu, player: PlayerTank, cache: GameStorage): void {
+    menu.score.updateState({
+        currentScore: player.score,
+        // PERF: Cache best score instead of reading from storage constantly
+        bestScore: getBestScore(cache),
+        survivedFor: player.survivedFor,
+        bestScoreOnly: menu.isMain,
     });
-    renderer.useCameraCoords(false);
 }
 
 export function saveBestScore(cache: GameStorage, score: number): void {
@@ -112,7 +170,7 @@ export function getBestScore(cache: GameStorage): ScoreRecord | null {
 
     const createdAt = cache.getDate(BEST_SCORE_AT_KEY);
     if (createdAt == null) {
-        console.warn('WARN: Found best score, but no creation date');
+        console.error('WARN: Found best score, but no creation date');
         return null;
     }
 

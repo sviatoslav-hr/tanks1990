@@ -1,29 +1,17 @@
-export function html(
-    segments: TemplateStringsArray,
-    ...args: string[]
-): string {
+export function html(segments: TemplateStringsArray, ...args: string[]): string {
     if (segments.length === 1) {
         return segments[0]!;
     }
-    return segments.reduce(
-        (acc, segment, i) => acc + segment + (args[i] || ''),
-        '',
-    );
+    return segments.reduce((acc, segment, i) => acc + segment + (args[i] || ''), '');
 }
 
-export function css(
-    segments: TemplateStringsArray,
-    ...args: string[]
-): HTMLStyleElement {
+export function css(segments: TemplateStringsArray, ...args: string[]): HTMLStyleElement {
     const style = document.createElement('style');
     if (segments.length === 1) {
         style.textContent = segments[0]!;
         return style;
     }
-    style.textContent = segments.reduce(
-        (acc, segment, i) => acc + segment + (args[i] || ''),
-        '',
-    );
+    style.textContent = segments.reduce((acc, segment, i) => acc + segment + (args[i] || ''), '');
     return style;
 }
 
@@ -43,16 +31,10 @@ export function CustomElement(tagName: string): CustomElementDecorator {
     ) => {
         if (context) {
             context.addInitializer(() => {
-                customElements.define(
-                    tagName,
-                    classOrTarget as Constructor<HTMLElement>,
-                );
+                customElements.define(tagName, classOrTarget as Constructor<HTMLElement>);
             });
         } else {
-            customElements.define(
-                tagName,
-                classOrTarget as Constructor<HTMLElement>,
-            );
+            customElements.define(tagName, classOrTarget as Constructor<HTMLElement>);
         }
     };
 }
@@ -63,9 +45,10 @@ export interface HTMLElementOptions {
     textContent?: string;
     onClick?: (event: MouseEvent) => void;
     children?: HTMLElementChildren;
+    style?: CSSStyleConfig;
 }
 
-type HTMLElementChildren = string | HTMLElement | (string | HTMLElement)[];
+type HTMLElementChildren = string | HTMLElement | (string | HTMLElement | null | false)[];
 
 function htmlElement<K extends keyof HTMLElementTagNameMap>(
     tagName: K,
@@ -114,10 +97,7 @@ export function label(options?: HTMLLabelElementOptions): HTMLLabelElement {
     return element;
 }
 
-function applyOptionsToElement(
-    element: HTMLElement,
-    options?: HTMLElementOptions,
-) {
+function applyOptionsToElement(element: HTMLElement, options?: HTMLElementOptions) {
     if (options?.id) {
         element.id = options.id;
     }
@@ -135,13 +115,39 @@ function applyOptionsToElement(
         if (typeof children === 'string') {
             element.textContent = children;
         } else if (Array.isArray(children)) {
-            element.append(...children);
+            element.append(...children.filter((c) => c != null && c !== false));
         } else {
             element.append(children);
         }
     }
     if (options?.onClick) {
         element.addEventListener('click', options.onClick);
+    }
+    if (options?.style) {
+        applyStyleToElement(element, options.style);
+    }
+}
+
+type CSSStyleConfig = Partial<
+    Omit<
+        CSSStyleDeclaration,
+        | 'parentRule'
+        | 'length'
+        | 'getPropertyPriority'
+        | 'getPropertyValue'
+        | 'item'
+        | 'removeProperty'
+        | 'setProperty'
+        | number
+        | symbol
+    >
+>;
+
+function applyStyleToElement(element: HTMLElement, style: CSSStyleConfig) {
+    for (const pair of Object.entries(style)) {
+        const key = pair[0] as keyof CSSStyleConfig;
+        const value = pair[1] as CSSStyleDeclaration[typeof key];
+        element.style[key] = value;
     }
 }
 
@@ -154,19 +160,11 @@ export abstract class ReactiveElement extends HTMLElement {
         super();
         this.shadow = this.attachShadow({mode: 'open'});
         applyOptionsToElement(this, options);
-        // HACK: this has to be executed in the next microtask since render can try to access uninitialized properties
+        // HACK: this has to be executed in the next macrotask since render can try to access uninitialized properties
         setTimeout(() => {
-            const styles = this.styles();
-            if (styles) {
-                this.shadow.append(styles);
-            }
-            const elements = this.render();
-            if (Array.isArray(elements)) {
-                this.shadow.append(...elements);
-            } else {
-                this.shadow.append(elements);
-            }
+            this.shadow.append(...this.constructContent());
             this.rendered = true;
+            this.afterRender();
         });
     }
 
@@ -176,6 +174,26 @@ export abstract class ReactiveElement extends HTMLElement {
         setTimeout(() => {
             this.shadow.append(...elements);
         });
+    }
+
+    rerender(): void {
+        if (!this.rendered) {
+            console.warn(`rerender called before initial render for element ${this.tagName}`);
+            return;
+        }
+        this.shadow.innerHTML = '';
+        this.shadow.append(...this.constructContent());
+        this.afterRender();
+    }
+
+    private constructContent(): HTMLElement[] {
+        const renderContent = this.render();
+        const elements = Array.isArray(renderContent) ? renderContent : [renderContent];
+        const styles = this.styles();
+        if (styles) {
+            return [styles, ...elements];
+        }
+        return elements;
     }
 
     // TODO: try avoid inheritance
