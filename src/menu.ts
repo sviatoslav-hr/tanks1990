@@ -331,13 +331,13 @@ export class Menu extends HTMLElement {
         const prevState = this.state;
         this.state = state;
         if (state === MenuState.HIDDEN) {
-            this.setMainVisibility(true);
+            this.setMainVisibility(false);
             if (prevState !== MenuState.HIDDEN) {
                 this.prevState = prevState;
             }
             return;
         } else {
-            this.setMainVisibility(false);
+            this.setMainVisibility(true);
         }
         this.setHeadingByState(state);
         let focused = false;
@@ -352,13 +352,15 @@ export class Menu extends HTMLElement {
 
     private setMainVisibility(visible: boolean): void {
         if (visible) {
-            this.mainContainer.hidden = true;
-            this.score.hidden = true;
-            this.classList.remove('bg-transparent-black');
-        } else {
             this.mainContainer.hidden = false;
             this.score.hidden = false;
             this.classList.add('bg-transparent-black');
+            this.classList.add('fade-in');
+        } else {
+            this.mainContainer.hidden = true;
+            this.score.hidden = true;
+            this.classList.remove('bg-transparent-black');
+            this.classList.remove('fade-in');
         }
     }
 
