@@ -27,7 +27,7 @@ export abstract class Tank extends Entity {
 
     protected velocity: number = 0;
     protected acceleration = 0;
-    protected shieldRemaining = Duration.zero();
+    protected shieldTimer = Duration.zero();
     protected moving = false;
     protected readonly SHOOTING_PERIOD = Duration.milliseconds(300);
     protected readonly SHIELD_TIME = Duration.milliseconds(1000);
@@ -211,21 +211,26 @@ export abstract class Tank extends Entity {
 
     activateShield(): void {
         this.hasShield = true;
-        this.shieldRemaining.setFrom(this.SHIELD_TIME);
+        this.shieldTimer.setFrom(this.SHIELD_TIME);
+        this.updateShieldBoundary();
     }
 
     protected updateShield(dt: Duration): void {
         this.shieldSprite.update(dt);
-        if (this.shieldRemaining.positive || this.hasShield) {
-            this.shieldBoundary.x = this.x - this.width / 2;
-            this.shieldBoundary.y = this.y - this.height / 2;
-            this.shieldBoundary.width = this.width * 2;
-            this.shieldBoundary.height = this.height * 2;
-            this.shieldRemaining.sub(dt).max(0);
-            if (!this.shieldRemaining.positive) {
+        if (this.shieldTimer.positive || this.hasShield) {
+            this.shieldTimer.sub(dt).max(0);
+            this.updateShieldBoundary();
+            if (!this.shieldTimer.positive) {
                 this.hasShield = false;
             }
         }
+    }
+
+    private updateShieldBoundary(): void {
+        this.shieldBoundary.x = this.x - this.width / 2;
+        this.shieldBoundary.y = this.y - this.height / 2;
+        this.shieldBoundary.width = this.width * 2;
+        this.shieldBoundary.height = this.height * 2;
     }
 
     protected handleCollision(_target: Entity): void {}
