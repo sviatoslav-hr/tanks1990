@@ -20,7 +20,7 @@ export abstract class Tank extends Entity {
     // TODO: Is this really a good idea to have this field here?
     public readonly bot: boolean = true;
     // TODO: No reason to store this in every tank instance, move this to a config.
-    public readonly topSpeed = (480 * 1000) / 3600; // in m/s
+    public readonly topSpeed = (400 * 1000) / 3600; // in m/s
     public readonly topSpeedReachTime = Duration.milliseconds(150);
     public readonly stoppingTime = Duration.milliseconds(70);
     public readonly id = newEntityId();
@@ -250,6 +250,7 @@ export abstract class Tank extends Entity {
 }
 
 export class PlayerTank extends Tank implements Entity {
+    public readonly topSpeed = (480 * 1000) / 3600; // in m/s
     public readonly topSpeedReachTime = Duration.milliseconds(50); // in seconds
     public readonly bot: boolean = false;
     public dead = true;
