@@ -50,10 +50,10 @@ export class ExplosionEffect {
         assert(boundary.width > 0);
         assert(boundary.height > 0);
 
-        const xScale = boundary.width / image.width;
-        const yScale = boundary.height / image.height;
+        const xScale = image.width / boundary.width;
+        const yScale = image.height / boundary.height;
         const scale = Math.min(xScale, yScale);
-        const particleSize = Math.floor((boundary.width * scale) / 8); // NOTE: 16 is single px in image
+        const particleSize = Math.floor((boundary.width * scale) / 16); // NOTE: take 1/16 of the boundary width as a particle size
         const particles: Particle[] = [];
         for (let y = 0; y < image.height; y += particleSize) {
             for (let x = 0; x < image.width; x += particleSize) {
@@ -75,7 +75,7 @@ export class ExplosionEffect {
                     color = `rgb(${red},${green},${blue})`;
                 }
                 const particle = new Particle(
-                    new Vector2(x * xScale, y * yScale).add(boundary),
+                    new Vector2(x / xScale, y / yScale).add(boundary),
                     new Vector2(particleSize, particleSize),
                     color,
                     boundary,
