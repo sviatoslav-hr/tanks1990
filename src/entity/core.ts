@@ -1,7 +1,6 @@
 import {EntityId, newEntityId} from '#/entity/id';
 import {Rect, clamp, isPosInsideRect, xn, yn} from '#/math';
 import {Duration} from '#/math/duration';
-import {Vector2Like} from '#/math/vector';
 import {EntityManager} from '#/entity/manager';
 
 export class Entity implements Rect {

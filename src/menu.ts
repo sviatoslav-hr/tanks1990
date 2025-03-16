@@ -145,7 +145,7 @@ export class MenuPage extends HTMLElement {
         this.initStyles();
         this.hide();
         this.append((this.container = this.createContainer()));
-        this.append(this.createCloseButton());
+        this.container.append(this.createCloseButton());
         this.container.append(this.createTitle(title));
         this.container.append((this.contentWrapper = this.createContentWrapper()));
     }
@@ -203,6 +203,10 @@ export class MenuPage extends HTMLElement {
 
     private createCloseButton(): HTMLButtonElement {
         const closeButton = document.createElement('button');
+        closeButton.style.position = 'absolute';
+        closeButton.style.top = '0';
+        closeButton.style.left = '-2rem';
+        closeButton.style.transform = 'translate(-100%, 0)';
         closeButton.textContent = 'Back';
         closeButton.classList.add('button');
         closeButton.onclick = () => {
