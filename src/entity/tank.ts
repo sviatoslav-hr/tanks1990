@@ -250,6 +250,7 @@ export abstract class Tank extends Entity {
 export class PlayerTank extends Tank implements Entity {
     public readonly topSpeed = (480 * 1000) / 3600; // in m/s
     public readonly topSpeedReachTime = Duration.milliseconds(50); // in seconds
+    protected readonly SHOOTING_PERIOD = Duration.milliseconds(500);
     public readonly bot: boolean = false;
     public readonly survivedFor = Duration.zero();
 
@@ -323,7 +324,7 @@ export class PlayerTank extends Tank implements Entity {
 export class EnemyTank extends Tank implements Entity {
     private static readonly RESPAWN_DELAY = Duration.milliseconds(2000);
     protected moving = true;
-    protected readonly SHOOTING_PERIOD = Duration.milliseconds(1000);
+    protected readonly SHOOTING_PERIOD = Duration.milliseconds(1500);
     protected readonly sprite = createTankSprite('enemy');
     private readonly SEARCH_DELAY = Duration.milliseconds(5000);
     private targetSearchTimer = this.SEARCH_DELAY.clone();

@@ -87,6 +87,18 @@ function runGame(
             devUI.update(preciseDt);
             input.nextTick();
             state.nextTick();
+            // TODO: Hide this under a button in de UI
+            // renderer.useCameraCoords(true);
+            // {
+            //     renderer.setFont('64px monospace');
+            //     renderer.fillText(`${(1000 / preciseDt.milliseconds).toFixed(0)}fps`, {
+            //         x: 10,
+            //         y: 10,
+            //     });
+            //     renderer.fillText(`dt=${dt.milliseconds.toFixed(3)}ms`, {x: 10, y: 85});
+            //     renderer.fillText(`pdt=${preciseDt.milliseconds.toFixed(3)}ms`, {x: 10, y: 160});
+            // }
+            // renderer.useCameraCoords(false);
         } catch (err) {
             console.error('Error in animationCallback', err);
         }
