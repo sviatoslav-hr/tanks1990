@@ -1,13 +1,13 @@
+import {Color} from '#/color';
+import {BASE_HEIGHT, BASE_WIDTH, CELL_SIZE} from '#/const';
 import {Entity, isIntesecting} from '#/entity/core';
+import {EntityManager, isSameEntity} from '#/entity/manager';
+import {createTileSprite} from '#/entity/sprite';
+import {JSONObjectParser} from '#/json';
 import {Rect, fmod, isPosInsideRect} from '#/math';
 import {Vector2Like} from '#/math/vector';
 import {Renderer} from '#/renderer';
-import {Color} from '#/color';
-import {EntityManager, isSameEntity} from '#/entity/manager';
-import {JSONObjectParser} from '#/json';
-import {BASE_HEIGHT, BASE_WIDTH, CELL_SIZE} from './const';
-import {GameStorage} from './storage';
-import {createTileSprite} from './entity/sprite';
+import {GameStorage} from '#/storage';
 
 const ENV_CONFIG_KEY = 'env_config';
 
@@ -31,7 +31,15 @@ export class Environment {
         return this.#valuesDirty;
     }
 
-    drawTiles(renderer: Renderer, cellSize: number): void {
+    public draw(renderer: Renderer): void {
+        if (false) this.drawTiles(renderer, CELL_SIZE);
+        else this.drawGrid(renderer, CELL_SIZE);
+        if (!this.isInfinite) {
+            this.drawWorldBoundary(renderer);
+        }
+    }
+
+    private drawTiles(renderer: Renderer, cellSize: number): void {
         const camera = renderer.camera;
         cellSize *= camera.scale;
         // NOTE: Find top-left position of the camera in camera coordinates
@@ -59,9 +67,7 @@ export class Environment {
         renderer.useCameraCoords(false);
     }
 
-    drawGrid(renderer: Renderer, cellSize: number): void {
-        // this.drawTiles(renderer, cellSize);
-        // return;
+    private drawGrid(renderer: Renderer, cellSize: number): void {
         const camera = renderer.camera;
         cellSize *= camera.scale;
         // NOTE: Find top-left position of the camera in camera coordinates
@@ -93,7 +99,7 @@ export class Environment {
         renderer.useCameraCoords(false);
     }
 
-    drawWorldBoundary(renderer: Renderer): void {
+    private drawWorldBoundary(renderer: Renderer): void {
         renderer.setStrokeColor(this.boundaryColor);
         renderer.strokeBoundary(
             {

@@ -1,5 +1,4 @@
 import {Camera} from '#/camera';
-import {CELL_SIZE} from '#/const';
 import {Block, generateBlocks} from '#/entity/block';
 import {Direction, Entity, isIntesecting} from '#/entity/core';
 import {ExplosionEffect} from '#/entity/effect';
@@ -42,8 +41,7 @@ export class EntityManager {
 
     // TODO: Entity manager should not be responsible for drawing
     drawAllEntities(renderer: Renderer): void {
-        this.env.drawGrid(renderer, CELL_SIZE);
-        this.env.drawWorldBoundary(renderer);
+        this.env.draw(renderer);
         for (const block of this.blocks) {
             block.draw(renderer);
         }
