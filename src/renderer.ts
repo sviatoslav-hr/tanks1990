@@ -21,9 +21,7 @@ export class Renderer {
         this.canvas = document.createElement('canvas');
         this.camera = new Camera(this.canvas.width, this.canvas.height);
 
-        const ctx2d = this.canvas.getContext('2d', {
-            willReadFrequently: true,
-        });
+        const ctx2d = this.canvas.getContext('2d');
         if (!ctx2d) {
             throw new Error('Context should be available');
         }

@@ -20,7 +20,7 @@ export abstract class Tank extends Entity {
     // TODO: Is this really a good idea to have this field here?
     public readonly bot: boolean = true;
     // TODO: No reason to store this in every tank instance, move this to a config.
-    public readonly topSpeed = (400 * 1000) / 3600; // in m/s
+    public readonly topSpeed = (300 * 1000) / 3600; // in m/s
     public readonly topSpeedReachTime = Duration.milliseconds(150);
     public readonly stoppingTime = Duration.milliseconds(70);
     public readonly id = newEntityId();
@@ -43,7 +43,6 @@ export abstract class Tank extends Entity {
     protected abstract readonly sprite: Sprite<string>;
     protected shootingDelay = this.SHOOTING_PERIOD.clone();
     protected isStuck = false;
-    private lastDt = 0;
 
     constructor(manager: EntityManager) {
         super(manager);
@@ -63,7 +62,6 @@ export abstract class Tank extends Entity {
     }
 
     update(dt: Duration): void {
-        this.lastDt = dt.milliseconds;
         if (this.dead) {
             return;
         }
@@ -133,7 +131,7 @@ export abstract class Tank extends Entity {
             const velocity = ((this.velocity * 3600) / 1000).toFixed(2);
             const acc = this.lastAcceleration.toFixed(2);
             renderer.fillText(
-                `${this.id}: a=${acc};v=${velocity}km/h;dt=${Math.floor(this.lastDt)}ms`,
+                `${this.id}: a=${acc};v=${velocity}km/h`,
                 // `ID:${this.id}: {${Math.floor(this.x)};${Math.floor(this.y)}}`,
                 {
                     x: this.x + this.width / 2,
@@ -253,9 +251,12 @@ export class PlayerTank extends Tank implements Entity {
     public readonly topSpeed = (480 * 1000) / 3600; // in m/s
     public readonly topSpeedReachTime = Duration.milliseconds(50); // in seconds
     public readonly bot: boolean = false;
+    public readonly survivedFor = Duration.zero();
+
     public dead = true;
     public score = 0;
-    public survivedFor = Duration.zero();
+    public invincible = false;
+
     protected readonly sprite = createTankSprite('player');
 
     constructor(manager: EntityManager) {
@@ -264,18 +265,23 @@ export class PlayerTank extends Tank implements Entity {
         this.y = 0;
     }
 
-    update(dt: Duration): void {
+    override update(dt: Duration): void {
         super.update(dt);
         if (this.dead) return;
         this.survivedFor.add(dt);
     }
 
-    respawn(): boolean {
+    override respawn(): boolean {
         const respawned = super.respawn();
         this.shootingDelay.milliseconds = 0;
         this.score = 0;
         this.survivedFor.milliseconds = 0;
         return respawned;
+    }
+
+    override takeDamage(): boolean {
+        if (this.invincible) return false;
+        return super.takeDamage();
     }
 
     // TODO: Should be handled in the main loop *probably*
@@ -364,10 +370,10 @@ export class EnemyTank extends Tank implements Entity {
         super.draw(renderer);
         if (this.dead) return;
         if (env.showBoundary) {
-            if (this.collisionAnimation.active) {
-                renderer.setStrokeColor(Color.WHITE_NAVAJO);
-                renderer.strokeBoundary(this, this.collisionAnimation.progress * 10);
-            }
+            // if (this.collisionAnimation.active) {
+            //     renderer.setStrokeColor(Color.WHITE_NAVAJO);
+            //     renderer.strokeBoundary(this, this.collisionAnimation.progress * 10);
+            // }
             if (this.isStuck) {
                 renderer.setStrokeColor(Color.RED);
                 renderer.strokeBoundary(this, 1);

@@ -56,45 +56,25 @@ export function isInside(rect: Rect, bounds: Rect): boolean {
 }
 
 export function clampByBoundary(entity: Rect, boundary: Rect): void {
-    entity.x = clamp(
-        entity.x,
-        boundary.x,
-        boundary.x + boundary.width - entity.width,
-    );
-    entity.y = clamp(
-        entity.y,
-        boundary.y,
-        boundary.y + boundary.height - entity.height,
-    );
+    entity.x = clamp(entity.x, boundary.x, boundary.x + boundary.width - entity.width);
+    entity.y = clamp(entity.y, boundary.y, boundary.y + boundary.height - entity.height);
 }
 
-export function moveEntity(
-    entity: Rect,
-    value: number,
-    direction: Direction,
-): void {
-    const movement = getMovement(value, direction);
-    entity.x += movement.x;
-    entity.y += movement.y;
-}
-
-export function getMovement(value: number, direction: Direction): Vector2Like {
-    const vec: Vector2Like = {x: 0, y: 0};
+export function moveEntity(entity: Rect, offset: number, direction: Direction): void {
     switch (direction) {
         case Direction.NORTH:
-            vec.y -= value;
+            entity.y -= offset;
             break;
         case Direction.SOUTH:
-            vec.y += value;
+            entity.y += offset;
             break;
         case Direction.EAST:
-            vec.x += value;
+            entity.x += offset;
             break;
         case Direction.WEST:
-            vec.x -= value;
+            entity.x -= offset;
             break;
     }
-    return vec;
 }
 
 export function scaleMovement(movement: number, dt: Duration): number {

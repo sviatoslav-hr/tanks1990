@@ -91,9 +91,14 @@ export class EntityManager {
     }
 
     updateEffects(dt: Duration): void {
+        const effectsToRemove: ExplosionEffect[] = [];
         for (const effect of this.effects) {
             effect.update(dt);
+            if (effect.animation.finished) {
+                effectsToRemove.push(effect);
+            }
         }
+        this.effects = this.effects.filter((e) => !effectsToRemove.includes(e));
     }
 
     updateAllEntities(dt: Duration, camera: Camera): void {

@@ -31,10 +31,7 @@ export class ExplosionEffect {
 
     // TODO: consider using a simpler data type for image instead of HTMLImageElement
     private explosionImage: HTMLImageElement;
-    readonly animation = new Animation(
-        ExplosionEffect.ANIMATION_DURATION,
-        easeOut2,
-    );
+    readonly animation = new Animation(ExplosionEffect.ANIMATION_DURATION, easeOut2);
 
     private constructor(
         public boundary: Rect,
@@ -49,10 +46,7 @@ export class ExplosionEffect {
         return new ExplosionEffect(boundary, particles, image);
     }
 
-    private static generateParticles(
-        image: ImageData,
-        boundary: Rect,
-    ): Particle[] {
+    private static generateParticles(image: ImageData, boundary: Rect): Particle[] {
         assert(boundary.width > 0);
         assert(boundary.height > 0);
 
@@ -69,10 +63,7 @@ export class ExplosionEffect {
                 const blue = image.data[index + 2];
                 const alpha = image.data[index + 3];
                 assert(
-                    red != null &&
-                        green != null &&
-                        blue != null &&
-                        alpha != null,
+                    red != null && green != null && blue != null && alpha != null,
                     'Invalid image data. Cannot extract color components',
                 );
                 if (!alpha || alpha < 0) continue;
@@ -114,6 +105,10 @@ export class ExplosionEffect {
     }
 
     draw(renderer: Renderer): void {
+        if (this.animation.finished) {
+            console.warn('WARN: Trying to draw finished explosion effect');
+            return;
+        }
         renderer.setGlobalAlpha(1 - this.animation.progress);
         this.drawExplosionImage(renderer);
         for (const p of this.particles) {
@@ -129,13 +124,10 @@ export class ExplosionEffect {
         }
 
         const imageScale =
-            Math.min(this.animation.progress * 2, 1) *
-            ExplosionEffect.IMAGE_MAX_SCALE;
+            Math.min(this.animation.progress * 2, 1) * ExplosionEffect.IMAGE_MAX_SCALE;
 
-        const xOffset =
-            (this.boundary.width * imageScale - this.boundary.width) / 2;
-        const yOffset =
-            (this.boundary.height * imageScale - this.boundary.height) / 2;
+        const xOffset = (this.boundary.width * imageScale - this.boundary.width) / 2;
+        const yOffset = (this.boundary.height * imageScale - this.boundary.height) / 2;
         renderer.drawImage(
             this.explosionImage,
             0,
@@ -160,15 +152,8 @@ export class ExplosionEffect {
     }
 
     clone(boundary: Rect = this.boundary): ExplosionEffect {
-        const particles = ExplosionEffect.generateParticles(
-            this.sourceImageData,
-            boundary,
-        );
-        const clone = new ExplosionEffect(
-            boundary,
-            particles,
-            this.sourceImageData,
-        );
+        const particles = ExplosionEffect.generateParticles(this.sourceImageData, boundary);
+        const clone = new ExplosionEffect(boundary, particles, this.sourceImageData);
         clone.animation.progress = 0;
         return clone;
     }
@@ -188,10 +173,7 @@ class Particle {
         const boundaryCenter = new Vector2(boundary.width, boundary.height)
             .divideScalar(2)
             .add(boundary);
-        const travelDistance = new Vector2(
-            boundary.width / 2,
-            boundary.height / 2,
-        );
+        const travelDistance = new Vector2(boundary.width / 2, boundary.height / 2);
         travelDistance.multiply({x: Math.random(), y: Math.random()});
         this.destination = position
             .clone()
@@ -203,12 +185,7 @@ class Particle {
 
     draw(renderer: Renderer): void {
         renderer.setFillColor(this.color);
-        renderer.fillRect(
-            this.position.x,
-            this.position.y,
-            this.size.width,
-            this.size.height,
-        );
+        renderer.fillRect(this.position.x, this.position.y, this.size.width, this.size.height);
     }
 
     update(animationProgress: number): void {
