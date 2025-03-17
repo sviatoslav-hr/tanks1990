@@ -9,9 +9,9 @@ import {Vector2Like} from '#/math/vector';
 import {Renderer} from '#/renderer';
 import {GameStorage} from '#/storage';
 
-const ENV_CONFIG_KEY = 'env_config';
+const WORLD_CONFIG_KEY = 'world_config';
 
-export class Environment {
+export class World {
     isInfinite = false;
     showBoundary = false;
     readonly boundary: Rect = {
@@ -127,7 +127,7 @@ export class Environment {
 
     save(storage: GameStorage): void {
         assert(this.#valuesDirty);
-        storage.set(ENV_CONFIG_KEY, this.serialize());
+        storage.set(WORLD_CONFIG_KEY, this.serialize());
         this.#valuesDirty = false;
     }
 
@@ -143,7 +143,7 @@ export class Environment {
     }
 
     load(storage: GameStorage): void {
-        const data = storage.get(ENV_CONFIG_KEY);
+        const data = storage.get(WORLD_CONFIG_KEY);
         if (data) {
             this.deserialize(data);
             this.#valuesDirty = false;
@@ -167,11 +167,7 @@ export class Environment {
     }
 }
 
-export function isOccupied(
-    pos: Vector2Like,
-    world: Environment,
-    entityManager: EntityManager,
-): boolean {
+export function isOccupied(pos: Vector2Like, world: World, entityManager: EntityManager): boolean {
     if (!world.isInfinite) {
         if (!isPosInsideRect(pos.x, pos.y, world.boundary)) {
             return true;
@@ -191,14 +187,14 @@ export function isRectOccupied(
     entityManager: EntityManager,
     ignoreEntity?: Entity,
 ): boolean {
-    const env = entityManager.env;
-    if (!env.isInfinite) {
-        if (!isPosInsideRect(rect.x, rect.y, env.boundary)) {
+    const world = entityManager.world;
+    if (!world.isInfinite) {
+        if (!isPosInsideRect(rect.x, rect.y, world.boundary)) {
             return true;
         }
         const xn = rect.x + rect.width;
         const yn = rect.y + rect.height;
-        if (!isPosInsideRect(xn, yn, env.boundary)) {
+        if (!isPosInsideRect(xn, yn, world.boundary)) {
             return true;
         }
     }

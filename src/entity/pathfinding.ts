@@ -1,6 +1,6 @@
 import {Rect, isPosInsideRect} from '#/math';
 import {Vector2} from '#/math/vector';
-import {isRectOccupied} from '#/environment';
+import {isRectOccupied} from '#/world';
 import {EntityManager} from '#/entity/manager';
 import {Entity} from '#/entity/core';
 
@@ -36,10 +36,7 @@ export function findPath(
         if (currentNode) {
             currentNode.considered = true;
         }
-        if (
-            currentNode &&
-            isPosInsideRect(currentNode.pos.x, currentNode.pos.y, destination)
-        ) {
+        if (currentNode && isPosInsideRect(currentNode.pos.x, currentNode.pos.y, destination)) {
             break;
         }
         // TODO: Some of the surrounding nodes should recompute the path since there might be a better path
@@ -79,12 +76,7 @@ function fillSurrondingNodes(
     nodes.push(...filteredNeighbors);
 }
 
-function createNode(
-    pos: Vector2,
-    parent: Node | null,
-    start: Vector2,
-    end: Vector2,
-): Node {
+function createNode(pos: Vector2, parent: Node | null, start: Vector2, end: Vector2): Node {
     // Technically this should be the cost of the path, not the distance between the points
     const g = pos.manhattanDistanceTo(start);
     const h = pos.manhattanDistanceTo(end);

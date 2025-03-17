@@ -22,7 +22,7 @@ export function drawScoreMini(
 ): void {
     renderer.useCameraCoords(true);
     const player = manager.player;
-    const env = manager.env;
+    const world = manager.world;
     const camera = renderer.camera;
     const padding = BASE_PADDING / 2;
 
@@ -31,7 +31,7 @@ export function drawScoreMini(
         const bestScoreText =
             'Best Score: ' +
             (bestScore ? `${bestScore.score} (${shortDate(bestScore.createdAt)})` : '-');
-        const x = camera.screenSize.width / 2 - (env.boundary.width * camera.scale) / 2;
+        const x = camera.screenSize.width / 2 - (world.boundary.width * camera.scale) / 2;
         const y = padding;
         renderer.setFont('200 20px Helvetica', 'start', 'top');
         renderer.fillText(bestScoreText, {x, y});
@@ -48,7 +48,7 @@ export function drawScoreMini(
 
     {
         const surviveText = `Survived for ${player.survivedFor.toHumanString()}`;
-        const x = camera.screenSize.width / 2 + (env.boundary.width * camera.scale) / 2;
+        const x = camera.screenSize.width / 2 + (world.boundary.width * camera.scale) / 2;
         const y = padding;
         renderer.setFont('200 20px Helvetica', 'right', 'top');
         renderer.fillText(surviveText, {x, y});

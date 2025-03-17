@@ -51,7 +51,7 @@ export function handleGameInputTick(
     }
 
     if (input.isPressed('KeyB')) {
-        manager.env.showBoundary = !manager.env.showBoundary;
+        manager.world.showBoundary = !manager.world.showBoundary;
     }
 
     if (input.isPressed('Semicolon')) {
@@ -73,8 +73,7 @@ export function handleGameInputTick(
         renderer.camera.manualMode = true;
         renderer.camera.worldOffset.sub(mouseDelta);
     }
-    const ctrlDevDown =
-        __DEV_MODE && (input.isDown('ControlLeft') || input.isDown('MetaLeft'));
+    const ctrlDevDown = __DEV_MODE && (input.isDown('ControlLeft') || input.isDown('MetaLeft'));
 
     // NOTE: Same as MouseMiddle but for touchpad
     if (ctrlDevDown && input.isDown('MouseLeft')) {
@@ -90,7 +89,7 @@ export function handleGameInputTick(
     if (__DEV_MODE && input.isPressed('Digit0')) {
         renderer.camera.reset();
         renderer.camera.centerOn(
-            manager.env.isInfinite ? manager.player : manager.env.boundary,
+            manager.world.isInfinite ? manager.player : manager.world.boundary,
         );
     }
     if (__DEV_MODE && input.isPressed('Digit1')) {

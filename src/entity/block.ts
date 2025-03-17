@@ -8,19 +8,16 @@ import {Renderer} from '#/renderer';
 import {EntityManager} from './manager';
 
 export function generateBlocks(manager: EntityManager): Block[] {
-    const env = manager.env;
+    const world = manager.world;
     // NOTE: no blocks in inifinite mode for now.
-    if (env.isInfinite) return [];
+    if (world.isInfinite) return [];
 
     const blocks: Block[] = [];
     const BLOCKS_COUNT = 9;
     for (let i = 0; i < BLOCKS_COUNT; i++) {
-        const x =
-            env.boundary.x +
-            randomInt(1, env.boundary.width / CELL_SIZE - 1) * CELL_SIZE;
+        const x = world.boundary.x + randomInt(1, world.boundary.width / CELL_SIZE - 1) * CELL_SIZE;
         const y =
-            env.boundary.y +
-            randomInt(1, env.boundary.height / CELL_SIZE - 1) * CELL_SIZE;
+            world.boundary.y + randomInt(1, world.boundary.height / CELL_SIZE - 1) * CELL_SIZE;
         const sprite = createStaticSprite({
             key: 'bricks',
             frameWidth: 64,
@@ -48,10 +45,7 @@ export class Block extends Entity {
     private readonly color: Color = Color.WHITE;
     private readonly sprite?: Sprite<string>;
 
-    constructor(
-        manager: EntityManager,
-        {x, y, width, height, texture}: BlockOpts,
-    ) {
+    constructor(manager: EntityManager, {x, y, width, height, texture}: BlockOpts) {
         super(manager);
         this.x = x;
         this.y = y;

@@ -14,12 +14,6 @@ Camera:
 
 
 ## IN_PROGRESS
-- [ ] **Rework the score UI!!!**
-    - [x] Allocate space on the screen for other info
-    - [x] Display score somewhere on the screen while game is active
-    - [ ] Display score on pause screen
-    - [ ] Display score on the death screen
-    - [ ] Display best score on the death screen
 - [ ] Improve Camera handling
     - [x] Renderer should render stuff based on the camera position
     - [x] Add the ability to move the camera
@@ -55,7 +49,6 @@ Camera:
 
 ## REFACTOR
 - [ ] Should just every entity have the `Renderer` reference as a field?
-- [ ] Should `World` contain entities or only environment?
 - [ ] Restructure coordinates system (consider defining something like `WorldPosition`)
 - [ ] Better way to store images and sprites (how bad Image is?)
 - [ ] Revisit entire *infinite mode* implementation

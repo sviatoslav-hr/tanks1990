@@ -37,7 +37,7 @@ export function initMenu(game: GameState, manager: EntityManager, sounds: SoundM
     menu.addButton(
         'RESTART',
         () => {
-            manager.init({infiniteWorld: manager.env.isInfinite});
+            manager.init({infiniteWorld: manager.world.isInfinite});
             game.start();
             menu.hide();
         },

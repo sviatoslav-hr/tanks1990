@@ -100,10 +100,10 @@ export abstract class Tank extends Entity {
             this.stopMoving();
             this.isStuck = true;
         }
-        if (!this.manager.env.isInfinite) {
+        if (!this.manager.world.isInfinite) {
             const oldX = this.x;
             const oldY = this.y;
-            clampByBoundary(this, this.manager.env.boundary);
+            clampByBoundary(this, this.manager.world.boundary);
             if (oldX !== this.x || oldY !== this.y) {
                 this.stopMoving();
                 this.isStuck = true;
@@ -123,7 +123,7 @@ export abstract class Tank extends Entity {
             this.shieldSprite.draw(renderer, this.shieldBoundary);
         }
 
-        if (this.manager.env.showBoundary) {
+        if (this.manager.world.showBoundary) {
             renderer.setStrokeColor(Color.PINK);
             renderer.strokeBoundary(this, 1);
             renderer.setFont('400 16px Helvetica', 'center', 'middle');
@@ -139,7 +139,7 @@ export abstract class Tank extends Entity {
                 },
             );
         }
-        if (this.manager.env.showBoundary && this.isStuck) {
+        if (this.manager.world.showBoundary && this.isStuck) {
             renderer.setStrokeColor(Color.RED);
             renderer.strokeBoundary(this, 1);
         }
@@ -158,11 +158,11 @@ export abstract class Tank extends Entity {
     }
 
     respawn(): boolean {
-        const env = this.manager.env;
-        const playerInInfinite = env.isInfinite && !this.bot;
+        const world = this.manager.world;
+        const playerInInfinite = world.isInfinite && !this.bot;
         if (playerInInfinite) {
             // NOTE: in infinite mode, player is always in the center
-            const boundary = env.boundary;
+            const boundary = world.boundary;
             this.x = boundary.x + boundary.width / 2 - this.width / 2;
             this.y = boundary.y + boundary.height / 2 - this.height / 2;
         }
@@ -194,7 +194,7 @@ export abstract class Tank extends Entity {
         const prevX = this.x;
         const prevY = this.y;
         for (let attempt = 0; attempt < attemptLimit; attempt++) {
-            moveToRandomCorner(this, this.manager.env.boundary);
+            moveToRandomCorner(this, this.manager.world.boundary);
             const collided = this.manager.findCollided(this);
             if (!collided) {
                 return true;
@@ -367,10 +367,10 @@ export class EnemyTank extends Tank implements Entity {
     }
 
     draw(renderer: Renderer): void {
-        const env = this.manager.env;
+        const world = this.manager.world;
         super.draw(renderer);
         if (this.dead) return;
-        if (env.showBoundary) {
+        if (world.showBoundary) {
             // if (this.collisionAnimation.active) {
             //     renderer.setStrokeColor(Color.WHITE_NAVAJO);
             //     renderer.strokeBoundary(this, this.collisionAnimation.progress * 10);

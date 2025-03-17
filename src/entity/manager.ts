@@ -5,7 +5,7 @@ import {ExplosionEffect} from '#/entity/effect';
 import {EntityId} from '#/entity/id';
 import {Projectile} from '#/entity/projectile';
 import {EnemyTank, PlayerTank, Tank} from '#/entity/tank';
-import {Environment} from '#/environment';
+import {World} from '#/world';
 import {Duration} from '#/math/duration';
 import {Vector2Like} from '#/math/vector';
 import {Renderer} from '#/renderer';
@@ -20,7 +20,7 @@ interface InitEntitiesOpts {
 
 export class EntityManager {
     readonly player = new PlayerTank(this);
-    readonly env = new Environment();
+    readonly world = new World();
     tanks: Tank[] = [];
     blocks: Block[] = [];
     projectiles: Projectile[] = [];
@@ -30,7 +30,7 @@ export class EntityManager {
 
     init({infiniteWorld}: InitEntitiesOpts): void {
         this.reset();
-        this.env.isInfinite = infiniteWorld;
+        this.world.isInfinite = infiniteWorld;
         this.blocks = generateBlocks(this);
         this.player.respawn();
         this.spawnEnemy();
@@ -41,7 +41,7 @@ export class EntityManager {
 
     // TODO: Entity manager should not be responsible for drawing
     drawAllEntities(renderer: Renderer): void {
-        this.env.draw(renderer);
+        this.world.draw(renderer);
         for (const block of this.blocks) {
             block.draw(renderer);
         }
@@ -147,7 +147,7 @@ export class EntityManager {
         // TODO: find a reasonable number/function to scale entities
         const dscore = 2 ** enemiesCount;
         const shouldSpawn =
-            (this.env.isInfinite ? this.player.score * 20 : this.player.score) >= dscore;
+            (this.world.isInfinite ? this.player.score * 20 : this.player.score) >= dscore;
         if (enemiesCount && shouldSpawn) {
             this.spawnEnemy();
         }

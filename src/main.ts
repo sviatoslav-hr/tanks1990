@@ -36,7 +36,7 @@ function main(): void {
     const input = new GameInput();
     const gameState = new GameState();
     const manager = new EntityManager();
-    manager.env.load(storage);
+    manager.world.load(storage);
 
     const menu = initMenu(gameState, manager, sounds);
     appElement.append(menu);
@@ -58,14 +58,14 @@ function runGame(
     sounds: SoundManager,
 ) {
     renderer.resizeCanvasByWindow(window);
-    renderer.camera.focusOnRect(manager.env.boundary);
+    renderer.camera.focusOnRect(manager.world.boundary);
     menu.resize(renderer.canvas.offsetWidth, renderer.canvas.offsetHeight);
     menu.showMain();
     input.listen(document.body, renderer.canvas);
 
     window.addEventListener('resize', () => {
         renderer.resizeCanvasByWindow(window);
-        renderer.camera.focusOnRect(manager.env.boundary);
+        renderer.camera.focusOnRect(manager.world.boundary);
         menu.resize(renderer.canvas.clientWidth, renderer.canvas.clientHeight);
     });
 
@@ -81,8 +81,8 @@ function runGame(
             handleGameTick(dt, state, manager, menu, storage, renderer);
             handleGameInputTick(input, renderer, state, manager, menu, devUI, storage);
             handleGameEvents(eventQueue, state, manager, sounds);
-            if (manager.env.needsSaving) {
-                manager.env.save(storage);
+            if (manager.world.needsSaving) {
+                manager.world.save(storage);
             }
             devUI.update(preciseDt);
             input.nextTick();
@@ -117,7 +117,7 @@ function handleGameTick(
     storage: GameStorage,
     renderer: Renderer,
 ) {
-    renderer.setFillColor(manager.env.bgColor);
+    renderer.setFillColor(manager.world.bgColor);
     renderer.fillScreen();
 
     manager.drawAllEntities(renderer);
@@ -141,7 +141,7 @@ function handleGameTick(
     if (state.playing || state.dead || state.debugUpdateTriggered) {
         manager.updateEffects(dt);
         manager.updateAllEntities(dt, renderer.camera);
-        if (manager.env.isInfinite) {
+        if (manager.world.isInfinite) {
             renderer.camera.centerOn(player);
         }
     }

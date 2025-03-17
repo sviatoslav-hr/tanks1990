@@ -118,7 +118,7 @@ export function createDevUI(state: GameState, manager: EntityManager, cache: Gam
         .setName('Open Assets')
         .onClick(() => window.open('./assets.html', '_blank'));
 
-    // const envFolder = devPanel.addFolder('Environment');
+    // const world = devPanel.addFolder('World');
     // TODO: Checkboxes to show/hide boundary, grid, etc.
     return devUI;
 }

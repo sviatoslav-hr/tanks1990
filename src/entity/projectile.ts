@@ -60,7 +60,7 @@ export class Projectile extends Entity {
         this.sprite.update(dt);
         // TODO: use movement equation instead
         moveEntity(this, scaleMovement(this.v, dt), this.direction);
-        if (!isInside(this, this.manager.env.boundary)) {
+        if (!isInside(this, this.manager.world.boundary)) {
             this.dead = true;
             return;
         }
@@ -91,7 +91,7 @@ export class Projectile extends Entity {
         }
         this.drawTrail(renderer);
         this.sprite.draw(renderer, this, this.direction);
-        if (this.manager.env.showBoundary) {
+        if (this.manager.world.showBoundary) {
             renderer.setStrokeColor(Color.PINK);
             renderer.strokeBoundary(this, 1);
         }

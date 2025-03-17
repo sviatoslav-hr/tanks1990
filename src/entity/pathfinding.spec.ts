@@ -34,10 +34,10 @@ vi.mock('../entity/sprite', () => {
 describe('Pathfinding', () => {
     it('should find a path', () => {
         const manager = new EntityManager();
-        manager.env.boundary.x = 0;
-        manager.env.boundary.y = 0;
-        manager.env.boundary.width = 800;
-        manager.env.boundary.height = 600;
+        manager.world.boundary.x = 0;
+        manager.world.boundary.y = 0;
+        manager.world.boundary.width = 800;
+        manager.world.boundary.height = 600;
         manager.blocks = generateBlocks(manager);
         const enemy = new EnemyTank(manager);
         enemy.respawnDelay.setMilliseconds(0);
