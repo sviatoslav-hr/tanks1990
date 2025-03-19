@@ -29,14 +29,18 @@ export function handleGameInputTick(
     }
 
     if (input.isPressed('KeyP') || input.isPressed('Escape')) {
-        if (!state.initial && !manager.player.dead) {
-            if (state.playing) {
-                menu.showPause();
-            } else {
-                menu.hide();
+        if (state.paused && !menu.paused) {
+            menu.showPause();
+        } else {
+            if (!state.initial && !manager.player.dead) {
+                if (state.playing) {
+                    menu.showPause();
+                } else {
+                    menu.hide();
+                }
             }
+            state.togglePauseResume();
         }
-        state.togglePauseResume();
     }
 
     if (input.isPressed('KeyO')) {
