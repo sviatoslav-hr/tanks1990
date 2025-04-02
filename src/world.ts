@@ -258,7 +258,6 @@ export function isRectOccupied(
     return false;
 }
 
-// TODO: Have rooms of different sizes, *maybe*
 // TODO: Figure out generation algorithm that would avoid overlapping rooms
 function generateDungeon(
     startRoomPosition: Vector2,
@@ -419,23 +418,6 @@ export class Room {
     draw(renderer: Renderer, world: World): void {
         if (world.isInfinite) {
             let text = `${this.roomIndex + 1}`;
-            // switch (this.nextDoorDir) {
-            //     case Direction.NORTH:
-            //         text += 'N';
-            //         break;
-            //     case Direction.EAST:
-            //         text += 'E';
-            //         break;
-            //     case Direction.SOUTH:
-            //         text += 'S';
-            //         break;
-            //     case Direction.WEST:
-            //         text += 'W';
-            //         break;
-            // }
-            // if (this.nextDoorOpen) {
-            //     text += 'O';
-            // }
             const fontSize = CELL_SIZE * 8 * renderer.camera.scale;
             renderer.setFont(`700 ${fontSize}px Helvetica`, 'center', 'middle');
             const {x, y} = this.position;

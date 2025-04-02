@@ -1,18 +1,5 @@
 # TODO:
 
-## Requirements
-
-World:
-- An open procedurally generated world with enemies and obstacles.
-- It should also contain dungeons which are also procedurally generated with enemies and nice loot.
-
-Camera:
-- Camera should be very flexible to use
-- There should be the ability to detach the camera in dev mode and move it positionally as you wish (probably with the mouse)
-- There should be a zoom in/out options for the camera and the game should be scaled properly
-- There should be some space on the screen for the things like score and maybe buttons like fullscreen
-
-
 ## IN_PROGRESS
 - [ ] Dungeon Mode
     - [ ] Figure out correct room generation algorithm
@@ -42,6 +29,7 @@ Camera:
 - [ ] Enemy explosion effect is gray instead of green (cannot reproduce)
 - [ ] Explosion effect image data may grab some black pixels from the boundary
 - [ ] Enemies sometimes stuck when they need to move around the block (probably because of the collision detection and precision issues)
+      It's esier to reproduce when there are more blocks around
 - [ ] Fix projectile size (it's bigger than it visually is)
 - [ ] Fix sound explosion delay
 - [ ] Cache best score instead of fetching it each frame

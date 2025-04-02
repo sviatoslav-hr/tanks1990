@@ -20,14 +20,6 @@ export class Camera {
         this.screenSize = new Vector2(screenWidth, screenHeight);
     }
 
-    get x0(): number {
-        return this.worldOffset.x - this.screenSize.width / 2 / this.visibleScale;
-    }
-
-    get y0(): number {
-        return this.worldOffset.y - this.screenSize.height / 2 / this.visibleScale;
-    }
-
     get scale() {
         return this.visibleScale;
     }
@@ -72,21 +64,22 @@ export class Camera {
     isRectVisible(x: number, y: number, width: number, height: number): boolean;
     isRectVisible(rect: Rect): boolean;
     isRectVisible(rectOrX: Rect | number, y?: number, width?: number, height?: number): boolean {
+        const visibleWidth = this.screenSize.width / this.scale;
+        const visibleHeight = this.screenSize.height / this.scale;
+        const visibleX = this.worldOffset.x - visibleWidth / 2;
+        const visibleY = this.worldOffset.y - visibleHeight / 2;
         if (typeof rectOrX === 'number') {
+            const x = rectOrX;
             assert(y != null && width != null && height != null, 'Invalid arguments');
             return (
-                rectOrX + width > this.x0 &&
-                rectOrX < this.x0 + this.screenSize.x &&
-                y + height > this.y0 &&
-                y < this.y0 + this.screenSize.y
+                x + width >= visibleX &&
+                x <= visibleX + visibleWidth &&
+                y + height >= visibleY &&
+                y <= visibleY + visibleHeight
             );
         }
-        return (
-            rectOrX.x + rectOrX.width > this.x0 &&
-            rectOrX.x < this.x0 + this.screenSize.x &&
-            rectOrX.y + rectOrX.height > this.y0 &&
-            rectOrX.y < this.y0 + this.screenSize.y
-        );
+        const rect = rectOrX;
+        return this.isRectVisible(rect.x, rect.y, rect.width, rect.height);
     }
 
     isLineVisible(x1: number, y1: number, x2: number, y2: number, lineWidth: number): boolean {

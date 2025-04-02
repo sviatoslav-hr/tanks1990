@@ -37,8 +37,8 @@ export class Renderer {
         return this.#usingCameraCoords;
     }
 
-    strokeBoundary({x, y, width, height}: Rect, lineWidth = 1): void {
-        if (!this.#usingCameraCoords && !this.camera.isRectVisible(x, y, width, height)) {
+    strokeBoundary({x, y, width, height}: Rect, lineWidth = 1, force = false): void {
+        if (!this.#usingCameraCoords && !force && !this.camera.isRectVisible(x, y, width, height)) {
             return;
         }
         const halfLW = lineWidth / 2;
