@@ -58,14 +58,14 @@ function runGame(
     sounds: SoundManager,
 ) {
     renderer.resizeCanvasByWindow(window);
-    renderer.camera.focusOnRect(manager.world.boundary);
+    renderer.camera.focusOnRect(manager.world.activeRoom.boundary);
     menu.resize(renderer.canvas.offsetWidth, renderer.canvas.offsetHeight);
     menu.showMain();
     input.listen(document.body, renderer.canvas);
 
     window.addEventListener('resize', () => {
         renderer.resizeCanvasByWindow(window);
-        renderer.camera.focusOnRect(manager.world.boundary);
+        renderer.camera.focusOnRect(manager.world.activeRoom.boundary);
         menu.resize(renderer.canvas.clientWidth, renderer.canvas.clientHeight);
     });
 
@@ -141,8 +141,8 @@ function handleGameTick(
     if (state.playing || state.dead || state.debugUpdateTriggered) {
         manager.updateEffects(dt);
         manager.updateAllEntities(dt, renderer.camera);
-        if (manager.world.isInfinite) {
-            renderer.camera.centerOn(player);
-        }
+        // if (manager.world.isInfinite) {
+        //     renderer.camera.centerOn(player);
+        // }
     }
 }

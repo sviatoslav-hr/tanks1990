@@ -7,7 +7,7 @@ import {Transform} from '#/math/transform';
 type ShadowTextOpts = {
     x: number;
     y: number;
-    color?: Color;
+    color?: Color | string;
     shadowColor?: Color;
 };
 

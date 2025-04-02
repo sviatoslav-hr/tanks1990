@@ -14,12 +14,14 @@ Camera:
 
 
 ## IN_PROGRESS
+- [ ] Dungeon Mode
+    - [ ] Figure out correct room generation algorithm
+    - [ ] Scale enemies based on the room index
+    - [ ] A a default mode basically a single room with different enemy spawn rules
+    - [ ] Fix enemies getting stuck in the room walls (during spawn?)
+    - [ ] Fix player not being able to return back to the previous room (or block the entrance)
 - [ ] Improve Camera handling
-    - [x] Renderer should render stuff based on the camera position
-    - [x] Add the ability to move the camera
-    - [x] Don't draw stuff that is not visible on the screen
-    - [x] Add the ability to zoom in/out
-    - [x] Make the canvas the size of the whole page
+    - [ ] Logic to not draw offscreen entities is not working correctly during zooming
     - [ ] Split camera into Player camera and Dev Camera
     - [ ] Zoom towards the mouse position
     - [ ] Add smooth zooming in and out

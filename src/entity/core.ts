@@ -2,6 +2,7 @@ import {EntityId, newEntityId} from '#/entity/id';
 import {Rect, clamp, isPosInsideRect, xn, yn} from '#/math';
 import {Duration} from '#/math/duration';
 import {EntityManager} from '#/entity/manager';
+import {Room} from '#/world';
 
 export class Entity implements Rect {
     readonly id: EntityId = newEntityId();
@@ -10,8 +11,14 @@ export class Entity implements Rect {
     public y = 0;
     public width = 0;
     public height = 0;
+    public room: Room;
+    public DEBUG_collidedCount = 0;
 
-    constructor(protected manager: EntityManager) {}
+    constructor(protected manager: EntityManager) {
+        const room = manager.world.activeRoom;
+        assert(room);
+        this.room = room;
+    }
 
     equals(other: Entity): boolean {
         return this.id === other.id;
@@ -25,6 +32,19 @@ export enum Direction {
     WEST = 270,
 }
 
+export function oppositeDirection(direction: Direction): Direction {
+    switch (direction) {
+        case Direction.NORTH:
+            return Direction.SOUTH;
+        case Direction.SOUTH:
+            return Direction.NORTH;
+        case Direction.EAST:
+            return Direction.WEST;
+        case Direction.WEST:
+            return Direction.EAST;
+    }
+}
+
 export function isOutsideRect(entity: Rect, boundary: Rect): boolean {
     return (
         entity.x < boundary.x ||
@@ -35,6 +55,7 @@ export function isOutsideRect(entity: Rect, boundary: Rect): boolean {
 }
 
 export function isIntesecting(rect: Rect, other: Rect): boolean {
+    // TODO: Use a better algorithm (For example, the AABB one?).
     // NOTE: checks if any corner of `rect` is inside of `other`
     return (
         isPosInsideRect(rect.x, rect.y, other) ||

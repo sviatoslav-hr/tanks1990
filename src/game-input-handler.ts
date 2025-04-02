@@ -92,9 +92,7 @@ export function handleGameInputTick(
     }
     if (__DEV_MODE && input.isPressed('Digit0')) {
         renderer.camera.reset();
-        renderer.camera.centerOn(
-            manager.world.isInfinite ? manager.player : manager.world.boundary,
-        );
+        renderer.camera.focusOnRect(manager.world.activeRoom.boundary);
     }
     if (__DEV_MODE && input.isPressed('Digit1')) {
         renderer.camera.manualMode = true;

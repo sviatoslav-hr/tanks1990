@@ -1,4 +1,4 @@
-import {Result, wrapError} from '#/common';
+import {Result} from '#/common';
 import {clamp} from '#/math';
 import {GameStorage} from '#/storage';
 
@@ -59,7 +59,7 @@ export class SoundManager {
         const results = await Promise.all(promises);
         for (const result of results) {
             if (result.isErr()) {
-                console.error(result.context('Failed to batch load sound').err);
+                console.error(result.contextErr('Failed to batch load sound').err);
             }
         }
     }
@@ -88,7 +88,7 @@ export class SoundManager {
             if (res.isOk()) {
                 sound.play(volumeScale ?? 1);
             } else {
-                console.error(res.context(`Failed to play sound: ${type}`).err);
+                console.error(res.contextErr(`Failed to play sound: ${type}`).err);
             }
         });
     }
@@ -144,9 +144,7 @@ class Sound {
             audioSource.start(0);
             this.state = SoundState.PLAYING;
         } else {
-            console.error(
-                `Sound: cannot play, sound not loaded: "${this.src}"`,
-            );
+            console.error(`Sound: cannot play, sound not loaded: "${this.src}"`);
         }
     }
 
@@ -163,39 +161,32 @@ class Sound {
     // TODO: extract this out of Sound class.
     // Sound class should only be responsible for playing sounds with already valid data.
     // This way there is no need for state management in Sound class.
-    async load(): Promise<Result<void>> {
+    async load(): Promise<Result<void, Error>> {
         if (this.loaded) {
             console.warn(`Sound: already loaded: "${this.src}"`);
-            return Result.Ok();
+            return Result.ok();
         }
         if (this.state === SoundState.LOADING) {
             console.warn(`Sound: already loading: "${this.src}"`);
-            return Result.Ok();
+            return Result.ok();
         }
+
         this.state = SoundState.LOADING;
-        const result = await Result.async(async () => {
-            const buffer = await fetch(this.src)
-                .then((res) => res.arrayBuffer())
-                .catch((err) => {
-                    throw wrapError(
-                        err,
-                        `Failed to fetch audio file "${this.src}"`,
-                    );
-                });
-            this.audioBuffer = await this.audioContext
-                .decodeAudioData(buffer)
-                .catch((err) => {
-                    throw wrapError(
-                        err,
-                        `Failed to decode audio data for "${this.src}"`,
-                    );
-                });
-            this.state = SoundState.LOADED;
-        });
-        if (result.isErr()) {
+        const bufferResult = await Result.async(fetch(this.src))
+            .contextErr(`Failed to fetch audio file "${this.src}"`)
+            .mapPromise((res) => res.arrayBuffer())
+            .contextErr(`Failed to read audio file "${this.src}" response as array buffer`)
+            .mapPromise((buffer) => this.audioContext.decodeAudioData(buffer))
+            .contextErr(`Failed to decode audio data for "${this.src}"`);
+
+        if (bufferResult.isErr()) {
             this.state = SoundState.ERROR;
+            return bufferResult.castValue();
         }
-        return result.context(`Failed to load sound: "${this.src}"`);
+
+        this.audioBuffer = bufferResult.value;
+        this.state = SoundState.LOADED;
+        return Result.ok();
     }
 
     private createSource(gainNode: GainNode): AudioBufferSourceNode {

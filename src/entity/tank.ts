@@ -17,6 +17,7 @@ export abstract class Tank extends Entity {
     public dead = true;
     public hasShield = true;
     public direction = Direction.NORTH;
+    public shouldRespawn = false;
     // TODO: Is this really a good idea to have this field here?
     public readonly bot: boolean = true;
     // TODO: No reason to store this in every tank instance, move this to a config.
@@ -158,16 +159,9 @@ export abstract class Tank extends Entity {
     }
 
     respawn(): boolean {
-        const world = this.manager.world;
-        const playerInInfinite = world.isInfinite && !this.bot;
-        if (playerInInfinite) {
-            // NOTE: in infinite mode, player is always in the center
-            const boundary = world.boundary;
-            this.x = boundary.x + boundary.width / 2 - this.width / 2;
-            this.y = boundary.y + boundary.height / 2 - this.height / 2;
-        }
-        if (playerInInfinite || this.tryRespawn(4)) {
+        if (!this.bot || this.tryRespawn(4)) {
             this.dead = false;
+            this.shouldRespawn = false;
             this.shootingDelay.setFrom(this.SHOOTING_PERIOD);
             this.activateShield();
             return true;
@@ -194,11 +188,13 @@ export abstract class Tank extends Entity {
         const prevX = this.x;
         const prevY = this.y;
         for (let attempt = 0; attempt < attemptLimit; attempt++) {
-            moveToRandomCorner(this, this.manager.world.boundary);
+            // TODO: Be more creative with spawn points
+            moveToRandomCorner(this, this.room.boundary);
             const collided = this.manager.findCollided(this);
             if (!collided) {
                 return true;
             }
+            collided.DEBUG_collidedCount += 1;
         }
         this.x = prevX;
         this.y = prevY;
@@ -262,8 +258,8 @@ export class PlayerTank extends Tank implements Entity {
 
     constructor(manager: EntityManager) {
         super(manager);
-        this.x = 0;
-        this.y = 0;
+        this.x = this.width / 2;
+        this.y = this.height / 2;
     }
 
     override update(dt: Duration): void {
@@ -274,6 +270,8 @@ export class PlayerTank extends Tank implements Entity {
 
     override respawn(): boolean {
         const respawned = super.respawn();
+        this.x = -this.width / 2;
+        this.y = -this.height / 2;
         this.shootingDelay.milliseconds = 0;
         this.score = 0;
         this.survivedFor.milliseconds = 0;
@@ -288,20 +286,20 @@ export class PlayerTank extends Tank implements Entity {
     // TODO: Should be handled in the main loop *probably*
     handleKeyboard(keyboard: GameInput): void {
         let newDirection: Direction | null = null;
-        if (keyboard.isDown('KeyA')) {
+        if (keyboard.isDown('KeyA') || keyboard.isDown('ArrowLeft') || keyboard.isDown('KeyH')) {
             newDirection = Direction.WEST;
         }
-        if (keyboard.isDown('KeyD')) {
+        if (keyboard.isDown('KeyD') || keyboard.isDown('ArrowRight') || keyboard.isDown('KeyL')) {
             if (newDirection === Direction.WEST) {
                 newDirection = null;
             } else {
                 newDirection = Direction.EAST;
             }
         }
-        if (keyboard.isDown('KeyW')) {
+        if (keyboard.isDown('KeyW') || keyboard.isDown('ArrowUp') || keyboard.isDown('KeyK')) {
             newDirection = Direction.NORTH;
         }
-        if (keyboard.isDown('KeyS')) {
+        if (keyboard.isDown('KeyS') || keyboard.isDown('ArrowDown') || keyboard.isDown('KeyJ')) {
             if (newDirection === Direction.NORTH) {
                 newDirection = null;
             } else {

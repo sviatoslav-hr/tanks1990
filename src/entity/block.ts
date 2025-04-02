@@ -1,33 +1,53 @@
 import {Color} from '#/color';
 import {CELL_SIZE} from '#/const';
-import {Entity} from '#/entity/core';
+import {Entity, isIntesecting} from '#/entity/core';
 import {Sprite, createStaticSprite} from '#/entity/sprite';
 import {Rect, randomInt} from '#/math';
 import {Duration} from '#/math/duration';
 import {Renderer} from '#/renderer';
+import {isRectOccupied} from '#/world';
 import {EntityManager} from './manager';
 
-export function generateBlocks(manager: EntityManager): Block[] {
-    const world = manager.world;
-    // NOTE: no blocks in inifinite mode for now.
-    if (world.isInfinite) return [];
-
+export function generateBlocks(
+    manager: EntityManager,
+    boundary: Rect,
+    blocksCount: number,
+    blockedArea?: Rect,
+): Block[] {
     const blocks: Block[] = [];
-    const BLOCKS_COUNT = 9;
-    for (let i = 0; i < BLOCKS_COUNT; i++) {
-        const x = world.boundary.x + randomInt(1, world.boundary.width / CELL_SIZE - 1) * CELL_SIZE;
-        const y =
-            world.boundary.y + randomInt(1, world.boundary.height / CELL_SIZE - 1) * CELL_SIZE;
+    const rect: Rect = {
+        x: 0,
+        y: 0,
+        width: CELL_SIZE,
+        height: CELL_SIZE,
+    };
+    const triesLimit = 10;
+    outer: for (let i = 0; i < blocksCount; i++) {
+        for (let j = 0; j < triesLimit; j++) {
+            rect.x = boundary.x + randomInt(1, boundary.width / CELL_SIZE - 1) * CELL_SIZE;
+            rect.y = boundary.y + randomInt(1, boundary.height / CELL_SIZE - 1) * CELL_SIZE;
+            if (
+                !isRectOccupied(rect, manager) &&
+                (!blockedArea || !isIntesecting(blockedArea, rect))
+            ) {
+                break;
+            }
+            if (j === triesLimit - 1) {
+                console.error('Could not find a place for a block');
+                break outer;
+            }
+        }
         const sprite = createStaticSprite({
             key: 'bricks',
             frameWidth: 64,
             frameHeight: 64,
         });
+
         const block = new Block(manager, {
-            x,
-            y,
-            width: CELL_SIZE,
-            height: CELL_SIZE,
+            x: rect.x,
+            y: rect.y,
+            width: rect.width,
+            height: rect.height,
             texture: sprite,
         });
         blocks.push(block);
@@ -68,6 +88,10 @@ export class Block extends Entity {
         } else {
             renderer.setFillColor(this.color);
             renderer.fillRect(this.x, this.y, this.width, this.height);
+        }
+        if (this.DEBUG_collidedCount > 0) {
+            renderer.setStrokeColor(Color.RED);
+            renderer.strokeBoundary(this, Math.min(20, this.DEBUG_collidedCount));
         }
     }
 }

@@ -6,6 +6,7 @@ import {EntityManager} from './entity/manager';
 import {css, CustomElement, div, ReactiveElement} from './html';
 import {Duration} from './math/duration';
 import {Menu} from './menu';
+import {Color} from './color';
 
 const BEST_SCORE_KEY = 'best_score';
 const BEST_SCORE_AT_KEY = 'best_score_at';
@@ -28,30 +29,30 @@ export function drawScoreMini(
 
     {
         const bestScore = getBestScore(cache);
-        const bestScoreText =
+        const text =
             'Best Score: ' +
             (bestScore ? `${bestScore.score} (${shortDate(bestScore.createdAt)})` : '-');
         const x = camera.screenSize.width / 2 - (world.boundary.width * camera.scale) / 2;
         const y = padding;
-        renderer.setFont('200 20px Helvetica', 'start', 'top');
-        renderer.fillText(bestScoreText, {x, y});
+        renderer.setFont('500 20px Helvetica', 'start', 'top');
+        renderer.fillText(text, {x, y, shadowColor: Color.BLACK_RAISIN});
     }
 
     {
-        const scoreText = `Score: ${player.score}`;
-        const m = renderer.measureText(scoreText);
+        const text = `Score: ${player.score}`;
+        const m = renderer.measureText(text);
         const x = camera.screenSize.width / 2 - m.width / 2;
         const y = padding;
-        renderer.setFont('200 20px Helvetica', 'start', 'top');
-        renderer.fillText(scoreText, {x, y});
+        renderer.setFont('500 20px Helvetica', 'start', 'top');
+        renderer.fillText(text, {x, y, shadowColor: Color.BLACK_RAISIN});
     }
 
     {
-        const surviveText = `Survived for ${player.survivedFor.toHumanString()}`;
+        const text = `Survived for ${player.survivedFor.toHumanString()}`;
         const x = camera.screenSize.width / 2 + (world.boundary.width * camera.scale) / 2;
         const y = padding;
-        renderer.setFont('200 20px Helvetica', 'right', 'top');
-        renderer.fillText(surviveText, {x, y});
+        renderer.setFont('500 20px Helvetica', 'right', 'top');
+        renderer.fillText(text, {x, y, shadowColor: Color.BLACK_RAISIN});
     }
     renderer.useCameraCoords(false);
 }
@@ -99,7 +100,6 @@ export class ScoreOverlay extends ReactiveElement {
             stateChanged = true;
         }
         if (stateChanged) {
-            console.log('updateState > rerender');
             this.rerender();
         }
     }

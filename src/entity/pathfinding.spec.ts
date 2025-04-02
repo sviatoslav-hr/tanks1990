@@ -15,6 +15,12 @@ vi.mock('../entity/sprite', () => {
                 update: () => {},
             };
         },
+        createTileSprite: () => {
+            return {
+                draw: () => {},
+                update: () => {},
+            };
+        },
         createShieldSprite: () => {
             return {
                 draw: () => {},
@@ -38,7 +44,7 @@ describe('Pathfinding', () => {
         manager.world.boundary.y = 0;
         manager.world.boundary.width = 800;
         manager.world.boundary.height = 600;
-        manager.blocks = generateBlocks(manager);
+        manager.world.activeRoom.blocks = generateBlocks(manager);
         const enemy = new EnemyTank(manager);
         enemy.respawnDelay.setMilliseconds(0);
         enemy.x = 107.97980493109108;

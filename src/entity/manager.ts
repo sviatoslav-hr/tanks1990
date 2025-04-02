@@ -1,5 +1,4 @@
 import {Camera} from '#/camera';
-import {Block, generateBlocks} from '#/entity/block';
 import {Direction, Entity, isIntesecting} from '#/entity/core';
 import {ExplosionEffect} from '#/entity/effect';
 import {EntityId} from '#/entity/id';
@@ -19,32 +18,33 @@ interface InitEntitiesOpts {
 }
 
 export class EntityManager {
-    readonly player = new PlayerTank(this);
     readonly world = new World();
+    readonly player = new PlayerTank(this);
     tanks: Tank[] = [];
-    blocks: Block[] = [];
     projectiles: Projectile[] = [];
     effects: ExplosionEffect[] = [];
     cachedBotExplosion: ExplosionEffect | null = null;
     cachedPlayerExplosion: ExplosionEffect | null = null;
+    private roomChanged = false;
 
     init({infiniteWorld}: InitEntitiesOpts): void {
         this.reset();
-        this.world.isInfinite = infiniteWorld;
-        this.blocks = generateBlocks(this);
         this.player.respawn();
+        this.world.init(infiniteWorld, this);
         this.spawnEnemy();
         this.spawnEnemy();
+        this.roomChanged = true;
         // this.spawnEnemy();
         // this.spawnEnemy();
     }
 
     // TODO: Entity manager should not be responsible for drawing
     drawAllEntities(renderer: Renderer): void {
-        this.world.draw(renderer);
-        for (const block of this.blocks) {
-            block.draw(renderer);
+        if (this.roomChanged) {
+            renderer.camera.focusOnRect(this.world.activeRoom.boundary);
+            this.roomChanged = false;
         }
+        this.world.draw(renderer);
         for (const effect of this.effects) {
             effect.draw(renderer);
         }
@@ -67,7 +67,7 @@ export class EntityManager {
                 yield t;
             }
         }
-        for (const b of this.blocks) {
+        for (const b of this.world.activeRoom.blocks) {
             yield b;
         }
     }
@@ -79,7 +79,7 @@ export class EntityManager {
         for (const p of this.projectiles) {
             yield p;
         }
-        for (const b of this.blocks) {
+        for (const b of this.world.activeRoom.blocks) {
             yield b;
         }
     }
@@ -100,6 +100,15 @@ export class EntityManager {
     }
 
     updateAllEntities(dt: Duration, camera: Camera): void {
+        this.world.update();
+        if (this.world.activeRoom.shouldGoToNextRoom(this.player)) {
+            const nextRoom = this.world.activeRoom.nextRoom;
+            assert(nextRoom);
+            this.world.activeRoom = nextRoom;
+            this.spawnEnemy();
+            this.spawnEnemy();
+            this.roomChanged = true;
+        }
         this.updateTanks(dt);
         this.updateProjectiles(dt, camera);
     }
@@ -107,6 +116,8 @@ export class EntityManager {
     spawnEnemy(): EnemyTank {
         // NOTE: Enemy will be dead initially, but it will be respawned automatically with the delay
         const enemy = new EnemyTank(this);
+        enemy.room = this.world.activeRoom;
+        enemy.shouldRespawn = true;
         enemy.respawnDelay.mul(0.5); // Respawn faster initially
         this.tanks.push(enemy);
         return enemy;
@@ -142,19 +153,25 @@ export class EntityManager {
     }
 
     private updateTanks(dt: Duration): void {
+        const room = this.world.activeRoom;
+        assert(room);
         const enemiesCount = this.tanks.length - 1;
         // NOTE: add more enemies as score increases in such progression 1=2; 2=3; 4=4; 8=5; 16=6; ...
         // TODO: find a reasonable number/function to scale entities
         const dscore = 2 ** enemiesCount;
-        const shouldSpawn =
-            (this.world.isInfinite ? this.player.score * 20 : this.player.score) >= dscore;
-        if (enemiesCount && shouldSpawn) {
+        if (!this.world.isInfinite && enemiesCount && this.player.score >= dscore) {
             this.spawnEnemy();
         }
         for (const tank of this.tanks) {
             tank.update(dt);
-            if (tank.dead && tank.bot) {
+            if (tank.bot && tank.shouldRespawn) {
+                assert(tank.dead);
+                // TODO: For some reason it takes way too much attempts to respawn... Need to have a
+                // deeper look into this
                 tank.respawn();
+                if (!tank.dead) {
+                    tank.room.aliveEnemiesCount++;
+                }
             }
         }
     }
@@ -203,7 +220,7 @@ export class EntityManager {
 
     private reset(): void {
         this.tanks = [this.player];
-        this.blocks = [];
+        this.world.reset();
         this.projectiles = [];
         this.effects = [];
     }

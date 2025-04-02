@@ -47,7 +47,7 @@ abstract class BaseOption<T> {
     }
 
     okOr<E>(err: E): Result<T, E> {
-        return this.isSome() ? Result.Ok(this.val) : Result.Err(err);
+        return this.isSome() ? Result.ok(this.val) : Result.err(err);
     }
 
     inspect(func: (val: T) => void): this {

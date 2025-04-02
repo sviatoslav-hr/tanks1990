@@ -12,7 +12,10 @@ export type KeyCode =
     | 'KeyP'
     | 'KeyO'
     | 'KeyU'
+    | 'KeyH'
+    | 'KeyL'
     | 'KeyJ'
+    | 'KeyK'
     | 'Backquote'
     | 'Space'
     | 'Escape'
@@ -26,7 +29,12 @@ export type KeyCode =
     | 'MouseMiddle'
     | 'MouseRight'
     | 'ControlLeft'
-    | 'MetaLeft';
+    | 'MetaLeft'
+    | 'ArrowLeft'
+    | 'ArrowRight'
+    | 'ArrowUp'
+    | 'ArrowDown';
+
 export type KeysState = Partial<Record<KeyCode, boolean>>;
 export type KeyHandler = (event: Event, code: KeyCode) => void;
 
@@ -77,9 +85,7 @@ export class GameInput {
     }
 
     getMouseDelta(): Vector2 {
-        return this.mouse.currentPosition
-            .clone()
-            .sub(this.mouse.previousPosition);
+        return this.mouse.currentPosition.clone().sub(this.mouse.previousPosition);
     }
 
     getMouseWheelDelta(): number {

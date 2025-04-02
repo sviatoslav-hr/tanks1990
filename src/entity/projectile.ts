@@ -60,7 +60,7 @@ export class Projectile extends Entity {
         this.sprite.update(dt);
         // TODO: use movement equation instead
         moveEntity(this, scaleMovement(this.v, dt), this.direction);
-        if (!isInside(this, this.manager.world.boundary)) {
+        if (!isInside(this, this.manager.world.activeRoom.boundary)) {
             this.dead = true;
             return;
         }

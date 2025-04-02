@@ -115,25 +115,26 @@ export function randomFrom<T>(...values: T[]): T {
 }
 
 export function moveToRandomCorner(entity: Rect, boundary: Rect): void {
+    const offset = 1;
     switch (randomFrom(0, 1, 2, 3)) {
         case 0: {
-            entity.x = boundary.x;
-            entity.y = boundary.y;
+            entity.x = boundary.x + offset;
+            entity.y = boundary.y + offset;
             break;
         }
         case 1: {
-            entity.x = xn(boundary) - entity.width;
-            entity.y = boundary.y;
+            entity.x = xn(boundary) - entity.width - offset;
+            entity.y = boundary.y + offset;
             break;
         }
         case 2: {
-            entity.x = xn(boundary) - entity.width;
-            entity.y = yn(boundary) - entity.height;
+            entity.x = xn(boundary) - entity.width - offset;
+            entity.y = yn(boundary) - entity.height - offset;
             break;
         }
         case 3: {
-            entity.x = boundary.x;
-            entity.y = yn(boundary) - entity.height;
+            entity.x = boundary.x + offset;
+            entity.y = yn(boundary) - entity.height - offset;
             break;
         }
     }
