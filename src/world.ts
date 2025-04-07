@@ -1,5 +1,6 @@
 import {Color} from '#/color';
 import {BASE_HEIGHT, BASE_WIDTH, CELL_SIZE} from '#/const';
+import {PlayerTank} from '#/entity';
 import {Block, generateBlocks} from '#/entity/block';
 import {Direction, Entity, isIntesecting} from '#/entity/core';
 import {EntityManager, isSameEntity} from '#/entity/manager';
@@ -23,7 +24,14 @@ export class World {
         width: BASE_WIDTH,
         height: BASE_HEIGHT,
     };
-    activeRoom = new Room(this.startRoomPosition, this.roomSizeInCells, [], null, Direction.NORTH);
+    activeRoom = new Room(
+        this.startRoomPosition,
+        this.roomSizeInCells,
+        [],
+        null,
+        Direction.NORTH,
+        [],
+    );
     rooms: Room[] = [this.activeRoom];
     #valuesDirty = false; // NOTE: Used to mark for saving
     private tileSprite = createTileSprite();
@@ -49,8 +57,8 @@ export class World {
         this.markDirty();
     }
 
-    update(): void {
-        this.activeRoom.update();
+    update(manager: EntityManager): void {
+        this.activeRoom.update(manager);
     }
 
     draw(renderer: Renderer): void {
@@ -230,7 +238,7 @@ function generateDungeon(
         const prevRoom = rooms[i - 1];
         if (prevRoom) {
             roomPosition.setFrom(prevRoom.position);
-            switch (prevRoom.nextDoorDir) {
+            switch (prevRoom.nextRoomDir) {
                 case Direction.NORTH:
                     roomPosition.y -= roomSizeInCells.height * CELL_SIZE + CELL_SIZE;
                     break;
@@ -264,7 +272,7 @@ function generateRoom(
         frameHeight: 64,
     });
 
-    const prevDir = prevRoom?.nextDoorDir != null ? oppositeDirection(prevRoom.nextDoorDir) : null;
+    const prevDir = prevRoom?.nextRoomDir != null ? oppositeDirection(prevRoom.nextRoomDir) : null;
     // TODO: South direction is excluded for now to avoid cyclic room structure.
     //       In future this should be replaced with a better generation algorithm.
     const dirs = [Direction.NORTH, Direction.EAST, /*Direction.SOUTH,*/ Direction.WEST];
@@ -275,7 +283,7 @@ function generateRoom(
     const nextDoorDir = prevRoom != null ? randomFrom(...dirs) : Direction.NORTH;
     // NOTE: Room reuses common border blocks with the previous room
     const nextRoomBlocks: Block[] = [];
-    const blocks: Block[] = prevRoom?.nextRoomBlocks?.slice() ?? [];
+    const blocks: Block[] = prevRoom?.nextRoomCommonBlocks?.slice() ?? [];
     const cellSize = CELL_SIZE;
 
     // north and south walls
@@ -349,20 +357,23 @@ function generateRoom(
 export class Room {
     aliveEnemiesCount = 0;
     started = false;
-    nextDoorOpen = false;
     readonly boundaryColor = Color.RED;
     readonly boundary: Rect;
+    readonly nextRoomTransitionRect: Rect;
     nextRoom: Room | null = null;
-    nextRoomRect: Rect;
-    roomIndex = 0;
+    nextRoomDoorOpen = false;
+    prevRoomDoorBlocks: Block[];
+    roomIndex: number;
+    expectedEnemiesCount = 0;
+    enemiesSpawned = false;
 
     constructor(
         public position: Vector2,
         public sizeInCells: Vector2,
         public blocks: Block[],
         public prevRoom: Room | null,
-        public nextDoorDir: Direction,
-        public readonly nextRoomBlocks: Block[] = [],
+        public nextRoomDir: Direction,
+        public readonly nextRoomCommonBlocks: Block[],
     ) {
         this.boundary = {
             x: this.position.x - 0.5 * CELL_SIZE * this.sizeInCells.width,
@@ -373,22 +384,29 @@ export class Room {
         if (prevRoom) {
             prevRoom.nextRoom = this;
         }
-        this.nextRoomRect = this.getNextRoomRect(position, sizeInCells, this.nextDoorDir);
+        this.nextRoomTransitionRect = this.makeNextRoomTransitionRect(
+            position,
+            sizeInCells,
+            this.nextRoomDir,
+        );
         this.roomIndex = prevRoom ? prevRoom.roomIndex + 1 : 0;
+        const prevRoomCommonBlocks = prevRoom?.nextRoomCommonBlocks ?? [];
+        this.prevRoomDoorBlocks =
+            prevRoomCommonBlocks.filter((b) => {
+                return isIntesecting(b, prevRoom!.nextRoomTransitionRect);
+            }) ?? [];
+        assert(this.roomIndex === 0 || this.prevRoomDoorBlocks.length === 2);
     }
 
-    shouldGoToNextRoom(player: Entity): boolean {
-        if (!this.nextRoom || !this.nextDoorOpen) return false;
-        if (isIntesecting(player, this.nextRoomRect)) {
-            return true;
-        }
-        return false;
+    shouldActivateNextRoom(player: Entity): boolean {
+        if (!this.nextRoom || !this.nextRoomDoorOpen) return false;
+        return isIntesecting(player, this.nextRoomTransitionRect);
     }
 
     // TODO: Move block rendering from world into room for both modes.
     draw(renderer: Renderer, world: World): void {
         {
-            let text = `${this.roomIndex + 1}`;
+            const text = `${this.roomIndex + 1}`;
             const fontSize = CELL_SIZE * 8 * renderer.camera.scale;
             renderer.setFont(`700 ${fontSize}px Helvetica`, 'center', 'middle');
             const {x, y} = this.position;
@@ -401,7 +419,7 @@ export class Room {
         }
 
         renderer.setStrokeColor('blue');
-        renderer.strokeBoundary(this.nextRoomRect, 10);
+        renderer.strokeBoundary(this.nextRoomTransitionRect, 10);
 
         renderer.setStrokeColor(this.boundaryColor);
         const boundaryThickness = 0.05 * CELL_SIZE;
@@ -417,16 +435,44 @@ export class Room {
         );
     }
 
-    update(): void {
-        if (!this.nextRoom) return;
-        if (!this.started && this.aliveEnemiesCount > 0) {
-            console.log(`Room ${this.roomIndex} started`);
-            this.started = true;
+    update(manager: EntityManager): void {
+        if (!this.started) {
+            this.maybeStartRoom(manager.player);
+        } else if (
+            this.nextRoom &&
+            this.started &&
+            this.expectedEnemiesCount === 0 &&
+            this.aliveEnemiesCount === 0 &&
+            !this.nextRoomDoorOpen
+        ) {
+            console.log(
+                `Room ${this.roomIndex} cleared. Opening door to room ${this.nextRoom.roomIndex}`,
+            );
+            this.openNextRoomDoors();
+            this.nextRoomDoorOpen = true;
         }
-        if (this.started && this.aliveEnemiesCount === 0 && !this.nextDoorOpen) {
-            console.log(`Room ${this.roomIndex} cleared`);
-            this.removeNextDoorBlocks();
-            this.nextDoorOpen = true;
+    }
+
+    private maybeStartRoom(player: PlayerTank): void {
+        assert(!this.started);
+        if (!isIntesecting(player, this.boundary)) {
+            return;
+        }
+
+        const isPlayerInsideDoors = this.prevRoomDoorBlocks.some((b) => isIntesecting(b, player));
+        if (!isPlayerInsideDoors) {
+            for (const b of this.prevRoomDoorBlocks) {
+                b.dead = false;
+            }
+            this.started = true;
+            // TODO: Have a better way to determine the number of enemies in the room.
+            //       In the later rooms there are too many enemies.
+            //       This can be either solved by spawning enemies in waves and/or
+            //       using stronger enemies.
+            this.expectedEnemiesCount = this.roomIndex + 1;
+            console.log(
+                `Room ${this.roomIndex} started. Spawning ${this.expectedEnemiesCount} enemies.`,
+            );
         }
     }
 
@@ -434,28 +480,9 @@ export class Room {
         this.blocks = [];
     }
 
-    private removeNextDoorBlocks(): void {
-        const doorPos = this.position.clone();
-        switch (this.nextDoorDir) {
-            case Direction.NORTH:
-                doorPos.y -= (this.sizeInCells.height * CELL_SIZE) / 2;
-                break;
-            case Direction.EAST:
-                doorPos.x += (this.sizeInCells.width * CELL_SIZE) / 2;
-                break;
-            case Direction.SOUTH:
-                doorPos.y += (this.sizeInCells.height * CELL_SIZE) / 2;
-                break;
-            case Direction.WEST:
-                doorPos.x -= (this.sizeInCells.width * CELL_SIZE) / 2;
-                break;
-        }
-        const searchRect: Rect = {
-            x: doorPos.x - CELL_SIZE / 2,
-            y: doorPos.y - CELL_SIZE / 2,
-            width: CELL_SIZE,
-            height: CELL_SIZE,
-        };
+    private openNextRoomDoors(): void {
+        const searchRect = this.nextRoomTransitionRect;
+        // TODO: Instead of just removing the blocks, animate door opening.
         const block1 = this.blocks.find((b) => !b.dead && isIntesecting(b, searchRect));
         assert(block1 != null);
         block1.dead = true;
@@ -464,7 +491,11 @@ export class Room {
         block2.dead = true;
     }
 
-    private getNextRoomRect(position: Vector2, sizeInCells: Vector2, nextDoorDir: Direction): Rect {
+    private makeNextRoomTransitionRect(
+        position: Vector2,
+        sizeInCells: Vector2,
+        nextDoorDir: Direction,
+    ): Rect {
         let x = position.x;
         let y = position.y;
         const xOffset = (sizeInCells.width * CELL_SIZE) / 2;

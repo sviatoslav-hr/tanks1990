@@ -54,14 +54,12 @@ export function isOutsideRect(entity: Rect, boundary: Rect): boolean {
     );
 }
 
-export function isIntesecting(rect: Rect, other: Rect): boolean {
-    // TODO: Use a better algorithm (For example, the AABB one?).
-    // NOTE: checks if any corner of `rect` is inside of `other`
+export function isIntesecting(a: Rect, b: Rect): boolean {
     return (
-        isPosInsideRect(rect.x, rect.y, other) ||
-        isPosInsideRect(xn(rect), rect.y, other) ||
-        isPosInsideRect(rect.x, yn(rect), other) ||
-        isPosInsideRect(xn(rect), yn(rect), other)
+        a.x <= b.x + b.width &&
+        a.x + a.width >= b.x &&
+        a.y <= b.y + b.height &&
+        a.y + a.height >= b.y
     );
 }
 

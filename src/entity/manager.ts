@@ -4,7 +4,7 @@ import {ExplosionEffect} from '#/entity/effect';
 import {EntityId} from '#/entity/id';
 import {Projectile} from '#/entity/projectile';
 import {EnemyTank, PlayerTank, Tank} from '#/entity/tank';
-import {Room, World} from '#/world';
+import {World} from '#/world';
 import {Duration} from '#/math/duration';
 import {Vector2Like} from '#/math/vector';
 import {Renderer} from '#/renderer';
@@ -27,9 +27,6 @@ export class EntityManager {
         this.reset();
         this.player.respawn();
         this.world.init(this);
-        this.spawnEnemy();
-        // this.spawnEnemy();
-        // this.spawnEnemy();
         this.roomInFocus = false;
     }
 
@@ -103,24 +100,24 @@ export class EntityManager {
     }
 
     updateAll(dt: Duration, camera: Camera): void {
-        this.world.update();
-        if (this.world.activeRoom.shouldGoToNextRoom(this.player)) {
+        this.world.update(this);
+        if (this.world.activeRoom.shouldActivateNextRoom(this.player)) {
             const nextRoom = this.world.activeRoom.nextRoom;
             assert(nextRoom);
             this.world.activeRoom = nextRoom;
-            this.spawnRoomEnemies(nextRoom);
             this.roomInFocus = false;
+        }
+        const activeRoom = this.world.activeRoom;
+        if (activeRoom.started && !activeRoom.enemiesSpawned) {
+            let expectedEnemiesCount = this.world.activeRoom.expectedEnemiesCount;
+            while (expectedEnemiesCount > 0) {
+                this.spawnEnemy();
+                expectedEnemiesCount--;
+            }
+            activeRoom.enemiesSpawned = true;
         }
         this.updateTanks(dt);
         this.updateProjectiles(dt, camera);
-    }
-
-    private spawnRoomEnemies(room: Room): void {
-        const roomIndex = room.roomIndex;
-        for (let i = 0; i <= roomIndex; i++) {
-            // TODO: Spawn enemies in waves instead of all at onces
-            this.spawnEnemy();
-        }
     }
 
     spawnEnemy(): EnemyTank {
@@ -172,6 +169,7 @@ export class EntityManager {
                 tank.respawn();
                 if (!tank.dead) {
                     tank.room.aliveEnemiesCount++;
+                    tank.room.expectedEnemiesCount--;
                 }
             }
         }
