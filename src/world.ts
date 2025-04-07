@@ -1,5 +1,6 @@
 import {Color} from '#/color';
 import {BASE_HEIGHT, BASE_WIDTH, CELL_SIZE} from '#/const';
+import {Block, generateBlocks} from '#/entity/block';
 import {Direction, Entity, isIntesecting} from '#/entity/core';
 import {EntityManager, isSameEntity} from '#/entity/manager';
 import {createStaticSprite, createTileSprite} from '#/entity/sprite';
@@ -8,7 +9,6 @@ import {Rect, fmod, isPosInsideRect, oppositeDirection, randomFrom} from '#/math
 import {Vector2, Vector2Like} from '#/math/vector';
 import {Renderer} from '#/renderer';
 import {GameStorage} from '#/storage';
-import {Block, generateBlocks} from '#/entity/block';
 
 const WORLD_CONFIG_KEY = 'world_config';
 
@@ -16,7 +16,7 @@ export class World {
     isInfinite = false;
     showBoundary = false;
     roomsLimit = 18;
-    readonly roomSizeInCells = new Vector2(10, 8);
+    readonly roomSizeInCells = new Vector2(16, 10);
     readonly startRoomPosition = new Vector2(0, 0);
     readonly boundary: Rect = {
         x: -BASE_WIDTH / 2,

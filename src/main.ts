@@ -120,7 +120,7 @@ function handleGameTick(
     renderer.setFillColor(manager.world.bgColor);
     renderer.fillScreen();
 
-    manager.drawAllEntities(renderer);
+    manager.drawAll(renderer);
     const player = manager.player;
 
     if (state.playing || (state.paused && !menu.visible)) {
@@ -140,7 +140,7 @@ function handleGameTick(
 
     if (state.playing || state.dead || state.debugUpdateTriggered) {
         manager.updateEffects(dt);
-        manager.updateAllEntities(dt, renderer.camera);
+        manager.updateAll(dt, renderer.camera);
         // if (manager.world.isInfinite) {
         //     renderer.camera.centerOn(player);
         // }

@@ -4,7 +4,7 @@ import {ExplosionEffect} from '#/entity/effect';
 import {EntityId} from '#/entity/id';
 import {Projectile} from '#/entity/projectile';
 import {EnemyTank, PlayerTank, Tank} from '#/entity/tank';
-import {World} from '#/world';
+import {Room, World} from '#/world';
 import {Duration} from '#/math/duration';
 import {Vector2Like} from '#/math/vector';
 import {Renderer} from '#/renderer';
@@ -25,24 +25,23 @@ export class EntityManager {
     effects: ExplosionEffect[] = [];
     cachedBotExplosion: ExplosionEffect | null = null;
     cachedPlayerExplosion: ExplosionEffect | null = null;
-    private roomChanged = false;
+    private roomInFocus = false;
 
     init({infiniteWorld}: InitEntitiesOpts): void {
         this.reset();
         this.player.respawn();
         this.world.init(infiniteWorld, this);
         this.spawnEnemy();
-        this.spawnEnemy();
-        this.roomChanged = true;
         // this.spawnEnemy();
         // this.spawnEnemy();
+        this.roomInFocus = false;
     }
 
     // TODO: Entity manager should not be responsible for drawing
-    drawAllEntities(renderer: Renderer): void {
-        if (this.roomChanged) {
+    drawAll(renderer: Renderer): void {
+        if (!this.roomInFocus) {
             renderer.camera.focusOnRect(this.world.activeRoom.boundary);
-            this.roomChanged = false;
+            this.roomInFocus = true;
         }
         this.world.draw(renderer);
         for (const effect of this.effects) {
@@ -99,18 +98,25 @@ export class EntityManager {
         this.effects = this.effects.filter((e) => !effectsToRemove.includes(e));
     }
 
-    updateAllEntities(dt: Duration, camera: Camera): void {
+    updateAll(dt: Duration, camera: Camera): void {
         this.world.update();
         if (this.world.activeRoom.shouldGoToNextRoom(this.player)) {
             const nextRoom = this.world.activeRoom.nextRoom;
             assert(nextRoom);
             this.world.activeRoom = nextRoom;
-            this.spawnEnemy();
-            this.spawnEnemy();
-            this.roomChanged = true;
+            this.spawnRoomEnemies(nextRoom);
+            this.roomInFocus = false;
         }
         this.updateTanks(dt);
         this.updateProjectiles(dt, camera);
+    }
+
+    private spawnRoomEnemies(room: Room): void {
+        const roomIndex = room.roomIndex;
+        for (let i = 0; i <= roomIndex; i++) {
+            // TODO: Spawn enemies in waves instead of all at onces
+            this.spawnEnemy();
+        }
     }
 
     spawnEnemy(): EnemyTank {
