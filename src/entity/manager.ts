@@ -63,19 +63,27 @@ export class EntityManager {
             }
         }
         for (const b of this.world.activeRoom.blocks) {
-            yield b;
+            if (!b.dead) {
+                yield b;
+            }
         }
     }
 
     *iterateEntities(): Generator<Entity> {
         for (const t of this.tanks) {
-            yield t;
+            if (!t.dead) {
+                yield t;
+            }
         }
         for (const p of this.projectiles) {
-            yield p;
+            if (!p.dead) {
+                yield p;
+            }
         }
         for (const b of this.world.activeRoom.blocks) {
-            yield b;
+            if (!b.dead) {
+                yield b;
+            }
         }
     }
 

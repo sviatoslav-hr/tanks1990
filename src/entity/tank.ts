@@ -149,8 +149,8 @@ export abstract class Tank extends Entity {
         });
     }
 
-    respawn(): boolean {
-        if (!this.bot || this.tryRespawn(4)) {
+    respawn(force = false): boolean {
+        if (force || this.tryRespawn(4)) {
             this.dead = false;
             this.shouldRespawn = false;
             this.shootingDelay.setFrom(this.SHOOTING_PERIOD);
@@ -260,13 +260,14 @@ export class PlayerTank extends Tank implements Entity {
     }
 
     override respawn(): boolean {
-        const respawned = super.respawn();
+        const respawned = super.respawn(true);
+        assert(respawned); // NOTE: Player tank respawn should never fail
         this.x = -this.width / 2;
         this.y = -this.height / 2;
         this.shootingDelay.milliseconds = 0;
         this.score = 0;
         this.survivedFor.milliseconds = 0;
-        return respawned;
+        return true;
     }
 
     override takeDamage(): boolean {

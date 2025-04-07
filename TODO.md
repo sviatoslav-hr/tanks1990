@@ -4,8 +4,7 @@
 - [ ] Dungeon Mode
     - [ ] Figure out correct room generation algorithm
     - [ ] Scale enemies based on the room index
-    - [ ] A a default mode basically a single room with different enemy spawn rules
-    - [ ] Fix enemies getting stuck in the room walls (during spawn?)
+    - [x] Fix enemies getting stuck in the room walls (during spawn?)
     - [ ] Fix player not being able to return back to the previous room (or block the entrance)
 - [ ] Improve Camera handling
     - [ ] Logic to not draw offscreen entities is not working correctly during zooming

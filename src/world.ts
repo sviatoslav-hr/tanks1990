@@ -23,7 +23,7 @@ export class World {
         width: BASE_WIDTH,
         height: BASE_HEIGHT,
     };
-    activeRoom = new Room(this.startRoomPosition, this.roomSizeInCells, []);
+    activeRoom = new Room(this.startRoomPosition, this.roomSizeInCells, [], null, Direction.NORTH);
     rooms: Room[] = [this.activeRoom];
     #valuesDirty = false; // NOTE: Used to mark for saving
     private tileSprite = createTileSprite();
@@ -54,6 +54,8 @@ export class World {
     }
 
     draw(renderer: Renderer): void {
+        // TODO: Figure out a performance way to deal with tiles.
+        //       And also pick the tiles that actually looks nice.
         if (false) this.drawTiles(renderer, CELL_SIZE);
         else this.drawGrid(renderer, CELL_SIZE);
         this.drawWorldBoundary(renderer);
@@ -256,18 +258,28 @@ function generateRoom(
     manager: EntityManager,
     prevRoom: Room | null = null,
 ): Room {
-    const blocks: Block[] = [];
-    const cellSize = CELL_SIZE;
-
-    const minX = roomPosition.x - (sizeInCells.width / 2) * cellSize;
     const sprite = createStaticSprite({
         key: 'bricks',
         frameWidth: 64,
         frameHeight: 64,
     });
-    const prevDir = prevRoom?.nextDoorDir != null && oppositeDirection(prevRoom.nextDoorDir);
+
+    const prevDir = prevRoom?.nextDoorDir != null ? oppositeDirection(prevRoom.nextDoorDir) : null;
+    // TODO: South direction is excluded for now to avoid cyclic room structure.
+    //       In future this should be replaced with a better generation algorithm.
+    const dirs = [Direction.NORTH, Direction.EAST, /*Direction.SOUTH,*/ Direction.WEST];
+    if (prevDir) {
+        dirs.splice(dirs.indexOf(prevDir), 1);
+    }
+
+    const nextDoorDir = prevRoom != null ? randomFrom(...dirs) : Direction.NORTH;
+    // NOTE: Room reuses common border blocks with the previous room
+    const nextRoomBlocks: Block[] = [];
+    const blocks: Block[] = prevRoom?.nextRoomBlocks?.slice() ?? [];
+    const cellSize = CELL_SIZE;
 
     // north and south walls
+    const minX = roomPosition.x - (sizeInCells.width / 2) * cellSize;
     for (let x = -1; x <= sizeInCells.width; x += 1) {
         // NOTE: north and south walls also include the corners
         if (x === -1 && prevDir === Direction.WEST) {
@@ -285,6 +297,7 @@ function generateRoom(
                 texture: sprite,
             });
             blocks.push(northBlock);
+            if (nextDoorDir === Direction.NORTH) nextRoomBlocks.push(northBlock);
         }
         if (prevDir !== Direction.SOUTH) {
             const southBlock = new Block(manager, {
@@ -295,6 +308,7 @@ function generateRoom(
                 texture: sprite,
             });
             blocks.push(southBlock);
+            if (nextDoorDir === Direction.SOUTH) nextRoomBlocks.push(southBlock);
         }
     }
 
@@ -310,6 +324,7 @@ function generateRoom(
                 texture: sprite,
             });
             blocks.push(westBlock);
+            if (nextDoorDir === Direction.WEST) nextRoomBlocks.push(westBlock);
         }
         if (prevDir !== Direction.EAST) {
             const eastBlock = new Block(manager, {
@@ -320,10 +335,11 @@ function generateRoom(
                 texture: sprite,
             });
             blocks.push(eastBlock);
+            if (nextDoorDir === Direction.EAST) nextRoomBlocks.push(eastBlock);
         }
     }
 
-    const room = new Room(roomPosition, sizeInCells, blocks, prevRoom);
+    const room = new Room(roomPosition, sizeInCells, blocks, prevRoom, nextDoorDir, nextRoomBlocks);
     const insideBlocks = generateBlocks(manager, room.boundary, 20, manager.player);
     room.blocks.push(...insideBlocks);
 
@@ -336,7 +352,6 @@ export class Room {
     nextDoorOpen = false;
     readonly boundaryColor = Color.RED;
     readonly boundary: Rect;
-    readonly nextDoorDir: Direction;
     nextRoom: Room | null = null;
     nextRoomRect: Rect;
     roomIndex = 0;
@@ -345,7 +360,9 @@ export class Room {
         public position: Vector2,
         public sizeInCells: Vector2,
         public blocks: Block[],
-        public prevRoom: Room | null = null,
+        public prevRoom: Room | null,
+        public nextDoorDir: Direction,
+        public readonly nextRoomBlocks: Block[] = [],
     ) {
         this.boundary = {
             x: this.position.x - 0.5 * CELL_SIZE * this.sizeInCells.width,
@@ -353,12 +370,9 @@ export class Room {
             width: CELL_SIZE * this.sizeInCells.width,
             height: CELL_SIZE * this.sizeInCells.height,
         };
-        const dirs = [Direction.NORTH, Direction.EAST, /*Direction.SOUTH,*/ Direction.WEST];
         if (prevRoom) {
-            dirs.splice(dirs.indexOf(oppositeDirection(prevRoom.nextDoorDir)), 1);
             prevRoom.nextRoom = this;
         }
-        this.nextDoorDir = randomFrom(...dirs);
         this.nextRoomRect = this.getNextRoomRect(position, sizeInCells, this.nextDoorDir);
         this.roomIndex = prevRoom ? prevRoom.roomIndex + 1 : 0;
     }
@@ -442,12 +456,12 @@ export class Room {
             width: CELL_SIZE,
             height: CELL_SIZE,
         };
-        const block1 = this.blocks.findIndex((b) => isIntesecting(b, searchRect));
-        assert(block1 > -1);
-        this.blocks.splice(block1, 1);
-        const block2 = this.blocks.findIndex((b) => isIntesecting(b, searchRect));
-        assert(block2 > -1);
-        this.blocks.splice(block2, 1);
+        const block1 = this.blocks.find((b) => !b.dead && isIntesecting(b, searchRect));
+        assert(block1 != null);
+        block1.dead = true;
+        const block2 = this.blocks.find((b) => !b.dead && isIntesecting(b, searchRect));
+        assert(block2 != null);
+        block2.dead = true;
     }
 
     private getNextRoomRect(position: Vector2, sizeInCells: Vector2, nextDoorDir: Direction): Rect {

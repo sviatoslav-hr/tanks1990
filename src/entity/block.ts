@@ -61,7 +61,7 @@ export type BlockOpts = Rect & {
 };
 
 export class Block extends Entity {
-    public readonly dead = false;
+    public dead = false;
     private readonly color: Color = Color.WHITE;
     private readonly sprite?: Sprite<string>;
 
@@ -83,6 +83,9 @@ export class Block extends Entity {
     }
 
     draw(renderer: Renderer): void {
+        if (this.dead) {
+            return;
+        }
         if (this.sprite) {
             this.sprite.draw(renderer, this);
         } else {
