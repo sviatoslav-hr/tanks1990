@@ -12,16 +12,7 @@ export function initMenu(game: GameState, manager: EntityManager, sounds: SoundM
         'NEW GAME',
         () => {
             game.start();
-            manager.init({infiniteWorld: false});
-            menu.hide();
-        },
-        [MenuState.START],
-    );
-    menu.addButton(
-        'INFINITE GAME',
-        () => {
-            game.start();
-            manager.init({infiniteWorld: true});
+            manager.init();
             menu.hide();
         },
         [MenuState.START],
@@ -37,7 +28,7 @@ export function initMenu(game: GameState, manager: EntityManager, sounds: SoundM
     menu.addButton(
         'RESTART',
         () => {
-            manager.init({infiniteWorld: manager.world.isInfinite});
+            manager.init();
             game.start();
             menu.hide();
         },

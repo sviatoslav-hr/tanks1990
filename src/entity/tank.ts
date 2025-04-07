@@ -1,7 +1,7 @@
 import {Animation} from '#/animation';
 import {Color} from '#/color';
 import {CELL_SIZE} from '#/const';
-import {Direction, Entity, clampByBoundary, moveEntity} from '#/entity/core';
+import {Direction, Entity, moveEntity} from '#/entity/core';
 import {newEntityId} from '#/entity/id';
 import {EntityManager} from '#/entity/manager';
 import {findPath} from '#/entity/pathfinding';
@@ -100,15 +100,6 @@ export abstract class Tank extends Entity {
             this.y = prevY;
             this.stopMoving();
             this.isStuck = true;
-        }
-        if (!this.manager.world.isInfinite) {
-            const oldX = this.x;
-            const oldY = this.y;
-            clampByBoundary(this, this.manager.world.boundary);
-            if (oldX !== this.x || oldY !== this.y) {
-                this.stopMoving();
-                this.isStuck = true;
-            }
         }
         this.updateShield(dt);
     }

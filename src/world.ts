@@ -13,7 +13,6 @@ import {GameStorage} from '#/storage';
 const WORLD_CONFIG_KEY = 'world_config';
 
 export class World {
-    isInfinite = false;
     showBoundary = false;
     roomsLimit = 18;
     readonly roomSizeInCells = new Vector2(16, 10);
@@ -37,22 +36,16 @@ export class World {
         return this.#valuesDirty;
     }
 
-    init(isInfinite: boolean, manager: EntityManager): void {
-        this.isInfinite = isInfinite;
-        if (this.isInfinite) {
-            this.rooms = generateDungeon(
-                this.startRoomPosition,
-                this.roomSizeInCells,
-                manager,
-                this.roomsLimit,
-            );
-            const startRoom = this.rooms[0];
-            assert(startRoom);
-            this.activeRoom = startRoom;
-        } else {
-            this.activeRoom = generateRoom(this.startRoomPosition, this.roomSizeInCells, manager);
-            this.rooms = [this.activeRoom];
-        }
+    init(manager: EntityManager): void {
+        this.rooms = generateDungeon(
+            this.startRoomPosition,
+            this.roomSizeInCells,
+            manager,
+            this.roomsLimit,
+        );
+        const startRoom = this.rooms[0];
+        assert(startRoom);
+        this.activeRoom = startRoom;
         this.markDirty();
     }
 
@@ -139,27 +132,10 @@ export class World {
     }
 
     private drawWorldBoundary(renderer: Renderer): void {
-        if (!this.isInfinite) {
-            renderer.setStrokeColor(this.boundaryColor);
-            renderer.strokeBoundary(
-                {
-                    x: this.boundary.x - 0.5 * this.boundaryThickness,
-                    y: this.boundary.y - 0.5 * this.boundaryThickness,
-                    width: this.boundary.width + this.boundaryThickness,
-                    height: this.boundary.height + this.boundaryThickness,
-                },
-                this.boundaryThickness,
-            );
-            if (this.showBoundary) {
+        if (this.showBoundary) {
+            for (const room of this.rooms) {
                 renderer.setStrokeColor(Color.RED);
-                renderer.strokeBoundary(this.boundary);
-            }
-        } else {
-            if (this.showBoundary) {
-                for (const room of this.rooms) {
-                    renderer.setStrokeColor(Color.RED);
-                    renderer.strokeBoundary(room.boundary);
-                }
+                renderer.strokeBoundary(room.boundary);
             }
         }
     }
@@ -177,7 +153,6 @@ export class World {
     serialize(): string {
         return JSON.stringify({
             b: this.showBoundary,
-            inf: this.isInfinite,
             bx: this.boundary.x,
             by: this.boundary.y,
             bw: this.boundary.width,
@@ -196,7 +171,6 @@ export class World {
     deserialize(data: string): void {
         const parser = new JSONObjectParser(data);
         this.showBoundary = parser.getBoolean('b') ?? false;
-        this.isInfinite = parser.getBoolean('inf') ?? false;
         const bx = parser.getNumber('bx');
         const by = parser.getNumber('by');
         const bw = parser.getNumber('bw');
@@ -216,12 +190,7 @@ export class World {
     }
 }
 
-export function isOccupied(pos: Vector2Like, world: World, entityManager: EntityManager): boolean {
-    if (!world.isInfinite) {
-        if (!isPosInsideRect(pos.x, pos.y, world.boundary)) {
-            return true;
-        }
-    }
+export function isOccupied(pos: Vector2Like, entityManager: EntityManager): boolean {
     for (const entity of entityManager.iterateEntities()) {
         if (entity === entityManager.player) continue;
         if (isPosInsideRect(pos.x, pos.y, entity)) {
@@ -236,18 +205,6 @@ export function isRectOccupied(
     entityManager: EntityManager,
     ignoreEntity?: Entity,
 ): boolean {
-    const world = entityManager.world;
-    if (!world.isInfinite) {
-        if (!isPosInsideRect(rect.x, rect.y, world.boundary)) {
-            return true;
-        }
-        const xn = rect.x + rect.width;
-        const yn = rect.y + rect.height;
-        if (!isPosInsideRect(xn, yn, world.boundary)) {
-            return true;
-        }
-    }
-
     for (const entity of entityManager.iterateCollidable()) {
         if (isSameEntity(entity, entityManager.player)) continue;
         if (ignoreEntity && isSameEntity(entity, ignoreEntity)) continue;
@@ -416,7 +373,7 @@ export class Room {
 
     // TODO: Move block rendering from world into room for both modes.
     draw(renderer: Renderer, world: World): void {
-        if (world.isInfinite) {
+        {
             let text = `${this.roomIndex + 1}`;
             const fontSize = CELL_SIZE * 8 * renderer.camera.scale;
             renderer.setFont(`700 ${fontSize}px Helvetica`, 'center', 'middle');

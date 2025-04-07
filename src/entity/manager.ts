@@ -13,10 +13,6 @@ export function isSameEntity(a: Entity, b: Entity): boolean {
     return a.id === b.id;
 }
 
-interface InitEntitiesOpts {
-    infiniteWorld: boolean;
-}
-
 export class EntityManager {
     readonly world = new World();
     readonly player = new PlayerTank(this);
@@ -27,10 +23,10 @@ export class EntityManager {
     cachedPlayerExplosion: ExplosionEffect | null = null;
     private roomInFocus = false;
 
-    init({infiniteWorld}: InitEntitiesOpts): void {
+    init(): void {
         this.reset();
         this.player.respawn();
-        this.world.init(infiniteWorld, this);
+        this.world.init(this);
         this.spawnEnemy();
         // this.spawnEnemy();
         // this.spawnEnemy();
@@ -159,15 +155,6 @@ export class EntityManager {
     }
 
     private updateTanks(dt: Duration): void {
-        const room = this.world.activeRoom;
-        assert(room);
-        const enemiesCount = this.tanks.length - 1;
-        // NOTE: add more enemies as score increases in such progression 1=2; 2=3; 4=4; 8=5; 16=6; ...
-        // TODO: find a reasonable number/function to scale entities
-        const dscore = 2 ** enemiesCount;
-        if (!this.world.isInfinite && enemiesCount && this.player.score >= dscore) {
-            this.spawnEnemy();
-        }
         for (const tank of this.tanks) {
             tank.update(dt);
             if (tank.bot && tank.shouldRespawn) {
