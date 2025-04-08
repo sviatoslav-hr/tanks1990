@@ -27,7 +27,7 @@ function main(): void {
     window.__DEV_MODE = storage.getBool(DEV_MODE_KEY) ?? false;
 
     const sounds = new SoundManager(storage);
-    sounds.loadAllSounds().then(() => console.log('All sounds loaded'));
+    sounds.loadAllSounds().then(() => console.log('[Sounds] All sounds loaded'));
     preloadEffectImages();
 
     const renderer = new Renderer();

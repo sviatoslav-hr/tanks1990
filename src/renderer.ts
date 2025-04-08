@@ -144,7 +144,6 @@ export class Renderer {
     getImageData(x: number, y: number, width: number, height: number): ImageData {
         x = this.offsetAndScaleX(x);
         y = this.offsetAndScaleY(y);
-        // TODO: this should be fixed
         width = this.scaleSize(width);
         height = this.scaleSize(height);
         const imageData = this.ctx.getImageData(x, y, width, height);

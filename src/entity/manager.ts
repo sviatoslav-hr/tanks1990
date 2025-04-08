@@ -4,7 +4,7 @@ import {ExplosionEffect} from '#/entity/effect';
 import {EntityId} from '#/entity/id';
 import {Projectile} from '#/entity/projectile';
 import {EnemyTank, PlayerTank, Tank} from '#/entity/tank';
-import {World} from '#/world';
+import {Room, World} from '#/world';
 import {Duration} from '#/math/duration';
 import {Vector2Like} from '#/math/vector';
 import {Renderer} from '#/renderer';
@@ -107,27 +107,14 @@ export class EntityManager {
             this.world.activeRoom = nextRoom;
             this.roomInFocus = false;
         }
-        const activeRoom = this.world.activeRoom;
-        if (activeRoom.started && !activeRoom.enemiesSpawned) {
-            let expectedEnemiesCount = this.world.activeRoom.expectedEnemiesCount;
-            while (expectedEnemiesCount > 0) {
-                this.spawnEnemy();
-                expectedEnemiesCount--;
+        {
+            const room = this.world.activeRoom;
+            while (room.expectedEnemiesCount > 0) {
+                this.spawnEnemy(room);
             }
-            activeRoom.enemiesSpawned = true;
         }
         this.updateTanks(dt);
         this.updateProjectiles(dt, camera);
-    }
-
-    spawnEnemy(): EnemyTank {
-        // NOTE: Enemy will be dead initially, but it will be respawned automatically with the delay
-        const enemy = new EnemyTank(this);
-        enemy.room = this.world.activeRoom;
-        enemy.shouldRespawn = true;
-        enemy.respawnDelay.mul(0.5); // Respawn faster initially
-        this.tanks.push(enemy);
-        return enemy;
     }
 
     spawnProjectile(ownerId: EntityId, origin: Vector2Like, direction: Direction): void {
@@ -159,17 +146,42 @@ export class EntityManager {
         this.effects.push(effect);
     }
 
+    spawnEnemy(room: Room): EnemyTank {
+        const deadEnemy = this.tanks.find((t) => t.bot && t.dead && !t.shouldRespawn) as EnemyTank;
+        // NOTE: Enemy will be dead initially, but it will be respawned automatically with the delay
+        const enemy = deadEnemy ?? new EnemyTank(this);
+        assert(enemy.dead);
+        if (!deadEnemy) {
+            console.log('[Manager] Created new enemy tank', enemy.id);
+            this.tanks.push(enemy);
+        } else {
+            console.log('[Manager] Reused dead enemy tank', enemy.id);
+        }
+        enemy.room = room;
+        enemy.markForRespawn();
+        enemy.room.pendingEnemiesCount++;
+        enemy.room.expectedEnemiesCount--;
+        return enemy;
+    }
+
     private updateTanks(dt: Duration): void {
         for (const tank of this.tanks) {
             tank.update(dt);
+
             if (tank.bot && tank.shouldRespawn) {
-                assert(tank.dead);
-                // TODO: For some reason it takes way too much attempts to respawn... Need to have a
-                // deeper look into this
-                tank.respawn();
-                if (!tank.dead) {
-                    tank.room.aliveEnemiesCount++;
-                    tank.room.expectedEnemiesCount--;
+                const canRespawn = tank.room.aliveEnemiesCount < tank.room.enemyLimitAtOnce;
+                if (canRespawn) {
+                    // TODO: For some reason it takes way too much attempts to respawn...
+                    // Need to have a deeper look into this.
+                    const respawned = tank.respawn();
+                    if (respawned) {
+                        assert(!tank.dead);
+                        tank.room.aliveEnemiesCount++;
+                        tank.room.pendingEnemiesCount--;
+                    }
+                } else {
+                    assert(tank instanceof EnemyTank);
+                    tank.markForRespawn();
                 }
             }
         }

@@ -55,7 +55,6 @@ describe('Pathfinding', () => {
         const path = findPath(enemy, manager.player, manager, 100);
         assert(path);
         expect(path.length).toBeGreaterThan(0);
-        console.log(path.length);
         const lastP = path[path.length - 1]!;
         expect(isPosInsideRect(lastP.x, lastP.y, manager.player)).toEqual(true);
 

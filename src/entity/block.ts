@@ -23,14 +23,14 @@ export function generateBlocks(
     };
     const triesLimit = 10;
     outer: for (let i = 0; i < blocksCount; i++) {
-        for (let j = 0; j < triesLimit; j++) {
+        inner: for (let j = 0; j < triesLimit; j++) {
             rect.x = boundary.x + randomInt(1, boundary.width / CELL_SIZE - 1) * CELL_SIZE;
             rect.y = boundary.y + randomInt(1, boundary.height / CELL_SIZE - 1) * CELL_SIZE;
             if (
                 !isRectOccupied(rect, manager) &&
                 (!blockedArea || !isIntesecting(blockedArea, rect))
             ) {
-                break;
+                break inner;
             }
             if (j === triesLimit - 1) {
                 console.error('Could not find a place for a block');

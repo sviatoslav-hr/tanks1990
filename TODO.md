@@ -1,29 +1,30 @@
 # TODO:
 
 ## IN_PROGRESS
-- [ ] Dungeon Mode
-    - [ ] Figure out correct room generation algorithm
-    - [ ] Find a way to spawn enemies in rooms that scales across rooms and if FUN
+## TODO
+- [ ] Add room number to the score (+store).
+- [ ] Define custom RNG and use it everywhere instead of `Math.random()`
+- [ ] Render fps monitor in it's own canvas. Add graph to show the fps over time.
+- [ ] Define game plan / trajectory / future development / main goal / idea
+- [ ] Better tank sprites (more details)!
+- [ ] Have explosion effect as a sprite
+- [ ] Change movement to move only by fractions of cells (e.g. 1/16 of a cell)
+      This will be easier to pathfinding and will fix the issue with the player being able to pass through blocks
+- [ ] Make enemies shoot only when they see the player
+- [ ] Add friction to projectile movement
 - [ ] Improve Camera handling
     - [ ] Logic to not draw offscreen entities is not working correctly during zooming
     - [ ] Split camera into Player camera and Dev Camera
     - [ ] Zoom towards the mouse position
     - [ ] Add smooth zooming in and out
-    - [ ] When camera follows the player, it should move a bit in front of the player to allow the player to see what's ahead
     - [ ] Screenshake when player dies?
-- [ ] World boundaries
-    - [ ] Determine based on max numbers in js what are the limitations of the world (boundaries)
-
-## TODO
-- [ ] Make enemies shoot only when they see the player
-- [ ] Define game plan / trajectory / future development / main goal / idea
-- [ ] Define custom RNG and use it everywhere instead of `Math.random()`
-- [ ] Add friction to projectile movement
+- [ ] Dungeon Mode
+    - [ ] Figure out correct room generation algorithm
 - [ ] Hot reload for development?
+
 
 ## FIXME
 - [ ] Sometimes after moving the camera manually, after trying to reset it, it's not zoomed correctly (slightly zoomed out so the world border is visible)
-- [ ] Enemy explosion effect is gray instead of green (cannot reproduce)
 - [ ] Explosion effect image data may grab some black pixels from the boundary
 - [ ] Enemies sometimes stuck when they need to move around the block (probably because of the collision detection and precision issues)
       It's esier to reproduce when there are more blocks around
@@ -45,7 +46,9 @@
 
 ## Visuals
 - [ ] Consider using [kenney.nl assets](https://kenney.nl/assets/top-down-tanks-redux)
-- [ ] Add fire effect to gun
+- [ ] Add fire effect to gun (when projectile is fired/spawned)
+- [ ] Add spawning effect for enemies and player (Shining/teleporting effect?)
+- [ ] Add explosion effect for the bullets (especially when they hit the wall/other bullet)
 - [ ] Add some fire effect inside of the explosion (doesn't look like explosion otherwise)
 - [ ] Add more particles [kenney.nl](https://kenney.nl/assets/particle-pack)
 

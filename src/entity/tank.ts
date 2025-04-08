@@ -261,7 +261,7 @@ export class PlayerTank extends Tank implements Entity {
 
     override respawn(): boolean {
         const respawned = super.respawn(true);
-        assert(respawned); // NOTE: Player tank respawn should never fail
+        assert(respawned); // Player tank respawn should never fail
         this.x = -this.width / 2;
         this.y = -this.height / 2;
         this.shootingDelay.milliseconds = 0;
@@ -312,7 +312,7 @@ export class PlayerTank extends Tank implements Entity {
 }
 
 export class EnemyTank extends Tank implements Entity {
-    private static readonly RESPAWN_DELAY = Duration.milliseconds(2000);
+    private static readonly RESPAWN_DELAY = Duration.milliseconds(1000);
     protected moving = true;
     protected readonly SHOOTING_PERIOD = Duration.milliseconds(1500);
     protected readonly sprite = createTankSprite('enemy');
@@ -324,7 +324,9 @@ export class EnemyTank extends Tank implements Entity {
     readonly respawnDelay = EnemyTank.RESPAWN_DELAY.clone();
 
     update(dt: Duration): void {
-        this.respawnDelay.sub(dt).max(0);
+        if (this.room.aliveEnemiesCount < this.room.enemyLimitAtOnce) {
+            this.respawnDelay.sub(dt).max(0);
+        }
         const player = this.manager.player;
         // NOTE: is collided, don't change the direction, allowing entities to move away from each other
         if (this.collided) {
@@ -375,7 +377,14 @@ export class EnemyTank extends Tank implements Entity {
         }
     }
 
+    markForRespawn(): void {
+        this.respawnDelay.setFrom(EnemyTank.RESPAWN_DELAY);
+        this.collided = false;
+        this.shouldRespawn = true;
+    }
+
     respawn(): boolean {
+        assert(this.shouldRespawn);
         if (this.respawnDelay.positive) return false;
         this.targetPath = [];
         this.targetSearchTimer.setMilliseconds(0);

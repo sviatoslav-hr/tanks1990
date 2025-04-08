@@ -112,7 +112,7 @@ export function createDevUI(state: GameState, manager: EntityManager, cache: Gam
     entitiesFolder
         .addButton()
         .setName('Spawn enemy')
-        .onClick(() => manager.spawnEnemy());
+        .onClick(() => manager.spawnEnemy(manager.world.activeRoom));
     entitiesFolder
         .addButton()
         .setName('Open Assets')

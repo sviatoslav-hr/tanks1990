@@ -24,6 +24,7 @@ export class FPSMonitor extends ReactiveElement {
             .monitor {
                 padding: 0.5rem;
                 border: 1px solid red;
+                background-color: rgba(48, 8, 8, 0.6);
             }
         `;
     }

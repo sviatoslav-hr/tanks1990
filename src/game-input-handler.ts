@@ -25,7 +25,7 @@ export function handleGameInputTick(
     if (input.isPressed('KeyF')) {
         renderer
             .toggleFullscreen(window)
-            .catch((err) => console.error('Failed to toggle fullscreen', err));
+            .catch((err) => console.error('[Input] Failed to toggle fullscreen', err));
     }
 
     if (input.isPressed('KeyP') || input.isPressed('Escape')) {
@@ -44,7 +44,11 @@ export function handleGameInputTick(
     }
 
     if (input.isPressed('KeyO')) {
-        state.togglePauseResume();
+        if (!state.dead) {
+            state.togglePauseResume();
+        } else {
+            console.warn('[Input] Game is over, cannot pause/unpause');
+        }
     }
 
     if (state.paused && input.isDown('BracketRight')) {
@@ -61,7 +65,7 @@ export function handleGameInputTick(
     if (input.isPressed('Semicolon')) {
         window.__DEV_MODE = !window.__DEV_MODE;
         storage.set(DEV_MODE_KEY, window.__DEV_MODE);
-        console.log(`Dev mode: ${window.__DEV_MODE ? 'ON' : 'OFF'}`);
+        console.log(`[Input] Dev mode: ${window.__DEV_MODE ? 'ON' : 'OFF'}`);
     }
 
     if (input.isPressed('Backquote')) {

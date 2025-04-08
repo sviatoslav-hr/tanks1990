@@ -6,7 +6,7 @@ import {Direction, Entity, isIntesecting} from '#/entity/core';
 import {EntityManager, isSameEntity} from '#/entity/manager';
 import {createStaticSprite, createTileSprite} from '#/entity/sprite';
 import {JSONObjectParser} from '#/json';
-import {Rect, fmod, isPosInsideRect, oppositeDirection, randomFrom} from '#/math';
+import {Rect, fmod, isPosInsideRect, oppositeDirection, randomFrom, randomInt} from '#/math';
 import {Vector2, Vector2Like} from '#/math/vector';
 import {Renderer} from '#/renderer';
 import {GameStorage} from '#/storage';
@@ -16,7 +16,7 @@ const WORLD_CONFIG_KEY = 'world_config';
 export class World {
     showBoundary = false;
     roomsLimit = 18;
-    readonly roomSizeInCells = new Vector2(16, 10);
+    readonly roomSizeInCells = new Vector2(12, 8);
     readonly startRoomPosition = new Vector2(0, 0);
     readonly boundary: Rect = {
         x: -BASE_WIDTH / 2,
@@ -348,14 +348,14 @@ function generateRoom(
     }
 
     const room = new Room(roomPosition, sizeInCells, blocks, prevRoom, nextDoorDir, nextRoomBlocks);
-    const insideBlocks = generateBlocks(manager, room.boundary, 20, manager.player);
+    const blocksCount = randomInt(16, 24);
+    const insideBlocks = generateBlocks(manager, room.boundary, blocksCount, manager.player);
     room.blocks.push(...insideBlocks);
 
     return room;
 }
 
 export class Room {
-    aliveEnemiesCount = 0;
     started = false;
     readonly boundaryColor = Color.RED;
     readonly boundary: Rect;
@@ -364,8 +364,10 @@ export class Room {
     nextRoomDoorOpen = false;
     prevRoomDoorBlocks: Block[];
     roomIndex: number;
+    aliveEnemiesCount = 0;
+    pendingEnemiesCount = 0; // NOTE: In a queue to be spawned
     expectedEnemiesCount = 0;
-    enemiesSpawned = false;
+    enemyLimitAtOnce = 2;
 
     constructor(
         public position: Vector2,
@@ -436,17 +438,18 @@ export class Room {
     }
 
     update(manager: EntityManager): void {
+        const enemiesCount = this.aliveEnemiesCount + this.pendingEnemiesCount;
         if (!this.started) {
             this.maybeStartRoom(manager.player);
         } else if (
             this.nextRoom &&
             this.started &&
-            this.expectedEnemiesCount === 0 &&
+            enemiesCount === 0 &&
             this.aliveEnemiesCount === 0 &&
             !this.nextRoomDoorOpen
         ) {
             console.log(
-                `Room ${this.roomIndex} cleared. Opening door to room ${this.nextRoom.roomIndex}`,
+                `[Room] Room ${this.roomIndex} cleared. Opening door to room ${this.nextRoom.roomIndex}`,
             );
             this.openNextRoomDoors();
             this.nextRoomDoorOpen = true;
@@ -469,9 +472,10 @@ export class Room {
             //       In the later rooms there are too many enemies.
             //       This can be either solved by spawning enemies in waves and/or
             //       using stronger enemies.
-            this.expectedEnemiesCount = this.roomIndex + 1;
+            this.expectedEnemiesCount = this.roomIndex + 2;
+            this.enemyLimitAtOnce = Math.max(2, Math.floor(this.expectedEnemiesCount / 2));
             console.log(
-                `Room ${this.roomIndex} started. Spawning ${this.expectedEnemiesCount} enemies.`,
+                `[Room] Room ${this.roomIndex} started. Spawning ${this.expectedEnemiesCount} enemies.`,
             );
         }
     }

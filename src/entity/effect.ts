@@ -6,7 +6,7 @@ import {Duration} from '#/math/duration';
 import {Animation, easeOut2} from '#/animation';
 import {Renderer} from '#/renderer';
 
-const EXPLOSION_IMAGE_PATH = './assets/kenney_particle-pack/scorch_01.png';
+const EXPLOSION_IMAGE_PATH = './assets/scorch.png';
 
 export function preloadEffectImages(): void {
     // TODO: handle possible errors?
@@ -27,7 +27,7 @@ function getExplosionImage(): HTMLImageElement {
 
 export class ExplosionEffect {
     static readonly IMAGE_MAX_SCALE = 4;
-    static readonly ANIMATION_DURATION = Duration.milliseconds(1000);
+    static readonly ANIMATION_DURATION = Duration.milliseconds(1500);
 
     // TODO: consider using a simpler data type for image instead of HTMLImageElement
     private explosionImage: HTMLImageElement;
@@ -53,11 +53,15 @@ export class ExplosionEffect {
         const xScale = image.width / boundary.width;
         const yScale = image.height / boundary.height;
         const scale = Math.min(xScale, yScale);
-        const particleSize = Math.floor((boundary.width * scale) / 16); // NOTE: take 1/16 of the boundary width as a particle size
+        // NOTE: Take 1/16 of the boundary width as a particle size
+        //       because sprite image has 16 actual pixels
+        const particleSize = (boundary.width * scale) / 16;
         const particles: Particle[] = [];
         for (let y = 0; y < image.height; y += particleSize) {
+            const yr = Math.floor(y);
             for (let x = 0; x < image.width; x += particleSize) {
-                const index = (y * image.width + x) * 4;
+                const xr = Math.floor(x);
+                const index = (yr * image.width + xr) * 4;
                 const red = image.data[index];
                 const green = image.data[index + 1];
                 const blue = image.data[index + 2];
@@ -76,7 +80,7 @@ export class ExplosionEffect {
                 }
                 const particle = new Particle(
                     new Vector2(x / xScale, y / yScale).add(boundary),
-                    new Vector2(particleSize, particleSize),
+                    new Vector2(particleSize / scale, particleSize / scale),
                     color,
                     boundary,
                 );
