@@ -173,14 +173,14 @@ export function createTileSprite() {
 }
 
 export function createTankSprite(type: 'player' | 'enemy') {
-    const key = type === 'player' ? 'tank_green' : 'tank_yellow';
+    const key = type === 'player' ? 'tank2_green' : 'tank2_yellow';
     // const key = type === 'player' ? 'tank_green_darker' : 'tank_yellow_darker';
     return new Sprite({
         key: key,
         frameWidth: 64,
         frameHeight: 64,
         frameDuration: Duration.milliseconds(100),
-        states: [{name: 'moving', frames: 2}],
+        states: [{name: 'moving', frames: 4}],
     });
 }
 
