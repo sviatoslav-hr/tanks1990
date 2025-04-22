@@ -185,9 +185,9 @@ export function createTankSprite(type: 'player' | 'enemy') {
     // const key = type === 'player' ? 'tank_green_darker' : 'tank_yellow_darker';
     return new Sprite({
         key: key,
-        frameWidth: 96,
-        frameHeight: 112,
-        framePadding: 4,
+        frameWidth: 64,
+        frameHeight: 80,
+        framePadding: 3,
         frameDuration: Duration.milliseconds(100),
         states: [{name: 'moving', frames: 6}],
     });
