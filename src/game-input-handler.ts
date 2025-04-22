@@ -81,7 +81,7 @@ export function handleGameInputTick(
         renderer.camera.manualMode = true;
         renderer.camera.worldOffset.sub(mouseDelta);
     }
-    const ctrlDevDown = __DEV_MODE && (input.isDown('ControlLeft') || input.isDown('MetaLeft'));
+    const ctrlDevDown = __DEV_MODE && input.isDown('MetaLeft');
 
     // NOTE: Same as MouseMiddle but for touchpad
     if (ctrlDevDown && input.isDown('MouseLeft')) {

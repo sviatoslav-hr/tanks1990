@@ -410,9 +410,13 @@ export class Room {
 
     drawRoomNumber(renderer: Renderer): void {
         const text = `${this.roomIndex + 1}`;
-        const fontSize = CELL_SIZE * 8 * renderer.camera.scale;
-        renderer.setFont(`700 ${fontSize}px Helvetica`, 'center', 'middle');
-        const {x, y} = this.position;
+        const scale = renderer.camera.scale;
+        const fontSize = CELL_SIZE * 8 * scale;
+        renderer.setFont(`700 ${fontSize}px Arial`, 'center', 'middle');
+        const metrics = renderer.measureText(text);
+        let {x, y} = this.position;
+        // NOTE: Offset the text since baseline=middle does not put the character actually in the middle.
+        y += (metrics.actualBoundingBoxAscent - metrics.actualBoundingBoxDescent) / 2 / scale;
         renderer.setGlobalAlpha(0.05);
         renderer.fillText(text, {x, y, color: '#ffffff'});
         renderer.setGlobalAlpha(1);
