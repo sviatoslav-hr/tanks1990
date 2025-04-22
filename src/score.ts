@@ -1,4 +1,4 @@
-import {BASE_PADDING} from '#/const';
+import {BASE_PADDING, CELL_SIZE} from '#/const';
 import {PlayerTank} from '#/entity';
 import {GameStorage} from '#/storage';
 import {Renderer} from '#/renderer';
@@ -21,40 +21,37 @@ export function drawScoreMini(
     manager: EntityManager,
     cache: GameStorage,
 ): void {
-    renderer.useCameraCoords(true);
     const player = manager.player;
     const world = manager.world;
-    const camera = renderer.camera;
     const padding = BASE_PADDING / 2;
+    const roomBounds = world.activeRoom.boundary;
+    const y = roomBounds.y - padding / 2;
+    const fontSize = 20;
+    const font = `500 ${fontSize}px Helvetica`;
 
     {
         const bestScore = getBestScore(cache);
         const text =
             'Best Score: ' +
             (bestScore ? `${bestScore.score} (${shortDate(bestScore.createdAt)})` : '-');
-        const x = camera.screenSize.width / 2 - (world.boundary.width * camera.scale) / 2;
-        const y = padding;
-        renderer.setFont('500 20px Helvetica', 'start', 'top');
+        const x = roomBounds.x - CELL_SIZE + padding;
+        renderer.setFont(font, 'start', 'bottom');
         renderer.fillText(text, {x, y, shadowColor: Color.BLACK_RAISIN});
     }
 
     {
         const text = `Score: ${player.score}`;
-        const m = renderer.measureText(text);
-        const x = camera.screenSize.width / 2 - m.width / 2;
-        const y = padding;
-        renderer.setFont('500 20px Helvetica', 'start', 'top');
+        const x = roomBounds.x + roomBounds.width / 2;
+        renderer.setFont(font, 'center', 'bottom');
         renderer.fillText(text, {x, y, shadowColor: Color.BLACK_RAISIN});
     }
 
     {
         const text = `Survived for ${player.survivedFor.toHumanString()}`;
-        const x = camera.screenSize.width / 2 + (world.boundary.width * camera.scale) / 2;
-        const y = padding;
-        renderer.setFont('500 20px Helvetica', 'right', 'top');
+        const x = roomBounds.x + roomBounds.width + CELL_SIZE - padding;
+        renderer.setFont(font, 'right', 'bottom');
         renderer.fillText(text, {x, y, shadowColor: Color.BLACK_RAISIN});
     }
-    renderer.useCameraCoords(false);
 }
 
 interface ScoreState {
