@@ -61,16 +61,12 @@ export class World {
         this.activeRoom.update(manager);
     }
 
-    draw(renderer: Renderer): void {
-        // TODO: Figure out a performance way to deal with tiles.
-        //       And also pick the tiles that actually looks nice.
-        if (false) this.drawTiles(renderer, CELL_SIZE);
-        else this.drawGrid(renderer, CELL_SIZE);
-        this.drawWorldBoundary(renderer);
+    drawRooms(renderer: Renderer): void {
         this.activeRoom.draw(renderer, this);
         for (const b of this.iterateBlocks()) {
             b.draw(renderer);
         }
+        this.drawWorldBoundary(renderer);
     }
 
     *iterateBlocks(): Generator<Block> {
@@ -81,7 +77,14 @@ export class World {
         }
     }
 
-    private drawTiles(renderer: Renderer, cellSize: number): void {
+    drawTiles(renderer: Renderer, cellSize: number = CELL_SIZE): void {
+        if (true) {
+            this.drawGrid(renderer, cellSize);
+            this.activeRoom.drawRoomNumber(renderer);
+            return;
+        }
+        // TODO: Figure out a performance way to deal with tiles.
+        //       And also pick the tiles that actually looks nice.
         const camera = renderer.camera;
         cellSize *= camera.scale;
         // NOTE: Find top-left position of the camera in camera coordinates
@@ -405,17 +408,18 @@ export class Room {
         return isIntesecting(player, this.nextRoomTransitionRect);
     }
 
+    drawRoomNumber(renderer: Renderer): void {
+        const text = `${this.roomIndex + 1}`;
+        const fontSize = CELL_SIZE * 8 * renderer.camera.scale;
+        renderer.setFont(`700 ${fontSize}px Helvetica`, 'center', 'middle');
+        const {x, y} = this.position;
+        renderer.setGlobalAlpha(0.05);
+        renderer.fillText(text, {x, y, color: '#ffffff'});
+        renderer.setGlobalAlpha(1);
+    }
+
     // TODO: Move block rendering from world into room for both modes.
     draw(renderer: Renderer, world: World): void {
-        {
-            const text = `${this.roomIndex + 1}`;
-            const fontSize = CELL_SIZE * 8 * renderer.camera.scale;
-            renderer.setFont(`700 ${fontSize}px Helvetica`, 'center', 'middle');
-            const {x, y} = this.position;
-            renderer.setGlobalAlpha(0.05);
-            renderer.fillText(text, {x, y, color: '#ffffff'});
-            renderer.setGlobalAlpha(1);
-        }
         if (!world.showBoundary) {
             return;
         }

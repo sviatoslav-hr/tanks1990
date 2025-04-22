@@ -1,7 +1,7 @@
 import {Transform} from '#/math/transform';
 import {Vector2} from '#/math/vector';
 import {Duration} from '#/math/duration';
-import {Rect} from '#/math';
+import {fmod, Rect, rotateRect} from '#/math';
 import {Renderer} from '#/renderer';
 
 const ASSETS_URL = './assets';
@@ -24,6 +24,7 @@ type SpriteOpts<K extends string> = {
     colorOverlay?: string;
     offsetX?: number;
     offsetY?: number;
+    framePadding?: number;
     frameWidth: number;
     frameHeight: number;
     frameDuration?: Duration; // default 100
@@ -37,8 +38,9 @@ export class Sprite<K extends string> {
     private frameIndex = 0;
     private animationDt = Duration.zero();
     private state?: SpriteState<K>;
-    private readonly frameWidth: number = 0;
-    private readonly frameHeight: number = 0;
+    readonly frameWidth: number;
+    readonly frameHeight: number;
+    readonly framePadding: number;
     private readonly offset: Vector2;
     private readonly stateKeys: readonly K[];
     private readonly frameDuration = new Duration(100);
@@ -49,6 +51,7 @@ export class Sprite<K extends string> {
         const {key, frameWidth, frameHeight, frameDuration, states} = opts;
         this.frameWidth = frameWidth;
         this.frameHeight = frameHeight;
+        this.framePadding = opts.framePadding ?? 0;
         if (frameDuration) {
             this.frameDuration.setFrom(frameDuration);
         }
@@ -84,7 +87,7 @@ export class Sprite<K extends string> {
         if (this.frameIndex > maxFrames - 1) this.frameIndex = 0;
     }
 
-    draw(renderer: Renderer, boundary: Rect, rotationDeg = 0): void {
+    draw(renderer: Renderer, boundary: Rect, rotationDeg = 0, debug = false): void {
         if (!this.state) return;
         if (!renderer.camera.isRectVisible(boundary)) return;
         const alreadyInCameraCoords = renderer.usingCameraCoords;
@@ -104,17 +107,26 @@ export class Sprite<K extends string> {
         renderer.rotate(rotationDeg);
         // NOTE: draw the image respecting the moved origin
         try {
-            renderer.drawImage(
-                this.image,
-                this.frameWidth * this.frameIndex + this.offset.x,
-                this.state.index * this.frameHeight + this.offset.y,
-                this.frameWidth,
-                this.frameHeight,
-                -boundary.width / 2,
-                -boundary.height / 2,
-                boundary.width,
-                boundary.height,
-            );
+            const fx = this.frameWidth * this.frameIndex + this.offset.x + this.framePadding;
+            const fy = this.state.index * this.frameHeight + this.offset.y + this.framePadding;
+            const fw = this.frameWidth - this.framePadding * 2;
+            const fh = this.frameHeight - this.framePadding * 2;
+            const isHorizontal = fmod(rotationDeg, 180) === 90;
+            let dx = -boundary.width / 2;
+            let dy = -boundary.height / 2;
+            let dw = boundary.width;
+            let dh = boundary.height;
+            if (isHorizontal) {
+                dx = -boundary.height / 2;
+                dy = -boundary.width / 2;
+                dw = boundary.height;
+                dh = boundary.width;
+            }
+            if (debug && isHorizontal) {
+                // renderer.setStrokeColor('cyan');
+                // renderer.strokeBoundary({x: dx, y: dy, width: dw, height: dh}, 2);
+            }
+            renderer.drawImage(this.image, fx, fy, fw, fh, dx, dy, dw, dh);
         } catch (e) {
             assert(false);
         }
@@ -173,15 +185,24 @@ export function createTileSprite() {
 }
 
 export function createTankSprite(type: 'player' | 'enemy') {
-    const key = type === 'player' ? 'tank2_green' : 'tank2_yellow';
+    // const key = type === 'player' ? 'tank2_green' : 'tank2_yellow';
+    const key = type === 'player' ? 'tank3_green' : 'tank3_gray';
     // const key = type === 'player' ? 'tank_green_darker' : 'tank_yellow_darker';
     return new Sprite({
         key: key,
-        frameWidth: 64,
-        frameHeight: 64,
+        frameWidth: 96,
+        frameHeight: 112,
+        framePadding: 4,
         frameDuration: Duration.milliseconds(100),
-        states: [{name: 'moving', frames: 4}],
+        states: [{name: 'moving', frames: 6}],
     });
+    // return new Sprite({
+    //     key: key,
+    //     frameWidth: 64,
+    //     frameHeight: 64,
+    //     frameDuration: Duration.milliseconds(100),
+    //     states: [{name: 'moving', frames: 4}],
+    // });
 }
 
 export function createStaticSprite(opts: Omit<SpriteOpts<'static'>, 'states'>): Sprite<'static'> {

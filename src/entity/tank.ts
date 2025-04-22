@@ -8,7 +8,7 @@ import {findPath} from '#/entity/pathfinding';
 import {Sprite, createShieldSprite, createTankSprite} from '#/entity/sprite';
 import {eventQueue} from '#/events';
 import {GameInput} from '#/game-input';
-import {moveToRandomCorner, sameSign} from '#/math';
+import {moveToRandomCorner, Rect, sameSign} from '#/math';
 import {Duration} from '#/math/duration';
 import {Vector2, Vector2Like} from '#/math/vector';
 import {Renderer} from '#/renderer';
@@ -50,8 +50,8 @@ export abstract class Tank extends Entity {
         // NOTE: spawn outside of the screen, expected to respawn
         this.x = -(2 * this.width);
         this.y = -(2 * this.height);
-        this.width = CELL_SIZE - 8;
-        this.height = CELL_SIZE - 8;
+        this.width = CELL_SIZE * 0.85;
+        this.height = CELL_SIZE * 0.85;
     }
 
     get cx(): number {
@@ -110,7 +110,51 @@ export abstract class Tank extends Entity {
 
     draw(renderer: Renderer): void {
         if (this.dead) return;
-        this.sprite.draw(renderer, this, this.direction);
+
+        {
+            const ratio = this.sprite.frameWidth / this.width;
+            const fw = this.sprite.frameWidth / ratio;
+            const fh = this.sprite.frameHeight / ratio;
+            const hdiff = this.height - fh;
+            let spriteBoundary: Rect | undefined;
+            switch (this.direction) {
+                case Direction.NORTH:
+                    spriteBoundary = {
+                        x: this.x,
+                        y: this.y + hdiff,
+                        width: fw,
+                        height: fh,
+                    };
+                    break;
+                case Direction.SOUTH:
+                    spriteBoundary = {
+                        x: this.x,
+                        y: this.y,
+                        width: fw,
+                        height: fh,
+                    };
+                    break;
+                case Direction.WEST:
+                    spriteBoundary = {
+                        x: this.x + hdiff,
+                        y: this.y,
+                        width: fh,
+                        height: fw,
+                    };
+                    break;
+                case Direction.EAST:
+                    spriteBoundary = {
+                        x: this.x,
+                        y: this.y,
+                        width: fh,
+                        height: fw,
+                    };
+                    break;
+            }
+            this.sprite.draw(renderer, spriteBoundary, this.direction - 180, true);
+            // renderer.setStrokeColor('orange');
+            // renderer.strokeBoundary(spriteBoundary, 1);
+        }
         if (this.hasShield) {
             this.shieldSprite.draw(renderer, this.shieldBoundary);
         }

@@ -36,7 +36,7 @@ export class EntityManager {
             renderer.camera.focusOnRect(this.world.activeRoom.boundary);
             this.roomInFocus = true;
         }
-        this.world.draw(renderer);
+        this.world.drawTiles(renderer);
         for (const effect of this.effects) {
             effect.draw(renderer);
         }
@@ -45,8 +45,10 @@ export class EntityManager {
                 tank.draw(renderer);
             }
         }
-        // NOTE: player should be drawn last to be on top of the entities
+        // NOTE: Player should be drawn last to be on top of the entities.
         this.player.draw(renderer);
+        // NOTE: Draw blocks on top of tanks to clip the tank sprite when intersecting with the block.
+        this.world.drawRooms(renderer);
         this.cacheExplosions(renderer);
         for (const projectile of this.projectiles) {
             projectile.draw(renderer);
