@@ -1,7 +1,7 @@
 import {Transform} from '#/math/transform';
 import {Vector2} from '#/math/vector';
 import {Duration} from '#/math/duration';
-import {fmod, Rect, rotateRect} from '#/math';
+import {fmod, Rect} from '#/math';
 import {Renderer} from '#/renderer';
 
 const ASSETS_URL = './assets';
@@ -87,12 +87,12 @@ export class Sprite<K extends string> {
         if (this.frameIndex > maxFrames - 1) this.frameIndex = 0;
     }
 
-    draw(renderer: Renderer, boundary: Rect, rotationDeg = 0, debug = false): void {
+    draw(renderer: Renderer, boundary: Rect, rotationDeg = 0): void {
         if (!this.state) return;
         if (!renderer.camera.isRectVisible(boundary)) return;
         const alreadyInCameraCoords = renderer.usingCameraCoords;
         if (!alreadyInCameraCoords) renderer.useCameraCoords(true); // NOTE: It's easier to rotate in camera coords
-        // NOTE: set origin at the center of tank for proper rotation
+        // NOTE: Set origin at the center of tank since it's easier to rotate that way.
         const boundaryCenterX = boundary.x + boundary.width / 2;
         const boundaryCenterY = boundary.y + boundary.height / 2;
         const translation = new Vector2(
@@ -105,7 +105,6 @@ export class Sprite<K extends string> {
         );
         renderer.setTransform(Transform.makeTranslation(translation).scale(renderer.camera.scale));
         renderer.rotate(rotationDeg);
-        // NOTE: draw the image respecting the moved origin
         try {
             const fx = this.frameWidth * this.frameIndex + this.offset.x + this.framePadding;
             const fy = this.state.index * this.frameHeight + this.offset.y + this.framePadding;
@@ -121,10 +120,6 @@ export class Sprite<K extends string> {
                 dy = -boundary.width / 2;
                 dw = boundary.height;
                 dh = boundary.width;
-            }
-            if (debug && isHorizontal) {
-                // renderer.setStrokeColor('cyan');
-                // renderer.strokeBoundary({x: dx, y: dy, width: dw, height: dh}, 2);
             }
             renderer.drawImage(this.image, fx, fy, fw, fh, dx, dy, dw, dh);
         } catch (e) {

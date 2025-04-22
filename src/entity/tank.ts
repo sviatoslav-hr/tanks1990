@@ -151,7 +151,7 @@ export abstract class Tank extends Entity {
                     };
                     break;
             }
-            this.sprite.draw(renderer, spriteBoundary, this.direction - 180, true);
+            this.sprite.draw(renderer, spriteBoundary, this.direction - 180);
             // renderer.setStrokeColor('orange');
             // renderer.strokeBoundary(spriteBoundary, 1);
         }
