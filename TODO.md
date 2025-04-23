@@ -2,10 +2,11 @@
 
 ## IN_PROGRESS
 ## TODO
-- [ ] Add room number to the score (+store).
+- [ ] Fix tanks moving too fast when the frame rate drops (usually this happens during explosions)
+- [ ] Define game plan / trajectory / future development / main goal / idea
 - [ ] Define custom RNG and use it everywhere instead of `Math.random()`
 - [ ] Render fps monitor in it's own canvas. Add graph to show the fps over time.
-- [ ] Define game plan / trajectory / future development / main goal / idea
+- [ ] Add room number to the score (+store).
 - [ ] Better tank sprites (more details)!
 - [ ] Have explosion effect as a sprite
 - [ ] Change movement to move only by fractions of cells (e.g. 1/16 of a cell)
