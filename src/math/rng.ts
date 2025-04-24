@@ -32,21 +32,24 @@ interface AleaState {
 
 type Seed = string | number;
 
-interface RNGOptions {
-    state?: AleaState;
-}
-
 export class RNG {
-    c: number;
-    s0: number;
-    s1: number;
-    s2: number;
-    private initial: AleaState;
+    c!: number;
+    s0!: number;
+    s1!: number;
+    s2!: number;
+    private initial!: AleaState;
+    private _seed!: string;
 
-    constructor(
-        readonly seed: string,
-        opts?: RNGOptions,
-    ) {
+    constructor(seed: string) {
+        this.init(seed);
+    }
+
+    get seed(): string {
+        return this._seed;
+    }
+
+    private init(seed: string): void {
+        this._seed = seed;
         let mash = makeMash();
         this.c = 1;
         this.s0 = mash(' ');
@@ -65,10 +68,6 @@ export class RNG {
             this.s2 += 1;
         }
         mash = null as any;
-        const state = opts?.state;
-        if (state && typeof state == 'object') {
-            copyInto(state, this);
-        }
         this.initial = this.state();
     }
 
@@ -109,12 +108,19 @@ export class RNG {
         return state as AleaState;
     }
 
-    reset(): void {
-        copyInto(this.initial, this);
+    reset(seed?: string): void {
+        console.log(`Resetting RNG with seed: ${seed}. Current seed: ${this._seed}`);
+        if (seed && seed !== this._seed) {
+            console.log(`Resetting RNG with seed: ${seed}`);
+            this.init(seed);
+        } else {
+            console.log(`Resetting RNG with initial state`);
+            copyInto(this.initial, this);
+        }
     }
 }
 
-export const random = new RNG('default');
+export const random = new RNG('iamthebest');
 
 function makeMash() {
     let n = 0xefc8249d;

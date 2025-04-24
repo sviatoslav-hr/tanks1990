@@ -3,16 +3,34 @@ import {SoundManager} from '#/sound';
 import {GameState} from '#/state';
 import {EntityManager} from '#/entity/manager';
 import {ScoreOverlay} from '#/score';
+import {random} from './math/rng';
+
+function setURLSeed(seed: string): void {
+    const url = new URL(window.location.href);
+    const key = 'seed';
+    if (url.searchParams.get(key) !== seed) {
+        url.searchParams.set('seed', seed);
+        window.history.replaceState({}, '', url);
+    }
+}
+
+function getURLSeed(): string | null {
+    const url = new URL(window.location.href);
+    return url.searchParams.get('seed');
+}
 
 // TODO: refactor menu into ReactiveElement
-
+// TODO: Detach menu from game objects
 export function initMenu(game: GameState, manager: EntityManager, sounds: SoundManager): Menu {
     const menu = new Menu();
     menu.addButton(
         'NEW GAME',
         () => {
             game.start();
+            const seed = getURLSeed();
+            random.reset(seed ?? undefined); // TODO: This should not be done in menu code.
             manager.init();
+            setURLSeed(random.seed);
             menu.hide();
         },
         [MenuState.START],
@@ -28,8 +46,11 @@ export function initMenu(game: GameState, manager: EntityManager, sounds: SoundM
     menu.addButton(
         'RESTART',
         () => {
-            manager.init();
             game.start();
+            const seed = getURLSeed();
+            random.reset(seed ?? undefined); // TODO: This should not be done in menu code.
+            manager.init();
+            setURLSeed(random.seed);
             menu.hide();
         },
         [MenuState.DEAD, MenuState.PAUSE],
