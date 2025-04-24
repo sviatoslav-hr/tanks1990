@@ -8,6 +8,7 @@ import {Room, World} from '#/world';
 import {Duration} from '#/math/duration';
 import {Vector2Like} from '#/math/vector';
 import {Renderer} from '#/renderer';
+import {random} from '#/math/rng';
 
 export function isSameEntity(a: Entity, b: Entity): boolean {
     return a.id === b.id;
@@ -24,6 +25,7 @@ export class EntityManager {
     private roomInFocus = false;
 
     init(): void {
+        random.reset(); // TODO: Manager should not be responsible for RNG
         this.reset();
         this.player.respawn();
         this.world.init(this);

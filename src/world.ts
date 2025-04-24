@@ -6,10 +6,11 @@ import {Direction, Entity, isIntesecting} from '#/entity/core';
 import {EntityManager, isSameEntity} from '#/entity/manager';
 import {createStaticSprite, createTileSprite} from '#/entity/sprite';
 import {JSONObjectParser} from '#/json';
-import {Rect, fmod, isPosInsideRect, oppositeDirection, randomFrom, randomInt} from '#/math';
+import {Rect, fmod, isPosInsideRect, oppositeDirection, randomFrom} from '#/math';
 import {Vector2, Vector2Like} from '#/math/vector';
 import {Renderer} from '#/renderer';
 import {GameStorage} from '#/storage';
+import {random} from './math/rng';
 
 const WORLD_CONFIG_KEY = 'world_config';
 
@@ -351,7 +352,7 @@ function generateRoom(
     }
 
     const room = new Room(roomPosition, sizeInCells, blocks, prevRoom, nextDoorDir, nextRoomBlocks);
-    const blocksCount = randomInt(16, 24);
+    const blocksCount = random.int32Range(16, 24);
     const insideBlocks = generateBlocks(manager, room.boundary, blocksCount, manager.player);
     room.blocks.push(...insideBlocks);
 

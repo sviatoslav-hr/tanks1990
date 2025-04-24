@@ -2,8 +2,9 @@ import {Color} from '#/color';
 import {CELL_SIZE} from '#/const';
 import {Entity, isIntesecting} from '#/entity/core';
 import {Sprite, createStaticSprite} from '#/entity/sprite';
-import {Rect, randomInt} from '#/math';
+import {Rect} from '#/math';
 import {Duration} from '#/math/duration';
+import {random} from '#/math/rng';
 import {Renderer} from '#/renderer';
 import {isRectOccupied} from '#/world';
 import {EntityManager} from './manager';
@@ -24,8 +25,8 @@ export function generateBlocks(
     const triesLimit = 10;
     outer: for (let i = 0; i < blocksCount; i++) {
         inner: for (let j = 0; j < triesLimit; j++) {
-            rect.x = boundary.x + randomInt(1, boundary.width / CELL_SIZE - 1) * CELL_SIZE;
-            rect.y = boundary.y + randomInt(1, boundary.height / CELL_SIZE - 1) * CELL_SIZE;
+            rect.x = boundary.x + random.int32Range(1, boundary.width / CELL_SIZE - 1) * CELL_SIZE;
+            rect.y = boundary.y + random.int32Range(1, boundary.height / CELL_SIZE - 1) * CELL_SIZE;
             if (
                 !isRectOccupied(rect, manager) &&
                 (!blockedArea || !isIntesecting(blockedArea, rect))

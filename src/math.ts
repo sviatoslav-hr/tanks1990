@@ -1,5 +1,6 @@
 import {Direction} from '#/entity/core';
 import {Vector2Like} from '#/math/vector';
+import {random} from './math/rng';
 
 export type Rect = {
     x: number;
@@ -106,12 +107,8 @@ export function numround(value: number, margin: number = 0): number {
     return Math.round(value * n) / n;
 }
 
-export function randomInt(min: number, max: number): number {
-    return Math.floor(Math.random() * (max - min) + min);
-}
-
 export function randomFrom<T>(...values: T[]): T {
-    return values[randomInt(0, values.length)]!;
+    return values[random.int32Range(0, values.length)]!;
 }
 
 export function moveToRandomCorner(entity: Rect, boundary: Rect): void {
