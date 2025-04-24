@@ -9,7 +9,7 @@ The generation algorithm should be based on the seed, so the world could be rege
 (The seed should be stored in the query string of the URL, so the game could be shared with the same seed.)
 
 Each level is basically a closed room with a bunch of enemies inside.
-There is a limited number of rooms.
+Since we have measure the completion time, there is a limited and fixed number of rooms.
 Enemies start to spawn as soon as player enters the room.
 Last room should contain a "final boss".
 There should be something fun after beating the final boss.
@@ -25,9 +25,24 @@ All rooms are connected. In order to get access to the next room, the currect ro
 
 
 ## Player
-...
+
+Player is spawned in the center of the first room.
+At the start of the game, player has a basic tank (the weakest tank?).
+Player can improve the tank (see power-ups).
+Player controls the tank either with a keyboard (WASD) or with a gamepad.
+
+*Consider making this game playable on a phone or tablet. I this case I would need to make my own onscreen controls.
+
 
 ## Power-ups
+
+Player tank can be improved in such ways:
+- Damage output (tank turret)
+- DPM - shoots faster (tank turret)
+- Movement speed (tank body)
+- More HP (tank body)
+
+* There also could be a missile upgrade that would flight straight to the closest enemy tank.
 
 ## Enemies
 
@@ -46,12 +61,19 @@ There could be different combinations of tanks and turrets, which is randomly de
 At the start of the game, player should only face the basic tanks.
 As the player progresses, the game should spawn different types of tanks and with different turrets.
 
-...
-
 ## Final Boss
-...
+
+The Final Boss is also a tank (I know, surprisingly).
+It will have 3 phases.
+In each phase Boss will use different skills/abilities, maybe? Not sure what those are supposed to be, yet.
+
+After killing the boss, the time of finishing the game will be displayed. The fastest completion time should be saved and displayed somewhere (probably, on menu screen).
+
+*I need to consider having a local leaderboard with best completion times. But this is very low priority, the game should be close to being finished before I even consider this.
 
 ## Score
+
+* Not sure if score still makes sense. Originally score was added when enemies were spawning infinitely, but they don't anymore. There will always be the same number of enemies, so what purpose does score serve? It seems to be an artifast of the past.
 
 - Score is calculated based on the number of killed enemies.
 - In playing state, the score is displayed at the top of the screen.
@@ -60,7 +82,6 @@ As the player progresses, the game should spawn different types of tanks and wit
 
 ## Open Questions
 
-- What size rooms should have? Should the size be fixed or random?
 - How many obstacles should be in the room?
 
 ### Camera
