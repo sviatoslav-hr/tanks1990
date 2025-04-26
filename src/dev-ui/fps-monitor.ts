@@ -1,5 +1,4 @@
 import {CustomElement, HTMLElementOptions, ReactiveElement, css, div} from '#/html';
-import {numround} from '#/math';
 import {Duration} from '#/math/duration';
 
 // NOTE: Inspired by https://github.com/mrdoob/stats.js/blob/28632bd87e0ea56acafc9b8779d813eb95e62c08/src/Stats.js
@@ -15,6 +14,7 @@ export class FPSMonitor extends ReactiveElement {
     private beginTime = 0;
     private prevTime = 0;
     private framesCount = 0;
+    private frameDurationsPerSecond: number[] = [];
     private fpsPanel: StatsPanel;
     private msPanel: StatsPanel;
     private memPanel: StatsPanel | undefined;
@@ -78,7 +78,7 @@ export class FPSMonitor extends ReactiveElement {
         if (this.updateDelay.milliseconds >= 0) {
             this.updateDelay.sub(dt);
         } else {
-            this.lastFPS = numround(1000 / dt.milliseconds).toString();
+            this.lastFPS = Math.round(1000 / dt.milliseconds).toString();
             this.updateDelay.setFrom(FPSMonitor.FPS_UPDATE_DELAY);
             if (this.visible) {
                 this.textElement.textContent = `FPS: ${this.lastFPS}`;
@@ -115,24 +115,39 @@ export class FPSMonitor extends ReactiveElement {
     }
 
     endMeasuring() {
+        const timeNow = (performance || Date).now();
+        const frameDuration = timeNow - this.beginTime;
+        const isValidFrameTime = this.beginTime !== 0 && this.prevTime !== 0;
+        if (isValidFrameTime) {
+            this.msPanel.update(frameDuration, 200);
+        }
         this.framesCount++;
-        const time = (performance || Date).now();
-        this.msPanel.update(time - this.beginTime, 200);
+        this.frameDurationsPerSecond.push(frameDuration);
 
-        // TODO: This is not ideal because it does not show spikes for single frames
-        if (time >= this.prevTime + 1000) {
-            this.fpsPanel.update((this.framesCount * 1000) / (time - this.prevTime), 100);
-            this.prevTime = time;
+        if (timeNow >= this.prevTime + 1000) {
+            // const averageFrameDuration = this.calcAverageFrameDuration();
+            if (isValidFrameTime) {
+                this.fpsPanel.update((this.framesCount * 1000) / (timeNow - this.prevTime), 100);
+            }
+            this.prevTime = timeNow;
             this.framesCount = 0;
+            this.frameDurationsPerSecond.splice(0, this.frameDurationsPerSecond.length);
 
-            if (this.memPanel) {
+            if (isValidFrameTime && this.memPanel) {
                 const memory = getCurrentMemory();
                 const mb = 1024 * 1024;
                 this.memPanel.update(memory.usedJSHeapSize / mb, memory.jsHeapSizeLimit / mb);
             }
         }
 
-        return time;
+        return timeNow;
+    }
+
+    calcAverageFrameDuration(): number {
+        return (
+            this.frameDurationsPerSecond.reduce((a, b) => a + b, 0) /
+            this.frameDurationsPerSecond.length
+        );
     }
 }
 
@@ -152,6 +167,7 @@ function getCurrentMemory() {
     return memory as MenoryInfo;
 }
 
+// TODO: Convert into ReactiveElement?
 class StatsPanel {
     private min: number;
     private max: number;

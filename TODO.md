@@ -2,12 +2,9 @@
 
 ## IN_PROGRESS
 ## TODO
-- [ ] Fix tanks moving too fast when the frame rate drops (usually this happens during explosions)
-- [ ] Define game plan / trajectory / future development / main goal / idea
-- [ ] Define custom RNG and use it everywhere instead of `Math.random()`
 - [ ] Render fps monitor in it's own canvas. Add graph to show the fps over time.
+- [ ] Fix tanks moving too fast when the frame rate drops (usually this happens during explosions)
 - [ ] Add room number to the score (+store).
-- [ ] Better tank sprites (more details)!
 - [ ] Have explosion effect as a sprite
 - [ ] Change movement to move only by fractions of cells (e.g. 1/16 of a cell)
       This will be easier to pathfinding and will fix the issue with the player being able to pass through blocks
@@ -26,7 +23,6 @@
 
 ## FIXME
 - [ ] Sometimes after moving the camera manually, after trying to reset it, it's not zoomed correctly (slightly zoomed out so the world border is visible)
-- [ ] Explosion effect image data may grab some black pixels from the boundary
 - [ ] Enemies sometimes stuck when they need to move around the block (probably because of the collision detection and precision issues)
       It's esier to reproduce when there are more blocks around
 - [ ] Fix projectile size (it's bigger than it visually is)
