@@ -28,6 +28,7 @@ export type KeyCode =
     | 'MouseLeft'
     | 'MouseMiddle'
     | 'MouseRight'
+    | 'ShiftLeft'
     | 'ControlLeft'
     | 'MetaLeft'
     | 'ArrowLeft'

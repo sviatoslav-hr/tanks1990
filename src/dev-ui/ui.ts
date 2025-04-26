@@ -1,7 +1,6 @@
 import {DevPanel, FPSMonitor} from '#/dev-ui';
 import {GameState} from '#/state';
 import {CustomElement, ReactiveElement, css, div} from '#/html';
-import {Duration} from '#/math/duration';
 import {GameStorage} from '#/storage';
 import {EntityManager} from '#/entity/manager';
 
@@ -42,10 +41,6 @@ export class DevUI extends ReactiveElement {
                 max-height: 100vh;
             }
         `;
-    }
-
-    update(dt: Duration) {
-        this.fpsMonitor.update(dt);
     }
 }
 

@@ -1,4 +1,5 @@
 import {CustomElement, HTMLElementOptions, ReactiveElement, css, div} from '#/html';
+import {numround} from '#/math';
 import {Duration} from '#/math/duration';
 
 // NOTE: Inspired by https://github.com/mrdoob/stats.js/blob/28632bd87e0ea56acafc9b8779d813eb95e62c08/src/Stats.js
@@ -6,21 +7,22 @@ import {Duration} from '#/math/duration';
 @CustomElement('fps-monitor')
 export class FPSMonitor extends ReactiveElement {
     public visible = true;
-    private lastFPS: string = '0';
-    private updateDelay = Duration.zero();
-    private textElement = div({textContent: 'FPS: 60'});
+    public paused = false;
 
     private currentPanelId = 0;
     private beginTime = 0;
-    private prevTime = 0;
+    private lastFrameTime = 0;
+    private framesBeginTime = 0;
     private framesCount = 0;
-    private frameDurationsPerSecond: number[] = [];
     private fpsPanel: StatsPanel;
-    private msPanel: StatsPanel;
+    private updateMsPanel: StatsPanel;
+    private frameMsPanel: StatsPanel;
     private memPanel: StatsPanel | undefined;
     private panels: StatsPanel[] = [];
 
-    static readonly FPS_UPDATE_DELAY = new Duration(300);
+    static readonly DISPLAY_DELAY = Duration.milliseconds(300);
+    private displayDelay = FPSMonitor.DISPLAY_DELAY.clone();
+    private initialDelay = Duration.milliseconds(1500);
 
     constructor(options?: HTMLElementOptions) {
         super(options);
@@ -33,14 +35,50 @@ export class FPSMonitor extends ReactiveElement {
             false,
         );
 
-        this.beginTime = (performance || Date).now();
-        this.prevTime = this.beginTime;
-        this.framesCount = 0;
+        this.addEventListener(
+            'contextmenu',
+            (event) => {
+                event.preventDefault();
+                this.reset();
+            },
+            false,
+        );
 
-        this.fpsPanel = this.addPanel(new StatsPanel('FPS', '#0ff', '#002'));
-        this.msPanel = this.addPanel(new StatsPanel('MS', '#0f0', '#020'));
+        this.beginTime = (performance || Date).now();
+
+        this.fpsPanel = this.addPanel(
+            new StatsPanel({
+                name: 'FPS',
+                fgColor: '#0ff',
+                bgColor: '#002',
+                maxValue: 999,
+                minValue: 1,
+                ignoreOutOfRange: true,
+            }),
+        );
+        this.frameMsPanel = this.addPanel(
+            new StatsPanel({
+                name: 'Frame MS',
+                fgColor: '#0f0',
+                bgColor: '#020',
+                precision: 1,
+                maxValue: 69.9,
+            }),
+        );
+        this.updateMsPanel = this.addPanel(
+            new StatsPanel({
+                name: 'Update MS',
+                fgColor: '#fd0',
+                bgColor: '#020',
+                precision: 1,
+                minValue: 0.1,
+                maxValue: 19.9,
+            }),
+        );
         if (isMemoryInfoAvailable()) {
-            this.memPanel = this.addPanel(new StatsPanel('MB', '#f08', '#201'));
+            this.memPanel = this.addPanel(
+                new StatsPanel({name: 'MB', fgColor: '#f08', bgColor: '#201'}),
+            );
         }
 
         this.selectPanel(0);
@@ -49,12 +87,7 @@ export class FPSMonitor extends ReactiveElement {
     protected override render(): HTMLElement {
         return div({
             className: ['monitor'],
-            children: [
-                this.textElement,
-                div({
-                    children: this.panels.map((p) => p.dom),
-                }),
-            ],
+            children: this.panels.map((p) => p.dom),
         });
     }
 
@@ -72,19 +105,6 @@ export class FPSMonitor extends ReactiveElement {
                 user-select: none;
             }
         `;
-    }
-
-    update(dt: Duration): void {
-        if (this.updateDelay.milliseconds >= 0) {
-            this.updateDelay.sub(dt);
-        } else {
-            this.lastFPS = Math.round(1000 / dt.milliseconds).toString();
-            this.updateDelay.setFrom(FPSMonitor.FPS_UPDATE_DELAY);
-            if (this.visible) {
-                this.textElement.textContent = `FPS: ${this.lastFPS}`;
-            }
-        }
-        this.beginTime = this.endMeasuring();
     }
 
     show(): void {
@@ -115,39 +135,65 @@ export class FPSMonitor extends ReactiveElement {
     }
 
     endMeasuring() {
-        const timeNow = (performance || Date).now();
-        const frameDuration = timeNow - this.beginTime;
-        const isValidFrameTime = this.beginTime !== 0 && this.prevTime !== 0;
-        if (isValidFrameTime) {
-            this.msPanel.update(frameDuration, 200);
+        if (this.paused) {
+            return;
         }
-        this.framesCount++;
-        this.frameDurationsPerSecond.push(frameDuration);
-
-        if (timeNow >= this.prevTime + 1000) {
-            // const averageFrameDuration = this.calcAverageFrameDuration();
-            if (isValidFrameTime) {
-                this.fpsPanel.update((this.framesCount * 1000) / (timeNow - this.prevTime), 100);
-            }
-            this.prevTime = timeNow;
+        const timeNow = (performance || Date).now();
+        const frameTime = timeNow - this.lastFrameTime;
+        // NOTE: Prevent initial loading from "breaking" charts.
+        if (this.initialDelay.positive) {
+            this.initialDelay.milliseconds -= frameTime;
+            return timeNow;
+        }
+        const isValidFrameTime =
+            this.beginTime !== 0 && this.lastFrameTime !== 0 && frameTime < 200;
+        if (isValidFrameTime) {
+            this.frameMsPanel.update(frameTime, 19.9);
+            const updateTime = timeNow - this.beginTime;
+            this.updateMsPanel.update(updateTime);
+            this.framesCount++;
+            this.displayDelay.milliseconds -= frameTime;
+        } else if (this.framesBeginTime !== 0) {
+            this.displayDelay.setFrom(FPSMonitor.DISPLAY_DELAY);
+            this.framesBeginTime = timeNow;
             this.framesCount = 0;
-            this.frameDurationsPerSecond.splice(0, this.frameDurationsPerSecond.length);
+        }
 
+        if (!this.displayDelay.positive) {
+            const allFramesTime = timeNow - this.framesBeginTime;
+            const avgFramesCount = (this.framesCount * 1000) / allFramesTime;
+            if (avgFramesCount && this.framesBeginTime > 0) {
+                this.fpsPanel.update(avgFramesCount, 200);
+            }
+            this.framesBeginTime = timeNow;
+            this.framesCount = 0;
+            this.displayDelay.add(FPSMonitor.DISPLAY_DELAY);
+            if (!this.displayDelay.positive) {
+                // NOTE: Workaround in case delay is too negative
+                this.displayDelay.setFrom(FPSMonitor.DISPLAY_DELAY);
+            }
             if (isValidFrameTime && this.memPanel) {
                 const memory = getCurrentMemory();
                 const mb = 1024 * 1024;
-                this.memPanel.update(memory.usedJSHeapSize / mb, memory.jsHeapSizeLimit / mb);
+                this.memPanel.update(memory.usedJSHeapSize / mb);
+                // this.memPanel.update(memory.usedJSHeapSize / mb, memory.jsHeapSizeLimit / mb);
             }
         }
 
+        this.lastFrameTime = timeNow;
+        this.beginTime = 0;
         return timeNow;
     }
 
-    calcAverageFrameDuration(): number {
-        return (
-            this.frameDurationsPerSecond.reduce((a, b) => a + b, 0) /
-            this.frameDurationsPerSecond.length
-        );
+    reset() {
+        for (const panel of this.panels) {
+            panel.reset();
+        }
+        this.beginTime = 0;
+        this.lastFrameTime = 0;
+        this.framesBeginTime = 0;
+        this.framesCount = 0;
+        this.displayDelay.setFrom(FPSMonitor.DISPLAY_DELAY);
     }
 }
 
@@ -167,12 +213,29 @@ function getCurrentMemory() {
     return memory as MenoryInfo;
 }
 
+interface StatsPanelOptions {
+    name: string;
+    fgColor: string;
+    bgColor: string;
+    precision?: number;
+    maxValue?: number;
+    minValue?: number;
+    ignoreOutOfRange?: boolean;
+}
+
 // TODO: Convert into ReactiveElement?
 class StatsPanel {
-    private min: number;
-    private max: number;
+    public name: string;
+    public fgColor: string;
+    public bgColor: string;
+    public precision: number;
+    private minForced?: number;
+    private maxForced?: number;
+    private ignoreOutOfRange: boolean;
+    public max: number;
+    public min: number;
     dom: HTMLCanvasElement;
-    private context: CanvasRenderingContext2D;
+    private ctx: CanvasRenderingContext2D;
     private readonly pixelRatio: number;
     private readonly width: number;
     private readonly height: number;
@@ -183,95 +246,134 @@ class StatsPanel {
     private readonly graphWidth: number;
     private readonly graphHeight: number;
 
-    constructor(
-        readonly name: string,
-        readonly fg: string,
-        readonly bg: string,
-    ) {
+    constructor(options: StatsPanelOptions) {
+        const {
+            name,
+            fgColor: fg,
+            bgColor: bg,
+            precision = 0,
+            minValue: minForced,
+            maxValue: maxForced,
+            ignoreOutOfRange = false,
+        } = options;
+        this.name = name;
+        this.fgColor = fg;
+        this.bgColor = bg;
+        this.precision = precision;
+        this.minForced = minForced;
+        this.maxForced = maxForced;
+        this.ignoreOutOfRange = ignoreOutOfRange;
         this.min = Infinity;
         this.max = 0;
         const PR = Math.round(window.devicePixelRatio || 1);
         this.pixelRatio = PR;
-        this.width = 80 * PR;
-        this.height = 48 * PR;
-        this.textX = 3 * PR;
-        this.textY = 2 * PR;
-        this.graphX = 3 * PR;
-        this.graphY = 15 * PR;
-        this.graphWidth = 74 * PR;
-        this.graphHeight = 30 * PR;
+        const paddingX = 3 * PR;
+        const paddingY = 2 * PR;
+        const fontSize = 24 * PR;
+        this.width = 320 * PR;
+        this.height = 150 * PR;
+        this.textX = paddingX;
+        this.textY = paddingY;
+        this.graphX = paddingX;
+        this.graphY = paddingY + fontSize + paddingY;
+        this.graphWidth = this.width - 2 * paddingX;
+        this.graphHeight = this.height - this.graphY - paddingY;
 
         const canvas = document.createElement('canvas');
         this.dom = canvas;
         canvas.width = this.width;
         canvas.height = this.height;
-        canvas.style.cssText = 'width:80px;height:48px';
+        canvas.style.cssText = `width:${this.width}px;height:${this.height}px`;
 
-        const context = canvas.getContext('2d');
-        assert(context);
-        this.context = context;
-        context.font = 'bold ' + 9 * PR + 'px Helvetica,Arial,sans-serif';
-        context.textBaseline = 'top';
+        const ctx = canvas.getContext('2d');
+        assert(ctx);
+        this.ctx = ctx;
+        ctx.font = 'bold ' + fontSize + 'px Helvetica,Arial,sans-serif';
+        ctx.textBaseline = 'top';
 
-        context.fillStyle = bg;
-        context.fillRect(0, 0, this.width, this.height);
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, this.width, this.height);
 
-        context.fillStyle = fg;
-        context.fillText(name, this.textX, this.textY);
-        context.fillRect(this.graphX, this.graphY, this.graphWidth, this.graphHeight);
+        ctx.fillStyle = fg;
+        ctx.fillText(name, this.textX, this.textY);
+        ctx.fillRect(this.graphX, this.graphY, this.graphWidth, this.graphHeight);
 
-        context.fillStyle = bg;
-        context.globalAlpha = 0.9;
-        context.fillRect(this.graphX, this.graphY, this.graphWidth, this.graphHeight);
+        ctx.fillStyle = bg;
+        ctx.globalAlpha = 0.9;
+        ctx.fillRect(this.graphX, this.graphY, this.graphWidth, this.graphHeight);
     }
 
-    update(value: number, maxValue: number) {
+    update(value: number, maxValue: number = this.max) {
+        if (this.minForced !== undefined && value <= this.minForced) {
+            if (this.ignoreOutOfRange) {
+                return;
+            }
+            value = this.minForced;
+        }
+        if (this.maxForced !== undefined && value >= this.maxForced) {
+            if (this.ignoreOutOfRange) {
+                return;
+            }
+            value = this.maxForced;
+        }
+        // PERF: Could be better to store already rounded values
         this.min = Math.min(this.min, value);
         this.max = Math.max(this.max, value);
 
-        this.context.fillStyle = this.bg;
-        this.context.globalAlpha = 1;
-        this.context.fillRect(0, 0, this.width, this.graphY);
-        this.context.fillStyle = this.fg;
-        this.context.fillText(
-            Math.round(value) +
-                ' ' +
-                this.name +
-                ' (' +
-                Math.round(this.min) +
-                '-' +
-                Math.round(this.max) +
-                ')',
-            this.textX,
-            this.textY,
-        );
+        this.ctx.fillStyle = this.bgColor;
+        this.ctx.globalAlpha = 1;
+        this.ctx.fillRect(0, 0, this.width, this.graphY);
+        this.ctx.fillStyle = this.fgColor;
+        if (this.name.includes('MS')) {
+            value = value;
+        }
+        const vv = numround(value, this.precision);
+        const valueText = vv.toFixed(this.precision);
+        const minText = numround(this.min, this.precision).toFixed(this.precision);
+        const maxText = numround(this.max, this.precision).toFixed(this.precision);
+        const text = `${this.name}: ${valueText} [${minText}-${maxText}]`;
+        this.ctx.fillText(text, this.textX, this.textY);
 
-        this.context.drawImage(
+        const pxSize = this.pixelRatio;
+        this.ctx.drawImage(
             this.dom,
-            this.graphX + this.pixelRatio,
+            this.graphX + pxSize,
             this.graphY,
-            this.graphWidth - this.pixelRatio,
+            this.graphWidth - pxSize,
             this.graphHeight,
             this.graphX,
             this.graphY,
-            this.graphWidth - this.pixelRatio,
+            this.graphWidth - pxSize,
             this.graphHeight,
         );
 
-        this.context.fillRect(
+        this.ctx.fillRect(
             this.graphX + this.graphWidth - this.pixelRatio,
             this.graphY,
             this.pixelRatio,
             this.graphHeight,
         );
 
-        this.context.fillStyle = this.bg;
-        this.context.globalAlpha = 0.9;
-        this.context.fillRect(
+        this.ctx.fillStyle = this.bgColor;
+        this.ctx.globalAlpha = 0.9;
+        this.ctx.fillRect(
             this.graphX + this.graphWidth - this.pixelRatio,
             this.graphY,
             this.pixelRatio,
-            Math.round((1 - value / maxValue) * this.graphHeight),
+            (1 - value / maxValue) * this.graphHeight,
         );
+    }
+
+    reset() {
+        this.min = Infinity;
+        this.max = 0;
+        this.ctx.fillStyle = this.bgColor;
+        this.ctx.globalAlpha = 1;
+        this.ctx.fillRect(0, 0, this.width, this.height);
+        this.ctx.fillStyle = this.fgColor;
+        this.ctx.fillRect(this.graphX, this.graphY, this.graphWidth, this.graphHeight);
+        this.ctx.globalAlpha = 0.9;
+        this.ctx.fillStyle = this.bgColor;
+        this.ctx.fillRect(this.graphX, this.graphY, this.graphWidth, this.graphHeight);
     }
 }

@@ -68,11 +68,15 @@ export function handleGameInputTick(
         console.log(`[Input] Dev mode: ${window.__DEV_MODE ? 'ON' : 'OFF'}`);
     }
 
-    if (input.isPressed('Backquote')) {
+    const shiftDown = input.isDown('ShiftLeft');
+    if (input.isPressed('Backquote') && !shiftDown) {
         toggleFPSVisibility(devUI.fpsMonitor, storage);
     }
+    if (input.isPressed('Backquote') && shiftDown) {
+        devUI.fpsMonitor.paused = !devUI.fpsMonitor.paused;
+    }
 
-    if (input.isPressed('Backslash')) {
+    if (__DEV_MODE && input.isPressed('Backslash')) {
         toggleDevPanelVisibility(devUI.devPanel, storage);
     }
 
