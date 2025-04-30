@@ -1,6 +1,11 @@
 export class Duration {
     constructor(public milliseconds: number) {}
 
+    static between(start: number, end: number): Duration {
+        assert(start <= end, 'Start time must be less than or equal to end time');
+        return new Duration(end - start);
+    }
+
     static since(start: number): Duration {
         return new Duration(performance.now() - start);
     }

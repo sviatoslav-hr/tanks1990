@@ -69,14 +69,22 @@ function runGame(
         menu.resize(renderer.canvas.clientWidth, renderer.canvas.clientHeight);
     });
 
-    let lastTimestamp = 0;
-    const animationCallback = (timestamp: number): void => {
-        devUI.fpsMonitor.beginMeasuring();
-        const dt = Duration.since(lastTimestamp);
-        // NOTE: Cap the delta time to 60fps. Otherwise the movement gets too during low FPS
-        dt.min(1000 / 60);
-        lastTimestamp = timestamp;
+    const perfectDt = 1000 / 60;
+    let fpsLimiterEnabled = false;
+    let allowedDtOverflow = 1000 / 60 - 1000 / 65; // NOTE: Allow to get 5 more that perfectDt
+    let lastTimestamp = performance.now();
+    const animationCallback = (): void => {
+        const now = performance.now();
+        const dt = Duration.between(lastTimestamp, now);
+        dt.min(1000 / 50); // NOTE: Cap the dt to 50fps. Otherwise the movement gets janky.
+        const dtOverflow = perfectDt - dt.milliseconds;
+        if (fpsLimiterEnabled && dtOverflow > allowedDtOverflow) {
+            setTimeout(animationCallback, dtOverflow - allowedDtOverflow);
+            return;
+        }
+        lastTimestamp = now;
 
+        devUI.fpsMonitor.begin();
         try {
             handleGameTick(dt, state, manager, menu, storage, renderer);
             handleGameInputTick(input, renderer, state, manager, menu, devUI, storage);
@@ -89,7 +97,7 @@ function runGame(
         } catch (err) {
             console.error('Error in animationCallback', err);
         }
-        devUI.fpsMonitor.endMeasuring();
+        devUI.fpsMonitor.end();
 
         window.requestAnimationFrame(animationCallback);
     };

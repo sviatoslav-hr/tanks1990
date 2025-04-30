@@ -21,7 +21,7 @@ export abstract class Tank extends Entity {
     // TODO: Is this really a good idea to have this field here?
     public readonly bot: boolean = true;
     // TODO: No reason to store this in every tank instance, move this to a config.
-    public readonly topSpeed = (300 * 1000) / 3600; // in m/s
+    public readonly topSpeed = (300 * 1000) / (60 * 60); // in m/s
     public readonly topSpeedReachTime = Duration.milliseconds(150);
     public readonly stoppingTime = Duration.milliseconds(70);
     public readonly id = newEntityId();
@@ -82,14 +82,13 @@ export abstract class Tank extends Entity {
                 this.isStuck = false;
             }
             this.lastAcceleration = acceleration;
-            const dtSeconds = dt.seconds;
             // v' = a*dt + v
-            const newVelocity = acceleration * dtSeconds + this.velocity;
+            const newVelocity = acceleration * dt.seconds + this.velocity;
             this.velocity = Math.min(Math.max(0, newVelocity), this.topSpeed);
             assert(this.velocity >= 0);
             // p' = 1/2*a*dt^2 + v*dt + p   ==>    dp = p'-p = 1/2*a*dt^2 + v*dt
             const movementOffset =
-                0.5 * acceleration * dtSeconds * dtSeconds + this.velocity * dtSeconds;
+                0.5 * acceleration * dt.seconds * dt.seconds + this.velocity * dt.seconds;
             moveEntity(this, movementOffset, this.direction);
         }
 
@@ -279,8 +278,8 @@ export abstract class Tank extends Entity {
 }
 
 export class PlayerTank extends Tank implements Entity {
-    public readonly topSpeed = (480 * 1000) / 3600; // in m/s
-    public readonly topSpeedReachTime = Duration.milliseconds(50); // in seconds
+    public readonly topSpeed = (480 * 1000) / (60 * 60); // in m/s
+    public readonly topSpeedReachTime = Duration.milliseconds(50);
     protected readonly SHOOTING_PERIOD = Duration.milliseconds(500);
     public readonly bot: boolean = false;
     public readonly survivedFor = Duration.zero();

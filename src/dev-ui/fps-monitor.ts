@@ -130,11 +130,11 @@ export class FPSMonitor extends ReactiveElement {
         this.currentPanelId = id;
     }
 
-    beginMeasuring() {
+    begin() {
         this.beginTime = (performance || Date).now();
     }
 
-    endMeasuring() {
+    end() {
         if (this.paused) {
             return;
         }

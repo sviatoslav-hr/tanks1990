@@ -16,6 +16,7 @@ export type KeyCode =
     | 'KeyL'
     | 'KeyJ'
     | 'KeyK'
+    | 'KeyN'
     | 'Backquote'
     | 'Space'
     | 'Escape'
