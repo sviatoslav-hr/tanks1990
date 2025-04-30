@@ -25,8 +25,8 @@ export function drawScoreMini(
     const world = manager.world;
     const padding = BASE_PADDING / 2;
     const roomBounds = world.activeRoom.boundary;
-    const y = roomBounds.y - padding / 2;
     const fontSize = 20;
+    const y = roomBounds.y + roomBounds.height + padding / 2 + fontSize / 8;
     const font = `500 ${fontSize}px Helvetica`;
 
     {
@@ -35,21 +35,21 @@ export function drawScoreMini(
             'Best Score: ' +
             (bestScore ? `${bestScore.score} (${shortDate(bestScore.createdAt)})` : '-');
         const x = roomBounds.x - CELL_SIZE + padding;
-        renderer.setFont(font, 'start', 'bottom');
+        renderer.setFont(font, 'start', 'top');
         renderer.fillText(text, {x, y, shadowColor: Color.BLACK_RAISIN});
     }
 
     {
         const text = `Score: ${player.score}`;
         const x = roomBounds.x + roomBounds.width / 2;
-        renderer.setFont(font, 'center', 'bottom');
+        renderer.setFont(font, 'center', 'top');
         renderer.fillText(text, {x, y, shadowColor: Color.BLACK_RAISIN});
     }
 
     {
         const text = `Survived for ${player.survivedFor.toHumanString()}`;
         const x = roomBounds.x + roomBounds.width + CELL_SIZE - padding;
-        renderer.setFont(font, 'right', 'bottom');
+        renderer.setFont(font, 'right', 'top');
         renderer.fillText(text, {x, y, shadowColor: Color.BLACK_RAISIN});
     }
 }
