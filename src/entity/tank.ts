@@ -504,7 +504,7 @@ export class EnemyTank extends Tank implements Entity {
 
     private recalculateDirectionPath(target: Entity): Direction | null {
         this.targetSearchTimer.setFrom(this.SEARCH_DELAY);
-        const path = findPath(this, target, this.manager, 100);
+        const path = findPath(this, target, this.manager, 200);
         if (path) {
             this.targetPath = path;
             const nextPoint = this.targetPath[0];

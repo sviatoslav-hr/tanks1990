@@ -39,6 +39,7 @@ export function findPath(
     for (let step = 0; step < maxSteps; step++) {
         currentNode = allNodes.length > 0 ? getClosestNode(allNodes) : null;
         if (allNodes.length && !currentNode) {
+            debug && console.log('No closest node found, all nodes considered');
             break;
         }
         if (currentNode) {
@@ -47,6 +48,7 @@ export function findPath(
         }
         if (currentNode && isPosInsideRect(currentNode.pos.x, currentNode.pos.y, target)) {
             debug && console.log(`Found path in ${step} steps for node ${currentNode.pos}`);
+            lastClosestNode = currentNode;
             break;
         }
         // TODO: Some of the surrounding nodes should recompute the path since there might be a better path
@@ -67,6 +69,10 @@ export function findPath(
     }
     assert(lastClosestNode !== null);
     const path = createPath(lastClosestNode);
+    debug &&
+        console.log(
+            `For Source=${source.id} Found path with length ${path.length} at position ${source.x}, ${source.y}`,
+        );
     return path;
 }
 
