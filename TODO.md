@@ -2,7 +2,6 @@
 
 ## IN_PROGRESS
 ## TODO
-- [ ] Render fps monitor in it's own canvas. Add graph to show the fps over time.
 - [ ] Fix tanks moving too fast when the frame rate drops (usually this happens during explosions)
 - [ ] Add room number to the score (+store).
 - [ ] Have explosion effect as a sprite
@@ -23,8 +22,6 @@
 
 ## FIXME
 - [ ] Sometimes after moving the camera manually, after trying to reset it, it's not zoomed correctly (slightly zoomed out so the world border is visible)
-- [ ] Enemies sometimes stuck when they need to move around the block (probably because of the collision detection and precision issues)
-      It's esier to reproduce when there are more blocks around
 - [ ] Fix projectile size (it's bigger than it visually is)
 - [ ] Fix sound explosion delay
 - [ ] Cache best score instead of fetching it each frame

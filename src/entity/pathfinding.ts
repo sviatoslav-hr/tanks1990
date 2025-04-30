@@ -1,10 +1,11 @@
-import {Rect, isPosInsideRect} from '#/math';
+import {Rect, isPosInsideRect, numround} from '#/math';
 import {Vector2} from '#/math/vector';
 import {isRectOccupied} from '#/world';
 import {EntityManager} from '#/entity/manager';
 import {Entity} from '#/entity/core';
 
 type Node = {
+    id: number;
     pos: Vector2;
     considered: boolean;
     parent: Node | null;
@@ -17,97 +18,125 @@ type Node = {
 };
 
 export function findPath(
-    entity: Entity,
-    destination: Rect,
+    source: Entity,
+    target: Rect,
     manager: EntityManager,
     maxSteps: number,
+    debug = false,
 ): Vector2[] | null {
-    const startP = Vector2.from(entity).floor();
-    startP.x += entity.width / 2;
-    startP.y += entity.height / 2;
-    const endP = Vector2.from(destination).floor();
-    endP.x += destination.width / 2;
-    endP.y += destination.height / 2;
+    const startP = Vector2.from(source);
+    startP.x += source.width / 2;
+    startP.y += source.height / 2;
+    startP.round();
+    const endP = Vector2.from(target);
+    endP.x += target.width / 2;
+    endP.y += target.height / 2;
+    endP.round();
     const allNodes = new Array<Node>();
 
     let currentNode: Node | null = null;
+    let lastClosestNode: Node | null = null;
     for (let step = 0; step < maxSteps; step++) {
-        currentNode = allNodes?.length > 0 ? getClosestNode(allNodes) : null;
+        currentNode = allNodes.length > 0 ? getClosestNode(allNodes) : null;
+        if (allNodes.length && !currentNode) {
+            break;
+        }
         if (currentNode) {
             currentNode.considered = true;
+            lastClosestNode = currentNode;
         }
-        if (currentNode && isPosInsideRect(currentNode.pos.x, currentNode.pos.y, destination)) {
+        if (currentNode && isPosInsideRect(currentNode.pos.x, currentNode.pos.y, target)) {
+            debug && console.log(`Found path in ${step} steps for node ${currentNode.pos}`);
             break;
         }
         // TODO: Some of the surrounding nodes should recompute the path since there might be a better path
-        // TODO: This could be optimized
-        fillSurrondingNodes(
+        // PERF: This could be optimized. *What kind of optimization specifically?*
+        appendSurrondingNodes(
             currentNode?.pos ?? startP,
             currentNode,
             endP,
             allNodes,
             manager,
-            entity,
+            source,
+            debug,
         );
         if (!allNodes.length) {
             // NOTE: No path found, entity is blocked/stuck
             return null;
         }
     }
-    assert(currentNode !== null);
-    return createPath(currentNode);
+    assert(lastClosestNode !== null);
+    const path = createPath(lastClosestNode);
+    return path;
 }
 
-function fillSurrondingNodes(
+function posRoundEqual(a: Vector2, b: Vector2): boolean {
+    const ax = numround(a.x);
+    const ay = numround(a.y);
+    const bx = numround(b.x);
+    const by = numround(b.y);
+    return ax === bx && ay === by;
+}
+
+function appendSurrondingNodes(
     pos: Vector2,
     parent: Node | null,
     end: Vector2,
     nodes: Node[],
     manager: EntityManager,
-    entity: Entity,
+    source: Entity,
+    debug = false,
 ): void {
-    // TODO: This could be optimized
-    const neighbors = getNeighbors(pos, parent, end, manager, entity);
+    // PERF: This could be optimized. *What kind of optimization specifically?*
+    const neighbors = makeNodeNeighbors(pos, parent, end, manager, source);
     const filteredNeighbors = neighbors.filter((n) => {
-        return !nodes.some((node) => node.pos.equals(n.pos));
+        return !nodes.some((node) => posRoundEqual(node.pos, n.pos));
+        // return !nodes.some((node) => node.pos.equals(n.pos));
     });
     // TODO: Can this happen so that there are no neighbors?
     // assert(filteredNeighbors.length > 0);
     nodes.push(...filteredNeighbors);
+    debug &&
+        console.log(
+            `Got ${filteredNeighbors.length} valid neighbors for node ${parent?.id ?? 'initial'}/${parent?.pos ?? pos}. Overall ${nodes.length} nodes`,
+        );
 }
 
+let lastId = 0;
 function createNode(pos: Vector2, parent: Node | null, start: Vector2, end: Vector2): Node {
     // Technically this should be the cost of the path, not the distance between the points
     const g = pos.manhattanDistanceTo(start);
     const h = pos.manhattanDistanceTo(end);
     const f = g + h;
-    return {pos, g, h, f, considered: false, parent: parent};
+    return {id: lastId++, pos, g, h, f, considered: false, parent: parent};
 }
 
-function getClosestNode(nodes: Node[]): Node {
-    let closest = nodes[0];
-    assert(closest !== undefined);
+function getClosestNode(nodes: Node[]): Node | null {
+    let closest: Node | undefined;
     for (const node of nodes) {
         if (node.considered) {
             continue;
         }
-        if (node.f < closest.f) {
+        if (!closest || node.f < closest.f) {
             closest = node;
         }
     }
-    return closest;
+    if (closest?.considered) {
+        return null;
+    }
+    return closest ?? null;
 }
 
-function getNeighbors(
+function makeNodeNeighbors(
     pos: Vector2,
     parent: Node | null,
     end: Vector2,
     manager: EntityManager,
-    entity: Entity,
+    source: Entity,
 ): Node[] {
     const neighbors = new Array<Node>();
-    const offsetX = entity.width / 3;
-    const offsetY = entity.height / 3;
+    const offsetX = source.width / 4;
+    const offsetY = source.height / 4;
     const allDirections = [
         new Vector2(0, -offsetY),
         new Vector2(offsetX, 0),
@@ -115,15 +144,15 @@ function getNeighbors(
         new Vector2(-offsetX, 0),
     ];
     for (const direction of allDirections) {
-        const neighbor = pos.clone().add(direction).floor();
-        // NOTE: Points are in the center of the entity
+        const neighbor = pos.clone().add(direction).round();
+        // NOTE: Points are in the center of the rect
         const rect: Rect = {
-            x: neighbor.x - entity.width / 2,
-            y: neighbor.y - entity.height / 2,
-            width: entity.width,
-            height: entity.height,
+            x: numround(neighbor.x - source.width / 2),
+            y: numround(neighbor.y - source.height / 2),
+            width: source.width,
+            height: source.height,
         };
-        if (isRectOccupied(rect, manager, entity)) {
+        if (isRectOccupied(rect, manager, source)) {
             continue;
         }
         neighbors.push(createNode(neighbor, parent, pos, end));

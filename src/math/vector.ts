@@ -1,4 +1,4 @@
-import {clamp} from '#/math';
+import {clamp, numround} from '#/math';
 
 export class Vector2 implements Vector2Like {
     constructor(
@@ -127,6 +127,12 @@ export class Vector2 implements Vector2Like {
     floor(): Vector2 {
         this.x = Math.floor(this.x);
         this.y = Math.floor(this.y);
+        return this;
+    }
+
+    round(margin?: number): Vector2 {
+        this.x = numround(this.x, margin);
+        this.y = numround(this.y, margin);
         return this;
     }
 

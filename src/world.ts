@@ -204,9 +204,14 @@ export class World {
     }
 }
 
-export function isOccupied(pos: Vector2Like, entityManager: EntityManager): boolean {
-    for (const entity of entityManager.iterateEntities()) {
-        if (entity === entityManager.player) continue;
+export function isOccupied(
+    pos: Vector2Like,
+    manager: EntityManager,
+    ignoredEntity?: Entity,
+): boolean {
+    for (const entity of manager.iterateCollidable()) {
+        if (entity === manager.player) continue;
+        if (ignoredEntity && isSameEntity(entity, ignoredEntity)) continue;
         if (isPosInsideRect(pos.x, pos.y, entity)) {
             return true;
         }

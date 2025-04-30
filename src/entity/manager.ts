@@ -151,6 +151,7 @@ export class EntityManager {
     spawnEnemy(room: Room): EnemyTank {
         const deadEnemy = this.tanks.find((t) => t.bot && t.dead && !t.shouldRespawn) as EnemyTank;
         // NOTE: Enemy will be dead initially, but it will be respawned automatically with the delay
+        // to not spawn it immediately and also have the ability to not spawn everyone at once.
         const enemy = deadEnemy ?? new EnemyTank(this);
         assert(enemy.dead);
         if (!deadEnemy) {
@@ -166,7 +167,7 @@ export class EntityManager {
         return enemy;
     }
 
-    private updateTanks(dt: Duration): void {
+    updateTanks(dt: Duration): void {
         for (const tank of this.tanks) {
             tank.update(dt);
 
