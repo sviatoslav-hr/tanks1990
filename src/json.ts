@@ -8,9 +8,7 @@ export class JSONObjectParser {
             throw new Error(`Faile to parse JSON data`, {cause: e});
         }
         if (this.type !== 'object') {
-            throw new Error(
-                `Invalid JSON data. Expected 'object', got: '${this.type}'`,
-            );
+            throw new Error(`Invalid JSON data. Expected 'object', got: '${this.type}'`);
         }
     }
 
@@ -45,9 +43,7 @@ export class JSONObjectParser {
         if (typeof value === 'boolean') {
             return value;
         }
-        console.warn(
-            `JSONObjectParser: Expected boolean, got: ${typeof value}`,
-        );
+        console.warn(`JSONObjectParser: Expected boolean, got: ${typeof value}`);
         return undefined;
     }
 }

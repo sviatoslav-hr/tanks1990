@@ -1,26 +1,21 @@
+import {Color} from '#/color';
 import {BASE_PADDING, CELL_SIZE} from '#/const';
-import {PlayerTank} from '#/entity';
-import {GameStorage} from '#/storage';
+import {EntityManager} from '#/entity/manager';
+import {css, CustomElement, div, ReactiveElement} from '#/html';
+import {Duration} from '#/math/duration';
+import {Menu} from '#/menu';
 import {Renderer} from '#/renderer';
-import {EntityManager} from './entity/manager';
-import {css, CustomElement, div, ReactiveElement} from './html';
-import {Duration} from './math/duration';
-import {Menu} from './menu';
-import {Color} from './color';
+import {GameStorage} from '#/storage';
 
 const BEST_SCORE_KEY = 'best_score';
-const BEST_SCORE_AT_KEY = 'best_score_at';
 
-export type ScoreRecord = {
+export interface ScoreRecord {
     score: number;
+    roomIndex: number;
     createdAt: Date;
-};
+}
 
-export function drawScoreMini(
-    renderer: Renderer,
-    manager: EntityManager,
-    cache: GameStorage,
-): void {
+export function drawScoreMini(renderer: Renderer, manager: EntityManager): void {
     const player = manager.player;
     const world = manager.world;
     const padding = BASE_PADDING / 2;
@@ -29,8 +24,8 @@ export function drawScoreMini(
     const y = roomBounds.y + roomBounds.height + padding / 2 + fontSize / 8;
     const font = `500 ${fontSize}px Helvetica`;
 
-    {
-        const bestScore = getBestScore(cache);
+    const bestScore = manager.bestScore;
+    if (bestScore) {
         const text =
             'Best Score: ' +
             (bestScore ? `${bestScore.score} (${shortDate(bestScore.createdAt)})` : '-');
@@ -77,6 +72,7 @@ export class ScoreOverlay extends ReactiveElement {
     currentScore = 0;
     bestScore: ScoreRecord | null = null;
     survivedFor = Duration.zero();
+    roomIndex = 0;
 
     updateState(state: ScoreState): void {
         let stateChanged = false;
@@ -102,15 +98,19 @@ export class ScoreOverlay extends ReactiveElement {
     }
 
     protected override render(): HTMLElement {
-        const bestScoreText = this.bestScore
-            ? `Best Score: ${this.bestScore.score} (${shortDate(this.bestScore.createdAt)})`
+        const best = this.bestScore;
+        const bestScoreText = best
+            ? `Best Record (${shortDate(best.createdAt)})\nRoom: ${best.roomIndex + 1}, Score: ${best.score} `
             : null;
         return div({
             className: ['score-overlay', this.bestScoreOnly ? 'score-overlay--best' : ''],
             children: [
-                !this.bestScoreOnly && div({textContent: `Score: ${this.currentScore}`}),
                 !this.bestScoreOnly &&
                     div({textContent: `Survived for ${this.survivedFor.toHumanString()}`}),
+                !this.bestScoreOnly &&
+                    div({
+                        textContent: `Current Record\nRoom: ${this.roomIndex + 1}, Score: ${this.currentScore}`,
+                    }),
                 bestScoreText && div({textContent: bestScoreText}),
             ],
         });
@@ -129,49 +129,50 @@ export class ScoreOverlay extends ReactiveElement {
                 flex-direction: column;
                 justify-content: flex-start;
                 gap: 2rem;
-            }
-            .score-overlay--best {
                 font-size: 2rem;
             }
+            .score-overlay--best {
+                font-size: 3rem;
+            }
             .score-overlay div {
-                white-space: nowrap;
+                white-space: pre-line;
                 text-shadow: #fc0 1px 0 5px;
             }
         `;
     }
 }
 
-export function updateScoreInMenu(menu: Menu, player: PlayerTank, cache: GameStorage): void {
+export function updateScoreInMenu(menu: Menu, manager: EntityManager): void {
     menu.score.updateState({
-        currentScore: player.score,
-        // PERF: Cache best score instead of reading from storage constantly
-        bestScore: getBestScore(cache),
-        survivedFor: player.survivedFor,
+        currentScore: manager.player.score,
+        bestScore: manager.bestScore,
+        survivedFor: manager.player.survivedFor,
         bestScoreOnly: menu.isMain,
     });
 }
 
-export function saveBestScore(cache: GameStorage, score: number): void {
-    const storedScore = cache.getNumber(BEST_SCORE_KEY);
-    if (storedScore == null || score > storedScore) {
-        cache.set(BEST_SCORE_KEY, score.toString());
-        cache.set(BEST_SCORE_AT_KEY, new Date().toISOString());
+export function saveBestScore(cache: GameStorage, manager: EntityManager): void {
+    const best = manager.bestScore;
+    const score = manager.player.score;
+    if (best == null || score > best.score) {
+        const roomIndex = manager.world.activeRoom.roomIndex;
+        cache.set(BEST_SCORE_KEY, JSON.stringify({s: score, r: roomIndex, d: Date.now()}));
     }
 }
 
 export function getBestScore(cache: GameStorage): ScoreRecord | null {
-    const score = cache.getNumber(BEST_SCORE_KEY);
-    if (score == null || score === 0) {
+    const parser = cache.getObjectParser(BEST_SCORE_KEY);
+    if (parser == null) {
         return null;
     }
-
-    const createdAt = cache.getDate(BEST_SCORE_AT_KEY);
-    if (createdAt == null) {
-        console.error('WARN: Found best score, but no creation date');
+    const score = parser.getNumber('s');
+    const roomIndex = parser.getNumber('r');
+    const dateNum = parser.getNumber('d');
+    if (score == null || roomIndex == null || dateNum == null) {
         return null;
     }
-
-    return {score, createdAt};
+    const createdAt = new Date();
+    return {score, roomIndex, createdAt};
 }
 
 function shortDate(date: Date): string {

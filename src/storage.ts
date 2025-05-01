@@ -1,3 +1,5 @@
+import {JSONObjectParser} from '#/json';
+
 export class GameStorage {
     constructor(private readonly storage: Storage) {}
 
@@ -35,6 +37,17 @@ export class GameStorage {
             return null;
         }
         return date;
+    }
+
+    getObjectParser(key: string): JSONObjectParser | null {
+        const value = this.get(key);
+        if (value == null) return null;
+        try {
+            return new JSONObjectParser(value);
+        } catch (e) {
+            console.warn(`WARN: '${key}' is not a valid JSON object`, e);
+            return null;
+        }
     }
 }
 

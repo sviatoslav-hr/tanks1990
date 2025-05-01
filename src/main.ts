@@ -5,17 +5,17 @@ import {APP_ELEMENT_ID, DEV_MODE_KEY} from '#/const';
 import {createDevUI, DevUI} from '#/dev-ui';
 import {preloadEffectImages} from '#/entity/effect';
 import {EntityManager} from '#/entity/manager';
+import {eventQueue} from '#/events';
 import {GameInput} from '#/game-input';
 import {handleGameInputTick} from '#/game-input-handler';
 import {Duration} from '#/math/duration';
 import {initMenu, Menu} from '#/menu';
 import {Renderer} from '#/renderer';
-import {updateScoreInMenu, drawScoreMini, saveBestScore} from '#/score';
+import {drawScoreMini, getBestScore, saveBestScore, updateScoreInMenu} from '#/score';
 import {SoundManager} from '#/sound';
 import {GameState} from '#/state';
 import {GameStorage} from '#/storage';
 import {handleGameEvents} from './events-handler';
-import {eventQueue} from '#/events';
 
 main();
 
@@ -37,6 +37,7 @@ function main(): void {
     const gameState = new GameState();
     const manager = new EntityManager();
     manager.world.load(storage);
+    manager.bestScore = getBestScore(storage);
 
     const menu = initMenu(gameState, manager, sounds);
     appElement.append(menu);
@@ -120,9 +121,9 @@ function handleGameTick(
     const player = manager.player;
 
     if (state.playing || (state.paused && !menu.visible)) {
-        drawScoreMini(renderer, manager, storage);
+        drawScoreMini(renderer, manager);
     } else if (menu.visible) {
-        updateScoreInMenu(menu, player, storage);
+        updateScoreInMenu(menu, manager);
     }
 
     if (state.playing && player.dead) {
@@ -131,7 +132,7 @@ function handleGameTick(
 
     if (state.dead && !menu.dead) {
         menu.showDead();
-        saveBestScore(storage, player.score);
+        saveBestScore(storage, manager);
     }
 
     if (state.playing || state.dead || state.debugUpdateTriggered) {

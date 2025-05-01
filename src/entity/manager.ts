@@ -8,6 +8,7 @@ import {Room, World} from '#/world';
 import {Duration} from '#/math/duration';
 import {Vector2Like} from '#/math/vector';
 import {Renderer} from '#/renderer';
+import {ScoreRecord} from '#/score';
 
 export function isSameEntity(a: Entity, b: Entity): boolean {
     return a.id === b.id;
@@ -21,6 +22,7 @@ export class EntityManager {
     effects: ExplosionEffect[] = [];
     cachedBotExplosion: ExplosionEffect | null = null;
     cachedPlayerExplosion: ExplosionEffect | null = null;
+    bestScore: ScoreRecord | null = null;
     private roomInFocus = false;
 
     init(): void {
