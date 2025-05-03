@@ -60,6 +60,7 @@ export function handleGameInputTick(
 
     if (input.isPressed('KeyB')) {
         manager.world.showBoundary = !manager.world.showBoundary;
+        manager.world.markDirty();
     }
 
     if (input.isPressed('Semicolon')) {

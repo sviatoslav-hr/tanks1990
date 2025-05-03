@@ -1,5 +1,4 @@
 import {Color} from '#/color';
-import {BASE_PADDING, CELL_SIZE} from '#/const';
 import {EntityManager} from '#/entity/manager';
 import {css, CustomElement, div, ReactiveElement} from '#/html';
 import {Duration} from '#/math/duration';
@@ -18,18 +17,19 @@ export interface ScoreRecord {
 export function drawScoreMini(renderer: Renderer, manager: EntityManager): void {
     const player = manager.player;
     const world = manager.world;
-    const padding = BASE_PADDING / 2;
+    const scale = renderer.camera.scale;
     const roomBounds = world.activeRoom.boundary;
-    const fontSize = 20;
-    const y = roomBounds.y + roomBounds.height + padding / 2 + fontSize / 8;
+    const scoreBoxHeight = renderer.camera.focusPaddingInPixels;
+    const fontSize = scoreBoxHeight * 0.8;
     const font = `500 ${fontSize}px Helvetica`;
+    const y = roomBounds.y + roomBounds.height + (scoreBoxHeight - fontSize) / 2 / scale;
 
     const bestScore = manager.bestScore;
-    if (bestScore) {
+    {
         const text =
-            'Best Score: ' +
-            (bestScore ? `${bestScore.score} (${shortDate(bestScore.createdAt)})` : '-');
-        const x = roomBounds.x - CELL_SIZE + padding;
+            'Best: ' +
+            (bestScore ? `Room: ${bestScore.roomIndex + 1}, Score: ${bestScore.score}` : '-');
+        const x = roomBounds.x;
         renderer.setFont(font, 'start', 'top');
         renderer.fillText(text, {x, y, shadowColor: Color.BLACK_RAISIN});
     }
@@ -43,7 +43,7 @@ export function drawScoreMini(renderer: Renderer, manager: EntityManager): void 
 
     {
         const text = `Survived for ${player.survivedFor.toHumanString()}`;
-        const x = roomBounds.x + roomBounds.width + CELL_SIZE - padding;
+        const x = roomBounds.x + roomBounds.width;
         renderer.setFont(font, 'right', 'top');
         renderer.fillText(text, {x, y, shadowColor: Color.BLACK_RAISIN});
     }
@@ -132,7 +132,7 @@ export class ScoreOverlay extends ReactiveElement {
                 font-size: 2rem;
             }
             .score-overlay--best {
-                font-size: 3rem;
+                font-size: 2rem;
             }
             .score-overlay div {
                 white-space: pre-line;
