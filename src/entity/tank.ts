@@ -50,8 +50,8 @@ export abstract class Tank extends Entity {
         // NOTE: spawn outside of the screen, expected to respawn
         this.x = -(2 * this.width);
         this.y = -(2 * this.height);
-        this.width = CELL_SIZE * 0.85;
-        this.height = CELL_SIZE * 0.85;
+        this.width = CELL_SIZE * 0.8;
+        this.height = CELL_SIZE * 0.8;
     }
 
     get cx(): number {
@@ -473,7 +473,7 @@ export class EnemyTank extends Tank implements Entity {
         this.collided = true;
         this.collisionAnimation.reset();
         if (target.id !== this.manager.player.id) {
-            this.direction = this.recalculateDirectionPath(target) ?? this.direction;
+            this.direction = this.recalculateDirectionPath(this.manager.player) ?? this.direction;
         }
         if (target instanceof EnemyTank) {
             target.collided = true;
@@ -503,7 +503,7 @@ export class EnemyTank extends Tank implements Entity {
 
     private recalculateDirectionPath(target: Entity): Direction | null {
         this.targetSearchTimer.setFrom(this.SEARCH_DELAY);
-        const path = findPath(this, target, this.manager, 200);
+        const path = findPath(this, target, this.manager, 1000, undefined, false);
         if (path) {
             this.targetPath = path;
             const nextPoint = this.targetPath[0];
@@ -536,6 +536,10 @@ export class EnemyTank extends Tank implements Entity {
         if (this.targetPath.length < 2) {
             return;
         }
+        renderer.setStrokeColor('blue');
+        renderer.setFillColor('blue');
+        const p0 = this.targetPath[0]!;
+        renderer.strokeLine(p0.x, p0.y, this.x + this.width / 2, this.y + this.height / 2, 1);
         renderer.setStrokeColor(Color.RED);
         renderer.setFillColor(Color.RED);
         for (let i = 0; i < this.targetPath.length - 1; i++) {

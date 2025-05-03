@@ -150,7 +150,7 @@ export class EntityManager {
         this.effects.push(effect);
     }
 
-    spawnEnemy(room: Room): EnemyTank {
+    spawnEnemy(room: Room, skipDelay = false): EnemyTank {
         const deadEnemy = this.tanks.find((t) => t.bot && t.dead && !t.shouldRespawn) as EnemyTank;
         // NOTE: Enemy will be dead initially, but it will be respawned automatically with the delay
         // to not spawn it immediately and also have the ability to not spawn everyone at once.
@@ -164,7 +164,14 @@ export class EntityManager {
         }
         enemy.room = room;
         enemy.markForRespawn();
-        enemy.room.pendingEnemiesCount++;
+        if (skipDelay) {
+            enemy.respawnDelay.setMilliseconds(0);
+            const respawned = enemy.respawn();
+            assert(respawned, 'Enemy should be respawned immediately');
+            enemy.room.aliveEnemiesCount++;
+        } else {
+            enemy.room.pendingEnemiesCount++;
+        }
         enemy.room.expectedEnemiesCount--;
         return enemy;
     }

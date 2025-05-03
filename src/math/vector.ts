@@ -80,6 +80,12 @@ export class Vector2 implements Vector2Like {
         return this;
     }
 
+    addXY(x: number, y: number): Vector2 {
+        this.x += x;
+        this.y += y;
+        return this;
+    }
+
     add(v: Vector2Like): Vector2 {
         this.x += v.x;
         this.y += v.y;

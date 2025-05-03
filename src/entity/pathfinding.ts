@@ -1,13 +1,13 @@
-import {Rect, isPosInsideRect, numround} from '#/math';
-import {Vector2} from '#/math/vector';
+import {Rect, isPosInsideRect} from '#/math';
+import {Vector2, Vector2Like} from '#/math/vector';
 import {isRectOccupied} from '#/world';
 import {EntityManager} from '#/entity/manager';
 import {Entity} from '#/entity/core';
+import {MinPriorityQueue} from '#/math/priority-queue';
+import {CELL_SIZE} from '#/const';
 
 type Node = {
-    id: number;
     pos: Vector2;
-    considered: boolean;
     parent: Node | null;
     /** The cost of the path from the start node to the current node */
     g: number;
@@ -22,156 +22,146 @@ export function findPath(
     target: Rect,
     manager: EntityManager,
     maxSteps: number,
+    posOffset: number = (CELL_SIZE * 0.8) / 5,
     debug = false,
 ): Vector2[] | null {
-    const startP = Vector2.from(source);
-    startP.x += source.width / 2;
-    startP.y += source.height / 2;
-    startP.round();
-    const endP = Vector2.from(target);
-    endP.x += target.width / 2;
-    endP.y += target.height / 2;
-    endP.round();
-    const allNodes = new Array<Node>();
+    const start = Vector2.from(source)
+        .addXY(source.width / 2, source.height / 2)
+        .round();
+    const end = Vector2.from(target)
+        .addXY(target.width / 2, target.height / 2)
+        .round();
 
-    let currentNode: Node | null = null;
-    let lastClosestNode: Node | null = null;
+    const openSet = new MinPriorityQueue<Node>((a, b) => a.f - b.f);
+    const openSetKeys = new Set<string>();
+    const gScores = new Map<string, number>();
+    const fScores = new Map<string, number>();
+    const cameFrom = new Map<string, Node>();
+    const closedSet = new Set<string>();
+
+    const startNode = createNode(start, null, start, end);
+    openSet.enqueue(startNode);
+    gScores.set(start.toString(), 0);
+    fScores.set(start.toString(), startNode.f);
+
     for (let step = 0; step < maxSteps; step++) {
-        currentNode = allNodes.length > 0 ? getClosestNode(allNodes) : null;
-        if (allNodes.length && !currentNode) {
-            debug && console.log('No closest node found, all nodes considered');
+        if (openSet.length === 0) {
+            if (debug) console.log('Open set exhausted, path not found.');
             break;
         }
-        if (currentNode) {
-            currentNode.considered = true;
-            lastClosestNode = currentNode;
-        }
-        if (currentNode && isPosInsideRect(currentNode.pos.x, currentNode.pos.y, target)) {
-            debug && console.log(`Found path in ${step} steps for node ${currentNode.pos}`);
-            lastClosestNode = currentNode;
-            break;
-        }
-        // TODO: Some of the surrounding nodes should recompute the path since there might be a better path
-        // PERF: This could be optimized. *What kind of optimization specifically?*
-        appendSurrondingNodes(
-            currentNode?.pos ?? startP,
-            currentNode,
-            endP,
-            allNodes,
-            manager,
-            source,
-            debug,
-        );
-        if (!allNodes.length) {
-            // NOTE: No path found, entity is blocked/stuck
-            return null;
-        }
-    }
-    assert(lastClosestNode !== null);
-    const path = createPath(lastClosestNode);
-    debug &&
-        console.log(
-            `For Source=${source.id} Found path with length ${path.length} at position ${source.x}, ${source.y}`,
-        );
-    return path;
-}
 
-function posRoundEqual(a: Vector2, b: Vector2): boolean {
-    const ax = numround(a.x);
-    const ay = numround(a.y);
-    const bx = numround(b.x);
-    const by = numround(b.y);
-    return ax === bx && ay === by;
-}
+        const current = openSet.dequeue()!;
+        const currentKey = current.pos.toString();
+        openSetKeys.delete(currentKey);
 
-function appendSurrondingNodes(
-    pos: Vector2,
-    parent: Node | null,
-    end: Vector2,
-    nodes: Node[],
-    manager: EntityManager,
-    source: Entity,
-    debug = false,
-): void {
-    // PERF: This could be optimized. *What kind of optimization specifically?*
-    const neighbors = makeNodeNeighbors(pos, parent, end, manager, source);
-    const filteredNeighbors = neighbors.filter((n) => {
-        return !nodes.some((node) => posRoundEqual(node.pos, n.pos));
-        // return !nodes.some((node) => node.pos.equals(n.pos));
-    });
-    // TODO: Can this happen so that there are no neighbors?
-    // assert(filteredNeighbors.length > 0);
-    nodes.push(...filteredNeighbors);
-    debug &&
-        console.log(
-            `Got ${filteredNeighbors.length} valid neighbors for node ${parent?.id ?? 'initial'}/${parent?.pos ?? pos}. Overall ${nodes.length} nodes`,
-        );
-}
-
-let lastId = 0;
-function createNode(pos: Vector2, parent: Node | null, start: Vector2, end: Vector2): Node {
-    // Technically this should be the cost of the path, not the distance between the points
-    const g = pos.manhattanDistanceTo(start);
-    const h = pos.manhattanDistanceTo(end);
-    const f = g + h;
-    return {id: lastId++, pos, g, h, f, considered: false, parent: parent};
-}
-
-function getClosestNode(nodes: Node[]): Node | null {
-    let closest: Node | undefined;
-    for (const node of nodes) {
-        if (node.considered) {
-            continue;
+        if (isPosInsideRect(current.pos.x, current.pos.y, target)) {
+            if (debug) console.log(`Path found in ${step} steps.`);
+            const path = reconstructPath(current);
+            return simplifyPath(path);
         }
-        if (!closest || node.f < closest.f) {
-            closest = node;
+
+        closedSet.add(currentKey);
+
+        for (const neighbor of getValidNeighbors(current, end, manager, source, posOffset)) {
+            const neighborKey = neighbor.pos.toString();
+
+            if (closedSet.has(neighborKey)) continue;
+
+            const tentativeG = current.g + current.pos.manhattanDistanceTo(neighbor.pos);
+
+            if (tentativeG < (gScores.get(neighborKey) ?? Infinity)) {
+                neighbor.g = tentativeG;
+                neighbor.f = tentativeG + neighbor.h;
+                neighbor.parent = current;
+
+                gScores.set(neighborKey, tentativeG);
+                fScores.set(neighborKey, neighbor.f);
+                cameFrom.set(neighborKey, current);
+
+                // NOTE: Avoid duplicates
+                if (!openSetKeys.has(neighborKey)) {
+                    openSet.enqueue(neighbor);
+                    openSetKeys.add(neighborKey);
+                }
+            }
         }
     }
-    if (closest?.considered) {
-        return null;
-    }
-    return closest ?? null;
+
+    if (debug) console.log('No path found after max steps.');
+    return null;
 }
 
-function makeNodeNeighbors(
-    pos: Vector2,
-    parent: Node | null,
-    end: Vector2,
-    manager: EntityManager,
-    source: Entity,
-): Node[] {
-    const neighbors = new Array<Node>();
-    const offsetX = source.width / 4;
-    const offsetY = source.height / 4;
-    const allDirections = [
-        new Vector2(0, -offsetY),
-        new Vector2(offsetX, 0),
-        new Vector2(0, offsetY),
-        new Vector2(-offsetX, 0),
-    ];
-    for (const direction of allDirections) {
-        const neighbor = pos.clone().add(direction).round();
-        // NOTE: Points are in the center of the rect
-        const rect: Rect = {
-            x: numround(neighbor.x - source.width / 2),
-            y: numround(neighbor.y - source.height / 2),
-            width: source.width,
-            height: source.height,
-        };
-        if (isRectOccupied(rect, manager, source)) {
-            continue;
+function simplifyPath(path: Vector2[]): Vector2[] {
+    if (path.length < 3) return path;
+    const simplified: Vector2[] = [path[0]!];
+    let prevDirection = path[1]!.clone().sub(path[0]!);
+    for (let i = 2; i < path.length; i++) {
+        const currDirection = path[i]!.clone().sub(path[i - 1]!);
+        if (!currDirection.equals(prevDirection)) {
+            simplified.push(path[i - 1]!);
         }
-        neighbors.push(createNode(neighbor, parent, pos, end));
+        prevDirection = currDirection;
     }
-    return neighbors;
+    simplified.push(path[path.length - 1]!);
+    return simplified;
 }
 
-function createPath(node: Node): Vector2[] {
-    const path = new Array<Vector2>();
+function reconstructPath(node: Node): Vector2[] {
+    const path: Vector2[] = [];
     let current: Node | null = node;
-    while (current !== null) {
-        path.push(current.pos);
+    while (current) {
+        // NOTE: Do not include the start node in the path
+        if (current.parent) {
+            path.push(current.pos);
+        }
         current = current.parent;
     }
     return path.reverse();
+}
+
+function getValidNeighbors(
+    node: Node,
+    end: Vector2,
+    manager: EntityManager,
+    source: Entity,
+    posOffset: number,
+): Node[] {
+    const neighbors: Node[] = [];
+    const directions: Vector2Like[] = [
+        {x: 0, y: -posOffset},
+        {x: posOffset, y: 0},
+        {x: 0, y: posOffset},
+        {x: -posOffset, y: 0},
+    ];
+
+    for (const dir of directions) {
+        const pos = node.pos.clone().add(dir).round();
+        const rect: Rect = {
+            x: pos.x - source.width / 2,
+            y: pos.y - source.height / 2,
+            width: source.width,
+            height: source.height,
+        };
+        if (!isRectOccupied(rect, manager, source)) {
+            const h = pos.manhattanDistanceTo(end);
+            neighbors.push({
+                pos,
+                parent: node,
+                g: Infinity,
+                h,
+                f: Infinity,
+            });
+        }
+    }
+
+    return neighbors;
+}
+
+function createNode(pos: Vector2, parent: Node | null, start: Vector2, end: Vector2): Node {
+    // Technically this should be the cost of the path, not the distance between the points
+    const stepCost = pos.manhattanDistanceTo(parent?.pos ?? start);
+    const g = stepCost + (parent?.g ?? 0);
+    const h = pos.manhattanDistanceTo(end);
+    const f = g + h;
+    return {pos, g, h, f, parent: parent};
 }
