@@ -9,7 +9,7 @@ import {CELL_SIZE} from '#/const';
 type Node = {
     pos: Vector2;
     parent: Node | null;
-    /** The cost of the path from the start node to the current node */
+    /** The cost of the path from the start node to the current node (through its parent) */
     g: number;
     /** The heuristic cost of the current node to the end node */
     h: number;
@@ -32,17 +32,20 @@ export function findPath(
         .addXY(target.width / 2, target.height / 2)
         .round();
 
-    const openSet = new MinPriorityQueue<Node>((a, b) => a.f - b.f);
-    const openSetKeys = new Set<string>();
+    const openSet = new MinPriorityQueue<Node>((a, b) => {
+        if (a.f === b.f) return a.h - b.h;
+        return a.f - b.f;
+    });
+    const openSetByKeys = new Map<string, Node>();
     const gScores = new Map<string, number>();
     const fScores = new Map<string, number>();
-    const cameFrom = new Map<string, Node>();
     const closedSet = new Set<string>();
 
     const startNode = createNode(start, null, start, end);
     openSet.enqueue(startNode);
     gScores.set(start.toString(), 0);
     fScores.set(start.toString(), startNode.f);
+    openSetByKeys.set(start.toString(), startNode);
 
     for (let step = 0; step < maxSteps; step++) {
         if (openSet.length === 0) {
@@ -52,7 +55,7 @@ export function findPath(
 
         const current = openSet.dequeue()!;
         const currentKey = current.pos.toString();
-        openSetKeys.delete(currentKey);
+        openSetByKeys.delete(currentKey);
 
         if (isPosInsideRect(current.pos.x, current.pos.y, target)) {
             if (debug) console.log(`Path found in ${step} steps.`);
@@ -62,13 +65,15 @@ export function findPath(
 
         closedSet.add(currentKey);
 
-        for (const neighbor of getValidNeighbors(current, end, manager, source, posOffset)) {
+        for (let neighbor of getValidNeighbors(current, end, manager, source, posOffset)) {
             const neighborKey = neighbor.pos.toString();
-
             if (closedSet.has(neighborKey)) continue;
+            const neighborFromSet = openSetByKeys.get(neighborKey);
+            if (neighborFromSet) {
+                neighbor = neighborFromSet;
+            }
 
             const tentativeG = current.g + current.pos.manhattanDistanceTo(neighbor.pos);
-
             if (tentativeG < (gScores.get(neighborKey) ?? Infinity)) {
                 neighbor.g = tentativeG;
                 neighbor.f = tentativeG + neighbor.h;
@@ -76,12 +81,10 @@ export function findPath(
 
                 gScores.set(neighborKey, tentativeG);
                 fScores.set(neighborKey, neighbor.f);
-                cameFrom.set(neighborKey, current);
 
-                // NOTE: Avoid duplicates
-                if (!openSetKeys.has(neighborKey)) {
+                if (!neighborFromSet) {
                     openSet.enqueue(neighbor);
-                    openSetKeys.add(neighborKey);
+                    openSetByKeys.set(neighborKey, neighbor);
                 }
             }
         }
@@ -158,10 +161,9 @@ function getValidNeighbors(
 }
 
 function createNode(pos: Vector2, parent: Node | null, start: Vector2, end: Vector2): Node {
-    // Technically this should be the cost of the path, not the distance between the points
     const stepCost = pos.manhattanDistanceTo(parent?.pos ?? start);
     const g = stepCost + (parent?.g ?? 0);
     const h = pos.manhattanDistanceTo(end);
     const f = g + h;
-    return {pos, g, h, f, parent: parent};
+    return {pos, g, h, f, parent};
 }

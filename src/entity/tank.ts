@@ -472,7 +472,7 @@ export class EnemyTank extends Tank implements Entity {
     protected override handleCollision(target: Entity): void {
         this.collided = true;
         this.collisionAnimation.reset();
-        if (target.id !== this.manager.player.id) {
+        if (target.id !== this.manager.player.id && !this.manager.player.dead) {
             this.direction = this.recalculateDirectionPath(this.manager.player) ?? this.direction;
         }
         if (target instanceof EnemyTank) {
@@ -540,8 +540,8 @@ export class EnemyTank extends Tank implements Entity {
         renderer.setFillColor('blue');
         const p0 = this.targetPath[0]!;
         renderer.strokeLine(p0.x, p0.y, this.x + this.width / 2, this.y + this.height / 2, 1);
-        renderer.setStrokeColor(Color.RED);
-        renderer.setFillColor(Color.RED);
+        renderer.setStrokeColor(Color.ORANGE_SAFFRON);
+        renderer.setFillColor(Color.ORANGE_SAFFRON);
         for (let i = 0; i < this.targetPath.length - 1; i++) {
             const p1 = this.targetPath[i];
             assert(p1);
