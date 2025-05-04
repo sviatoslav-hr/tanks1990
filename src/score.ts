@@ -54,6 +54,7 @@ interface ScoreState {
     currentScore: number;
     bestScore: ScoreRecord | null;
     survivedFor: Duration;
+    roomIndex: number;
 }
 
 function bestScoreEquals(a: ScoreRecord | null, b: ScoreRecord | null): boolean {
@@ -90,6 +91,10 @@ export class ScoreOverlay extends ReactiveElement {
         }
         if (!this.survivedFor.equals(state.survivedFor)) {
             this.survivedFor.setFrom(state.survivedFor);
+            stateChanged = true;
+        }
+        if (this.roomIndex !== state.roomIndex) {
+            this.roomIndex = state.roomIndex;
             stateChanged = true;
         }
         if (stateChanged) {
@@ -148,6 +153,7 @@ export function updateScoreInMenu(menu: Menu, manager: EntityManager): void {
         bestScore: manager.bestScore,
         survivedFor: manager.player.survivedFor,
         bestScoreOnly: menu.isMain,
+        roomIndex: manager.world.activeRoom.roomIndex,
     });
 }
 

@@ -146,9 +146,10 @@ export class Sprite<K extends string> {
     }
 }
 
-export function createShieldSprite() {
+export function createShieldSprite(type: 'player' | 'enemy') {
+    const key = type === 'player' ? 'shield6_blue' : 'shield6_red';
     return new Sprite({
-        key: 'shield6',
+        key: key,
         frameWidth: 64,
         frameHeight: 64,
         framePadding: 0,

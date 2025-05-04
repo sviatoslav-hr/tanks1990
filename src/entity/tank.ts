@@ -33,7 +33,7 @@ export abstract class Tank extends Entity {
     protected readonly SHOOTING_PERIOD = Duration.milliseconds(300);
     protected readonly SHIELD_TIME = Duration.milliseconds(1000);
     // TODO: Reuse shield sprite for all tanks (since it's the same)
-    protected readonly shieldSprite = createShieldSprite();
+    protected abstract readonly shieldSprite: Sprite<string>;
     private readonly shieldBoundary = {
         x: this.x - this.width / 2,
         y: this.y - this.height / 2,
@@ -282,6 +282,7 @@ export class PlayerTank extends Tank implements Entity {
     public readonly topSpeed = (480 * 1000) / (60 * 60); // in m/s
     public readonly topSpeedReachTime = Duration.milliseconds(50);
     protected readonly SHOOTING_PERIOD = Duration.milliseconds(500);
+    protected readonly shieldSprite = createShieldSprite('player');
     public readonly bot: boolean = false;
     public readonly survivedFor = Duration.zero();
 
@@ -361,6 +362,7 @@ export class EnemyTank extends Tank implements Entity {
     protected moving = true;
     protected readonly SHOOTING_PERIOD = Duration.milliseconds(1500);
     protected readonly sprite = createTankSprite('enemy');
+    protected readonly shieldSprite = createShieldSprite('enemy');
     private readonly SEARCH_DELAY = Duration.milliseconds(5000);
     private targetSearchTimer = this.SEARCH_DELAY.clone();
     private targetPath: Vector2[] = [];
