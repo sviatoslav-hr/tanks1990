@@ -87,7 +87,7 @@ export class GameInput {
     }
 
     getMouseDelta(): Vector2 {
-        return this.mouse.currentPosition.clone().sub(this.mouse.previousPosition);
+        return this.mouse.previousPosition.clone().sub(this.mouse.currentPosition);
     }
 
     getMouseWheelDelta(): number {

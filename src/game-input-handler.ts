@@ -84,7 +84,7 @@ export function handleGameInputTick(
     if (__DEV_MODE && input.isDown('MouseMiddle')) {
         const mouseDelta = input.getMouseDelta();
         renderer.camera.manualMode = true;
-        renderer.camera.worldOffset.sub(mouseDelta);
+        renderer.camera.worldOffset.add(mouseDelta.divideScalar(renderer.camera.scale));
     }
     const ctrlDevDown = __DEV_MODE && input.isDown('MetaLeft');
 
