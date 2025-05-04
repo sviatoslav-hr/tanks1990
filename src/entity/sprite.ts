@@ -148,10 +148,12 @@ export class Sprite<K extends string> {
 
 export function createShieldSprite() {
     return new Sprite({
-        key: 'circle_shield_blue',
-        frameWidth: 512,
-        frameHeight: 512,
-        states: [{name: 'static', frames: 1}],
+        key: 'shield6',
+        frameWidth: 64,
+        frameHeight: 64,
+        framePadding: 0,
+        frameDuration: Duration.milliseconds(100),
+        states: [{name: 'anim', frames: 6}],
     });
 }
 

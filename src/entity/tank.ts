@@ -253,10 +253,11 @@ export abstract class Tank extends Entity {
     }
 
     private updateShieldBoundary(): void {
-        this.shieldBoundary.x = this.x - this.width / 2;
-        this.shieldBoundary.y = this.y - this.height / 2;
-        this.shieldBoundary.width = this.width * 2;
-        this.shieldBoundary.height = this.height * 2;
+        const padding = 3;
+        this.shieldBoundary.x = this.x - padding;
+        this.shieldBoundary.y = this.y - padding;
+        this.shieldBoundary.width = this.width + padding * 2;
+        this.shieldBoundary.height = this.height + padding * 2;
     }
 
     protected handleCollision(_target: Entity): void {}

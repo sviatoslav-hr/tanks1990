@@ -21,6 +21,7 @@
 
 
 ## FIXME
+- [ ] During later levels, the pathfindin slows down the game significantly. Probably, need to put a smaller limit on the number of iterations.
 - [ ] Sometimes after moving the camera manually, after trying to reset it, it's not zoomed correctly (slightly zoomed out so the world border is visible)
 - [ ] Fix projectile size (it's bigger than it visually is)
 - [ ] Fix sound explosion delay
