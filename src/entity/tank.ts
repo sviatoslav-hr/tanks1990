@@ -32,7 +32,6 @@ export abstract class Tank extends Entity {
     protected moving = false;
     protected readonly SHOOTING_PERIOD = Duration.milliseconds(300);
     protected readonly SHIELD_TIME = Duration.milliseconds(1000);
-    // TODO: Reuse shield sprite for all tanks (since it's the same)
     protected abstract readonly shieldSprite: Sprite<string>;
     private readonly shieldBoundary = {
         x: this.x - this.width / 2,
@@ -47,9 +46,8 @@ export abstract class Tank extends Entity {
 
     constructor(manager: EntityManager) {
         super(manager);
-        // NOTE: spawn outside of the screen, expected to respawn
-        this.x = -(2 * this.width);
-        this.y = -(2 * this.height);
+        this.x = 0;
+        this.y = 0;
         this.width = CELL_SIZE * 0.8;
         this.height = CELL_SIZE * 0.8;
     }
@@ -151,8 +149,6 @@ export abstract class Tank extends Entity {
                     break;
             }
             this.sprite.draw(renderer, spriteBoundary, this.direction - 180);
-            // renderer.setStrokeColor('orange');
-            // renderer.strokeBoundary(spriteBoundary, 1);
         }
         if (this.hasShield) {
             this.shieldSprite.draw(renderer, this.shieldBoundary);
