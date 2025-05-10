@@ -1,3 +1,20 @@
+// HACK: This is needed for tests to run in Node.js
+//       It would be nicer to do this mocking inside tests.
+if (!globalThis.HTMLElement) {
+    globalThis.HTMLElement =
+        globalThis.HTMLElement ??
+        (class {
+            append() {}
+            attachShadow() {
+                return new globalThis.HTMLElement();
+            }
+        } as unknown as typeof HTMLElement);
+    globalThis.customElements = globalThis.customElements ?? {define: () => {}};
+    globalThis.document = globalThis.document ?? {
+        createElement: () => new globalThis.HTMLElement(),
+    };
+}
+
 export function html(segments: TemplateStringsArray, ...args: string[]): string {
     if (segments.length === 1) {
         return segments[0]!;
@@ -59,43 +76,42 @@ function htmlElement<K extends keyof HTMLElementTagNameMap>(
     return element;
 }
 
-export function div(options?: HTMLElementOptions): HTMLElement {
-    const element = htmlElement('div', options);
-    return element;
-}
-
 interface HTMLInputElementOptions extends HTMLElementOptions {
     type?: 'number';
     value?: string | number;
-}
-
-export function button(options?: HTMLElementOptions): HTMLButtonElement {
-    const element = htmlElement('button', options);
-    return element;
-}
-
-export function input(options?: HTMLInputElementOptions): HTMLInputElement {
-    const element = htmlElement('input', options);
-    if (options?.type) {
-        element.type = options.type;
-    }
-    if (options?.value) {
-        element.value = options.value.toString();
-    }
-    return element;
 }
 
 interface HTMLLabelElementOptions extends HTMLElementOptions {
     for?: string;
 }
 
-export function label(options?: HTMLLabelElementOptions): HTMLLabelElement {
-    const element = htmlElement('label', options);
-    if (options?.for) {
-        element.htmlFor = options.for;
-    }
-    return element;
-}
+export const ui = {
+    div(options?: HTMLElementOptions): HTMLElement {
+        const element = htmlElement('div', options);
+        return element;
+    },
+    button(options?: HTMLElementOptions): HTMLButtonElement {
+        const element = htmlElement('button', options);
+        return element;
+    },
+    input(options?: HTMLInputElementOptions): HTMLInputElement {
+        const element = htmlElement('input', options);
+        if (options?.type) {
+            element.type = options.type;
+        }
+        if (options?.value) {
+            element.value = options.value.toString();
+        }
+        return element;
+    },
+    label(options?: HTMLLabelElementOptions): HTMLLabelElement {
+        const element = htmlElement('label', options);
+        if (options?.for) {
+            element.htmlFor = options.for;
+        }
+        return element;
+    },
+};
 
 function applyOptionsToElement(element: HTMLElement, options?: HTMLElementOptions) {
     if (options?.id) {
@@ -178,7 +194,7 @@ export abstract class ReactiveElement extends HTMLElement {
 
     rerender(): void {
         if (!this.rendered) {
-            console.warn(`rerender called before initial render for element ${this.tagName}`);
+            logger.warn('Rerender called before initial render for element %s', this.tagName);
             return;
         }
         this.shadow.innerHTML = '';

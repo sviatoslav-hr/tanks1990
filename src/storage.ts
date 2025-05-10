@@ -1,4 +1,5 @@
 import {JSONObjectParser} from '#/json';
+import {logger} from '#/logger';
 
 export class GameStorage {
     constructor(private readonly storage: Storage) {}
@@ -22,7 +23,7 @@ export class GameStorage {
         if (value == null) return null;
         const num = Number(value);
         if (isNaN(num)) {
-            console.warn(`WARN: '${key}' is NaN`);
+            logger.warn('Storage: "%s" is NaN', key);
             return null;
         }
         return num;
@@ -33,7 +34,7 @@ export class GameStorage {
         if (value == null) return null;
         const date = new Date(value);
         if (isNaN(date.getTime())) {
-            console.warn(`WARN: '${key}' is an invalid date`);
+            logger.warn('Storage: "%s" is an invalid date', key);
             return null;
         }
         return date;
@@ -45,7 +46,7 @@ export class GameStorage {
         try {
             return new JSONObjectParser(value);
         } catch (e) {
-            console.warn(`WARN: '${key}' is not a valid JSON object`, e);
+            logger.warn('Storage: "%s" is not a valid JSON object %O', key, e);
             return null;
         }
     }

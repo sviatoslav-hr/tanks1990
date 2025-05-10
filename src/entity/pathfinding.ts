@@ -49,7 +49,7 @@ export function findPath(
 
     for (let step = 0; step < maxSteps; step++) {
         if (openSet.length === 0) {
-            if (debug) console.log('Open set exhausted, path not found.');
+            if (debug) logger.debug('Open set exhausted, path not found.');
             break;
         }
 
@@ -58,7 +58,7 @@ export function findPath(
         openSetByKeys.delete(currentKey);
 
         if (isPosInsideRect(current.pos.x, current.pos.y, target)) {
-            if (debug) console.log(`Path found in ${step} steps.`);
+            if (debug) logger.debug(`Path found in ${step} steps.`);
             const path = reconstructPath(current);
             return simplifyPath(path);
         }
@@ -90,7 +90,7 @@ export function findPath(
         }
     }
 
-    if (debug) console.log('No path found after max steps.');
+    if (debug) logger.warn('No path found after max steps.');
     return null;
 }
 

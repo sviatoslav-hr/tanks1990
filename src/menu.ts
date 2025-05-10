@@ -320,7 +320,7 @@ export class Menu extends HTMLElement {
 
     resize(width: number, height: number): void {
         if (!width || !height) {
-            console.error(
+            logger.error(
                 `Expected width and height to be non-zero, got width=${width}, height=${height}`,
             );
             return;

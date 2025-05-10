@@ -14,7 +14,7 @@ export function getCachedImage(src: string): HTMLImageElement | undefined {
 
 export function setCachedImage(src: string, image: HTMLImageElement): void {
     if (imageCache[src]) {
-        console.warn(`WARN: overwriting cached image for "${src}"`);
+        logger.warn('Overwriting cached image for "%s"', src);
     }
     imageCache[src] = image;
 }
@@ -139,7 +139,7 @@ export class Sprite<K extends string> {
     reset(): void {
         const stateKey = this.stateKeys[0];
         if (!stateKey) {
-            console.warn(`WARN: no states found for sprite ${this.image.alt}`);
+            logger.warn('No states found for sprite %s', this.image.alt);
             return;
         }
         this.selectState(stateKey);

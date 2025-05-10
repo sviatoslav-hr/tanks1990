@@ -34,7 +34,7 @@ export class JSONObjectParser {
         if (typeof value === 'number') {
             return value;
         }
-        console.warn(`JSONObjectParser: Expected number, got: ${typeof value}`);
+        logger.warn(`JSONObjectParser: Expected number, got: ${typeof value}`);
         return undefined;
     }
 
@@ -43,7 +43,7 @@ export class JSONObjectParser {
         if (typeof value === 'boolean') {
             return value;
         }
-        console.warn(`JSONObjectParser: Expected boolean, got: ${typeof value}`);
+        logger.warn(`JSONObjectParser: Expected boolean, got: ${typeof value}`);
         return undefined;
     }
 }

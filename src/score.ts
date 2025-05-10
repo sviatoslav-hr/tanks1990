@@ -1,6 +1,6 @@
 import {Color} from '#/color';
 import {EntityManager} from '#/entity/manager';
-import {css, CustomElement, div, ReactiveElement} from '#/html';
+import {css, CustomElement, ui, ReactiveElement} from '#/html';
 import {Duration} from '#/math/duration';
 import {Menu} from '#/menu';
 import {Renderer} from '#/renderer';
@@ -107,16 +107,16 @@ export class ScoreOverlay extends ReactiveElement {
         const bestScoreText = best
             ? `Best Record (${shortDate(best.createdAt)})\nRoom: ${best.roomIndex + 1}, Score: ${best.score} `
             : null;
-        return div({
+        return ui.div({
             className: ['score-overlay', this.bestScoreOnly ? 'score-overlay--best' : ''],
             children: [
                 !this.bestScoreOnly &&
-                    div({textContent: `Survived for ${this.survivedFor.toHumanString()}`}),
+                    ui.div({textContent: `Survived for ${this.survivedFor.toHumanString()}`}),
                 !this.bestScoreOnly &&
-                    div({
+                    ui.div({
                         textContent: `Current Record\nRoom: ${this.roomIndex + 1}, Score: ${this.currentScore}`,
                     }),
-                bestScoreText && div({textContent: bestScoreText}),
+                bestScoreText && ui.div({textContent: bestScoreText}),
             ],
         });
     }

@@ -219,7 +219,7 @@ export class Renderer {
     async toggleFullscreen(window: Window): Promise<void> {
         const document = window.document;
         if (!document.fullscreenEnabled) {
-            console.warn('Fullscreen is either not supported or disabled');
+            logger.warn('Fullscreen is either not supported or disabled');
             return;
         }
         if (document.fullscreenElement) {

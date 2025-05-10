@@ -1,12 +1,4 @@
-import {
-    CustomElement,
-    ReactiveElement,
-    button,
-    css,
-    div,
-    input,
-    label,
-} from '#/html';
+import {css, CustomElement, ReactiveElement, ui} from '#/html';
 
 type NumberOnChangeCallback = (value: number) => void;
 
@@ -14,20 +6,17 @@ type PickTypeKeys<TSource, TType> = {
     [TProp in keyof TSource]: TSource[TProp] extends TType ? TProp : never;
 }[keyof TSource];
 
-type PickType<TSource extends object, TType> = Pick<
-    TSource,
-    PickTypeKeys<TSource, TType>
->;
+type PickType<TSource extends object, TType> = Pick<TSource, PickTypeKeys<TSource, TType>>;
 
 @CustomElement('dev-number-input')
 export class DevNumberInput extends ReactiveElement {
     private static idCounter = 0;
-    private readonly input = input({
+    private readonly input = ui.input({
         id: 'number-input-' + DevNumberInput.idCounter++,
         className: 'number-input',
         type: 'number',
     });
-    private readonly label = label({
+    private readonly label = ui.label({
         textContent: 'Value',
         for: this.input.id,
     });
@@ -52,7 +41,7 @@ export class DevNumberInput extends ReactiveElement {
         this.setStep(step);
         this.input.addEventListener('change', () => {
             if (false) {
-                console.warn('TODO: step is not implemented', this.step);
+                logger.TODO('step is not implemented, step=%d', this.step);
             }
             this.setValue(Number(this.input.value));
             for (const callback of this.onChangeCallbacks) {
@@ -62,7 +51,7 @@ export class DevNumberInput extends ReactiveElement {
     }
 
     protected override render(): HTMLElement {
-        return div({
+        return ui.div({
             className: 'number-input-container',
             children: [this.label, this.input],
         });
@@ -136,10 +125,10 @@ export class DevNumberInput extends ReactiveElement {
         return this;
     }
 
-    bindValue<
-        TSource extends object,
-        TKey extends keyof PickType<TSource, number>,
-    >(source: TSource, field: TKey): this {
+    bindValue<TSource extends object, TKey extends keyof PickType<TSource, number>>(
+        source: TSource,
+        field: TKey,
+    ): this {
         const value = source[field] as number;
         this.setValue(value);
         if (this.name === undefined && typeof field === 'string') {
@@ -159,7 +148,7 @@ export class DevNumberInput extends ReactiveElement {
 
 @CustomElement('dev-button')
 export class DevButton extends ReactiveElement {
-    private readonly button = button({
+    private readonly button = ui.button({
         className: 'button',
     });
 

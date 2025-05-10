@@ -112,7 +112,7 @@ export class ExplosionEffect {
 
     draw(renderer: Renderer): void {
         if (this.animation.finished) {
-            console.warn('WARN: Trying to draw finished explosion effect');
+            logger.warn('Trying to draw finished explosion effect');
             return;
         }
         renderer.setGlobalAlpha(1 - this.animation.progress);
@@ -125,7 +125,7 @@ export class ExplosionEffect {
 
     private drawExplosionImage(renderer: Renderer): void {
         if (!this.explosionImage.complete) {
-            console.warn('WARN: Explosion image not loaded');
+            logger.warn('Explosion image not loaded');
             return;
         }
 

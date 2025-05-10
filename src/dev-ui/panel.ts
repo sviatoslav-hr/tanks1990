@@ -1,11 +1,5 @@
 import {DevButton, DevNumberInput} from '#/dev-ui';
-import {
-    CustomElement,
-    HTMLElementOptions,
-    ReactiveElement,
-    css,
-    div,
-} from '#/html';
+import {css, CustomElement, HTMLElementOptions, ReactiveElement, ui} from '#/html';
 
 @CustomElement('dev-panel')
 export class DevPanel extends ReactiveElement {
@@ -21,17 +15,15 @@ export class DevPanel extends ReactiveElement {
     }
 
     protected override render(): HTMLElement {
-        return div({
-            className: this.parentPanel
-                ? 'dev-panel'
-                : ['dev-panel', 'root-panel'],
+        return ui.div({
+            className: this.parentPanel ? 'dev-panel' : ['dev-panel', 'root-panel'],
             children: [
-                div({
+                ui.div({
                     textContent: this.name ?? 'Dev Panel',
                     className: ['dev-panel-trigger'],
                     onClick: () => this.toggleContainerVisibility(),
                 }),
-                div({
+                ui.div({
                     className: ['dev-panel-container'],
                     children: [...this.panelChildren],
                 }),
@@ -120,9 +112,7 @@ export class DevPanel extends ReactiveElement {
     }
 
     private getPanelContainer(): HTMLElement {
-        const container = this.shadow.querySelector<HTMLElement>(
-            '.dev-panel-container',
-        );
+        const container = this.shadow.querySelector<HTMLElement>('.dev-panel-container');
         assert(container);
         return container;
     }

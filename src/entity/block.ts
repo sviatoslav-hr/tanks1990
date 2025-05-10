@@ -34,7 +34,7 @@ export function generateBlocks(
                 break inner;
             }
             if (j === triesLimit - 1) {
-                console.error('Could not find a place for a block');
+                logger.error('Could not find a place for a block');
                 break outer;
             }
         }

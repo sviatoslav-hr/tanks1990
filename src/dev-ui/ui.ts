@@ -1,8 +1,8 @@
 import {DevPanel, FPSMonitor} from '#/dev-ui';
-import {GameState} from '#/state';
-import {CustomElement, ReactiveElement, css, div} from '#/html';
-import {GameStorage} from '#/storage';
 import {EntityManager} from '#/entity/manager';
+import {CustomElement, ReactiveElement, css, ui} from '#/html';
+import {GameState} from '#/state';
+import {GameStorage} from '#/storage';
 
 @CustomElement('dev-ui')
 export class DevUI extends ReactiveElement {
@@ -10,7 +10,7 @@ export class DevUI extends ReactiveElement {
     readonly fpsMonitor = new FPSMonitor({className: 'fps-monitor'});
 
     protected override render(): HTMLElement {
-        return div({
+        return ui.div({
             className: ['dev-ui'],
             children: [this.fpsMonitor, this.devPanel],
         });
@@ -89,11 +89,11 @@ export function createDevUI(state: GameState, manager: EntityManager, cache: Gam
         .onClick(() => {
             const enemyId = parseInt(prompt('Enter enemy id to remove')!);
             if (isNaN(enemyId)) {
-                console.error(`Invalid enemy ID: ${enemyId}. Expected an integer number`);
+                logger.error(`Invalid enemy ID: ${enemyId}. Expected an integer number`);
             }
             const enemyArrayIndex = manager.tanks.findIndex((t) => t.bot && t.id === enemyId);
             if (enemyArrayIndex === -1) {
-                console.error(`Enemy with index ${enemyId} not found`);
+                logger.error(`Enemy with index ${enemyId} not found`);
             } else {
                 manager.tanks.splice(enemyArrayIndex, 1);
             }

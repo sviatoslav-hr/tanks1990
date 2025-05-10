@@ -3,9 +3,11 @@ import './style.css';
 
 import {APP_ELEMENT_ID, DEV_MODE_KEY} from '#/const';
 import {createDevUI, DevUI} from '#/dev-ui';
+import {getNotificationBar} from '#/notification';
 import {preloadEffectImages} from '#/entity/effect';
 import {EntityManager} from '#/entity/manager';
 import {eventQueue} from '#/events';
+import {handleGameEvents} from '#/events-handler';
 import {GameInput} from '#/game-input';
 import {handleGameInputTick} from '#/game-input-handler';
 import {Duration} from '#/math/duration';
@@ -15,19 +17,20 @@ import {drawScoreMini, getBestScore, saveBestScore, updateScoreInMenu} from '#/s
 import {SoundManager} from '#/sound';
 import {GameState} from '#/state';
 import {GameStorage} from '#/storage';
-import {handleGameEvents} from './events-handler';
+import {logger} from '#/logger';
 
 main();
 
 function main(): void {
     const appElement = document.getElementById(APP_ELEMENT_ID);
     assert(appElement, 'No app element found');
+    appElement.append(getNotificationBar());
 
     const storage = new GameStorage(localStorage);
     window.__DEV_MODE = storage.getBool(DEV_MODE_KEY) ?? false;
 
     const sounds = new SoundManager(storage);
-    sounds.loadAllSounds().then(() => console.log('[Sounds] All sounds loaded'));
+    sounds.loadAllSounds().then(() => logger.debug('[Sounds] All sounds loaded'));
     preloadEffectImages();
 
     const renderer = new Renderer();
@@ -41,6 +44,7 @@ function main(): void {
 
     const menu = initMenu(gameState, manager, sounds);
     appElement.append(menu);
+    logger.info('Dev mode is %s', window.__DEV_MODE ? 'on' : 'off');
 
     const devUI = createDevUI(gameState, manager, storage);
     appElement.append(devUI);
@@ -87,8 +91,8 @@ function runGame(
 
         devUI.fpsMonitor.begin();
         try {
-            handleGameTick(dt, state, manager, menu, storage, renderer);
             handleGameInputTick(input, renderer, state, manager, menu, devUI, storage);
+            handleGameTick(dt, state, manager, menu, storage, renderer);
             handleGameEvents(eventQueue, state, manager, sounds);
             if (manager.world.needsSaving) {
                 manager.world.save(storage);
@@ -96,7 +100,7 @@ function runGame(
             input.nextTick();
             state.nextTick();
         } catch (err) {
-            console.error('Error in animationCallback', err);
+            logger.error('Error in animationCallback', err);
         }
         devUI.fpsMonitor.end();
 
@@ -122,7 +126,7 @@ function handleGameTick(
 
     if (state.playing || (state.paused && !menu.visible)) {
         drawScoreMini(renderer, manager);
-    } else if (menu.visible) {
+    } else if (menu.visible && !state.initial) {
         updateScoreInMenu(menu, manager);
     }
 
@@ -138,8 +142,5 @@ function handleGameTick(
     if (state.playing || state.dead || state.debugUpdateTriggered) {
         manager.updateEffects(dt);
         manager.updateAll(dt, renderer.camera);
-        // if (manager.world.isInfinite) {
-        //     renderer.camera.centerOn(player);
-        // }
     }
 }

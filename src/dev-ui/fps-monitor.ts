@@ -1,4 +1,4 @@
-import {CustomElement, HTMLElementOptions, ReactiveElement, css, div} from '#/html';
+import {CustomElement, HTMLElementOptions, ReactiveElement, css, ui} from '#/html';
 import {numround} from '#/math';
 import {Duration} from '#/math/duration';
 
@@ -85,7 +85,7 @@ export class FPSMonitor extends ReactiveElement {
     }
 
     protected override render(): HTMLElement {
-        return div({
+        return ui.div({
             className: ['monitor'],
             children: this.panels.map((p) => p.dom),
         });

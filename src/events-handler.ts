@@ -30,8 +30,9 @@ export function handleGameEvents(
                     if (entity) {
                         entity.room.aliveEnemiesCount -= 1;
                     } else {
-                        console.warn(
-                            `Tank with id ${event.entityId} not found even though it was destroyed`,
+                        logger.warn(
+                            'Tank with id %i not found even though it was destroyed',
+                            event.entityId,
                         );
                     }
                 }

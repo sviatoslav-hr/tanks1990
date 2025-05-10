@@ -1,11 +1,12 @@
 import {DEV_MODE_KEY} from '#/const';
 import {DevUI, toggleDevPanelVisibility, toggleFPSVisibility} from '#/dev-ui';
+import {notify} from '#/notification';
+import {EntityManager} from '#/entity/manager';
 import {GameInput} from '#/game-input';
 import {Menu} from '#/menu';
 import {Renderer} from '#/renderer';
 import {GameState} from '#/state';
 import {GameStorage} from '#/storage';
-import {EntityManager} from '#/entity/manager';
 
 // TODO: Probably all keys handling should be here so it's centralized.
 // TODO: At some point the key bindings should be separated from the specifics of the key handling.
@@ -25,7 +26,7 @@ export function handleGameInputTick(
     if (input.isPressed('KeyF')) {
         renderer
             .toggleFullscreen(window)
-            .catch((err) => console.error('[Input] Failed to toggle fullscreen', err));
+            .catch((err) => logger.error('[Input] Failed to toggle fullscreen', err));
     }
 
     if (input.isPressed('KeyP') || input.isPressed('Escape')) {
@@ -47,7 +48,7 @@ export function handleGameInputTick(
         if (!state.dead) {
             state.togglePauseResume();
         } else {
-            console.warn('[Input] Game is over, cannot pause/unpause');
+            logger.warn('[Input] Game is over, cannot pause/unpause');
         }
     }
 
@@ -66,7 +67,7 @@ export function handleGameInputTick(
     if (input.isPressed('Semicolon')) {
         window.__DEV_MODE = !window.__DEV_MODE;
         storage.set(DEV_MODE_KEY, window.__DEV_MODE);
-        console.log(`[Input] Dev mode: ${window.__DEV_MODE ? 'ON' : 'OFF'}`);
+        notify(`Dev mode ${window.__DEV_MODE ? 'enabled' : 'disabled'}`);
     }
 
     const shiftDown = input.isDown('ShiftLeft');

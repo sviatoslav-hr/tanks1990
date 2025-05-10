@@ -40,6 +40,7 @@ vi.mock('../entity/sprite', () => {
 });
 
 describe('Pathfinding', () => {
+    logger.level = logger.LogLevel.WARN;
     const seed = 'default'; // NOTE: Using a fixed seed for reproducibility.
     const loops = 1;
     beforeEach(() => {

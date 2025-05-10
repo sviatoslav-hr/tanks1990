@@ -59,7 +59,7 @@ export class SoundManager {
         const results = await Promise.all(promises);
         for (const result of results) {
             if (result.isErr()) {
-                console.error(result.contextErr('Failed to batch load sound').err);
+                logger.error(result.contextErr('Failed to batch load sound').err);
             }
         }
     }
@@ -88,7 +88,7 @@ export class SoundManager {
             if (res.isOk()) {
                 sound.play(volumeScale ?? 1);
             } else {
-                console.error(res.contextErr(`Failed to play sound: ${type}`).err);
+                logger.error(res.contextErr(`Failed to play sound: ${type}`).err);
             }
         });
     }
@@ -144,7 +144,7 @@ class Sound {
             audioSource.start(0);
             this.state = SoundState.PLAYING;
         } else {
-            console.error(`Sound: cannot play, sound not loaded: "${this.src}"`);
+            logger.error(`Sound: cannot play, sound not loaded: "${this.src}"`);
         }
     }
 
@@ -163,11 +163,11 @@ class Sound {
     // This way there is no need for state management in Sound class.
     async load(): Promise<Result<void, Error>> {
         if (this.loaded) {
-            console.warn(`Sound: already loaded: "${this.src}"`);
+            logger.warn(`Sound: already loaded: "${this.src}"`);
             return Result.ok();
         }
         if (this.state === SoundState.LOADING) {
-            console.warn(`Sound: already loading: "${this.src}"`);
+            logger.warn(`Sound: already loading: "${this.src}"`);
             return Result.ok();
         }
 
@@ -198,7 +198,7 @@ class Sound {
 
     private getGainNode(volumeScale: number): GainNode {
         if (volumeScale < 0 || volumeScale > 1) {
-            console.warn(
+            logger.warn(
                 `Sound: volume scale out of range: ${volumeScale}. Expected value between 0 and 1.`,
             );
         }

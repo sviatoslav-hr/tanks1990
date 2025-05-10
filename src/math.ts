@@ -44,7 +44,7 @@ export function rotateRect(rect: Rect, cx: number, cy: number, deg: 0 | 90 | 180
         return rect;
     }
     if (![0, 90, 180, 270].includes(deg)) {
-        console.warn('this rotation degree is not currently supported');
+        logger.warn('this rotation degree is not currently supported');
         return rect;
     }
     const {x, y, width, height} = rect;

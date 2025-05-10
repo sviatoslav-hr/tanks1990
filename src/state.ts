@@ -65,7 +65,7 @@ export class GameState {
             case GameStatus.INITIAL:
                 break;
             default:
-                console.warn('Unhandled value ', this.status);
+                logger.warn('Unhandled value ', this.status);
         }
     }
 }

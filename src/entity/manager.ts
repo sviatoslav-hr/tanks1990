@@ -157,10 +157,10 @@ export class EntityManager {
         const enemy = deadEnemy ?? new EnemyTank(this);
         assert(enemy.dead);
         if (!deadEnemy) {
-            console.log('[Manager] Created new enemy tank', enemy.id);
+            logger.debug('[Manager] Created new enemy tank', enemy.id);
             this.tanks.push(enemy);
         } else {
-            console.log('[Manager] Reused dead enemy tank', enemy.id);
+            logger.debug('[Manager] Reused dead enemy tank', enemy.id);
         }
         enemy.room = room;
         enemy.markForRespawn();

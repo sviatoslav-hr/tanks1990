@@ -110,10 +110,10 @@ export class RNG {
 
     reset(seed?: string): void {
         if (seed && seed !== this._seed) {
-            console.log(`[RNG] Resetting with new seed=${seed}. Previous seed=${this._seed}`);
+            logger.debug(`[RNG] Resetting with new seed=${seed}. Previous seed=${this._seed}`);
             this.init(seed);
         } else {
-            console.log(`[RNG] Resetting with same seed=${this._seed}`);
+            logger.debug(`[RNG] Resetting with same seed=${this._seed}`);
             copyInto(this.initial, this);
         }
     }

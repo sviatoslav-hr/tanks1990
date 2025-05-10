@@ -201,7 +201,7 @@ export abstract class Tank extends Entity {
 
     takeDamage(): boolean {
         if (this.dead) {
-            console.error('ERROR: Trying to kill a dead entity');
+            logger.error('[Tank] Trying to kill a dead entity');
             return false;
         }
         const dead = !this.hasShield;

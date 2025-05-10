@@ -1,4 +1,5 @@
 import type {assert, assertError, throwError, wrapError} from '#/utils';
+import type {Logger} from '#/logger';
 
 type AssertFn = typeof assert;
 type AssertErrorFn = typeof assertError;
@@ -11,4 +12,6 @@ declare global {
     var wrapError: WrapErrorFn;
     var panic: PanicFn;
     var __DEV_MODE: boolean;
+    var logger: Logger;
+    var BROWSER: boolean;
 }

@@ -7,10 +7,10 @@ import {EntityManager, isSameEntity} from '#/entity/manager';
 import {createStaticSprite, createTileSprite} from '#/entity/sprite';
 import {JSONObjectParser} from '#/json';
 import {Rect, fmod, isPosInsideRect, oppositeDirection, randomFrom} from '#/math';
+import {random} from '#/math/rng';
 import {Vector2, Vector2Like} from '#/math/vector';
 import {Renderer} from '#/renderer';
 import {GameStorage} from '#/storage';
-import {random} from './math/rng';
 
 const WORLD_CONFIG_KEY = 'world_config';
 
@@ -462,8 +462,10 @@ export class Room {
             this.aliveEnemiesCount === 0 &&
             !this.nextRoomDoorOpen
         ) {
-            console.log(
-                `[Room] Room ${this.roomIndex} cleared. Opening door to room ${this.nextRoom.roomIndex}`,
+            logger.debug(
+                '[Room] Room %i cleared. Opening door to room %i',
+                this.roomIndex,
+                this.nextRoom.roomIndex,
             );
             this.openNextRoomDoors();
             this.nextRoomDoorOpen = true;
@@ -488,8 +490,10 @@ export class Room {
             //       using stronger enemies.
             this.expectedEnemiesCount = this.roomIndex + 2;
             this.enemyLimitAtOnce = Math.max(2, Math.floor(this.expectedEnemiesCount / 2));
-            console.log(
-                `[Room] Room ${this.roomIndex} started. Spawning ${this.expectedEnemiesCount} enemies.`,
+            logger.debug(
+                '[Room] Room %i started. Spawning %i enemies.',
+                this.roomIndex,
+                this.expectedEnemiesCount,
             );
         }
     }
