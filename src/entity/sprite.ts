@@ -166,26 +166,10 @@ export function createTileSprite() {
         frameHeight: 128,
         states: [{name: 'static', frames: 1}],
     });
-    // return new Sprite({
-    //     key: 'roguelikeDungeon_transparent',
-    //     frameWidth: 16,
-    //     frameHeight: 16,
-    //     offsetX: 152,
-    //     offsetY: 33, // 152,
-    //     states: [{name: 'static', frames: 1}],
-    // });
-    // return new Sprite({
-    //     key: 'tileSand1',
-    //     frameWidth: 72,
-    //     frameHeight: 72,
-    //     states: [{name: 'static', frames: 1}],
-    // });
 }
 
 export function createTankSprite(type: 'player' | 'enemy') {
-    // const key = type === 'player' ? 'tank2_green' : 'tank2_yellow';
-    const key = type === 'player' ? 'tank3_green' : 'tank3_gray';
-    // const key = type === 'player' ? 'tank_green_darker' : 'tank_yellow_darker';
+    const key = type === 'player' ? 'tank_green' : 'tank_darkgray';
     return new Sprite({
         key: key,
         frameWidth: 64,
@@ -194,13 +178,6 @@ export function createTankSprite(type: 'player' | 'enemy') {
         frameDuration: Duration.milliseconds(100),
         states: [{name: 'moving', frames: 6}],
     });
-    // return new Sprite({
-    //     key: key,
-    //     frameWidth: 64,
-    //     frameHeight: 64,
-    //     frameDuration: Duration.milliseconds(100),
-    //     states: [{name: 'moving', frames: 4}],
-    // });
 }
 
 export function createStaticSprite(opts: Omit<SpriteOpts<'static'>, 'states'>): Sprite<'static'> {

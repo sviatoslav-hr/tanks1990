@@ -5,7 +5,7 @@ import {Direction, Entity, moveEntity} from '#/entity/core';
 import {newEntityId} from '#/entity/id';
 import {EntityManager} from '#/entity/manager';
 import {findPath} from '#/entity/pathfinding';
-import {Sprite, createShieldSprite, createTankSprite} from '#/entity/sprite';
+import {createShieldSprite, createTankSprite, Sprite} from '#/entity/sprite';
 import {eventQueue} from '#/events';
 import {GameInput} from '#/game-input';
 import {moveToRandomCorner, Rect, sameSign} from '#/math';

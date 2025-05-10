@@ -3,7 +3,6 @@
 ## IN_PROGRESS
 ## TODO
 - [ ] Fix tanks moving too fast when the frame rate drops (usually this happens during explosions)
-- [ ] Add room number to the score (+store).
 - [ ] Have explosion effect as a sprite
 - [ ] Change movement to move only by fractions of cells (e.g. 1/16 of a cell)
       This will be easier to pathfinding and will fix the issue with the player being able to pass through blocks
