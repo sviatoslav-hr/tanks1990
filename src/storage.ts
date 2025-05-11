@@ -1,6 +1,20 @@
 import {JSONObjectParser} from '#/json';
 import {logger} from '#/logger';
 
+export function exportAsJson(obj: object, fileName = 'data.json'): void {
+    const jsonStr = JSON.stringify(obj); // Pretty-print with 2 spaces
+    const blob = new Blob([jsonStr], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
 export class GameStorage {
     constructor(private readonly storage: Storage) {}
 

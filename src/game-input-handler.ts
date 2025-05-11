@@ -15,6 +15,7 @@ import {GameStorage} from '#/storage';
 // (e.g. Bindings code could fire events that are handled somewhere else)
 
 export interface InputResult {
+    dt?: number;
     playerDirection?: Direction;
     // PERF: It will be more efficient to compress these into flags.
     //       Although I'm not sure how well it will work in the usage code.

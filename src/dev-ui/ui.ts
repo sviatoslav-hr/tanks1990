@@ -1,8 +1,9 @@
 import {DevPanel, FPSMonitor} from '#/dev-ui';
 import {EntityManager} from '#/entity/manager';
 import {CustomElement, ReactiveElement, css, ui} from '#/html';
+import {notify, notifyError} from '#/notification';
 import {GameState} from '#/state';
-import {GameStorage} from '#/storage';
+import {exportAsJson, GameStorage} from '#/storage';
 
 @CustomElement('dev-ui')
 export class DevUI extends ReactiveElement {
@@ -108,10 +109,34 @@ export function createDevUI(state: GameState, manager: EntityManager, cache: Gam
         .addButton()
         .setName('Spawn enemy')
         .onClick(() => manager.spawnEnemy(manager.world.activeRoom));
-    entitiesFolder
+    const toolsFolder = devPanel.addFolder('Tools');
+    toolsFolder
         .addButton()
         .setName('Open Assets')
         .onClick(() => window.open('./assets.html', '_blank'));
+    toolsFolder
+        .addButton()
+        .setName('Toggle Recording')
+        .onClick(() => {
+            if (state.recordingExpected) {
+                state.isRecording = false;
+                state.recordingExpected = false;
+                notify('Recording Disabled');
+            } else {
+                state.recordingExpected = true;
+                notify('Recording Enabled');
+            }
+        });
+    toolsFolder
+        .addButton()
+        .setName('Export Recording')
+        .onClick(() => {
+            if (!state.inputs.length) {
+                notifyError('No recording to export');
+                return;
+            }
+            exportAsJson(state.inputs, 'recording.json');
+        });
 
     // const world = devPanel.addFolder('World');
     // TODO: Checkboxes to show/hide boundary, grid, etc.

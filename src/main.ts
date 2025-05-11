@@ -92,6 +92,9 @@ function runGame(
         devUI.fpsMonitor.begin();
         try {
             const inputResult = handleGameKeymaps(input);
+            inputResult.dt = dt.milliseconds;
+            state.inputs.push(inputResult);
+
             handleGameInputResult(inputResult, renderer, state, manager, menu, devUI, storage);
             handleGameTick(dt, state, manager, menu, storage, renderer);
             handleGameEvents(eventQueue, state, manager, sounds);
