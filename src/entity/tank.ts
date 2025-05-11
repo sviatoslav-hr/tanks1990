@@ -317,6 +317,16 @@ export class PlayerTank extends Tank implements Entity {
         return super.takeDamage();
     }
 
+    changeDirection(direction: Direction | null): void {
+        this.moving = direction != null;
+        if (direction != null) {
+            if (direction !== this.direction) {
+                this.velocity = 0;
+            }
+            this.direction = direction;
+        }
+    }
+
     // TODO: Should be handled in the main loop *probably*
     handleKeyboard(keyboard: GameInput): void {
         let newDirection: Direction | null = null;

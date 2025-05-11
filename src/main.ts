@@ -9,7 +9,7 @@ import {EntityManager} from '#/entity/manager';
 import {eventQueue} from '#/events';
 import {handleGameEvents} from '#/events-handler';
 import {GameInput} from '#/game-input';
-import {handleGameInputTick} from '#/game-input-handler';
+import {handleGameInputResult, handleGameKeymaps} from '#/game-input-handler';
 import {Duration} from '#/math/duration';
 import {initMenu, Menu} from '#/menu';
 import {Renderer} from '#/renderer';
@@ -91,13 +91,14 @@ function runGame(
 
         devUI.fpsMonitor.begin();
         try {
-            handleGameInputTick(input, renderer, state, manager, menu, devUI, storage);
+            const inputResult = handleGameKeymaps(input);
+            handleGameInputResult(inputResult, renderer, state, manager, menu, devUI, storage);
             handleGameTick(dt, state, manager, menu, storage, renderer);
             handleGameEvents(eventQueue, state, manager, sounds);
             if (manager.world.needsSaving) {
                 manager.world.save(storage);
             }
-            input.nextTick();
+            input.endTick();
             state.nextTick();
         } catch (err) {
             logger.error('Error in animationCallback', err);

@@ -1,5 +1,7 @@
 import {Vector2} from '#/math/vector';
 
+// PERF: It might not be the very efficient to use string every time to check
+// if the button is pressed. Could be better to
 export type KeyCode =
     | 'KeyQ'
     | 'KeyW'
@@ -25,12 +27,20 @@ export type KeyCode =
     | 'Backslash'
     | 'Digit1'
     | 'Digit2'
+    | 'Digit3'
+    | 'Digit4'
+    | 'Digit5'
+    | 'Digit6'
+    | 'Digit7'
+    | 'Digit8'
+    | 'Digit9'
     | 'Digit0'
     | 'MouseLeft'
     | 'MouseMiddle'
     | 'MouseRight'
     | 'ShiftLeft'
     | 'ControlLeft'
+    | 'AltLeft'
     | 'MetaLeft'
     | 'ArrowLeft'
     | 'ArrowRight'
@@ -143,7 +153,7 @@ export class GameInput {
         });
     }
 
-    nextTick() {
+    endTick() {
         this.previousPressed = {...this.currentPressed};
         this.mouse.previousPosition.setFrom(this.mouse.currentPosition);
         this.mouse.previousWheelDelta = this.mouse.currentWheenDelta;
