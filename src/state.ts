@@ -12,7 +12,7 @@ export class GameState {
     status = GameStatus.INITIAL;
     debugUpdateTriggered = false;
     recording: RecordingStatus = {active: false, expected: false, playing: false, inputIndex: 0};
-    recordingInfo: RecordingInfo = {seed: 'default', inputs: []};
+    recordingInfo: RecordingInfo = {version: 0, seed: 'default', inputs: []};
 
     get initial(): boolean {
         return this.status === GameStatus.INITIAL;
