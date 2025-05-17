@@ -112,7 +112,8 @@ export class GameInput {
             this.setPressed(code);
         });
         element.addEventListener('keyup', (ev) => {
-            this.setReleased(ev.code as KeyCode);
+            const code = ev.code as KeyCode;
+            this.setReleased(code);
         });
         element.addEventListener('mousedown', (ev) => {
             switch (ev.button) {

@@ -9,12 +9,13 @@ import {notify} from '#/notification';
 import {Renderer} from '#/renderer';
 import {GameState} from '#/state';
 import {GameStorage} from '#/storage';
+import {toggleRecording} from '#/recording';
 
 // TODO: Probably all keys handling should be here so it's centralized.
 // TODO: At some point the key bindings should be separated from the specifics of the key handling.
 // (e.g. Bindings code could fire events that are handled somewhere else)
 
-export interface InputResult {
+export interface InputState {
     dt?: number;
     playerDirection?: Direction;
     // PERF: It will be more efficient to compress these into flags.
@@ -34,21 +35,23 @@ export interface InputResult {
     cameraManualScaleOffset?: number;
     cameraManualScale?: number;
     cameraReset?: 1;
+    toggleRecording?: 1;
 }
 
-export function handleGameKeymaps(input: GameInput): InputResult {
-    const result: InputResult = {};
-    const alt = __DEV_MODE && input.isDown('AltLeft'); // NOTE: Alt is used for debug keymaps.
+export function handleGameKeymaps(input: GameInput): InputState {
+    const result: InputState = {};
+    const alt = input.isDown('AltLeft'); // NOTE: Alt is used for debug keymaps.
     const shift = input.isDown('ShiftLeft'); // NOTE: Shift is used for alternative actions.
 
     if (input.isPressed('KeyF')) {
         result.toggleFullscreen = 1;
     }
 
-    if (input.isPressed('KeyP') || input.isPressed('Escape')) {
+    if (input.isPressed('Escape')) {
         result.toggleGamePause = 1;
-    } else if (alt && input.isPressed('KeyO')) {
-        result.toggleGamePauseIgnoreMenu = 1;
+    } else if (input.isPressed('KeyP')) {
+        if (__DEV_MODE && alt) result.toggleGamePauseIgnoreMenu = 1;
+        else result.toggleGamePause = 1;
     }
 
     {
@@ -78,7 +81,12 @@ export function handleGameKeymaps(input: GameInput): InputResult {
         }
     }
 
-    if (alt) {
+    if (alt && input.isPressed('Semicolon')) {
+        result.toggleDevMode = 1;
+    }
+
+    // NOTE: Dev keymaps shuld only be available in dev mode.
+    if (__DEV_MODE && alt) {
         if (input.isPressed('BracketRight')) {
             result.triggerSingleUpdate = 1;
         }
@@ -87,8 +95,9 @@ export function handleGameKeymaps(input: GameInput): InputResult {
             result.showBoundaries = 1;
         }
 
-        if (input.isPressed('Semicolon')) {
-            result.toggleDevMode = 1;
+        if (input.isPressed('KeyO')) {
+            console.log('Recording should be toggled');
+            result.toggleRecording = 1;
         }
 
         if (input.isPressed('Backquote'))
@@ -127,7 +136,7 @@ export function handleGameKeymaps(input: GameInput): InputResult {
 }
 
 export function handleGameInputResult(
-    input: InputResult,
+    input: InputState,
     renderer: Renderer,
     state: GameState,
     manager: EntityManager,
@@ -164,10 +173,11 @@ export function handleGameInputResult(
     }
 
     if (input.toggleGamePauseIgnoreMenu) {
-        if (!state.dead) {
+        if (state.playing || state.paused) {
+            logger.info(state.playing ? 'Game paused' : 'Game resumed');
             state.togglePauseResume();
         } else {
-            logger.warn('[Input] Game is over, cannot pause/unpause');
+            logger.warn('Game is not in playing state, cannot pause/unpause');
         }
     }
 
@@ -181,6 +191,10 @@ export function handleGameInputResult(
     if (input.showBoundaries) {
         manager.world.showBoundary = !manager.world.showBoundary;
         manager.world.markDirty();
+    }
+
+    if (input.toggleRecording) {
+        toggleRecording(state);
     }
 
     if (input.toggleDevMode) {

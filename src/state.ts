@@ -1,4 +1,5 @@
-import type {InputResult} from '#/input-handler';
+import type {InputState} from '#/input-handler';
+import {resetInputState} from '#/recording';
 
 export enum GameStatus {
     INITIAL,
@@ -12,7 +13,7 @@ export class GameState {
     debugUpdateTriggered = false;
     recordingExpected = false;
     isRecording = false;
-    inputs: InputResult[] = [];
+    inputs: InputState[] = [];
 
     get initial(): boolean {
         return this.status === GameStatus.INITIAL;
@@ -43,8 +44,7 @@ export class GameState {
     }
 
     start(): void {
-        this.isRecording = false;
-        this.inputs = [];
+        resetInputState(this);
         if (this.recordingExpected) {
             this.isRecording = true;
             this.recordingExpected = false;
@@ -76,7 +76,7 @@ export class GameState {
             case GameStatus.INITIAL:
                 break;
             default:
-                logger.warn('Unhandled value ', this.status);
+                logger.warn('Unhandled Game status %s', this.status);
         }
     }
 }

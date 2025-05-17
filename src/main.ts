@@ -3,21 +3,22 @@ import './style.css';
 
 import {APP_ELEMENT_ID, DEV_MODE_KEY} from '#/const';
 import {createDevUI, DevUI} from '#/dev-ui';
-import {getNotificationBar} from '#/notification';
 import {preloadEffectImages} from '#/entity/effect';
 import {EntityManager} from '#/entity/manager';
 import {eventQueue} from '#/events';
 import {handleGameEvents} from '#/events-handler';
 import {GameInput} from '#/input';
 import {handleGameInputResult, handleGameKeymaps} from '#/input-handler';
+import {logger} from '#/logger';
 import {Duration} from '#/math/duration';
 import {initMenu, Menu} from '#/menu';
+import {getNotificationBar} from '#/notification';
+import {pushInputState} from '#/recording';
 import {Renderer} from '#/renderer';
 import {drawScoreMini, getBestScore, saveBestScore, updateScoreInMenu} from '#/score';
 import {SoundManager} from '#/sound';
 import {GameState} from '#/state';
 import {GameStorage} from '#/storage';
-import {logger} from '#/logger';
 
 main();
 
@@ -93,9 +94,9 @@ function runGame(
         try {
             const inputResult = handleGameKeymaps(input);
             inputResult.dt = dt.milliseconds;
-            state.inputs.push(inputResult);
-
             handleGameInputResult(inputResult, renderer, state, manager, menu, devUI, storage);
+            pushInputState(state, inputResult);
+
             handleGameTick(dt, state, manager, menu, storage, renderer);
             handleGameEvents(eventQueue, state, manager, sounds);
             if (manager.world.needsSaving) {
