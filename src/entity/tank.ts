@@ -7,7 +7,7 @@ import {EntityManager} from '#/entity/manager';
 import {findPath} from '#/entity/pathfinding';
 import {createShieldSprite, createTankSprite, Sprite} from '#/entity/sprite';
 import {eventQueue} from '#/events';
-import {GameInput} from '#/game-input';
+import {GameInput} from '#/input';
 import {moveToRandomCorner, Rect, sameSign} from '#/math';
 import {Duration} from '#/math/duration';
 import {Vector2, Vector2Like} from '#/math/vector';
@@ -84,9 +84,9 @@ export abstract class Tank extends Entity {
             const newVelocity = acceleration * dt.seconds + this.velocity;
             this.velocity = Math.min(Math.max(0, newVelocity), this.topSpeed);
             assert(this.velocity >= 0);
-            // p' = 1/2*a*dt^2 + v*dt + p   ==>    dp = p'-p = 1/2*a*dt^2 + v*dt
+            // p' = 1/2*a*dt^2 + v*dt + p   ==>    dp = p' - p = 1/2*a*dt^2 + v*dt
             const movementOffset =
-                0.5 * acceleration * dt.seconds * dt.seconds + this.velocity * dt.seconds;
+                0.5 * acceleration * dt.seconds ** 2 + this.velocity * dt.seconds;
             moveEntity(this, movementOffset, this.direction);
         }
 
@@ -204,13 +204,14 @@ export abstract class Tank extends Entity {
             logger.error('[Tank] Trying to kill a dead entity');
             return false;
         }
-        const dead = !this.hasShield;
-        if (dead) {
+        const canDie = !this.hasShield;
+        if (canDie) {
             this.dead = true;
             this.onDied();
             eventQueue.push({type: 'tank-destroyed', entityId: this.id, bot: this.bot});
+            return true;
         }
-        return dead;
+        return false;
     }
 
     private tryRespawn(attemptLimit: number): boolean {

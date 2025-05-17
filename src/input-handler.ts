@@ -2,7 +2,7 @@ import {DEV_MODE_KEY} from '#/const';
 import {DevUI, toggleDevPanelVisibility, toggleFPSVisibility} from '#/dev-ui';
 import {Direction} from '#/entity/core';
 import {EntityManager} from '#/entity/manager';
-import {GameInput} from '#/game-input';
+import {GameInput} from '#/input';
 import {Vector2Like} from '#/math/vector';
 import {Menu} from '#/menu';
 import {notify} from '#/notification';

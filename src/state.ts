@@ -1,4 +1,4 @@
-import type {InputResult} from '#/game-input-handler';
+import type {InputResult} from '#/input-handler';
 
 export enum GameStatus {
     INITIAL,
