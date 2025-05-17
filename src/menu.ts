@@ -1,9 +1,9 @@
+import {EntityManager} from '#/entity/manager';
 import {CustomElement, html} from '#/html';
+import {random} from '#/math/rng';
+import {ScoreOverlay} from '#/score';
 import {SoundManager} from '#/sound';
 import {GameState} from '#/state';
-import {EntityManager} from '#/entity/manager';
-import {ScoreOverlay} from '#/score';
-import {random} from './math/rng';
 
 function setURLSeed(seed: string): void {
     const url = new URL(window.location.href);
@@ -21,14 +21,15 @@ function getURLSeed(): string | null {
 
 // TODO: refactor menu into ReactiveElement
 // TODO: Detach menu from game objects
-export function initMenu(game: GameState, manager: EntityManager, sounds: SoundManager): Menu {
+export function initMenu(state: GameState, manager: EntityManager, sounds: SoundManager): Menu {
     const menu = new Menu();
     menu.addButton(
         'NEW GAME',
         () => {
-            game.start();
             const seed = getURLSeed();
             random.reset(seed ?? undefined); // TODO: This should not be done in menu code.
+            state.recording.playing = false;
+            state.start();
             manager.init();
             setURLSeed(random.seed);
             menu.hide();
@@ -38,7 +39,7 @@ export function initMenu(game: GameState, manager: EntityManager, sounds: SoundM
     menu.addButton(
         'RESUME',
         () => {
-            game.resume();
+            state.resume();
             menu.hide();
         },
         [MenuState.PAUSE],
@@ -46,9 +47,10 @@ export function initMenu(game: GameState, manager: EntityManager, sounds: SoundM
     menu.addButton(
         'RESTART',
         () => {
-            game.start();
             const seed = getURLSeed();
             random.reset(seed ?? undefined); // TODO: This should not be done in menu code.
+            state.recording.playing = false;
+            state.start();
             manager.init();
             setURLSeed(random.seed);
             menu.hide();
@@ -58,7 +60,7 @@ export function initMenu(game: GameState, manager: EntityManager, sounds: SoundM
     menu.addButton(
         'MAIN MENU',
         () => {
-            game.init();
+            state.init();
             menu.showMain();
         },
         [MenuState.PAUSE, MenuState.DEAD],

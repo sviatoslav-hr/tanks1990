@@ -92,10 +92,14 @@ function runGame(
 
         devUI.fpsMonitor.begin();
         try {
-            const inputState = handleKeymaps(input);
-            inputState.dt = dt.milliseconds;
+            const inputState = handleKeymaps(state, input);
+            if (state.recording.playing) {
+                dt.setMilliseconds(inputState.game.dtMillis ?? 0);
+            } else {
+                inputState.game.dtMillis = dt.milliseconds;
+            }
             processInput(inputState, renderer, state, manager, menu, devUI, storage);
-            maybeRecordInput(state, inputState);
+            maybeRecordInput(state, inputState.game);
 
             simulateGameTick(dt, state, manager, menu, storage, renderer);
             processGameEvents(eventQueue, state, manager, sounds);

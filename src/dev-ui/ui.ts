@@ -123,11 +123,11 @@ export function createDevUI(state: GameState, manager: EntityManager, cache: Gam
         .addButton()
         .setName('Export Recording')
         .onClick(() => {
-            if (!state.recording.inputs.length) {
+            if (!state.recordingInfo.inputs.length) {
                 notifyError('No recording to export');
                 return;
             }
-            exportAsJson(state.recording.inputs, 'recording.json');
+            exportAsJson(state.recordingInfo, 'recording.json');
         });
 
     // const world = devPanel.addFolder('World');

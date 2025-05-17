@@ -1,4 +1,5 @@
-import {type RecordingInfo, resetRecording} from '#/recording';
+import {resetRecording, type RecordingInfo, type RecordingStatus} from '#/recording';
+import {random} from '#/math/rng';
 
 export enum GameStatus {
     INITIAL,
@@ -10,11 +11,8 @@ export enum GameStatus {
 export class GameState {
     status = GameStatus.INITIAL;
     debugUpdateTriggered = false;
-    recording: RecordingInfo = {
-        active: false,
-        expected: false,
-        inputs: [],
-    };
+    recording: RecordingStatus = {active: false, expected: false, playing: false, inputIndex: 0};
+    recordingInfo: RecordingInfo = {seed: 'default', inputs: []};
 
     get initial(): boolean {
         return this.status === GameStatus.INITIAL;
@@ -45,10 +43,13 @@ export class GameState {
     }
 
     start(): void {
-        resetRecording(this);
-        if (this.recording.expected) {
-            this.recording.active = true;
-            this.recording.expected = false;
+        if (!this.recording.playing) {
+            resetRecording(this);
+            if (this.recording.expected) {
+                this.recording.active = true;
+                this.recording.expected = false;
+                this.recordingInfo.seed = random.seed;
+            }
         }
         this.status = GameStatus.PLAYING;
     }

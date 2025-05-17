@@ -306,6 +306,7 @@ export class PlayerTank extends Tank implements Entity {
         assert(respawned); // Player tank respawn should never fail
         this.x = -this.width / 2;
         this.y = -this.height / 2;
+        this.direction = Direction.NORTH;
         this.velocity = 0;
         this.shootingDelay.milliseconds = 0;
         this.score = 0;

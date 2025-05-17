@@ -6,21 +6,30 @@ import {GameInput} from '#/input';
 import {Vector2Like} from '#/math/vector';
 import {Menu} from '#/menu';
 import {notify} from '#/notification';
+import {
+    exitRecording,
+    getNextRecordedInput,
+    playRecentRecording,
+    toggleRecording,
+} from '#/recording';
 import {Renderer} from '#/renderer';
 import {GameState} from '#/state';
 import {GameStorage} from '#/storage';
-import {toggleRecording} from '#/recording';
-
-// TODO: Probably all keys handling should be here so it's centralized.
-// TODO: At some point the key bindings should be separated from the specifics of the key handling.
-// (e.g. Bindings code could fire events that are handled somewhere else)
 
 export interface InputState {
-    dt?: number;
+    game: GameInputState;
+    extra: ExtraInputState;
+}
+
+export interface GameInputState {
+    dtMillis?: number;
     playerDirection?: Direction;
+    playerShooting?: 1;
+}
+
+export interface ExtraInputState {
     // PERF: It will be more efficient to compress these into flags.
     //       Although I'm not sure how well it will work in the usage code.
-    playerShooting?: 1;
     toggleGamePause?: 1;
     toggleGamePauseIgnoreMenu?: 1;
     toggleFullscreen?: 1;
@@ -36,10 +45,51 @@ export interface InputState {
     cameraManualScale?: number;
     cameraReset?: 1;
     toggleRecording?: 1;
+    playOrExitRecording?: 1;
 }
 
-export function handleKeymaps(input: GameInput): InputState {
-    const result: InputState = {};
+export function handleKeymaps(state: GameState, input: GameInput): InputState {
+    let gameInput: GameInputState | undefined;
+    if (state.recording.playing) {
+        gameInput = getNextRecordedInput(state) ?? {};
+    } else {
+        gameInput = handleGameKeymaps(input);
+    }
+    const extraInput = handleExtraKeymaps(input);
+    return {game: gameInput, extra: extraInput};
+}
+
+export function handleGameKeymaps(input: GameInput): GameInputState {
+    const result: GameInputState = {};
+    if (input.isDown('Space')) {
+        result.playerShooting = 1;
+    }
+    // NOTE: If player is pressing two opposite direction keys, they should negate each other.
+    if (input.isDown('KeyA') || input.isDown('ArrowLeft')) {
+        result.playerDirection = Direction.WEST;
+    }
+    if (input.isDown('KeyD') || input.isDown('ArrowRight')) {
+        if (result.playerDirection === Direction.WEST) {
+            result.playerDirection = undefined;
+        } else {
+            result.playerDirection = Direction.EAST;
+        }
+    }
+    if (input.isDown('KeyW') || input.isDown('ArrowUp')) {
+        result.playerDirection = Direction.NORTH;
+    }
+    if (input.isDown('KeyS') || input.isDown('ArrowDown')) {
+        if (result.playerDirection === Direction.NORTH) {
+            result.playerDirection = undefined;
+        } else {
+            result.playerDirection = Direction.SOUTH;
+        }
+    }
+    return result;
+}
+
+export function handleExtraKeymaps(input: GameInput): ExtraInputState {
+    const result: ExtraInputState = {};
     const alt = input.isDown('AltLeft'); // NOTE: Alt is used for debug keymaps.
     const shift = input.isDown('ShiftLeft'); // NOTE: Shift is used for alternative actions.
 
@@ -52,33 +102,6 @@ export function handleKeymaps(input: GameInput): InputState {
     } else if (input.isPressed('KeyP')) {
         if (__DEV_MODE && alt) result.toggleGamePauseIgnoreMenu = 1;
         else result.toggleGamePause = 1;
-    }
-
-    {
-        if (input.isDown('Space')) {
-            result.playerShooting = 1;
-        }
-        // NOTE: If player is pressing two opposite direction keys, they should negate each other.
-        if (input.isDown('KeyA') || input.isDown('ArrowLeft')) {
-            result.playerDirection = Direction.WEST;
-        }
-        if (input.isDown('KeyD') || input.isDown('ArrowRight')) {
-            if (result.playerDirection === Direction.WEST) {
-                result.playerDirection = undefined;
-            } else {
-                result.playerDirection = Direction.EAST;
-            }
-        }
-        if (input.isDown('KeyW') || input.isDown('ArrowUp')) {
-            result.playerDirection = Direction.NORTH;
-        }
-        if (input.isDown('KeyS') || input.isDown('ArrowDown')) {
-            if (result.playerDirection === Direction.NORTH) {
-                result.playerDirection = undefined;
-            } else {
-                result.playerDirection = Direction.SOUTH;
-            }
-        }
     }
 
     if (alt && input.isPressed('Semicolon')) {
@@ -97,6 +120,10 @@ export function handleKeymaps(input: GameInput): InputState {
 
         if (input.isPressed('KeyO')) {
             result.toggleRecording = 1;
+        }
+
+        if (input.isPressed('KeyI')) {
+            result.playOrExitRecording = 1;
         }
 
         if (input.isPressed('Backquote'))
@@ -144,19 +171,19 @@ export function processInput(
     storage: GameStorage,
 ) {
     if (state.playing) {
-        manager.player.changeDirection(input.playerDirection ?? null);
+        manager.player.changeDirection(input.game.playerDirection ?? null);
     }
-    if (input.playerShooting) {
+    if (input.game.playerShooting) {
         manager.player.shoot();
     }
 
-    if (input.toggleFullscreen) {
+    if (input.extra.toggleFullscreen) {
         renderer
             .toggleFullscreen(window)
             .catch((err) => logger.error('[Input] Failed to toggle fullscreen', err));
     }
 
-    if (input.toggleGamePause) {
+    if (input.extra.toggleGamePause) {
         if (state.paused && !menu.paused) {
             menu.showPause();
         } else {
@@ -171,7 +198,7 @@ export function processInput(
         }
     }
 
-    if (input.toggleGamePauseIgnoreMenu) {
+    if (input.extra.toggleGamePauseIgnoreMenu) {
         if (state.playing || state.paused) {
             logger.info(state.playing ? 'Game paused' : 'Game resumed');
             state.togglePauseResume();
@@ -180,56 +207,64 @@ export function processInput(
         }
     }
 
-    if (input.triggerSingleUpdate) {
+    if (input.extra.triggerSingleUpdate) {
         if (menu.visible) {
             menu.hide();
         }
         state.debugUpdateTriggered = true;
     }
 
-    if (input.showBoundaries) {
+    if (input.extra.showBoundaries) {
         manager.world.showBoundary = !manager.world.showBoundary;
         manager.world.markDirty();
     }
 
-    if (input.toggleRecording) {
+    if (input.extra.toggleRecording) {
         toggleRecording(state);
     }
 
-    if (input.toggleDevMode) {
+    if (input.extra.playOrExitRecording) {
+        if (!state.recording.playing) {
+            playRecentRecording(state, manager, menu);
+        } else {
+            exitRecording(state);
+        }
+    }
+
+    if (input.extra.toggleDevMode) {
         window.__DEV_MODE = !window.__DEV_MODE;
         storage.set(DEV_MODE_KEY, window.__DEV_MODE);
         notify(`Dev mode ${window.__DEV_MODE ? 'enabled' : 'disabled'}`);
     }
 
-    if (input.toggleFPSMonitor) {
+    if (input.extra.toggleFPSMonitor) {
         toggleFPSVisibility(devUI.fpsMonitor, storage);
     }
-    if (input.toggleFPSMonitorPause) {
+    if (input.extra.toggleFPSMonitorPause) {
         devUI.fpsMonitor.paused = !devUI.fpsMonitor.paused;
     }
 
-    if (input.toggleDevPanel) {
+    if (input.extra.toggleDevPanel) {
         toggleDevPanelVisibility(devUI.devPanel, storage);
     }
 
-    if (input.cameraManualOffset) {
+    if (input.extra.cameraManualOffset) {
         renderer.camera.manualMode = true;
-        const offset = input.cameraManualOffset;
+        const offset = input.extra.cameraManualOffset;
         offset.x /= renderer.camera.scale;
         offset.y /= renderer.camera.scale;
         renderer.camera.worldOffset.add(offset);
     }
 
-    if (input.cameraManualScaleOffset != null) {
+    if (input.extra.cameraManualScaleOffset != null) {
         renderer.camera.manualMode = true;
-        renderer.camera.setScale(renderer.camera.scale - input.cameraManualScaleOffset);
-    } else if (input.cameraManualScale != null) {
+        renderer.camera.setScale(renderer.camera.scale - input.extra.cameraManualScaleOffset);
+    } else if (input.extra.cameraManualScale != null) {
         renderer.camera.manualMode = true;
-        renderer.camera.setScale(renderer.camera.scale - input.cameraManualScale);
+        renderer.camera.setScale(renderer.camera.scale - input.extra.cameraManualScale);
     }
 
-    if (input.cameraReset) {
+    if (input.extra.cameraReset) {
         renderer.camera.reset();
         renderer.camera.focusOnRect(manager.world.activeRoom.boundary);
     }

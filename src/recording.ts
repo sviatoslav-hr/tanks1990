@@ -1,11 +1,20 @@
+import type {EntityManager} from '#/entity/manager';
+import type {GameInputState} from '#/input-handler';
+import {random} from '#/math/rng';
+import type {Menu} from '#/menu';
 import {notify, notifyError} from '#/notification';
 import type {GameState} from '#/state';
-import type {InputState} from '#/input-handler';
 
-export interface RecordingInfo {
+export interface RecordingStatus {
     active: boolean;
     expected: boolean;
-    inputs: InputState[];
+    playing: boolean;
+    inputIndex: number;
+}
+
+export interface RecordingInfo {
+    seed: string;
+    inputs: GameInputState[];
 }
 
 export function toggleRecording(state: GameState): void {
@@ -24,13 +33,60 @@ export function toggleRecording(state: GameState): void {
     }
 }
 
-export function maybeRecordInput(state: GameState, input: InputState): void {
-    if (state.playing && state.recording.active) {
-        state.recording.inputs.push(input);
+export function maybeRecordInput(state: GameState, input: GameInputState): void {
+    if (state.playing && state.recording.active && !state.recording.playing) {
+        state.recordingInfo.inputs.push(input);
     }
 }
 
 export function resetRecording(state: GameState): void {
-    state.recording.inputs = [];
+    state.recordingInfo.inputs = [];
     state.recording.active = false;
+    state.recording.inputIndex = 0;
+}
+
+export function getNextRecordedInput(state: GameState): GameInputState | undefined {
+    assert(state.recording.playing);
+    const inputIndex = state.recording.inputIndex++;
+    const inputs = state.recordingInfo.inputs;
+    const input = inputs[inputIndex];
+    if (inputIndex === inputs.length - 1) {
+        // state.recording.playing = false;
+        notify('Recording finished');
+    }
+    return input;
+}
+
+export function playRecentRecording(state: GameState, manager: EntityManager, menu: Menu): void {
+    if (state.recording.playing) {
+        logger.error('Recording is already playing');
+        return;
+    }
+    if (!state.recordingInfo.inputs.length) {
+        logger.error('No recording to play');
+        return;
+    }
+    notify('Playing recording');
+    // TODO: It's probably best to avoid asynchronous code.
+    //       Instead I can put a flat to trigger this right before
+    //       the next frame or immediately after the current frame.
+    setTimeout(() => {
+        state.recording.playing = true;
+        state.recording.inputIndex = 0;
+        random.reset(state.recordingInfo.seed);
+        state.start();
+        manager.init();
+        menu.hide();
+    }, 0);
+}
+
+export function exitRecording(state: GameState): void {
+    if (!state.recording.playing) {
+        logger.error('Recording is not playing');
+        return;
+    }
+    state.recording.playing = false;
+    state.recording.active = false;
+    state.init();
+    notify('Recording exited');
 }
