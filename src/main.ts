@@ -6,14 +6,14 @@ import {createDevUI, DevUI} from '#/dev-ui';
 import {preloadEffectImages} from '#/entity/effect';
 import {EntityManager} from '#/entity/manager';
 import {eventQueue} from '#/events';
-import {handleGameEvents} from '#/events-handler';
+import {handleGameEvents as processGameEvents} from '#/events-handler';
 import {GameInput} from '#/input';
-import {handleGameInputResult, handleGameKeymaps} from '#/input-handler';
+import {processInput, handleKeymaps} from '#/input-handler';
 import {logger} from '#/logger';
 import {Duration} from '#/math/duration';
 import {initMenu, Menu} from '#/menu';
 import {getNotificationBar} from '#/notification';
-import {pushInputState} from '#/recording';
+import {maybeRecordInput} from '#/recording';
 import {Renderer} from '#/renderer';
 import {drawScoreMini, getBestScore, saveBestScore, updateScoreInMenu} from '#/score';
 import {SoundManager} from '#/sound';
@@ -92,20 +92,20 @@ function runGame(
 
         devUI.fpsMonitor.begin();
         try {
-            const inputResult = handleGameKeymaps(input);
-            inputResult.dt = dt.milliseconds;
-            handleGameInputResult(inputResult, renderer, state, manager, menu, devUI, storage);
-            pushInputState(state, inputResult);
+            const inputState = handleKeymaps(input);
+            inputState.dt = dt.milliseconds;
+            processInput(inputState, renderer, state, manager, menu, devUI, storage);
+            maybeRecordInput(state, inputState);
 
-            handleGameTick(dt, state, manager, menu, storage, renderer);
-            handleGameEvents(eventQueue, state, manager, sounds);
+            simulateGameTick(dt, state, manager, menu, storage, renderer);
+            processGameEvents(eventQueue, state, manager, sounds);
             if (manager.world.needsSaving) {
                 manager.world.save(storage);
             }
             input.endTick();
             state.nextTick();
         } catch (err) {
-            logger.error('Error in animationCallback', err);
+            logger.error('Error in animationCallback %O', err);
         }
         devUI.fpsMonitor.end();
 
@@ -115,7 +115,7 @@ function runGame(
     window.requestAnimationFrame(animationCallback);
 }
 
-function handleGameTick(
+function simulateGameTick(
     dt: Duration,
     state: GameState,
     manager: EntityManager,

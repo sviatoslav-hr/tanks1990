@@ -1,34 +1,36 @@
 import {notify, notifyError} from '#/notification';
-import {GameState} from '#/state';
-import {InputState} from './input-handler';
+import type {GameState} from '#/state';
+import type {InputState} from '#/input-handler';
+
+export interface RecordingInfo {
+    active: boolean;
+    expected: boolean;
+    inputs: InputState[];
+}
 
 export function toggleRecording(state: GameState): void {
     const isPlaying = state.paused || state.playing;
+    const recording = state.recording;
     if (isPlaying) {
-        if (state.isRecording) {
-            state.isRecording = false;
+        if (recording.active) {
+            recording.active = false;
             notify('Recording stopped');
         } else {
             notifyError('Cannot start recording while game is in playing state');
         }
     } else {
-        if (state.recordingExpected) {
-            notify('Recording disabled');
-            state.recordingExpected = false;
-        } else {
-            notify('Recording enabled');
-            state.recordingExpected = true;
-        }
+        recording.expected = !recording.expected;
+        notify(recording.expected ? 'Recording enabled' : 'Recording disabled');
     }
 }
 
-export function pushInputState(state: GameState, input: InputState): void {
-    if (state.playing) {
-        state.inputs.push(input);
+export function maybeRecordInput(state: GameState, input: InputState): void {
+    if (state.playing && state.recording.active) {
+        state.recording.inputs.push(input);
     }
 }
 
-export function resetInputState(state: GameState): void {
-    state.inputs = [];
-    state.isRecording = false;
+export function resetRecording(state: GameState): void {
+    state.recording.inputs = [];
+    state.recording.active = false;
 }

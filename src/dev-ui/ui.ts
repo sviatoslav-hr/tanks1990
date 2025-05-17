@@ -1,7 +1,8 @@
 import {DevPanel, FPSMonitor} from '#/dev-ui';
 import {EntityManager} from '#/entity/manager';
-import {CustomElement, ReactiveElement, css, ui} from '#/html';
-import {notify, notifyError} from '#/notification';
+import {css, CustomElement, ReactiveElement, ui} from '#/html';
+import {notifyError} from '#/notification';
+import {toggleRecording} from '#/recording';
 import {GameState} from '#/state';
 import {exportAsJson, GameStorage} from '#/storage';
 
@@ -117,25 +118,16 @@ export function createDevUI(state: GameState, manager: EntityManager, cache: Gam
     toolsFolder
         .addButton()
         .setName('Toggle Recording')
-        .onClick(() => {
-            if (state.recordingExpected) {
-                state.isRecording = false;
-                state.recordingExpected = false;
-                notify('Recording Disabled');
-            } else {
-                state.recordingExpected = true;
-                notify('Recording Enabled');
-            }
-        });
+        .onClick(() => toggleRecording(state));
     toolsFolder
         .addButton()
         .setName('Export Recording')
         .onClick(() => {
-            if (!state.inputs.length) {
+            if (!state.recording.inputs.length) {
                 notifyError('No recording to export');
                 return;
             }
-            exportAsJson(state.inputs, 'recording.json');
+            exportAsJson(state.recording.inputs, 'recording.json');
         });
 
     // const world = devPanel.addFolder('World');

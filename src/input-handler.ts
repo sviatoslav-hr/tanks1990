@@ -38,7 +38,7 @@ export interface InputState {
     toggleRecording?: 1;
 }
 
-export function handleGameKeymaps(input: GameInput): InputState {
+export function handleKeymaps(input: GameInput): InputState {
     const result: InputState = {};
     const alt = input.isDown('AltLeft'); // NOTE: Alt is used for debug keymaps.
     const shift = input.isDown('ShiftLeft'); // NOTE: Shift is used for alternative actions.
@@ -96,7 +96,6 @@ export function handleGameKeymaps(input: GameInput): InputState {
         }
 
         if (input.isPressed('KeyO')) {
-            console.log('Recording should be toggled');
             result.toggleRecording = 1;
         }
 
@@ -135,7 +134,7 @@ export function handleGameKeymaps(input: GameInput): InputState {
     return result;
 }
 
-export function handleGameInputResult(
+export function processInput(
     input: InputState,
     renderer: Renderer,
     state: GameState,

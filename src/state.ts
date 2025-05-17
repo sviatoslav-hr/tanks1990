@@ -1,5 +1,4 @@
-import type {InputState} from '#/input-handler';
-import {resetInputState} from '#/recording';
+import {type RecordingInfo, resetRecording} from '#/recording';
 
 export enum GameStatus {
     INITIAL,
@@ -11,9 +10,11 @@ export enum GameStatus {
 export class GameState {
     status = GameStatus.INITIAL;
     debugUpdateTriggered = false;
-    recordingExpected = false;
-    isRecording = false;
-    inputs: InputState[] = [];
+    recording: RecordingInfo = {
+        active: false,
+        expected: false,
+        inputs: [],
+    };
 
     get initial(): boolean {
         return this.status === GameStatus.INITIAL;
@@ -44,10 +45,10 @@ export class GameState {
     }
 
     start(): void {
-        resetInputState(this);
-        if (this.recordingExpected) {
-            this.isRecording = true;
-            this.recordingExpected = false;
+        resetRecording(this);
+        if (this.recording.expected) {
+            this.recording.active = true;
+            this.recording.expected = false;
         }
         this.status = GameStatus.PLAYING;
     }
