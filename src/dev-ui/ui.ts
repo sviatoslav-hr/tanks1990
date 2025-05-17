@@ -2,7 +2,7 @@ import {DevPanel, FPSMonitor} from '#/dev-ui';
 import {EntityManager} from '#/entity/manager';
 import {css, CustomElement, ReactiveElement, ui} from '#/html';
 import {notifyError} from '#/notification';
-import {toggleRecording} from '#/recording';
+import {importRecording, toggleRecording} from '#/recording';
 import {GameState} from '#/state';
 import {exportAsJson, GameStorage} from '#/storage';
 
@@ -110,6 +110,7 @@ export function createDevUI(state: GameState, manager: EntityManager, cache: Gam
         .addButton()
         .setName('Spawn enemy')
         .onClick(() => manager.spawnEnemy(manager.world.activeRoom));
+
     const toolsFolder = devPanel.addFolder('Tools');
     toolsFolder
         .addButton()
@@ -120,6 +121,15 @@ export function createDevUI(state: GameState, manager: EntityManager, cache: Gam
         .setName('Toggle Recording')
         .onClick(() => toggleRecording(state));
     toolsFolder
+        .addFilePicker()
+        .setPlaceholder('Import Recording')
+        .setMultiple(false)
+        .setContentType('.json,application/json')
+        .onSelect((files) => {
+            const file = files[0];
+            file?.text().then((text) => importRecording(state, text));
+        });
+    toolsFolder
         .addButton()
         .setName('Export Recording')
         .onClick(() => {
@@ -127,7 +137,8 @@ export function createDevUI(state: GameState, manager: EntityManager, cache: Gam
                 notifyError('No recording to export');
                 return;
             }
-            exportAsJson(state.recordingInfo, 'recording.json');
+            const filename = `recording-${state.recordingInfo.startedAt}.json`;
+            exportAsJson(state.recordingInfo, filename);
         });
 
     // const world = devPanel.addFolder('World');

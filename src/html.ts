@@ -77,7 +77,7 @@ function htmlElement<K extends keyof HTMLElementTagNameMap>(
 }
 
 interface HTMLInputElementOptions extends HTMLElementOptions {
-    type?: 'number';
+    type?: 'number' | 'file';
     value?: string | number;
 }
 

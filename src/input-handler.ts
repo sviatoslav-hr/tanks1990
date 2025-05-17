@@ -22,7 +22,7 @@ export interface InputState {
 }
 
 export interface GameInputState {
-    dtMillis?: number;
+    dt?: number;
     playerDirection?: Direction;
     playerShooting?: 1;
 }
@@ -227,7 +227,7 @@ export function processInput(
         if (!state.recording.playing) {
             playRecentRecording(state, manager, menu);
         } else {
-            exitRecording(state);
+            exitRecording(state, menu);
         }
     }
 

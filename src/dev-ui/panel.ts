@@ -1,4 +1,4 @@
-import {DevButton, DevNumberInput} from '#/dev-ui';
+import {DevButton, DevFilePicker, DevNumberInput} from '#/dev-ui';
 import {css, CustomElement, HTMLElementOptions, ReactiveElement, ui} from '#/html';
 
 @CustomElement('dev-panel')
@@ -102,6 +102,12 @@ export class DevPanel extends ReactiveElement {
         const button = new DevButton();
         this.append(button);
         return button;
+    }
+
+    addFilePicker(): DevFilePicker {
+        const filePicker = new DevFilePicker();
+        this.append(filePicker);
+        return filePicker;
     }
 
     append(element: ReactiveElement): void {

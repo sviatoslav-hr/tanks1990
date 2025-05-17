@@ -179,3 +179,78 @@ export class DevButton extends ReactiveElement {
         return this;
     }
 }
+
+@CustomElement('dev-file-picker')
+export class DevFilePicker extends ReactiveElement {
+    private static idCounter = 0;
+    private readonly input = ui.input({
+        id: 'file-input-' + DevFilePicker.idCounter++,
+        type: 'file',
+    });
+    private placeholder = 'Select file';
+    private readonly label = ui.label({
+        textContent: this.placeholder,
+        for: this.input.id,
+        className: 'button',
+    });
+
+    protected override render(): HTMLElement[] {
+        return [this.input, this.label];
+    }
+
+    protected afterRender(): void {
+        this.input.addEventListener('change', () => {
+            const file = this.input.files?.[0];
+            this.label.textContent = file ? file.name : this.placeholder;
+        });
+    }
+
+    protected override styles(): HTMLStyleElement {
+        return css`
+            .button {
+                padding: 0.5rem;
+                border: 1px solid #00ff00;
+                background-color: transparent;
+                cursor: pointer;
+                max-width: 120px;
+                text-overflow: ellipsis;
+                text-wrap: nowrap;
+                overflow-x: clip;
+                display: inline-block;
+                font-size: 13.3px;
+                line-height: normal;
+            }
+            .button:hover {
+                border-color: #00fff0;
+            }
+            input[type='file'] {
+                display: none;
+            }
+        `;
+    }
+
+    onSelect(callback: (f: FileList) => void): void {
+        this.input.addEventListener('change', () => {
+            const files = this.input.files;
+            if (files) callback(files);
+        });
+    }
+
+    setContentType(contentType: string): this {
+        this.input.accept = contentType;
+        return this;
+    }
+
+    setMultiple(multiple: boolean): this {
+        this.input.multiple = multiple;
+        return this;
+    }
+
+    setPlaceholder(placeholder: string): this {
+        this.placeholder = placeholder;
+        if (!this.input.files?.length) {
+            this.label.textContent = placeholder;
+        }
+        return this;
+    }
+}

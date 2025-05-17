@@ -94,9 +94,9 @@ function runGame(
         try {
             const inputState = handleKeymaps(state, input);
             if (state.recording.playing) {
-                dt.setMilliseconds(inputState.game.dtMillis ?? 0);
+                dt.setMilliseconds(inputState.game.dt ?? 0);
             } else {
-                inputState.game.dtMillis = dt.milliseconds;
+                inputState.game.dt = dt.milliseconds;
             }
             processInput(inputState, renderer, state, manager, menu, devUI, storage);
             maybeRecordInput(state, inputState.game);

@@ -5,6 +5,8 @@ import type {Menu} from '#/menu';
 import {notify, notifyError} from '#/notification';
 import type {GameState} from '#/state';
 
+export const RECORDING_VERSION = 0;
+
 export interface RecordingStatus {
     active: boolean;
     expected: boolean;
@@ -15,6 +17,7 @@ export interface RecordingStatus {
 export interface RecordingInfo {
     version: number;
     seed: string;
+    startedAt: number;
     inputs: GameInputState[];
 }
 
@@ -81,7 +84,7 @@ export function playRecentRecording(state: GameState, manager: EntityManager, me
     }, 0);
 }
 
-export function exitRecording(state: GameState): void {
+export function exitRecording(state: GameState, menu: Menu): void {
     if (!state.recording.playing) {
         logger.error('Recording is not playing');
         return;
@@ -89,5 +92,16 @@ export function exitRecording(state: GameState): void {
     state.recording.playing = false;
     state.recording.active = false;
     state.init();
+    menu.showMain();
     notify('Recording exited');
+}
+
+export function importRecording(state: GameState, data: string): void {
+    const recordingInfo = JSON.parse(data) as RecordingInfo;
+    if (recordingInfo.version !== RECORDING_VERSION) {
+        logger.error('Invalid recording version');
+        return;
+    }
+    state.recordingInfo = recordingInfo;
+    notify('Recording imported');
 }
