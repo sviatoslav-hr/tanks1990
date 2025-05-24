@@ -60,7 +60,7 @@ export class ExplosionEffect {
         for (let y = 0; y < image.height; y += particleSize) {
             const yr = Math.floor(y);
             for (let x = 0; x < image.width; x += particleSize) {
-                // NOTE: Generate only 40% of particles, randomly picked.
+                // NOTE: Generate only 40% of particles for performance reasons, randomly picked.
                 if (Math.random() > 0.6) continue;
                 const xr = Math.floor(x);
                 const index = (yr * image.width + xr) * 4;
