@@ -30,7 +30,7 @@ export interface GameInputState {
 export interface ExtraInputState {
     // PERF: It will be more efficient to compress these into flags.
     //       Although I'm not sure how well it will work in the usage code.
-    toggleGamePause?: 1;
+    toggleMenu?: 1;
     toggleGamePauseIgnoreMenu?: 1;
     toggleFullscreen?: 1;
     triggerSingleUpdate?: 1;
@@ -98,10 +98,10 @@ export function handleExtraKeymaps(input: GameInput): ExtraInputState {
     }
 
     if (input.isPressed('Escape')) {
-        result.toggleGamePause = 1;
+        result.toggleMenu = 1;
     } else if (input.isPressed('KeyP')) {
         if (__DEV_MODE && alt) result.toggleGamePauseIgnoreMenu = 1;
-        else result.toggleGamePause = 1;
+        else result.toggleMenu = 1;
     }
 
     if (alt && input.isPressed('Semicolon')) {
@@ -183,16 +183,16 @@ export function processInput(
             .catch((err) => logger.error('[Input] Failed to toggle fullscreen', err));
     }
 
-    if (input.extra.toggleGamePause) {
-        if (state.paused && !menu.paused) {
+    if (input.extra.toggleMenu) {
+        if (state.dead) {
+            if (menu.visible) menu.hide();
+            else menu.showDead();
+        } else if (state.paused && !menu.paused) {
             menu.showPause();
         } else {
             if (!state.initial && !manager.player.dead) {
-                if (state.playing) {
-                    menu.showPause();
-                } else {
-                    menu.hide();
-                }
+                if (state.playing) menu.showPause();
+                else menu.hide();
             }
             state.togglePauseResume();
         }

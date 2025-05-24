@@ -5,11 +5,13 @@ import type {Menu} from '#/menu';
 import {notify, notifyError} from '#/notification';
 import type {GameState} from '#/state';
 
-export const RECORDING_VERSION = 0;
+export const RECORDING_VERSION = 0.1;
 
 export interface RecordingStatus {
+    /** Indicates whether the next game sessions should be recorded. */
+    enabled: boolean;
+    /** Indicates whether the current game session is currently being recorded. */
     active: boolean;
-    expected: boolean;
     playing: boolean;
     inputIndex: number;
 }
@@ -23,18 +25,17 @@ export interface RecordingInfo {
 }
 
 export function toggleRecording(state: GameState): void {
-    const isPlaying = state.paused || state.playing;
     const recording = state.recording;
-    if (isPlaying) {
+    if (state.paused || state.playing) {
         if (recording.active) {
             recording.active = false;
-            notify('Recording stopped');
+            if (__DEV_MODE) notify('Recording stopped');
         } else {
             notifyError('Cannot start recording while game is in playing state');
         }
     } else {
-        recording.expected = !recording.expected;
-        notify(recording.expected ? 'Recording enabled' : 'Recording disabled');
+        recording.enabled = !recording.enabled;
+        notify(recording.enabled ? 'Recording enabled' : 'Recording disabled');
     }
 }
 
@@ -87,14 +88,14 @@ export function playRecentRecording(state: GameState, manager: EntityManager, me
 
 export function exitRecording(state: GameState, menu: Menu): void {
     if (!state.recording.playing) {
-        logger.error('Recording is not playing');
+        logger.warn('Recording is not being played');
         return;
     }
     state.recording.playing = false;
     state.recording.active = false;
     state.init();
     menu.showMain();
-    notify('Recording exited');
+    notify('Recording playback stopped');
 }
 
 export function importRecording(state: GameState, data: string): void {

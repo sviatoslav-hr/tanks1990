@@ -140,11 +140,9 @@ function simulateGameTick(
     }
 
     if (state.playing && player.dead) {
+        const playedRecording = state.recording.playing;
         state.markDead();
-    }
-
-    if (state.dead && !menu.dead) {
-        menu.showDead();
+        if (!playedRecording) menu.showDead();
         saveBestScore(storage, manager);
     }
 

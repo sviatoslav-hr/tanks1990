@@ -17,7 +17,12 @@ export enum GameStatus {
 export class GameState {
     status = GameStatus.INITIAL;
     debugUpdateTriggered = false;
-    recording: RecordingStatus = {active: false, expected: false, playing: false, inputIndex: 0};
+    recording: RecordingStatus = {
+        enabled: true,
+        active: false,
+        playing: false,
+        inputIndex: 0,
+    };
     recordingInfo: RecordingInfo = {
         commitHash: COMMIT_HASH,
         version: RECORDING_VERSION,
@@ -57,9 +62,8 @@ export class GameState {
     start(): void {
         if (!this.recording.playing) {
             resetRecording(this);
-            if (this.recording.expected) {
+            if (this.recording.enabled) {
                 this.recording.active = true;
-                this.recording.expected = false;
                 this.recordingInfo.seed = random.seed;
                 this.recordingInfo.startedAt = Date.now();
             }
@@ -71,6 +75,9 @@ export class GameState {
         if (this.recording.active) {
             toggleRecording(this);
         }
+        if (this.recording.playing) {
+            this.recording.playing = false;
+        }
         this.status = GameStatus.DEAD;
     }
 
@@ -80,6 +87,10 @@ export class GameState {
 
     togglePauseResume(): void {
         switch (this.status) {
+            case GameStatus.DEAD: {
+                logger.warn('Cannot toggle pause/resume while in dead state');
+                break;
+            }
             case GameStatus.PLAYING: {
                 if (!this.dead) {
                     this.pause();
