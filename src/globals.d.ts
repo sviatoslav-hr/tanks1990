@@ -14,4 +14,5 @@ declare global {
     var __DEV_MODE: boolean;
     var logger: Logger;
     var BROWSER: boolean;
+    var COMMIT_HASH: string;
 }

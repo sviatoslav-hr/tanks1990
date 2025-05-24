@@ -13,3 +13,4 @@ window.assertError = assertError;
 window.panic = throwError;
 window.logger = logger;
 window.BROWSER = BROWSER;
+window.COMMIT_HASH = COMMIT_HASH || 'unknown';

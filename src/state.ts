@@ -19,6 +19,7 @@ export class GameState {
     debugUpdateTriggered = false;
     recording: RecordingStatus = {active: false, expected: false, playing: false, inputIndex: 0};
     recordingInfo: RecordingInfo = {
+        commitHash: COMMIT_HASH,
         version: RECORDING_VERSION,
         seed: 'default',
         inputs: [],

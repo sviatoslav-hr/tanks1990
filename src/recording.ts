@@ -16,6 +16,7 @@ export interface RecordingStatus {
 
 export interface RecordingInfo {
     version: number;
+    commitHash: string;
     seed: string;
     startedAt: number;
     inputs: GameInputState[];
