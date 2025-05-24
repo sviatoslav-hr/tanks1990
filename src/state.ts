@@ -1,6 +1,7 @@
 import {
     RECORDING_VERSION,
     resetRecording,
+    toggleRecording,
     type RecordingInfo,
     type RecordingStatus,
 } from '#/recording';
@@ -66,6 +67,9 @@ export class GameState {
     }
 
     markDead(): void {
+        if (this.recording.active) {
+            toggleRecording(this);
+        }
         this.status = GameStatus.DEAD;
     }
 
