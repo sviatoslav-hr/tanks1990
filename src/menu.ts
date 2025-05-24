@@ -1,5 +1,5 @@
 import {EntityManager} from '#/entity/manager';
-import {CustomElement, html} from '#/html';
+import {CustomElement, html, ui} from '#/html';
 import {random} from '#/math/rng';
 import {ScoreOverlay} from '#/score';
 import {SoundManager} from '#/sound';
@@ -241,6 +241,8 @@ export class Menu extends HTMLElement {
     private buttons: MenuButton[] = [];
     private pages: MenuPage[] = [];
     readonly score: ScoreOverlay;
+    readonly fullscreenButton: HTMLButtonElement;
+    fullscreenToggleExpected = false;
 
     constructor() {
         super();
@@ -267,6 +269,21 @@ export class Menu extends HTMLElement {
             },
         });
         this.append(this.score);
+        this.fullscreenButton = ui.button({
+            className: 'button--fullscreen',
+            textContent: '⛶',
+            style: {
+                position: 'fixed',
+                bottom: '1rem',
+                right: '1rem',
+            },
+            onClick: (e) => {
+                e.preventDefault(); // NOTE: Prevent accidental movement of the camera
+                this.fullscreenToggleExpected = !this.fullscreenToggleExpected;
+                this.fullscreenButton.blur();
+            },
+        });
+        this.append(this.fullscreenButton);
     }
 
     get isMain(): boolean {

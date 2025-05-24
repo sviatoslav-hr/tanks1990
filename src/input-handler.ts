@@ -48,14 +48,14 @@ export interface ExtraInputState {
     playOrExitRecording?: 1;
 }
 
-export function handleKeymaps(state: GameState, input: GameInput): InputState {
+export function handleKeymaps(state: GameState, input: GameInput, menu: Menu): InputState {
     let gameInput: GameInputState | undefined;
     if (state.recording.playing) {
         gameInput = getNextRecordedInput(state) ?? {};
     } else {
         gameInput = handleGameKeymaps(input);
     }
-    const extraInput = handleExtraKeymaps(input);
+    const extraInput = handleExtraKeymaps(input, menu);
     return {game: gameInput, extra: extraInput};
 }
 
@@ -88,13 +88,14 @@ export function handleGameKeymaps(input: GameInput): GameInputState {
     return result;
 }
 
-export function handleExtraKeymaps(input: GameInput): ExtraInputState {
+export function handleExtraKeymaps(input: GameInput, menu: Menu): ExtraInputState {
     const result: ExtraInputState = {};
     const alt = input.isDown('AltLeft'); // NOTE: Alt is used for debug keymaps.
     const shift = input.isDown('ShiftLeft'); // NOTE: Shift is used for alternative actions.
 
-    if (input.isPressed('KeyF')) {
+    if (input.isPressed('KeyF') || menu.fullscreenToggleExpected) {
         result.toggleFullscreen = 1;
+        menu.fullscreenToggleExpected = false; // Reset the flag after processing.
     }
 
     if (input.isPressed('Escape')) {

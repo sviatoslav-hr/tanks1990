@@ -92,7 +92,7 @@ function runGame(
 
         devUI.fpsMonitor.begin();
         try {
-            const inputState = handleKeymaps(state, input);
+            const inputState = handleKeymaps(state, input, menu);
             if (state.recording.playing) {
                 dt.setMilliseconds(inputState.game.dt ?? 0);
             } else {

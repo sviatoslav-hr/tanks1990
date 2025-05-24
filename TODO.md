@@ -3,7 +3,6 @@
 ## DOING
 
 ## NEXT TODO
-- [ ] Add Literal fullscreen button (in options or literally below the canvas)
 - [ ] Add a proper health and damage system for the tanks (instead of one-shotting everyone)
 
 ## SHOULD BE FIXED

@@ -8,6 +8,8 @@
     --black-eirie-0: #19191900;
     --black-eirie-75: #191919bf;
     --gray-granite: #777777;
+    --gray-granite-25: #77777740;
+    --gray-granite-75: #777777bf;
     /* --gray-granite: #616161; */
     --white: rgba(255, 255, 255, 0.87);
     --red-carnelian: #b71c1c;
@@ -170,6 +172,28 @@ game-menu.fade-in .menu > .text-red {
     cursor: pointer;
     text-align: center;
     color: var(--white);
+}
+
+.button--fullscreen {
+    font-size: 2rem;
+    height: 1em;
+    width: 1em;
+    border: none;
+    border-radius: 0.25rem;
+    background-color: var(--gray-granite-25);
+    box-shadow: none;
+    overflow: hidden;
+    line-height: 1.5rem;
+    padding: 0;
+    transition-property: box-shadow, background-color, color, transform;
+    transition-timing-function: ease-in-out;
+    transition-duration: 0.2s;
+}
+.button--fullscreen:hover {
+    transform: scale(1.1);
+}
+.button--fullscreen:active {
+    background-color: var(--gray-granite-75);
 }
 
 .button:focus-visible:not(:disabled), .button:hover:not(:disabled) {
