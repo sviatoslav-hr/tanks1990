@@ -13,6 +13,9 @@ import {Duration} from '#/math/duration';
 import {Vector2, Vector2Like} from '#/math/vector';
 import {Renderer} from '#/renderer';
 
+const PLAYER_TANK_MAX_HEALTH = 20;
+const ENEMY_TANK_MAX_HEALTH = 20;
+
 export abstract class Tank extends Entity {
     public dead = true;
     public hasShield = true;
@@ -43,6 +46,7 @@ export abstract class Tank extends Entity {
     protected abstract readonly sprite: Sprite<string>;
     protected shootingDelay = this.SHOOTING_PERIOD.clone();
     protected isStuck = false;
+    protected isDamaged = false;
 
     constructor(manager: EntityManager) {
         super(manager);
@@ -50,6 +54,7 @@ export abstract class Tank extends Entity {
         this.y = 0;
         this.width = CELL_SIZE * 0.8;
         this.height = CELL_SIZE * 0.8;
+        this.maxHealth = this.bot ? ENEMY_TANK_MAX_HEALTH : PLAYER_TANK_MAX_HEALTH;
     }
 
     get cx(): number {
@@ -150,6 +155,12 @@ export abstract class Tank extends Entity {
             }
             this.sprite.draw(renderer, spriteBoundary, this.direction - 180);
         }
+        if (this.isDamaged) {
+            // TODO: This should be replaced with a proper damage effect or even a
+            // sprite.
+            renderer.setFillColor('#ff000040');
+            renderer.fillCircle(this.cx, this.cy, this.width / 2);
+        }
         if (this.hasShield) {
             this.shieldSprite.draw(renderer, this.shieldBoundary);
         }
@@ -191,6 +202,7 @@ export abstract class Tank extends Entity {
     respawn(force = false): boolean {
         if (force || this.tryRespawn(4)) {
             this.dead = false;
+            this.health = this.maxHealth;
             this.shouldRespawn = false;
             this.shootingDelay.setFrom(this.SHOOTING_PERIOD);
             this.activateShield();
@@ -199,19 +211,22 @@ export abstract class Tank extends Entity {
         return false;
     }
 
-    takeDamage(): boolean {
+    takeDamage(damage: number): boolean {
         if (this.dead) {
             logger.error('[Tank] Trying to kill a dead entity');
             return false;
         }
-        const canDie = !this.hasShield;
-        if (canDie) {
-            this.dead = true;
+        if (this.hasShield) {
+            return false;
+        }
+        this.health = Math.max(0, this.health - damage);
+        this.dead = this.health <= 0;
+        if (this.dead) {
             this.onDied();
             eventQueue.push({type: 'tank-destroyed', entityId: this.id, bot: this.bot});
-            return true;
         }
-        return false;
+        this.isDamaged = !this.dead && this.health <= this.maxHealth * 0.5;
+        return this.dead;
     }
 
     private tryRespawn(attemptLimit: number): boolean {
@@ -314,9 +329,9 @@ export class PlayerTank extends Tank implements Entity {
         return true;
     }
 
-    override takeDamage(): boolean {
+    override takeDamage(damage: number): boolean {
         if (this.invincible) return false;
-        return super.takeDamage();
+        return super.takeDamage(damage);
     }
 
     changeDirection(direction: Direction | null): void {

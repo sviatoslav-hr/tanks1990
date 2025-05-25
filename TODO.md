@@ -3,7 +3,9 @@
 ## DOING
 
 ## NEXT TODO
-- [ ] Add a proper health and damage system for the tanks (instead of one-shotting everyone)
+- [ ] Make different combinations of tank turrets and bodies
+- [ ] Power ups - needs more thought on what they should be and how they should work
+      Examples: Time stop, damage increase, shield, speed increase, etc.
 
 ## SHOULD BE FIXED
 - [ ] During later levels, the pathfinding slows down the game significantly.
@@ -14,11 +16,11 @@
 ## BACKLOG
 
 ### Features
-- [ ] Make different combinations of tank turrets and bodies
+- [ ] Final boss - describe it first.
 
 ### Low priority features
-- [ ] Power ups - needs more thought on what they should be and how they should work
-      Examples: Time stop, damage increase, shield, speed increase, etc.
+- [ ] Have different types of the projectiles - TBD.
+- [ ] Tank armor - TBD. Could be a power up or specisic to a separate tank type.
 
 ### Sounds And Music
 - [ ] Background music?
@@ -32,8 +34,11 @@
       This will be easier to pathfind. And also will *may* the UX by fixing the issue with the player being able to pass through blocks.
 - [ ] Display the control hints during the start of the game in a non-intrusive way
       For example, display the controls in the bottom left corner of the screen for a few seconds or have them half-transparent.
+      Another option is to display the controls to the right of the menu since that area if free.
 
 ### Visual improvements
+- [ ] Add a proper visual effect for the tanks when they are damaged
+      It could be something like a crack on the tank body or a small explosion effect or a smoke particles.
 - [ ] Make a proper sprite for the tank explosion effect
 - [ ] Fire effect to gun (when projectile is fired/spawned)
 - [ ] Spawning effect for the tanks (Shining/teleporting effect?)

@@ -12,12 +12,13 @@ export class Entity implements Rect {
     public width = 0;
     public height = 0;
     public room: Room;
+    // NOTE: Negative values indicate that the entity is invisible.
+    public maxHealth = -1;
+    public health = -1;
     public DEBUG_collidedCount = 0;
 
     constructor(protected manager: EntityManager) {
-        const room = manager.world.activeRoom;
-        assert(room);
-        this.room = room;
+        this.room = manager.world.activeRoom;
     }
 
     equals(other: Entity): boolean {
