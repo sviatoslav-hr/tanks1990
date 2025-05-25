@@ -1,9 +1,13 @@
 # TODO
 
 ## DOING
+- [ ] Make different combinations of tank turrets and bodies
+  - [x] Split the tank body and turret into separate sprites
+  - [ ] Create different tank bodies and turrets
+  - [ ] Randomly select tank body and turret for the enemies
+  - [ ] Assign different characteristics to different tank bodies and turrets
 
 ## NEXT TODO
-- [ ] Make different combinations of tank turrets and bodies
 - [ ] Power ups - needs more thought on what they should be and how they should work
       Examples: Time stop, damage increase, shield, speed increase, etc.
 
@@ -69,6 +73,8 @@
 
 ### Low priority improvements
 - [ ] Make enemies shoot only when they see the player
+- [ ] Tracks animation speed should be dependent by the speed of the tank.
+      This is needed so it feels like track actually reflect the movement.
 
 ### Refactoring
 - [ ] Should just every entity have the `Renderer` reference as a field?

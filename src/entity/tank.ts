@@ -5,7 +5,7 @@ import {Direction, Entity, moveEntity} from '#/entity/core';
 import {newEntityId} from '#/entity/id';
 import {EntityManager} from '#/entity/manager';
 import {findPath} from '#/entity/pathfinding';
-import {createShieldSprite, createTankSprite, Sprite} from '#/entity/sprite';
+import {createShieldSprite, createTankSprite, Sprite, TankSpriteGroup} from '#/entity/sprite';
 import {eventQueue} from '#/events';
 import {GameInput} from '#/input';
 import {moveToRandomCorner, Rect, sameSign} from '#/math';
@@ -43,7 +43,7 @@ export abstract class Tank extends Entity {
         height: this.height * 2,
     };
 
-    protected abstract readonly sprite: Sprite<string>;
+    protected abstract readonly sprite: TankSpriteGroup;
     protected shootingDelay = this.SHOOTING_PERIOD.clone();
     protected isStuck = false;
     protected isDamaged = false;
@@ -74,7 +74,7 @@ export abstract class Tank extends Entity {
         const prevX = this.x;
         const prevY = this.y;
         if (this.moving) {
-            this.sprite.update(dt);
+            this.sprite.body.update(dt);
         }
 
         {
@@ -114,46 +114,51 @@ export abstract class Tank extends Entity {
         if (this.dead) return;
 
         {
-            const ratio = this.sprite.frameWidth / this.width;
-            const fw = this.sprite.frameWidth / ratio;
-            const fh = this.sprite.frameHeight / ratio;
+            // FIXME: This code is a mess. We need to speciby the boundary for each piece of
+            // the sprite. The sprite API should be flexible enough to not have to do something like this.
+            const turret = this.sprite.turret;
+            const ratio = turret.frameHeight / this.height;
+            const fw = turret.frameWidth / ratio;
+            const fh = turret.frameHeight / ratio;
             const hdiff = this.height - fh;
+            const wdiff = this.width - fw;
             let spriteBoundary: Rect | undefined;
             switch (this.direction) {
                 case Direction.NORTH:
                     spriteBoundary = {
-                        x: this.x,
-                        y: this.y + hdiff,
+                        x: this.x + wdiff / 2,
+                        y: this.y - fh / 4,
                         width: fw,
                         height: fh,
                     };
                     break;
                 case Direction.SOUTH:
                     spriteBoundary = {
-                        x: this.x,
-                        y: this.y,
+                        x: this.x + wdiff / 2,
+                        y: this.y + fh / 4,
                         width: fw,
                         height: fh,
                     };
                     break;
                 case Direction.WEST:
                     spriteBoundary = {
-                        x: this.x + hdiff,
-                        y: this.y,
+                        x: this.x + hdiff - fh / 4,
+                        y: this.y + wdiff / 2,
                         width: fh,
                         height: fw,
                     };
                     break;
                 case Direction.EAST:
                     spriteBoundary = {
-                        x: this.x,
-                        y: this.y,
+                        x: this.x + fh / 4,
+                        y: this.y + wdiff / 2,
                         width: fh,
                         height: fw,
                     };
                     break;
             }
-            this.sprite.draw(renderer, spriteBoundary, this.direction - 180);
+            this.sprite.body.draw(renderer, this, this.direction - 180);
+            turret.draw(renderer, spriteBoundary, this.direction - 180);
         }
         if (this.isDamaged) {
             // TODO: This should be replaced with a proper damage effect or even a
@@ -202,6 +207,7 @@ export abstract class Tank extends Entity {
     respawn(force = false): boolean {
         if (force || this.tryRespawn(4)) {
             this.dead = false;
+            this.isDamaged = false;
             this.health = this.maxHealth;
             this.shouldRespawn = false;
             this.shootingDelay.setFrom(this.SHOOTING_PERIOD);

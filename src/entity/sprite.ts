@@ -168,16 +168,31 @@ export function createTileSprite() {
     });
 }
 
-export function createTankSprite(type: 'player' | 'enemy') {
+export interface TankSpriteGroup {
+    turret: Sprite<'static'>;
+    body: Sprite<'moving'>;
+}
+
+export function createTankSprite(type: 'player' | 'enemy'): TankSpriteGroup {
     const key = type === 'player' ? 'tank_green' : 'tank_darkgray';
-    return new Sprite({
-        key: key,
-        frameWidth: 64,
-        frameHeight: 80,
-        framePadding: 3,
-        frameDuration: Duration.milliseconds(100),
-        states: [{name: 'moving', frames: 6}],
-    });
+    return {
+        turret: new Sprite({
+            key: key + '_turret',
+            frameWidth: 40,
+            frameHeight: 63,
+            framePadding: 2,
+            states: [{name: 'static', frames: 1}],
+        }),
+        body: new Sprite({
+            key: key + '_body',
+            frameWidth: 64,
+            frameHeight: 64,
+            framePadding: 3,
+            // TODO: Tracks animation speed should be dependent by the speed of the tank.
+            frameDuration: Duration.milliseconds(type === 'player' ? 40 : 60),
+            states: [{name: 'moving', frames: 6}],
+        }),
+    };
 }
 
 export function createStaticSprite(opts: Omit<SpriteOpts<'static'>, 'states'>): Sprite<'static'> {
