@@ -46,7 +46,6 @@ export abstract class Tank extends Entity {
     protected abstract readonly sprite: TankSpriteGroup;
     protected shootingDelay = this.SHOOTING_PERIOD.clone();
     protected isStuck = false;
-    protected isDamaged = false;
 
     constructor(manager: EntityManager) {
         super(manager);
@@ -160,12 +159,6 @@ export abstract class Tank extends Entity {
             this.sprite.body.draw(renderer, this, this.direction - 180);
             turret.draw(renderer, spriteBoundary, this.direction - 180);
         }
-        if (this.isDamaged) {
-            // TODO: This should be replaced with a proper damage effect or even a
-            // sprite.
-            renderer.setFillColor('#ff000040');
-            renderer.fillCircle(this.cx, this.cy, this.width / 2);
-        }
         if (this.hasShield) {
             this.shieldSprite.draw(renderer, this.shieldBoundary);
         }
@@ -186,9 +179,28 @@ export abstract class Tank extends Entity {
                 },
             );
         }
+        if (this.health < this.maxHealth) {
+            this.drawHealthBar(renderer);
+        }
         if (this.manager.world.showBoundary && this.isStuck) {
             renderer.setStrokeColor(Color.RED);
             renderer.strokeBoundary(this, 1);
+        }
+    }
+
+    private drawHealthBar(renderer: Renderer) {
+        const barWidth = this.width * 0.9;
+        // NOTE: Draw health bar in camera size, since it's a UI element and it should not scale.
+        const barHeight = 3 / renderer.camera.scale;
+        const barOffset = 3 / renderer.camera.scale;
+        const barX = this.x + (this.width - barWidth) / 2;
+        const barY = this.y - barHeight - barOffset;
+        renderer.setFillColor('red');
+        renderer.fillRect(barX, barY, barWidth, barHeight);
+        const hpFraction = this.health / this.maxHealth || 0;
+        if (hpFraction) {
+            renderer.setFillColor('green');
+            renderer.fillRect(barX, barY, barWidth * hpFraction, barHeight);
         }
     }
 
@@ -207,7 +219,6 @@ export abstract class Tank extends Entity {
     respawn(force = false): boolean {
         if (force || this.tryRespawn(4)) {
             this.dead = false;
-            this.isDamaged = false;
             this.health = this.maxHealth;
             this.shouldRespawn = false;
             this.shootingDelay.setFrom(this.SHOOTING_PERIOD);
@@ -231,7 +242,6 @@ export abstract class Tank extends Entity {
             this.onDied();
             eventQueue.push({type: 'tank-destroyed', entityId: this.id, bot: this.bot});
         }
-        this.isDamaged = !this.dead && this.health <= this.maxHealth * 0.5;
         return this.dead;
     }
 
