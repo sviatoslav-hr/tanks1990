@@ -107,13 +107,9 @@ export function numround(value: number, margin: number = 0): number {
     return Math.round(value * n) / n;
 }
 
-export function randomFrom<T>(...values: T[]): T {
-    return values[random.int32Range(0, values.length)]!;
-}
-
 export function moveToRandomCorner(entity: Rect, boundary: Rect): void {
     const offset = 1;
-    switch (randomFrom(0, 1, 2, 3)) {
+    switch (random.selectFrom(0, 1, 2, 3)) {
         case 0: {
             entity.x = boundary.x + offset;
             entity.y = boundary.y + offset;

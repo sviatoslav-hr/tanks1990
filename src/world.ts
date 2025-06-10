@@ -6,7 +6,7 @@ import {Direction, Entity, isIntesecting} from '#/entity/core';
 import {EntityManager, isSameEntity} from '#/entity/manager';
 import {createStaticSprite, createTileSprite} from '#/entity/sprite';
 import {JSONObjectParser} from '#/json';
-import {Rect, fmod, isPosInsideRect, oppositeDirection, randomFrom} from '#/math';
+import {Rect, fmod, isPosInsideRect, oppositeDirection} from '#/math';
 import {random} from '#/math/rng';
 import {Vector2, Vector2Like} from '#/math/vector';
 import {Renderer} from '#/renderer';
@@ -289,7 +289,7 @@ function generateRoom(
         dirs.splice(dirs.indexOf(prevDir), 1);
     }
 
-    const nextDoorDir = prevRoom != null ? randomFrom(...dirs) : Direction.NORTH;
+    const nextDoorDir = prevRoom != null ? random.selectFrom(...dirs) : Direction.NORTH;
     // NOTE: Room reuses common border blocks with the previous room
     const nextRoomBlocks: Block[] = [];
     const blocks: Block[] = prevRoom?.nextRoomCommonBlocks?.slice() ?? [];

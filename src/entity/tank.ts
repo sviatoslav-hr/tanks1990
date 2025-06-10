@@ -1,4 +1,4 @@
-import {Animation} from '#/animation';
+import {Animation, easeOut} from '#/animation';
 import {Color} from '#/color';
 import {CELL_SIZE} from '#/const';
 import {Direction, Entity, moveEntity} from '#/entity/core';
@@ -10,11 +10,14 @@ import {eventQueue} from '#/events';
 import {GameInput} from '#/input';
 import {moveToRandomCorner, Rect, sameSign} from '#/math';
 import {Duration} from '#/math/duration';
+import {random} from '#/math/rng';
 import {Vector2, Vector2Like} from '#/math/vector';
 import {Renderer} from '#/renderer';
 
 const PLAYER_TANK_MAX_HEALTH = 20;
 const ENEMY_TANK_MAX_HEALTH = 20;
+const ENEMY_TANK2_MAX_HEALTH = 30;
+const ENEMY_TANK3_MAX_HEALTH = 40;
 
 export abstract class Tank extends Entity {
     public dead = true;
@@ -46,6 +49,8 @@ export abstract class Tank extends Entity {
     protected abstract readonly sprite: TankSpriteGroup;
     protected shootingDelay = this.SHOOTING_PERIOD.clone();
     protected isStuck = false;
+    private healthAnimation = new Animation(Duration.milliseconds(300), easeOut).end();
+    private prevHealth = 0;
 
     constructor(manager: EntityManager) {
         super(manager);
@@ -65,16 +70,12 @@ export abstract class Tank extends Entity {
     }
 
     update(dt: Duration): void {
-        if (this.dead) {
-            return;
-        }
+        if (this.dead) return;
 
         this.shootingDelay.sub(dt).max(0);
         const prevX = this.x;
         const prevY = this.y;
-        if (this.moving) {
-            this.sprite.body.update(dt);
-        }
+        if (this.moving) this.sprite.body.update(dt);
 
         {
             const acceleration = this.moving
@@ -103,6 +104,7 @@ export abstract class Tank extends Entity {
             this.isStuck = true;
         }
         this.updateShield(dt);
+        this.healthAnimation.update(dt);
     }
 
     stopMoving(): void {
@@ -197,7 +199,11 @@ export abstract class Tank extends Entity {
         const barY = this.y - barHeight - barOffset;
         renderer.setFillColor('red');
         renderer.fillRect(barX, barY, barWidth, barHeight);
-        const hpFraction = this.health / this.maxHealth || 0;
+        let hpFraction = this.health / this.maxHealth || 0;
+        if (!this.healthAnimation.finished) {
+            const healthLostFraction = Math.abs(this.health - this.prevHealth) / this.maxHealth;
+            hpFraction += (1 - this.healthAnimation.progress) * healthLostFraction;
+        }
         if (hpFraction) {
             renderer.setFillColor('green');
             renderer.fillRect(barX, barY, barWidth * hpFraction, barHeight);
@@ -220,6 +226,7 @@ export abstract class Tank extends Entity {
         if (force || this.tryRespawn(4)) {
             this.dead = false;
             this.health = this.maxHealth;
+            this.prevHealth = this.health;
             this.shouldRespawn = false;
             this.shootingDelay.setFrom(this.SHOOTING_PERIOD);
             this.activateShield();
@@ -236,7 +243,12 @@ export abstract class Tank extends Entity {
         if (this.hasShield) {
             return false;
         }
+        this.prevHealth = this.health;
         this.health = Math.max(0, this.health - damage);
+        // TODO: If the animation is still active, it should not just reset,
+        //       but instead make a smooth transition. Otherwise there might be cases when health
+        //       goes down and then up and then down again, which is a visual bug.
+        this.healthAnimation.reset();
         this.dead = this.health <= 0;
         if (this.dead) {
             this.onDied();
@@ -474,6 +486,11 @@ export class EnemyTank extends Tank implements Entity {
         if (this.respawnDelay.positive) return false;
         this.targetPath = [];
         this.targetSearchTimer.setMilliseconds(0);
+        this.maxHealth = random.selectFrom(
+            ENEMY_TANK_MAX_HEALTH,
+            ENEMY_TANK2_MAX_HEALTH,
+            ENEMY_TANK3_MAX_HEALTH,
+        );
         return super.respawn();
     }
 

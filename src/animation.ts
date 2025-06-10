@@ -4,6 +4,7 @@ import {Duration} from '#/math/duration';
 type EasingFunction = (t: number) => number;
 
 export class Animation {
+    /** Grows from 0 to 1, where 0 means not started and 1 means finished. */
     progress = 0;
     readonly duration: Duration;
     readonly elapsed = Duration.zero();

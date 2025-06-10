@@ -102,6 +102,10 @@ export class RNG {
         return this.float();
     }
 
+    selectFrom<T>(...values: T[]): T {
+        return values[this.int32Range(0, values.length)]!;
+    }
+
     private state(): AleaState {
         const state: Partial<AleaState> = {};
         copyInto(this, state);
