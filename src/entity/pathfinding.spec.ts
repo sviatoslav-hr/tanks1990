@@ -9,32 +9,22 @@ import {Duration} from '#/math/duration';
 import {random} from '#/math/rng';
 import {Vector2Like} from '#/math/vector';
 
+function spriteMock() {
+    return {
+        draw: () => {},
+        update: () => {},
+    };
+}
+
 vi.mock('../entity/sprite', () => {
     return {
-        createStaticSprite: () => {
-            return {
-                draw: () => {},
-                update: () => {},
-            };
-        },
-        createTileSprite: () => {
-            return {
-                draw: () => {},
-                update: () => {},
-            };
-        },
-        createShieldSprite: () => {
-            return {
-                draw: () => {},
-                update: () => {},
-            };
-        },
-        createTankSprite: () => {
-            return {
-                draw: () => {},
-                update: () => {},
-            };
-        },
+        createStaticSprite: () => spriteMock(),
+        createTileSprite: () => spriteMock(),
+        createShieldSprite: () => spriteMock(),
+        createTankSprite: () => ({
+            turret: spriteMock(),
+            body: spriteMock(),
+        }),
         Sprite: class {},
     };
 });

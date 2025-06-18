@@ -1,2 +1,4 @@
 editorconfig = true
 bracketSpacing = false
+singleQuote = true
+printWidth = 100
