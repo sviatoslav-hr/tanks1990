@@ -168,31 +168,40 @@ export function createTileSprite() {
     });
 }
 
-export interface TankSpriteGroup {
-    turret: Sprite<'static'>;
-    body: Sprite<'moving'>;
-}
+type TankPartKind = 'light' | 'medium' | 'heavy';
 
-export function createTankSprite(type: 'player' | 'enemy'): TankSpriteGroup {
-    const key = type === 'player' ? 'tank_green' : 'tank_darkgray';
-    return {
-        turret: new Sprite({
-            key: key + '_turret',
+export class TankSpriteGroup {
+    readonly keyPrefix: string;
+    readonly turret: Sprite<'static'>;
+    readonly body: Sprite<'moving'>;
+
+    constructor(
+        type: 'player' | 'enemy',
+        readonly turretKind: TankPartKind,
+        readonly bodyKind: TankPartKind = 'medium',
+    ) {
+        this.keyPrefix = type === 'player' ? 'tank_green' : 'tank_darkgray';
+        this.turret = new Sprite({
+            key: `${this.keyPrefix}_turret_${this.turretKind}`,
             frameWidth: 40,
             frameHeight: 63,
             framePadding: 2,
             states: [{name: 'static', frames: 1}],
-        }),
-        body: new Sprite({
-            key: key + '_body',
+        });
+        this.body = new Sprite({
+            key: `${this.keyPrefix}_body_${this.bodyKind}`,
             frameWidth: 64,
             frameHeight: 64,
             framePadding: 3,
-            // TODO: Tracks animation speed should be dependent by the speed of the tank.
+            // HACK: Tracks animation speed should be dependent by the speed of the tank.
             frameDuration: Duration.milliseconds(type === 'player' ? 40 : 60),
             states: [{name: 'moving', frames: 6}],
-        }),
-    };
+        });
+    }
+
+    update(dt: Duration): void {
+        this.body.update(dt);
+    }
 }
 
 export function createStaticSprite(opts: Omit<SpriteOpts<'static'>, 'states'>): Sprite<'static'> {

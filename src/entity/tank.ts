@@ -5,7 +5,7 @@ import {Direction, Entity, moveEntity} from '#/entity/core';
 import {newEntityId} from '#/entity/id';
 import {EntityManager} from '#/entity/manager';
 import {findPath} from '#/entity/pathfinding';
-import {createShieldSprite, createTankSprite, Sprite, TankSpriteGroup} from '#/entity/sprite';
+import {createShieldSprite, Sprite, TankSpriteGroup} from '#/entity/sprite';
 import {eventQueue} from '#/events';
 import {GameInput} from '#/input';
 import {moveToRandomCorner, Rect, sameSign} from '#/math';
@@ -13,6 +13,10 @@ import {Duration} from '#/math/duration';
 import {random} from '#/math/rng';
 import {Vector2, Vector2Like} from '#/math/vector';
 import {Renderer} from '#/renderer';
+
+const bodyTypes = ['light', 'medium', 'heavy'] as const;
+
+const tankCombinations = bodyTypes.flatMap((turret) => bodyTypes.map((body) => ({turret, body})));
 
 const PLAYER_TANK_MAX_HEALTH = 20;
 const ENEMY_TANK_MAX_HEALTH = 20;
@@ -330,7 +334,7 @@ export class PlayerTank extends Tank implements Entity {
     public score = 0;
     public invincible = false;
 
-    protected readonly sprite = createTankSprite('player');
+    protected readonly sprite = new TankSpriteGroup('player', 'medium', 'medium');
 
     constructor(manager: EntityManager) {
         super(manager);
@@ -412,7 +416,7 @@ export class EnemyTank extends Tank implements Entity {
     private static readonly RESPAWN_DELAY = Duration.milliseconds(1000);
     protected moving = true;
     protected readonly SHOOTING_PERIOD = Duration.milliseconds(1500);
-    protected readonly sprite = createTankSprite('enemy');
+    protected readonly sprite = new TankSpriteGroup('enemy', 'medium', 'medium');
     protected readonly shieldSprite = createShieldSprite('enemy');
     private readonly SEARCH_DELAY = Duration.milliseconds(5000);
     private targetSearchTimer = this.SEARCH_DELAY.clone();
