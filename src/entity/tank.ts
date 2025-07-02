@@ -5,19 +5,25 @@ import {Direction, Entity, moveEntity} from '#/entity/core';
 import {newEntityId} from '#/entity/id';
 import {EntityManager} from '#/entity/manager';
 import {findPath} from '#/entity/pathfinding';
-import {createShieldSprite, createTankSprite, Sprite, TankSpriteGroup} from '#/entity/sprite';
+import {createShieldSprite, Sprite} from '#/entity/sprite';
+import {
+    createTankSpriteGroup,
+    randomTankSchema,
+    TankPartKind,
+    TankSpriteGroup,
+} from '#/entity/tank-generation';
 import {eventQueue} from '#/events';
 import {GameInput} from '#/input';
-import {moveToRandomCorner, Rect, sameSign} from '#/math';
+import {moveToRandomCorner, sameSign} from '#/math';
 import {Duration} from '#/math/duration';
-import {random} from '#/math/rng';
 import {Vector2, Vector2Like} from '#/math/vector';
 import {Renderer} from '#/renderer';
 
-const PLAYER_TANK_MAX_HEALTH = 20;
-const ENEMY_TANK_MAX_HEALTH = 20;
-const ENEMY_TANK2_MAX_HEALTH = 30;
-const ENEMY_TANK3_MAX_HEALTH = 40;
+const tankHealthConfig: Record<TankPartKind, number> = {
+    light: 20,
+    medium: 30,
+    heavy: 40,
+};
 
 export abstract class Tank extends Entity {
     public dead = true;
@@ -58,7 +64,7 @@ export abstract class Tank extends Entity {
         this.y = 0;
         this.width = CELL_SIZE * 0.8;
         this.height = CELL_SIZE * 0.8;
-        this.maxHealth = this.bot ? ENEMY_TANK_MAX_HEALTH : PLAYER_TANK_MAX_HEALTH;
+        this.maxHealth = 0;
     }
 
     get cx(): number {
@@ -114,53 +120,7 @@ export abstract class Tank extends Entity {
     draw(renderer: Renderer): void {
         if (this.dead) return;
 
-        {
-            // FIXME: This code is a mess. We need to speciby the boundary for each piece of
-            // the sprite. The sprite API should be flexible enough to not have to do something like this.
-            const turret = this.sprite.turret;
-            const ratio = turret.frameHeight / this.height;
-            const fw = turret.frameWidth / ratio;
-            const fh = turret.frameHeight / ratio;
-            const hdiff = this.height - fh;
-            const wdiff = this.width - fw;
-            let spriteBoundary: Rect | undefined;
-            switch (this.direction) {
-                case Direction.NORTH:
-                    spriteBoundary = {
-                        x: this.x + wdiff / 2,
-                        y: this.y - fh / 4,
-                        width: fw,
-                        height: fh,
-                    };
-                    break;
-                case Direction.SOUTH:
-                    spriteBoundary = {
-                        x: this.x + wdiff / 2,
-                        y: this.y + fh / 4,
-                        width: fw,
-                        height: fh,
-                    };
-                    break;
-                case Direction.WEST:
-                    spriteBoundary = {
-                        x: this.x + hdiff - fh / 4,
-                        y: this.y + wdiff / 2,
-                        width: fh,
-                        height: fw,
-                    };
-                    break;
-                case Direction.EAST:
-                    spriteBoundary = {
-                        x: this.x + fh / 4,
-                        y: this.y + wdiff / 2,
-                        width: fh,
-                        height: fw,
-                    };
-                    break;
-            }
-            this.sprite.body.draw(renderer, this, this.direction - 180);
-            turret.draw(renderer, spriteBoundary, this.direction - 180);
-        }
+        this.sprite.draw(renderer, this, this.direction);
         if (this.hasShield) {
             this.shieldSprite.draw(renderer, this.shieldBoundary);
         }
@@ -330,7 +290,11 @@ export class PlayerTank extends Tank implements Entity {
     public score = 0;
     public invincible = false;
 
-    protected readonly sprite = createTankSprite('player');
+    readonly sprite = createTankSpriteGroup({
+        type: 'player',
+        turret: 'medium',
+        body: 'medium',
+    });
 
     constructor(manager: EntityManager) {
         super(manager);
@@ -345,6 +309,7 @@ export class PlayerTank extends Tank implements Entity {
     }
 
     override respawn(): boolean {
+        this.maxHealth = tankHealthConfig[this.sprite.schema.body];
         const respawned = super.respawn(true);
         assert(respawned); // Player tank respawn should never fail
         this.x = -this.width / 2;
@@ -412,7 +377,7 @@ export class EnemyTank extends Tank implements Entity {
     private static readonly RESPAWN_DELAY = Duration.milliseconds(1000);
     protected moving = true;
     protected readonly SHOOTING_PERIOD = Duration.milliseconds(1500);
-    protected readonly sprite = createTankSprite('enemy');
+    protected sprite = createTankSpriteGroup(randomTankSchema('enemy'));
     protected readonly shieldSprite = createShieldSprite('enemy');
     private readonly SEARCH_DELAY = Duration.milliseconds(5000);
     private targetSearchTimer = this.SEARCH_DELAY.clone();
@@ -486,11 +451,8 @@ export class EnemyTank extends Tank implements Entity {
         if (this.respawnDelay.positive) return false;
         this.targetPath = [];
         this.targetSearchTimer.setMilliseconds(0);
-        this.maxHealth = random.selectFrom(
-            ENEMY_TANK_MAX_HEALTH,
-            ENEMY_TANK2_MAX_HEALTH,
-            ENEMY_TANK3_MAX_HEALTH,
-        );
+        this.sprite = createTankSpriteGroup(randomTankSchema('enemy'));
+        this.maxHealth = tankHealthConfig[this.sprite.schema.body];
         return super.respawn();
     }
 

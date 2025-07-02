@@ -209,8 +209,8 @@ export class Renderer {
     }
 
     private resizeCanvas(width: number, height: number): void {
-        this.canvas.style.width = '';
-        this.canvas.style.height = '';
+        this.canvas.style.width = width + 'px';
+        this.canvas.style.height = height + 'px';
         this.canvas.width = width;
         this.canvas.height = height;
         this.camera.screenSize.set(width, height);

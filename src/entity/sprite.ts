@@ -106,10 +106,10 @@ export class Sprite<K extends string> {
         renderer.setTransform(Transform.makeTranslation(translation).scale(renderer.camera.scale));
         renderer.rotate(rotationDeg);
         try {
-            const fx = this.frameWidth * this.frameIndex + this.offset.x + this.framePadding;
-            const fy = this.state.index * this.frameHeight + this.offset.y + this.framePadding;
-            const fw = this.frameWidth - this.framePadding * 2;
-            const fh = this.frameHeight - this.framePadding * 2;
+            let fx = this.frameWidth * this.frameIndex + this.offset.x + this.framePadding;
+            let fy = this.state.index * this.frameHeight + this.offset.y + this.framePadding;
+            let fw = this.frameWidth - this.framePadding * 2;
+            let fh = this.frameHeight - this.framePadding * 2;
             const isHorizontal = fmod(rotationDeg, 180) === 90;
             let dx = -boundary.width / 2;
             let dy = -boundary.height / 2;
@@ -166,33 +166,6 @@ export function createTileSprite() {
         frameHeight: 128,
         states: [{name: 'static', frames: 1}],
     });
-}
-
-export interface TankSpriteGroup {
-    turret: Sprite<'static'>;
-    body: Sprite<'moving'>;
-}
-
-export function createTankSprite(type: 'player' | 'enemy'): TankSpriteGroup {
-    const key = type === 'player' ? 'tank_green' : 'tank_darkgray';
-    return {
-        turret: new Sprite({
-            key: key + '_turret',
-            frameWidth: 40,
-            frameHeight: 63,
-            framePadding: 2,
-            states: [{name: 'static', frames: 1}],
-        }),
-        body: new Sprite({
-            key: key + '_body',
-            frameWidth: 64,
-            frameHeight: 64,
-            framePadding: 3,
-            // TODO: Tracks animation speed should be dependent by the speed of the tank.
-            frameDuration: Duration.milliseconds(type === 'player' ? 40 : 60),
-            states: [{name: 'moving', frames: 6}],
-        }),
-    };
 }
 
 export function createStaticSprite(opts: Omit<SpriteOpts<'static'>, 'states'>): Sprite<'static'> {
