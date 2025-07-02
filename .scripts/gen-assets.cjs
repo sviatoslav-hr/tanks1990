@@ -10,10 +10,7 @@ let dirsCount = 0;
 
 async function main() {
     const list = await readDir('.');
-    await fs.writeFile(
-        path.join(PUBLIC_PATH, LIST_FILENAME),
-        JSON.stringify(list, null, 2),
-    );
+    await fs.writeFile(path.join(PUBLIC_PATH, LIST_FILENAME), JSON.stringify(list, null, 2));
     printResults();
 }
 
@@ -31,7 +28,7 @@ async function readDir(dirPath) {
             dirsCount++;
         } else {
             // TODO: Does it make sense to include the full path?
-            result[filename] = filePath;
+            result[filename] = filePath.replaceAll('\\', '/');
             const ext = extname(filename);
             fileCounts[ext] = (fileCounts[ext] || 0) + 1;
         }
