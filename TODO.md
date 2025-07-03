@@ -3,11 +3,18 @@
 ## DOING
 - [ ] Make different combinations of tank turrets and bodies
   - [x] Split the tank body and turret into separate sprites
-  - [ ] Create different tank bodies and turrets
-  - [ ] Randomly select tank body and turret for the enemies
-  - [ ] Assign different characteristics to different tank bodies and turrets
+  - [x] Create different tank bodies and turrets
+  - [x] Randomly select tank body and turret for the enemies
+  - [x] Assign health based on tank body
+  - [ ] Assign speed based on tank body
+  - [ ] Assign damage based on tank turret
+  - [ ] Assign reload speed based on tank turret
 
 ## NEXT TODO
+- [ ] Bug: Health bar is not visible when tank is close to a wall
+- [ ] Enemy generation: instead of randomly generating enemies, make them incrementally stronger as the player progresses through the levels.
+  - [ ] Start with enemies that are weaker than the player and can't survive a single hit.
+  - [ ] Gradually introduce stronger enemies that can survive multiple hits and deal more damage.
 - [ ] Power ups - needs more thought on what they should be and how they should work
       Examples: Time stop, damage increase, shield, speed increase, etc.
 
@@ -25,6 +32,7 @@
 ### Low priority features
 - [ ] Have different types of the projectiles - TBD.
 - [ ] Tank armor - TBD. Could be a power up or specisic to a separate tank type.
+- [ ] Enemy spawning: Make the enemies spawn in waves, with each wave being stronger than the previous one.
 
 ### Sounds And Music
 - [ ] Background music?
@@ -65,6 +73,7 @@
 
 ### Low priority bugs
 - [ ] Fix projectile size (it's bigger than it visually is)
+- [ ] Disable smoothing in a way that it doesn't cause jittering.
 - [ ] Fix tanks moving too fast when the frame rate drops (usually this happens during explosions)
       Update (24.05.2025): This doesn't seem to preproduce anymore or at least it's a lot rarer now.
 - [ ] Fix sound explosion delay
@@ -87,4 +96,3 @@
 ### Not sure about
 - [ ] Try out Entity Component System (ECS)
 - [ ] Use states for animations ([see](https://www.youtube.com/watch?v=e3LGFrHqqiI))
-
