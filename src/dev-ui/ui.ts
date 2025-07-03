@@ -1,8 +1,9 @@
 import {DevPanel, FPSMonitor} from '#/dev-ui';
 import {EntityManager} from '#/entity/manager';
 import {css, CustomElement, ReactiveElement, ui} from '#/html';
-import {notifyError} from '#/notification';
+import {notify, notifyError} from '#/notification';
 import {importRecording, toggleRecording} from '#/recording';
+import {Renderer} from '#/renderer';
 import {GameState} from '#/state';
 import {exportAsJson, GameStorage} from '#/storage';
 
@@ -66,7 +67,12 @@ export function toggleDevPanelVisibility(panel: DevPanel, cache: GameStorage): v
     cache.set(SHOW_DEV_PANEL_KEY, panel.visible);
 }
 
-export function createDevUI(state: GameState, manager: EntityManager, cache: GameStorage): DevUI {
+export function createDevUI(
+    state: GameState,
+    manager: EntityManager,
+    renderer: Renderer,
+    cache: GameStorage,
+): DevUI {
     const devUI = new DevUI();
     const isFPSVisible = cache.getBool(SHOW_FPS_KEY) ?? false;
     if (!isFPSVisible) {
@@ -110,6 +116,16 @@ export function createDevUI(state: GameState, manager: EntityManager, cache: Gam
         .addButton()
         .setName('Spawn enemy')
         .onClick(() => manager.spawnEnemy(manager.world.activeRoom));
+
+    const rendererFolder = devPanel.addFolder('Renderer');
+    rendererFolder
+        .addButton()
+        .setName(renderer.imageSmoothingDisabled ? 'Enable Smoothing' : 'Disable Smoothing')
+        .onClick((btn) => {
+            renderer.imageSmoothingDisabled = !renderer.imageSmoothingDisabled;
+            btn.setName(renderer.imageSmoothingDisabled ? 'Enable Smoothing' : 'Disable Smoothing');
+            notify(renderer.imageSmoothingDisabled ? 'Smoothing disabled' : 'Smoothing enabled');
+        });
 
     const toolsFolder = devPanel.addFolder('Tools');
     toolsFolder

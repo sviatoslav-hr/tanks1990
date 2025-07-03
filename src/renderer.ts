@@ -16,6 +16,7 @@ export class Renderer {
     readonly ctx: CanvasRenderingContext2D;
     readonly camera: Camera;
     #usingCameraCoords = false;
+    imageSmoothingDisabled = false;
 
     constructor() {
         this.canvas = document.createElement('canvas');

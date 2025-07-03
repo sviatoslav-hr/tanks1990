@@ -82,7 +82,7 @@ export class TankSpriteGroup {
     draw(renderer: Renderer, boundary: Rect, direction: Direction): void {
         // FIXME: Sprites look better (not blurry) when smoothing is disabled,
         //        but is also causes jittering on big screens. (Not sure how to fix it yet)
-        // renderer.ctx.imageSmoothingEnabled = false;
+        if (renderer.imageSmoothingDisabled) renderer.ctx.imageSmoothingEnabled = false;
         this.body.draw(renderer, boundary, direction - 180);
         {
             const turret = this.turret;
@@ -109,7 +109,7 @@ export class TankSpriteGroup {
             );
             this.turret.draw(renderer, spriteBoundary, direction - 180);
         }
-        // renderer.ctx.imageSmoothingEnabled = true;
+        if (renderer.imageSmoothingDisabled) renderer.ctx.imageSmoothingEnabled = true;
     }
 
     update(dt: Duration): void {

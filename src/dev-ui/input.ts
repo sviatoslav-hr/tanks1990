@@ -170,8 +170,8 @@ export class DevButton extends ReactiveElement {
         `;
     }
 
-    onClick(callback: () => void): void {
-        this.button.addEventListener('click', callback);
+    onClick(callback: (bth: this) => void): void {
+        this.button.addEventListener('click', () => callback(this));
     }
 
     setName(name: string): this {

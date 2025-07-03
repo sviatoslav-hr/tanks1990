@@ -8,7 +8,7 @@ import {EntityManager} from '#/entity/manager';
 import {eventQueue} from '#/events';
 import {handleGameEvents as processGameEvents} from '#/events-handler';
 import {GameInput} from '#/input';
-import {processInput, handleKeymaps} from '#/input-handler';
+import {handleKeymaps, processInput} from '#/input-handler';
 import {logger} from '#/logger';
 import {Duration} from '#/math/duration';
 import {initMenu, Menu} from '#/menu';
@@ -47,7 +47,7 @@ function main(): void {
     appElement.append(menu);
     logger.info('Dev mode is %s', window.__DEV_MODE ? 'on' : 'off');
 
-    const devUI = createDevUI(gameState, manager, storage);
+    const devUI = createDevUI(gameState, manager, renderer, storage);
     appElement.append(devUI);
 
     runGame(gameState, manager, menu, input, storage, devUI, renderer, sounds);
