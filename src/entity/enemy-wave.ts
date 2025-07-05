@@ -5,12 +5,15 @@ import {TankPartKind} from '#/entity/tank-generation';
 export class EnemyWave {
     private aliveEnemies: EntityId[] = [];
     private enemyRespawnQueue: EntityId[] = [];
+    private expectedEnemyIndex = 0;
 
     constructor(
-        private expectedEnemies: TankPartKind[],
+        // NOTE: Waves are being reused per each restart, so we want to keep the original order of enemies.
+        private readonly expectedEnemies: readonly TankPartKind[],
         private readonly enemyLimitAtOnce: number,
     ) {
         assert(enemyLimitAtOnce > 0);
+        this.expectedEnemyIndex = 0;
     }
 
     get enemiesCount(): number {
@@ -18,7 +21,7 @@ export class EnemyWave {
     }
 
     get nextEnemyKind(): TankPartKind | undefined {
-        return this.expectedEnemies[0];
+        return this.expectedEnemies[this.expectedEnemyIndex];
     }
 
     get hasRespawnPlace(): boolean {
@@ -26,7 +29,7 @@ export class EnemyWave {
     }
 
     get hasExpectedEnemies(): boolean {
-        return this.expectedEnemies.length > 0;
+        return this.expectedEnemyIndex < this.expectedEnemies.length;
     }
 
     spawnEnemy(enemy: EnemyTank): void {
@@ -45,10 +48,18 @@ export class EnemyWave {
     queueEnemy(enemy: EnemyTank, enemyKind?: TankPartKind): void {
         enemy.markForRespawn();
         if (!enemyKind) {
-            enemyKind = this.expectedEnemies.pop() ?? 'light';
+            enemyKind = this.popExpectedEnemy() ?? 'light';
         }
-        enemy.defineKind(enemyKind);
+        enemy.changeKind(enemyKind);
         this.enemyRespawnQueue.push(enemy.id);
+    }
+
+    private popExpectedEnemy(): TankPartKind | undefined {
+        const enemyKind = this.expectedEnemies[this.expectedEnemyIndex];
+        if (this.expectedEnemyIndex < this.expectedEnemies.length) {
+            this.expectedEnemyIndex++;
+        }
+        return enemyKind;
     }
 
     handleEnemyDeath(enemyId: EntityId): void {
@@ -61,7 +72,13 @@ export class EnemyWave {
     }
 
     clearExpected(): void {
-        this.expectedEnemies = [];
+        this.expectedEnemyIndex = 0;
+    }
+
+    reset(): void {
+        this.aliveEnemies = [];
+        this.enemyRespawnQueue = [];
+        this.expectedEnemyIndex = 0;
     }
 }
 
@@ -74,6 +91,7 @@ interface EnemyWaveConfig {
 export const wavePerRoom = makeWaves(
     // NOTE: Start with one medium tank: not overwhelming with many enemies, but also not too easy to kill.
     {enemies: ['medium'], limitAtOnce: 1},
+    // {enemies: ['light', 'medium', 'heavy'], limitAtOnce: 3}, // NOTE: This is a test wave, only for dev purposes.
     // NOTE: In the next room we teach player that he can play against multiple enemies at once.
     {enemies: ['light', 'light'], limitAtOnce: 2},
     // NOTE: In this room we show that more enemies can be spawned.
@@ -96,7 +114,7 @@ function makeWaves(...configs: EnemyWaveConfig[]): EnemyWave[] {
             config.limitAtOnce = prevWaveConfig.limitAtOnce;
         }
 
-        const wave = new EnemyWave(config.enemies, config.limitAtOnce);
+        const wave = new EnemyWave(config.enemies.slice(), config.limitAtOnce);
         return wave;
     });
     return waves;

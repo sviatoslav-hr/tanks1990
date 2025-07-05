@@ -5,7 +5,7 @@ import {Block, generateBlocks} from '#/entity/block';
 import {Direction, Entity, isIntesecting} from '#/entity/core';
 import {EnemyWave, wavePerRoom} from '#/entity/enemy-wave';
 import {EntityManager, isSameEntity} from '#/entity/manager';
-import {createStaticSprite, createTileSprite} from '#/entity/sprite';
+import {createStaticSprite} from '#/entity/sprite';
 import {JSONObjectParser} from '#/json';
 import {Rect, fmod, isPosInsideRect, oppositeDirection} from '#/math';
 import {random} from '#/math/rng';
@@ -36,7 +36,6 @@ export class World {
     );
     rooms: Room[] = [this.activeRoom];
     #valuesDirty = false; // NOTE: Used to mark for saving
-    private tileSprite = createTileSprite();
     readonly bgColor = Color.BLACK_RAISIN;
     readonly gridColor = Color.BLACK_IERIE;
     readonly boundaryColor = Color.BLACK_IERIE;
@@ -87,31 +86,31 @@ export class World {
         }
         // TODO: Figure out a performance way to deal with tiles.
         //       And also pick the tiles that actually looks nice.
-        const camera = renderer.camera;
-        cellSize *= camera.scale;
+        // const camera = renderer.camera;
+        // cellSize *= camera.scale;
         // NOTE: Find top-left position of the camera in camera coordinates
-        const cameraX0 = camera.worldOffset.x * camera.scale - camera.screenSize.width / 2;
-        const cameraY0 = camera.worldOffset.y * camera.scale - camera.screenSize.height / 2;
+        // const cameraX0 = camera.worldOffset.x * camera.scale - camera.screenSize.width / 2;
+        // const cameraY0 = camera.worldOffset.y * camera.scale - camera.screenSize.height / 2;
         // NOTE: Find first visible line on the screen for each axis
-        const x0 = cellSize - fmod(cameraX0, cellSize) - cellSize;
-        const y0 = cellSize - fmod(cameraY0, cellSize) - cellSize;
+        // const x0 = cellSize - fmod(cameraX0, cellSize) - cellSize;
+        // const y0 = cellSize - fmod(cameraY0, cellSize) - cellSize;
 
-        renderer.useCameraCoords(true);
-        const maxX = x0 + camera.screenSize.width + cellSize;
-        const maxY = y0 + camera.screenSize.height + cellSize;
+        // renderer.useCameraCoords(true);
+        // const maxX = x0 + camera.screenSize.width + cellSize;
+        // const maxY = y0 + camera.screenSize.height + cellSize;
         // NOTE: Should be converted to world coordinates since sprite converts them back
-        const worldSize = cellSize * camera.scale;
-        for (let colX = x0; colX < maxX; colX += cellSize) {
-            for (let colY = y0; colY < maxY; colY += cellSize) {
-                this.tileSprite.draw(renderer, {
-                    x: camera.toWorldX(colX),
-                    y: camera.toWorldY(colY),
-                    width: worldSize,
-                    height: worldSize,
-                });
-            }
-        }
-        renderer.useCameraCoords(false);
+        // const worldSize = cellSize * camera.scale;
+        // for (let colX = x0; colX < maxX; colX += cellSize) {
+        // for (let colY = y0; colY < maxY; colY += cellSize) {
+        // this.tileSprite.draw(renderer, {
+        //     x: camera.toWorldX(colX),
+        //     y: camera.toWorldY(colY),
+        //     width: worldSize,
+        //     height: worldSize,
+        // });
+        // }
+        // }
+        // renderer.useCameraCoords(false);
     }
 
     private drawGrid(renderer: Renderer, cellSize: number): void {
@@ -405,6 +404,7 @@ export class Room {
         {
             const wave = wavePerRoom[this.roomIndex];
             assert(wave);
+            wave.reset();
             this.wave = wave;
         }
         const prevRoomCommonBlocks = prevRoom?.nextRoomCommonBlocks ?? [];

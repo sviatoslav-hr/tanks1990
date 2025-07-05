@@ -1,13 +1,13 @@
 import {Color} from '#/color';
 import {CELL_SIZE} from '#/const';
 import {Entity, isIntesecting} from '#/entity/core';
+import {EntityManager} from '#/entity/manager';
 import {Sprite, createStaticSprite} from '#/entity/sprite';
 import {Rect} from '#/math';
 import {Duration} from '#/math/duration';
 import {random} from '#/math/rng';
 import {Renderer} from '#/renderer';
 import {isRectOccupied} from '#/world';
-import {EntityManager} from './manager';
 
 export function generateBlocks(
     manager: EntityManager,

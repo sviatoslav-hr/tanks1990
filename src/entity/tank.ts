@@ -8,8 +8,9 @@ import {findPath} from '#/entity/pathfinding';
 import {createShieldSprite, Sprite} from '#/entity/sprite';
 import {
     createTankSpriteGroup,
-    randomTankSchema,
+    makeTankSchema,
     TankPartKind,
+    TankSchema,
     TankSpriteGroup,
 } from '#/entity/tank-generation';
 import {eventQueue} from '#/events';
@@ -19,12 +20,6 @@ import {Duration} from '#/math/duration';
 import {Vector2, Vector2Like} from '#/math/vector';
 import {Renderer} from '#/renderer';
 
-const tankHealthConfig: Record<TankPartKind, number> = {
-    light: 20,
-    medium: 30,
-    heavy: 40,
-};
-
 export abstract class Tank extends Entity {
     public dead = true;
     public hasShield = true;
@@ -33,7 +28,7 @@ export abstract class Tank extends Entity {
     // TODO: Is this really a good idea to have this field here?
     public readonly bot: boolean = true;
     // TODO: No reason to store this in every tank instance, move this to a config.
-    public readonly topSpeed = (300 * 1000) / (60 * 60); // in m/s
+    public maxSpeed = 0;
     public readonly topSpeedReachTime = Duration.milliseconds(150);
     public readonly stoppingTime = Duration.milliseconds(70);
     public readonly id = newEntityId();
@@ -53,6 +48,7 @@ export abstract class Tank extends Entity {
     };
 
     protected abstract sprite: TankSpriteGroup;
+    protected abstract schema: TankSchema;
     protected shootingDelay = this.SHOOTING_PERIOD.clone();
     protected isStuck = false;
     private healthAnimation = new Animation(Duration.milliseconds(300), easeOut).end();
@@ -85,7 +81,7 @@ export abstract class Tank extends Entity {
 
         {
             const acceleration = this.moving
-                ? this.topSpeed / this.topSpeedReachTime.seconds
+                ? this.maxSpeed / this.topSpeedReachTime.seconds
                 : -this.velocity / this.stoppingTime.seconds;
             if (this.velocity > 0) {
                 this.isStuck = false;
@@ -93,7 +89,7 @@ export abstract class Tank extends Entity {
             this.lastAcceleration = acceleration;
             // v' = a*dt + v
             const newVelocity = acceleration * dt.seconds + this.velocity;
-            this.velocity = Math.min(Math.max(0, newVelocity), this.topSpeed);
+            this.velocity = Math.min(Math.max(0, newVelocity), this.maxSpeed);
             assert(this.velocity >= 0);
             // p' = 1/2*a*dt^2 + v*dt + p   ==>    dp = p' - p = 1/2*a*dt^2 + v*dt
             const movementOffset =
@@ -217,12 +213,16 @@ export abstract class Tank extends Entity {
         return this.dead;
     }
 
-    defineKind(kind: TankPartKind): void {
-        this.sprite = createTankSpriteGroup({
-            type: this.bot ? 'enemy' : 'player',
-            body: kind,
-            turret: kind,
-        });
+    changeKind(kind: TankPartKind): void {
+        const schema = makeTankSchema(this.bot ? 'enemy' : 'player', kind);
+        this.applySchema(schema);
+        this.sprite = createTankSpriteGroup(schema);
+    }
+
+    protected applySchema(schema: TankSchema): void {
+        this.schema = schema;
+        this.maxHealth = schema.maxHealth;
+        this.maxSpeed = schema.maxSpeed;
     }
 
     private tryRespawn(attemptLimit: number): boolean {
@@ -287,7 +287,7 @@ export abstract class Tank extends Entity {
 }
 
 export class PlayerTank extends Tank implements Entity {
-    public readonly topSpeed = (480 * 1000) / (60 * 60); // in m/s
+    public readonly maxSpeed = 0;
     public readonly topSpeedReachTime = Duration.milliseconds(50);
     protected readonly SHOOTING_PERIOD = Duration.milliseconds(500);
     protected readonly shieldSprite = createShieldSprite('player');
@@ -298,11 +298,8 @@ export class PlayerTank extends Tank implements Entity {
     public score = 0;
     public invincible = false;
 
-    readonly sprite = createTankSpriteGroup({
-        type: 'player',
-        turret: 'medium',
-        body: 'medium',
-    });
+    readonly schema = makeTankSchema('player', 'medium');
+    readonly sprite = createTankSpriteGroup(this.schema);
 
     constructor(manager: EntityManager) {
         super(manager);
@@ -317,7 +314,7 @@ export class PlayerTank extends Tank implements Entity {
     }
 
     override respawn(): boolean {
-        this.maxHealth = tankHealthConfig[this.sprite.schema.body];
+        this.applySchema(this.schema);
         const respawned = super.respawn(true);
         assert(respawned); // Player tank respawn should never fail
         this.x = -this.width / 2;
@@ -385,7 +382,8 @@ export class EnemyTank extends Tank implements Entity {
     private static readonly RESPAWN_DELAY = Duration.milliseconds(1000);
     protected moving = true;
     protected readonly SHOOTING_PERIOD = Duration.milliseconds(1500);
-    protected sprite = createTankSpriteGroup(randomTankSchema('enemy'));
+    protected schema = makeTankSchema('enemy', 'medium');
+    protected sprite = createTankSpriteGroup(this.schema);
     protected readonly shieldSprite = createShieldSprite('enemy');
     private readonly SEARCH_DELAY = Duration.milliseconds(5000);
     private targetSearchTimer = this.SEARCH_DELAY.clone();
@@ -460,7 +458,6 @@ export class EnemyTank extends Tank implements Entity {
         this.respawnDelay.setMilliseconds(0);
         this.targetPath = [];
         this.targetSearchTimer.setMilliseconds(0);
-        this.maxHealth = tankHealthConfig[this.sprite.schema.body];
         return super.respawn();
     }
 

@@ -1,13 +1,13 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 
 import {isIntesecting} from '#/entity/core';
+import {EntityManager} from '#/entity/manager';
 import {findPath} from '#/entity/pathfinding';
 import {isPosInsideRect, Rect} from '#/math';
-import {EntityManager} from '#/entity/manager';
-import {EnemyTank} from './tank';
 import {Duration} from '#/math/duration';
 import {random} from '#/math/rng';
 import {Vector2Like} from '#/math/vector';
+import {EnemyTank} from './tank';
 import {type TankSchema} from './tank-generation';
 
 function spriteMock() {
@@ -25,10 +25,10 @@ vi.mock('../entity/sprite', () => {
         Sprite: class {},
     };
 });
-vi.mock('../entity/tank-generation', () => {
+vi.mock('../entity/tank-generation', async (importOriginal) => {
+    const original = await importOriginal<object>();
     return {
-        randomTankSchema: (type: 'player' | 'enemy') =>
-            ({type, body: 'light', turret: 'light'}) satisfies TankSchema,
+        ...original,
         createTankSpriteGroup: (schema: TankSchema) => ({
             schema,
             ...spriteMock(),

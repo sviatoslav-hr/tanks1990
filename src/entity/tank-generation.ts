@@ -1,9 +1,8 @@
 import {Direction} from '#/entity/core';
 import {Sprite} from '#/entity/sprite';
-import {Rect} from '#/math';
+import type {Rect} from '#/math';
 import {Duration} from '#/math/duration';
-import {random} from '#/math/rng';
-import {Renderer} from '#/renderer';
+import type {Renderer} from '#/renderer';
 
 const tankPartKinds = ['light', 'medium', 'heavy'] as const;
 export type TankPartKind = (typeof tankPartKinds)[number];
@@ -12,7 +11,34 @@ export interface TankSchema {
     type: 'player' | 'enemy';
     turret: TankPartKind;
     body: TankPartKind;
+    maxHealth: number;
+    maxSpeed: number;
 }
+
+export function makeTankSchema(type: 'player' | 'enemy', kind: TankPartKind): TankSchema {
+    // NOTE: Player should be faster because the game feel better this way.
+    const mult = type === 'player' ? 1.5 : 1;
+    return {
+        type,
+        // NOTE: For now turret and body are the same kind for the sake of simplicity.
+        turret: kind,
+        body: kind,
+        maxHealth: tankKindMaxHealth[kind],
+        maxSpeed: tankKindSpeed[kind] * mult,
+    };
+}
+
+const tankKindMaxHealth: Record<TankPartKind, number> = {
+    light: 20,
+    medium: 30,
+    heavy: 40,
+};
+
+const tankKindSpeed: Record<TankPartKind, number> = {
+    light: (400 * 1000) / (60 * 60), // in m/s
+    medium: (300 * 1000) / (60 * 60),
+    heavy: (200 * 1000) / (60 * 60),
+};
 
 function makeTankTurretSprite(keyPrefix: string, kind: TankPartKind): Sprite<'static'> {
     switch (kind) {
@@ -115,15 +141,6 @@ export class TankSpriteGroup {
     update(dt: Duration): void {
         this.body.update(dt);
     }
-}
-
-const tankCombinations = tankPartKinds.flatMap((turret) =>
-    tankPartKinds.map((body) => ({turret, body})),
-);
-
-export function randomTankSchema(type: 'player' | 'enemy'): TankSchema {
-    const base = random.selectFrom(...tankCombinations);
-    return {...base, type};
 }
 
 function rotateRectAround(rect: Rect, cx: number, cy: number, angle: number) {

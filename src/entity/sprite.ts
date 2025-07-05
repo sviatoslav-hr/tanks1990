@@ -1,7 +1,7 @@
+import {fmod, Rect} from '#/math';
+import {Duration} from '#/math/duration';
 import {Transform} from '#/math/transform';
 import {Vector2} from '#/math/vector';
-import {Duration} from '#/math/duration';
-import {fmod, Rect} from '#/math';
 import {Renderer} from '#/renderer';
 
 const ASSETS_URL = './assets';
@@ -37,6 +37,7 @@ type SpriteStateMap<K extends string> = {[Key in K]: SpriteState<Key>};
 export class Sprite<K extends string> {
     private frameIndex = 0;
     private animationDt = Duration.zero();
+    private loaded = false;
     private state?: SpriteState<K>;
     readonly frameWidth: number;
     readonly frameHeight: number;
@@ -59,11 +60,26 @@ export class Sprite<K extends string> {
         const cached = getCachedImage(src);
         if (cached) {
             this.image = cached;
+            this.loaded = this.image.complete;
         } else {
             this.image = new Image();
-            this.image.alt = key;
+            this.image.alt = `Asset ${key}`;
             this.image.src = src;
             setCachedImage(src, this.image);
+        }
+        if (!this.image.complete) {
+            const self = this;
+            const prevOnload = this.image.onload;
+            this.image.onload = function (...args) {
+                self.loaded = true;
+                prevOnload?.call(this, ...args);
+            };
+            const prevOnerror = this.image.onerror;
+            this.image.onerror = function (...args) {
+                if (!cached) logger.error('Failed to load asset "%s"', key);
+                self.loaded = false;
+                prevOnerror?.call(this, ...args);
+            };
         }
         this.stateMap = {} as SpriteStateMap<K>;
         for (const [index, {name, frames}] of states.entries()) {
@@ -89,6 +105,7 @@ export class Sprite<K extends string> {
 
     draw(renderer: Renderer, boundary: Rect, rotationDeg = 0): void {
         if (!this.state) return;
+        if (!this.loaded) return;
         if (!renderer.camera.isRectVisible(boundary)) return;
         const alreadyInCameraCoords = renderer.usingCameraCoords;
         if (!alreadyInCameraCoords) renderer.useCameraCoords(true); // NOTE: It's easier to rotate in camera coords
@@ -155,16 +172,6 @@ export function createShieldSprite(type: 'player' | 'enemy') {
         framePadding: 0,
         frameDuration: Duration.milliseconds(100),
         states: [{name: 'anim', frames: 6}],
-    });
-}
-
-export function createTileSprite() {
-    return new Sprite({
-        key: 'dirt',
-        // key: 'sand',
-        frameWidth: 128,
-        frameHeight: 128,
-        states: [{name: 'static', frames: 1}],
     });
 }
 
