@@ -115,7 +115,7 @@ export function createDevUI(
     entitiesFolder
         .addButton()
         .setName('Spawn enemy')
-        .onClick(() => manager.spawnEnemy(manager.world.activeRoom));
+        .onClick(() => manager.spawnEnemy()); // TODO: Add a way to select enemy kind
 
     const rendererFolder = devPanel.addFolder('Renderer');
     rendererFolder

@@ -28,12 +28,7 @@ export function handleGameEvents(
                     manager.player.score += 1;
                     const entity = manager.findTank(event.entityId);
                     if (entity) {
-                        entity.room.aliveEnemiesCount -= 1;
-                    } else {
-                        logger.warn(
-                            'Tank with id %i not found even though it was destroyed',
-                            event.entityId,
-                        );
+                        entity.room.wave.handleEnemyDeath(entity.id);
                     }
                 }
                 sounds.playSound(SoundType.EXPLOSION);

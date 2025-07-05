@@ -148,6 +148,6 @@ function simulateGameTick(
 
     if (state.playing || state.dead || state.debugUpdateTriggered) {
         manager.updateEffects(dt);
-        manager.updateAll(dt, renderer.camera);
+        manager.updateAllEntities(dt, renderer.camera);
     }
 }

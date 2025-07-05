@@ -8,6 +8,7 @@ import {EnemyTank} from './tank';
 import {Duration} from '#/math/duration';
 import {random} from '#/math/rng';
 import {Vector2Like} from '#/math/vector';
+import {type TankSchema} from './tank-generation';
 
 function spriteMock() {
     return {
@@ -21,11 +22,17 @@ vi.mock('../entity/sprite', () => {
         createStaticSprite: () => spriteMock(),
         createTileSprite: () => spriteMock(),
         createShieldSprite: () => spriteMock(),
-        createTankSprite: () => ({
-            turret: spriteMock(),
-            body: spriteMock(),
-        }),
         Sprite: class {},
+    };
+});
+vi.mock('../entity/tank-generation', () => {
+    return {
+        randomTankSchema: (type: 'player' | 'enemy') =>
+            ({type, body: 'light', turret: 'light'}) satisfies TankSchema,
+        createTankSpriteGroup: (schema: TankSchema) => ({
+            schema,
+            ...spriteMock(),
+        }),
     };
 });
 
@@ -73,9 +80,8 @@ describe('Pathfinding', () => {
         const manager = new EntityManager();
         manager.world.roomsLimit = 1;
         manager.init();
-        manager.world.activeRoom.enemyLimitAtOnce = 1;
-        manager.world.activeRoom.expectedEnemiesCount = 1;
-        manager.spawnEnemy(manager.world.activeRoom, true);
+        manager.world.activeRoom.wave.clearExpected();
+        manager.spawnEnemy('light', true);
         const enemy = manager.tanks.find((t) => t instanceof EnemyTank) as EnemyTank;
         manager.updateTanks(Duration.milliseconds(0));
         assert(enemy, 'Enemy tank not found');

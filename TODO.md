@@ -1,6 +1,4 @@
 # TODO
-
-## DOING
 - [ ] Make different combinations of tank turrets and bodies
   - [x] Split the tank body and turret into separate sprites
   - [x] Create different tank bodies and turrets
@@ -10,11 +8,10 @@
   - [ ] Assign damage based on tank turret
   - [ ] Assign reload speed based on tank turret
 
+## DOING
+
 ## NEXT TODO
 - [ ] Bug: Health bar is not visible when tank is close to a wall
-- [ ] Enemy generation: instead of randomly generating enemies, make them incrementally stronger as the player progresses through the levels.
-  - [ ] Start with enemies that are weaker than the player and can't survive a single hit.
-  - [ ] Gradually introduce stronger enemies that can survive multiple hits and deal more damage.
 - [ ] Power ups - needs more thought on what they should be and how they should work
       Examples: Time stop, damage increase, shield, speed increase, etc.
 

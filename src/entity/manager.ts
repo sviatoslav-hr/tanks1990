@@ -4,11 +4,12 @@ import {ExplosionEffect} from '#/entity/effect';
 import {EntityId} from '#/entity/id';
 import {Projectile} from '#/entity/projectile';
 import {EnemyTank, PlayerTank, Tank} from '#/entity/tank';
-import {Room, World} from '#/world';
+import {TankPartKind} from '#/entity/tank-generation';
 import {Duration} from '#/math/duration';
 import {Vector2Like} from '#/math/vector';
 import {Renderer} from '#/renderer';
 import {ScoreRecord} from '#/score';
+import {World} from '#/world';
 
 export function isSameEntity(a: Entity, b: Entity): boolean {
     return a.id === b.id;
@@ -103,7 +104,7 @@ export class EntityManager {
         this.effects = this.effects.filter((e) => !effectsToRemove.includes(e));
     }
 
-    updateAll(dt: Duration, camera: Camera): void {
+    updateAllEntities(dt: Duration, camera: Camera): void {
         this.world.update(this);
         if (this.world.activeRoom.shouldActivateNextRoom(this.player)) {
             const nextRoom = this.world.activeRoom.nextRoom;
@@ -112,9 +113,9 @@ export class EntityManager {
             this.roomInFocus = false;
         }
         {
-            const room = this.world.activeRoom;
-            while (room.expectedEnemiesCount > 0) {
-                this.spawnEnemy(room);
+            const wave = this.world.activeRoom.wave;
+            while (wave.hasExpectedEnemies) {
+                this.spawnEnemy();
             }
         }
         this.updateTanks(dt);
@@ -150,7 +151,7 @@ export class EntityManager {
         this.effects.push(effect);
     }
 
-    spawnEnemy(room: Room, skipDelay = false): EnemyTank {
+    spawnEnemy(enemyKind?: TankPartKind, skipDelay = false): EnemyTank {
         const deadEnemy = this.tanks.find((t) => t.bot && t.dead && !t.shouldRespawn) as EnemyTank;
         // NOTE: Enemy will be dead initially, but it will be respawned automatically with the delay
         // to not spawn it immediately and also have the ability to not spawn everyone at once.
@@ -162,38 +163,28 @@ export class EntityManager {
         } else {
             logger.debug('[Manager] Reused dead enemy tank', enemy.id);
         }
-        enemy.room = room;
-        enemy.markForRespawn();
+        enemy.room = this.world.activeRoom;
         if (skipDelay) {
-            enemy.respawnDelay.setMilliseconds(0);
-            const respawned = enemy.respawn();
-            assert(respawned, 'Enemy should be respawned immediately');
-            enemy.room.aliveEnemiesCount++;
+            enemy.room.wave.spawnEnemy(enemy);
         } else {
-            enemy.room.pendingEnemiesCount++;
+            enemy.room.wave.queueEnemy(enemy, enemyKind);
         }
-        enemy.room.expectedEnemiesCount--;
         return enemy;
     }
 
     updateTanks(dt: Duration): void {
+        const wave = this.world.activeRoom.wave;
         for (const tank of this.tanks) {
             tank.update(dt);
 
             if (tank.bot && tank.shouldRespawn) {
-                const canRespawn = tank.room.aliveEnemiesCount < tank.room.enemyLimitAtOnce;
-                if (canRespawn) {
+                assert(tank instanceof EnemyTank);
+                if (tank.respawnDelay.positive) {
+                    continue;
+                } else if (wave.hasRespawnPlace) {
                     // TODO: For some reason it takes way too much attempts to respawn...
-                    // Need to have a deeper look into this.
-                    const respawned = tank.respawn();
-                    if (respawned) {
-                        assert(!tank.dead);
-                        tank.room.aliveEnemiesCount++;
-                        tank.room.pendingEnemiesCount--;
-                    }
-                } else {
-                    assert(tank instanceof EnemyTank);
-                    tank.markForRespawn();
+                    //       Need to have a deeper look into this.
+                    wave.spawnEnemy(tank);
                 }
             }
         }

@@ -3,6 +3,7 @@ import {BASE_HEIGHT, BASE_WIDTH, CELL_SIZE} from '#/const';
 import {PlayerTank} from '#/entity';
 import {Block, generateBlocks} from '#/entity/block';
 import {Direction, Entity, isIntesecting} from '#/entity/core';
+import {EnemyWave, wavePerRoom} from '#/entity/enemy-wave';
 import {EntityManager, isSameEntity} from '#/entity/manager';
 import {createStaticSprite, createTileSprite} from '#/entity/sprite';
 import {JSONObjectParser} from '#/json';
@@ -16,7 +17,7 @@ const WORLD_CONFIG_KEY = 'world_config';
 
 export class World {
     showBoundary = false;
-    roomsLimit = 18;
+    roomsLimit = MAX_ROOMS_COUNT;
     readonly roomSizeInCells = new Vector2(12, 8);
     readonly startRoomPosition = new Vector2(0, 0);
     readonly boundary: Rect = {
@@ -239,11 +240,12 @@ function generateDungeon(
     startRoomPosition: Vector2,
     roomSizeInCells: Vector2,
     manager: EntityManager,
-    roomsLimit = 6,
+    roomsCount = 6,
 ): Room[] {
+    assert(roomsCount <= MAX_ROOMS_COUNT);
     const rooms: Room[] = [];
     const roomPosition = startRoomPosition.clone();
-    for (let i = 0; i < roomsLimit; i++) {
+    for (let i = 0; i < roomsCount; i++) {
         const prevRoom = rooms[i - 1];
         if (prevRoom) {
             roomPosition.setFrom(prevRoom.position);
@@ -364,6 +366,8 @@ function generateRoom(
     return room;
 }
 
+export const MAX_ROOMS_COUNT = wavePerRoom.length;
+
 export class Room {
     started = false;
     readonly boundaryColor = Color.RED;
@@ -373,10 +377,7 @@ export class Room {
     nextRoomDoorOpen = false;
     prevRoomDoorBlocks: Block[];
     roomIndex: number;
-    aliveEnemiesCount = 0;
-    pendingEnemiesCount = 0; // NOTE: In a queue to be spawned
-    expectedEnemiesCount = 0;
-    enemyLimitAtOnce = 2;
+    wave: EnemyWave;
 
     constructor(
         public position: Vector2,
@@ -401,6 +402,11 @@ export class Room {
             this.nextRoomDir,
         );
         this.roomIndex = prevRoom ? prevRoom.roomIndex + 1 : 0;
+        {
+            const wave = wavePerRoom[this.roomIndex];
+            assert(wave);
+            this.wave = wave;
+        }
         const prevRoomCommonBlocks = prevRoom?.nextRoomCommonBlocks ?? [];
         this.prevRoomDoorBlocks =
             prevRoomCommonBlocks.filter((b) => {
@@ -452,14 +458,12 @@ export class Room {
     }
 
     update(manager: EntityManager): void {
-        const enemiesCount = this.aliveEnemiesCount + this.pendingEnemiesCount;
         if (!this.started) {
             this.maybeStartRoom(manager.player);
         } else if (
             this.nextRoom &&
             this.started &&
-            enemiesCount === 0 &&
-            this.aliveEnemiesCount === 0 &&
+            this.wave.enemiesCount === 0 &&
             !this.nextRoomDoorOpen
         ) {
             logger.debug(
@@ -484,17 +488,6 @@ export class Room {
                 b.dead = false;
             }
             this.started = true;
-            // TODO: Have a better way to determine the number of enemies in the room.
-            //       In the later rooms there are too many enemies.
-            //       This can be either solved by spawning enemies in waves and/or
-            //       using stronger enemies.
-            this.expectedEnemiesCount = this.roomIndex + 2;
-            this.enemyLimitAtOnce = Math.max(2, Math.floor(this.expectedEnemiesCount / 2));
-            logger.debug(
-                '[Room] Room %i started. Spawning %i enemies.',
-                this.roomIndex,
-                this.expectedEnemiesCount,
-            );
         }
     }
 

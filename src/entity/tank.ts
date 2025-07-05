@@ -52,7 +52,7 @@ export abstract class Tank extends Entity {
         height: this.height * 2,
     };
 
-    protected abstract readonly sprite: TankSpriteGroup;
+    protected abstract sprite: TankSpriteGroup;
     protected shootingDelay = this.SHOOTING_PERIOD.clone();
     protected isStuck = false;
     private healthAnimation = new Animation(Duration.milliseconds(300), easeOut).end();
@@ -81,7 +81,7 @@ export abstract class Tank extends Entity {
         this.shootingDelay.sub(dt).max(0);
         const prevX = this.x;
         const prevY = this.y;
-        if (this.moving) this.sprite.body.update(dt);
+        if (this.moving) this.sprite.update(dt);
 
         {
             const acceleration = this.moving
@@ -215,6 +215,14 @@ export abstract class Tank extends Entity {
             eventQueue.push({type: 'tank-destroyed', entityId: this.id, bot: this.bot});
         }
         return this.dead;
+    }
+
+    defineKind(kind: TankPartKind): void {
+        this.sprite = createTankSpriteGroup({
+            type: this.bot ? 'enemy' : 'player',
+            body: kind,
+            turret: kind,
+        });
     }
 
     private tryRespawn(attemptLimit: number): boolean {
@@ -387,8 +395,9 @@ export class EnemyTank extends Tank implements Entity {
     readonly respawnDelay = EnemyTank.RESPAWN_DELAY.clone();
 
     update(dt: Duration): void {
-        if (this.room.aliveEnemiesCount < this.room.enemyLimitAtOnce) {
+        if (this.dead && this.room.wave.hasRespawnPlace) {
             this.respawnDelay.sub(dt).max(0);
+            return;
         }
         const player = this.manager.player;
         // NOTE: is collided, don't change the direction, allowing entities to move away from each other
@@ -442,16 +451,15 @@ export class EnemyTank extends Tank implements Entity {
 
     markForRespawn(): void {
         this.respawnDelay.setFrom(EnemyTank.RESPAWN_DELAY);
-        this.collided = false;
         this.shouldRespawn = true;
     }
 
-    respawn(): boolean {
+    override respawn(): boolean {
         assert(this.shouldRespawn);
-        if (this.respawnDelay.positive) return false;
+        this.collided = false;
+        this.respawnDelay.setMilliseconds(0);
         this.targetPath = [];
         this.targetSearchTimer.setMilliseconds(0);
-        this.sprite = createTankSpriteGroup(randomTankSchema('enemy'));
         this.maxHealth = tankHealthConfig[this.sprite.schema.body];
         return super.respawn();
     }
