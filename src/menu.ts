@@ -274,7 +274,7 @@ export class Menu extends HTMLElement {
             textContent: '⛶',
             style: {
                 position: 'fixed',
-                bottom: '1rem',
+                top: '1rem',
                 right: '1rem',
             },
             onClick: (e) => {
@@ -391,11 +391,13 @@ export class Menu extends HTMLElement {
             this.score.hidden = false;
             this.classList.add('bg-transparent-black');
             this.classList.add('fade-in');
+            this.fullscreenButton.hidden = false;
         } else {
             this.mainContainer.hidden = true;
             this.score.hidden = true;
             this.classList.remove('bg-transparent-black');
             this.classList.remove('fade-in');
+            this.fullscreenButton.hidden = true;
         }
     }
 

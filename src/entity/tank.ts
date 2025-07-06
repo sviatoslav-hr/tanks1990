@@ -19,6 +19,7 @@ import {moveToRandomCorner, sameSign} from '#/math';
 import {Duration} from '#/math/duration';
 import {Vector2, Vector2Like} from '#/math/vector';
 import {Renderer} from '#/renderer';
+import {roomSizeInCells} from '#/world';
 
 export abstract class Tank extends Entity {
     public dead = true;
@@ -50,8 +51,8 @@ export abstract class Tank extends Entity {
     protected abstract schema: TankSchema;
     protected shootingDelay = Duration.milliseconds(0);
     protected isStuck = false;
-    private healthAnimation = new Animation(Duration.milliseconds(300), easeOut).end();
-    private prevHealth = 0;
+    public readonly healthAnimation = new Animation(Duration.milliseconds(300), easeOut).end();
+    protected prevHealth = 0;
 
     constructor(manager: EntityManager) {
         super(manager);
@@ -71,6 +72,7 @@ export abstract class Tank extends Entity {
     }
 
     update(dt: Duration): void {
+        this.healthAnimation.update(dt);
         if (this.dead) return;
 
         this.shootingDelay.sub(dt).max(0);
@@ -105,7 +107,6 @@ export abstract class Tank extends Entity {
             this.isStuck = true;
         }
         this.updateShield(dt);
-        this.healthAnimation.update(dt);
     }
 
     stopMoving(): void {
@@ -113,46 +114,53 @@ export abstract class Tank extends Entity {
     }
 
     draw(renderer: Renderer): void {
-        if (this.dead) return;
+        if (!this.dead) {
+            this.sprite.draw(renderer, this, this.direction);
+            if (this.hasShield) {
+                this.shieldSprite.draw(renderer, this.shieldBoundary);
+            }
 
-        this.sprite.draw(renderer, this, this.direction);
-        if (this.hasShield) {
-            this.shieldSprite.draw(renderer, this.shieldBoundary);
+            if (this.manager.world.showBoundary) {
+                renderer.setStrokeColor(Color.PINK);
+                renderer.strokeBoundary(this, 1);
+                renderer.setFont('400 16px Helvetica', 'center', 'middle');
+                renderer.setFillColor(Color.WHITE);
+                const velocity = ((this.velocity * 3600) / 1000).toFixed(2);
+                const acc = this.lastAcceleration.toFixed(2);
+                renderer.fillText(
+                    `${this.id}: a=${acc};v=${velocity}km/h`,
+                    // `ID:${this.id}: {${Math.floor(this.x)};${Math.floor(this.y)}}`,
+                    {
+                        x: this.x + this.width / 2,
+                        y: this.y - this.height / 2,
+                    },
+                );
+            }
         }
-
-        if (this.manager.world.showBoundary) {
-            renderer.setStrokeColor(Color.PINK);
-            renderer.strokeBoundary(this, 1);
-            renderer.setFont('400 16px Helvetica', 'center', 'middle');
-            renderer.setFillColor(Color.WHITE);
-            const velocity = ((this.velocity * 3600) / 1000).toFixed(2);
-            const acc = this.lastAcceleration.toFixed(2);
-            renderer.fillText(
-                `${this.id}: a=${acc};v=${velocity}km/h`,
-                // `ID:${this.id}: {${Math.floor(this.x)};${Math.floor(this.y)}}`,
-                {
-                    x: this.x + this.width / 2,
-                    y: this.y - this.height / 2,
-                },
-            );
-        }
-        if (this.health < this.maxHealth) {
+        if (!this.dead || this.healthAnimation.active) {
             this.drawHealthBar(renderer);
-        }
-        if (this.manager.world.showBoundary && this.isStuck) {
-            renderer.setStrokeColor(Color.RED);
-            renderer.strokeBoundary(this, 1);
+            const showBoundary = !this.dead && this.manager.world.showBoundary;
+            // NOTE: It only makes sense to draw the shooting bar for bots for debug purposes
+            if (!this.bot || showBoundary) {
+                this.drawShootingBar(renderer);
+            }
+            if (showBoundary && this.isStuck) {
+                renderer.setStrokeColor(Color.RED);
+                renderer.strokeBoundary(this, 1);
+            }
         }
     }
 
-    private drawHealthBar(renderer: Renderer) {
+    protected drawHealthBar(renderer: Renderer) {
+        // NOTE: Draw hp bar only if the tank is not full health.
+        if (this.health === this.maxHealth) return;
         const barWidth = this.width * 0.9;
         // NOTE: Draw health bar in camera size, since it's a UI element and it should not scale.
         const barHeight = 3 / renderer.camera.scale;
-        const barOffset = 3 / renderer.camera.scale;
+        const barOffset = 6 / renderer.camera.scale;
         const barX = this.x + (this.width - barWidth) / 2;
         const barY = this.y - barHeight - barOffset;
-        renderer.setFillColor('red');
+        renderer.setFillColor(Color.GREEN_DARKEST);
         renderer.fillRect(barX, barY, barWidth, barHeight);
         let hpFraction = this.health / this.maxHealth || 0;
         if (!this.healthAnimation.finished) {
@@ -160,9 +168,23 @@ export abstract class Tank extends Entity {
             hpFraction += (1 - this.healthAnimation.progress) * healthLostFraction;
         }
         if (hpFraction) {
-            renderer.setFillColor('green');
+            renderer.setFillColor(Color.GREEN);
             renderer.fillRect(barX, barY, barWidth * hpFraction, barHeight);
         }
+    }
+
+    protected drawShootingBar(renderer: Renderer): void {
+        if (!this.shootingDelay.positive) return;
+        const barWidth = this.width * 0.9;
+        // NOTE: Draw health bar in camera size, since it's a UI element and it should not scale.
+        const barHeight = 3 / renderer.camera.scale;
+        const barOffset = 3 / renderer.camera.scale;
+        const barX = this.x + (this.width - barWidth) / 2;
+        const barY = this.y - barHeight - barOffset;
+        renderer.setFillColor(Color.ORANGE_SAFFRON);
+        const fraction =
+            1 - this.shootingDelay.milliseconds / this.schema.shootingDelay.milliseconds;
+        renderer.fillRect(barX, barY, barWidth * fraction, barHeight);
     }
 
     shoot(): void {
@@ -374,6 +396,75 @@ export class PlayerTank extends Tank implements Entity {
             }
             this.direction = newDirection;
         }
+    }
+
+    protected override drawHealthBar(renderer: Renderer): void {
+        // TODO: Refactor these draw methods to be more flexible and configurable.
+        renderer.useCameraCoords(true);
+        renderer.setGlobalAlpha(0.6);
+        const barWidth = 20;
+        const paddingX = 5;
+        const paddingY = 10;
+        const barHeight = Math.min(
+            renderer.canvas.height - paddingY * 2,
+            (roomSizeInCells.height + 2) * CELL_SIZE * renderer.camera.scale,
+        );
+        const barY = (renderer.canvas.height - barHeight) / 2;
+        const barX = paddingX;
+        let hpFraction = this.health / this.maxHealth || 0;
+        if (!this.healthAnimation.finished) {
+            const healthLostFraction = Math.abs(this.health - this.prevHealth) / this.maxHealth;
+            hpFraction += (1 - this.healthAnimation.progress) * healthLostFraction;
+        }
+        {
+            const redBarHeight = barHeight * (1 - hpFraction);
+            renderer.setFillColor(Color.GREEN_DARKEST);
+            renderer.fillRect(barX, barY, barWidth, redBarHeight);
+        }
+        if (hpFraction > 0) {
+            renderer.setFillColor(Color.GREEN);
+            const greenBarHeight = barHeight * hpFraction;
+            const greenBarY = barY + barHeight - greenBarHeight;
+            renderer.fillRect(barX, greenBarY, barWidth, greenBarHeight);
+        }
+        renderer.setGlobalAlpha(1);
+        renderer.setStrokeColor(Color.GREEN);
+        renderer.strokeBoundary2(barX, barY, barWidth, barHeight);
+        renderer.useCameraCoords(false);
+    }
+
+    protected override drawShootingBar(renderer: Renderer): void {
+        renderer.useCameraCoords(true);
+        renderer.setGlobalAlpha(0.8);
+        const fraction =
+            1 - this.shootingDelay.milliseconds / this.schema.shootingDelay.milliseconds;
+        const barWidth = 20;
+        const paddingX = 5;
+        const paddingY = 10;
+        const barHeight = Math.min(
+            renderer.canvas.height - paddingY * 2,
+            (roomSizeInCells.height + 2) * CELL_SIZE * renderer.camera.scale,
+        );
+        const barY = (renderer.canvas.height - barHeight) / 2;
+        const barX = renderer.canvas.width - paddingX - barWidth;
+        {
+            renderer.setFillColor('#493909');
+            renderer.fillRect(barX, barY, barWidth, barHeight * (1 - fraction));
+        }
+        const color = '#ffc107';
+        {
+            renderer.setFillColor(color);
+            renderer.fillRect(
+                barX,
+                barY + barHeight * (1 - fraction),
+                barWidth,
+                barHeight * fraction,
+            );
+        }
+        renderer.setGlobalAlpha(1);
+        renderer.setStrokeColor(color);
+        renderer.strokeBoundary2(barX, barY, barWidth, barHeight);
+        renderer.useCameraCoords(false);
     }
 }
 

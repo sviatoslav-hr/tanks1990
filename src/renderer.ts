@@ -39,6 +39,17 @@ export class Renderer {
     }
 
     strokeBoundary({x, y, width, height}: Rect, lineWidth = 1, force = false): void {
+        this.strokeBoundary2(x, y, width, height, lineWidth, force);
+    }
+
+    strokeBoundary2(
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+        lineWidth = 1,
+        force = false,
+    ): void {
         if (!this.#usingCameraCoords && !force && !this.camera.isRectVisible(x, y, width, height)) {
             return;
         }

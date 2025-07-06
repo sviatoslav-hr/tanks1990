@@ -11,7 +11,9 @@ export enum Color {
     ORANGE_SAFFRON = '#FF9A39',
     ORANGE_GAMBOGE = '#8C7100',
     ORANGE_PHILIPPINE = '#ff6f00',
+    GREEN = '#00ff00',
     GREEN_DARK = '#005400',
+    GREEN_DARKEST = '#003400',
     GREEN_DEEP = '#00730a',
     GREEN_NT = '#00a71c',
 }

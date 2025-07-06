@@ -14,11 +14,11 @@ import {Renderer} from '#/renderer';
 import {GameStorage} from '#/storage';
 
 const WORLD_CONFIG_KEY = 'world_config';
+export const roomSizeInCells = new Vector2(12, 8);
 
 export class World {
     showBoundary = false;
     roomsLimit = MAX_ROOMS_COUNT;
-    readonly roomSizeInCells = new Vector2(12, 8);
     readonly startRoomPosition = new Vector2(0, 0);
     readonly boundary: Rect = {
         x: -BASE_WIDTH / 2,
@@ -26,14 +26,7 @@ export class World {
         width: BASE_WIDTH,
         height: BASE_HEIGHT,
     };
-    activeRoom = new Room(
-        this.startRoomPosition,
-        this.roomSizeInCells,
-        [],
-        null,
-        Direction.NORTH,
-        [],
-    );
+    activeRoom = new Room(this.startRoomPosition, roomSizeInCells, [], null, Direction.NORTH, []);
     rooms: Room[] = [this.activeRoom];
     #valuesDirty = false; // NOTE: Used to mark for saving
     readonly bgColor = Color.BLACK_RAISIN;
@@ -46,12 +39,7 @@ export class World {
     }
 
     init(manager: EntityManager): void {
-        this.rooms = generateDungeon(
-            this.startRoomPosition,
-            this.roomSizeInCells,
-            manager,
-            this.roomsLimit,
-        );
+        this.rooms = generateDungeon(this.startRoomPosition, manager, this.roomsLimit);
         const startRoom = this.rooms[0];
         assert(startRoom);
         this.activeRoom = startRoom;
@@ -237,7 +225,6 @@ export function isRectOccupied(
 // TODO: Figure out generation algorithm that would avoid overlapping rooms
 function generateDungeon(
     startRoomPosition: Vector2,
-    roomSizeInCells: Vector2,
     manager: EntityManager,
     roomsCount = 6,
 ): Room[] {

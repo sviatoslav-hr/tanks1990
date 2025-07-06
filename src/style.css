@@ -1,5 +1,5 @@
-    /** TODO: look into using there colors */
-    /* border-image-source: linear-gradient(to left, #00C853, #B2FF59); */
+/** TODO: look into using there colors */
+/* border-image-source: linear-gradient(to left, #00C853, #B2FF59); */
 :root {
     --black-raisin: #242424;
     --black-raisin-0: #24242400;
@@ -9,6 +9,7 @@
     --black-eirie-75: #191919bf;
     --gray-granite: #777777;
     --gray-granite-25: #77777740;
+    --gray-granite-50: #77777780;
     --gray-granite-75: #777777bf;
     /* --gray-granite: #616161; */
     --white: rgba(255, 255, 255, 0.87);
@@ -29,7 +30,8 @@
     -webkit-text-size-adjust: 100%;
 }
 
-html, body {
+html,
+body {
     overflow: hidden;
 }
 
@@ -50,7 +52,7 @@ canvas {
 }
 
 :is(h2, button) > * {
-   display: none;
+    display: none;
 }
 
 #app {
@@ -180,7 +182,7 @@ game-menu.fade-in .menu > .text-red {
     width: 1em;
     border: none;
     border-radius: 0.25rem;
-    background-color: var(--gray-granite-25);
+    background-color: var(--gray-granite-50);
     box-shadow: none;
     overflow: hidden;
     line-height: 1.5rem;
@@ -196,7 +198,8 @@ game-menu.fade-in .menu > .text-red {
     background-color: var(--gray-granite-75);
 }
 
-.button:focus-visible:not(:disabled), .button:hover:not(:disabled) {
+.button:focus-visible:not(:disabled),
+.button:hover:not(:disabled) {
     /* box-shadow: inset 0 0 10px var(--gray-granite), 0 0 10px var(--gray-granite); */
     /* transform: scale(1.05); */
     /* box-shadow: inset 0 0 4px 1px var(--gray-granite), 0 0 4px 1px var(--gray-granite); */
@@ -259,4 +262,3 @@ code {
     /* background-color: color-mix(in srgb, var(--black-eirie) 75%, transparent); */
     background-color: var(--black-eirie-75);
 }
-

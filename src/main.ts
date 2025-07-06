@@ -139,7 +139,7 @@ function simulateGameTick(
         updateScoreInMenu(menu, manager);
     }
 
-    if (state.playing && player.dead) {
+    if (state.playing && player.dead && player.healthAnimation.finished) {
         const playedRecording = state.recording.playing;
         state.markDead();
         if (!playedRecording) menu.showDead();

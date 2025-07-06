@@ -43,6 +43,10 @@ export class EntityManager {
         for (const effect of this.effects) {
             effect.draw(renderer);
         }
+        // FIXME: Tanks should be drawn before blocks to not overlap them.
+        //        But it causes some UI elements to be overlayed by blocks.
+        //        Probably, this should be split into two separate draw calls.
+        this.world.drawRooms(renderer);
         for (const tank of this.tanks) {
             if (tank.bot) {
                 tank.draw(renderer);
@@ -50,8 +54,6 @@ export class EntityManager {
         }
         // NOTE: Player should be drawn last to be on top of the entities.
         this.player.draw(renderer);
-        // NOTE: Draw blocks on top of tanks to clip the tank sprite when intersecting with the block.
-        this.world.drawRooms(renderer);
         this.cacheExplosions(renderer);
         for (const projectile of this.projectiles) {
             projectile.draw(renderer);
