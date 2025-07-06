@@ -1,14 +1,14 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {beforeEach, describe, expect, it, vi} from 'vitest';
 
-import { isIntesecting } from '#/entity/core';
-import { EntityManager } from '#/entity/manager';
-import { EnemyTank } from '#/entity/tank';
-import { type TankSchema } from '#/entity/tank/generation';
-import { isPosInsideRect, Rect } from '#/math';
-import { Duration } from '#/math/duration';
-import { random } from '#/math/rng';
-import { Vector2Like } from '#/math/vector';
-import { findPath } from '#/pathfinding';
+import {isIntesecting} from '#/entity/core';
+import {EntityManager} from '#/entity/manager';
+import {EnemyTank} from '#/entity/tank';
+import {type TankSchema} from '#/entity/tank/generation';
+import {isPosInsideRect, Rect} from '#/math';
+import {Duration} from '#/math/duration';
+import {random} from '#/math/rng';
+import {Vector2Like} from '#/math/vector';
+import {findPath} from '#/pathfinding';
 
 function spriteMock() {
     return {
@@ -17,7 +17,7 @@ function spriteMock() {
     };
 }
 
-vi.mock('../entity/sprite', () => {
+vi.mock('#/renderer/sprite', () => {
     return {
         createStaticSprite: () => spriteMock(),
         createTileSprite: () => spriteMock(),
@@ -25,7 +25,7 @@ vi.mock('../entity/sprite', () => {
         Sprite: class {},
     };
 });
-vi.mock('../entity/tank-generation', async (importOriginal) => {
+vi.mock('#/entity/tank/generation', async (importOriginal) => {
     const original = await importOriginal<object>();
     return {
         ...original,
