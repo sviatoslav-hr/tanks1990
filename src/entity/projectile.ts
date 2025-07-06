@@ -1,14 +1,15 @@
-import {Camera} from '#/camera';
 import {Color} from '#/color';
 import {CELL_SIZE} from '#/const';
-import {Direction, Entity, isInside, isIntesecting, moveEntity, scaleMovement} from '#/entity/core';
+import {Entity, isInside, isIntesecting, moveEntity} from '#/entity/core';
 import {EntityId} from '#/entity/id';
-import {Sprite} from '#/entity/sprite';
 import {EnemyTank, PlayerTank} from '#/entity/tank';
 import {bellCurveInterpolate, lerp} from '#/math';
+import {Direction} from '#/math/direction';
 import {Duration} from '#/math/duration';
 import {Vector2} from '#/math/vector';
 import {Renderer} from '#/renderer';
+import {Camera} from '#/renderer/camera';
+import {Sprite} from '#/renderer/sprite';
 import {EntityManager, isSameEntity} from './manager';
 
 interface CreateProjectileOpts {
@@ -60,7 +61,7 @@ export class Projectile extends Entity {
 
         this.sprite.update(dt);
         // TODO: use movement equation instead
-        moveEntity(this, scaleMovement(this.v, dt), this.direction);
+        moveEntity(this, this.v * dt.seconds, this.direction);
         if (!isInside(this, this.manager.world.activeRoom.boundary)) {
             this.dead = true;
             return;

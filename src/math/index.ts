@@ -1,6 +1,6 @@
-import {Direction} from '#/entity/core';
-import {Vector2Like} from '#/math/vector';
-import {random} from './math/rng';
+import { Direction } from '#/math/direction';
+import { random } from '#/math/rng';
+import { Vector2Like } from '#/math/vector';
 
 export type Rect = {
     x: number;

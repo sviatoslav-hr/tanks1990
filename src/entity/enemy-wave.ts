@@ -1,6 +1,6 @@
 import {EntityId} from '#/entity/id';
+import {TankPartKind} from '#/entity/tank/generation';
 import {EnemyTank} from '#/entity/tank';
-import {TankPartKind} from '#/entity/tank-generation';
 
 export class EnemyWave {
     private aliveEnemies: EntityId[] = [];

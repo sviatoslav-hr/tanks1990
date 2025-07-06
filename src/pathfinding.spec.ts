@@ -1,14 +1,14 @@
-import {beforeEach, describe, expect, it, vi} from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {isIntesecting} from '#/entity/core';
-import {EntityManager} from '#/entity/manager';
-import {findPath} from '#/entity/pathfinding';
-import {isPosInsideRect, Rect} from '#/math';
-import {Duration} from '#/math/duration';
-import {random} from '#/math/rng';
-import {Vector2Like} from '#/math/vector';
-import {EnemyTank} from './tank';
-import {type TankSchema} from './tank-generation';
+import { isIntesecting } from '#/entity/core';
+import { EntityManager } from '#/entity/manager';
+import { EnemyTank } from '#/entity/tank';
+import { type TankSchema } from '#/entity/tank/generation';
+import { isPosInsideRect, Rect } from '#/math';
+import { Duration } from '#/math/duration';
+import { random } from '#/math/rng';
+import { Vector2Like } from '#/math/vector';
+import { findPath } from '#/pathfinding';
 
 function spriteMock() {
     return {

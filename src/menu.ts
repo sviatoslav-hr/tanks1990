@@ -1,9 +1,9 @@
-import {EntityManager} from '#/entity/manager';
-import {CustomElement, html, ui} from '#/html';
-import {random} from '#/math/rng';
-import {ScoreOverlay} from '#/score';
-import {SoundManager} from '#/sound';
-import {GameState} from '#/state';
+import { EntityManager } from '#/entity/manager';
+import { random } from '#/math/rng';
+import { ScoreOverlay } from '#/score';
+import { SoundManager } from '#/sound';
+import { GameState } from '#/state';
+import { CustomElement, html, ui } from '#/ui/html';
 
 function setURLSeed(seed: string): void {
     const url = new URL(window.location.href);

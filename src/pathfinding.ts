@@ -1,10 +1,10 @@
-import {Rect, isPosInsideRect} from '#/math';
-import {Vector2, Vector2Like} from '#/math/vector';
-import {isRectOccupied} from '#/world';
-import {EntityManager} from '#/entity/manager';
-import {Entity} from '#/entity/core';
-import {MinPriorityQueue} from '#/math/priority-queue';
-import {CELL_SIZE} from '#/const';
+import { CELL_SIZE } from '#/const';
+import { Entity } from '#/entity/core';
+import { EntityManager } from '#/entity/manager';
+import { Rect, isPosInsideRect } from '#/math';
+import { MinPriorityQueue } from '#/math/priority-queue';
+import { Vector2, Vector2Like } from '#/math/vector';
+import { isRectOccupied } from '#/world';
 
 type Node = {
     pos: Vector2;

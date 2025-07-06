@@ -1,10 +1,10 @@
-import {Rect} from '#/math';
-import {Vector2} from '#/math/vector';
-import {assert} from '#/utils';
-import {getCachedImage, setCachedImage} from '#/entity/sprite';
-import {Duration} from '#/math/duration';
-import {Animation, easeOut2} from '#/animation';
-import {Renderer} from '#/renderer';
+import { Animation, easeOut2 } from '#/animation';
+import { Rect } from '#/math';
+import { Duration } from '#/math/duration';
+import { Vector2 } from '#/math/vector';
+import { Renderer } from '#/renderer';
+import { getCachedImage, setCachedImage } from '#/renderer/sprite';
+import { assert } from '#/utils';
 
 const EXPLOSION_IMAGE_PATH = './assets/scorch.png';
 

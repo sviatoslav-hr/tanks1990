@@ -1,11 +1,9 @@
 import {DEV_MODE_KEY} from '#/const';
-import {DevUI, toggleDevPanelVisibility, toggleFPSVisibility} from '#/dev-ui';
-import {Direction} from '#/entity/core';
 import {EntityManager} from '#/entity/manager';
 import {GameInput} from '#/input';
+import {Direction} from '#/math/direction';
 import {Vector2Like} from '#/math/vector';
 import {Menu} from '#/menu';
-import {notify} from '#/notification';
 import {
     exitRecording,
     getNextRecordedInput,
@@ -15,6 +13,8 @@ import {
 import {Renderer} from '#/renderer';
 import {GameState} from '#/state';
 import {GameStorage} from '#/storage';
+import {DevUI, toggleDevPanelVisibility, toggleFPSVisibility} from '#/ui/dev';
+import {notify} from '#/ui/notification';
 
 export interface InputState {
     game: GameInputState;

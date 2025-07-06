@@ -1,15 +1,16 @@
-import {Camera} from '#/camera';
-import {Direction, Entity, isIntesecting} from '#/entity/core';
-import {ExplosionEffect} from '#/entity/effect';
-import {EntityId} from '#/entity/id';
-import {Projectile} from '#/entity/projectile';
-import {EnemyTank, PlayerTank, Tank} from '#/entity/tank';
-import {TankPartKind} from '#/entity/tank-generation';
-import {Duration} from '#/math/duration';
-import {Vector2Like} from '#/math/vector';
-import {Renderer} from '#/renderer';
-import {ScoreRecord} from '#/score';
-import {World} from '#/world';
+import { ExplosionEffect } from '#/effect';
+import { Entity, isIntesecting } from '#/entity/core';
+import { EntityId } from '#/entity/id';
+import { Projectile } from '#/entity/projectile';
+import { EnemyTank, PlayerTank, Tank } from '#/entity/tank';
+import { TankPartKind } from '#/entity/tank/generation';
+import { Direction } from '#/math/direction';
+import { Duration } from '#/math/duration';
+import { Vector2Like } from '#/math/vector';
+import { Renderer } from '#/renderer';
+import { Camera } from '#/renderer/camera';
+import { ScoreRecord } from '#/score';
+import { World } from '#/world';
 
 export function isSameEntity(a: Entity, b: Entity): boolean {
     return a.id === b.id;

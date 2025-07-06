@@ -1,4 +1,4 @@
-import {describe, it, expect} from 'vitest';
+import {describe, expect, it} from 'vitest';
 
 import {toDegrees} from '#/math';
 import {Transform} from '#/math/transform';

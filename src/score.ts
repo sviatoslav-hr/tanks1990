@@ -1,10 +1,10 @@
-import {Color} from '#/color';
-import {EntityManager} from '#/entity/manager';
-import {css, CustomElement, ui, ReactiveElement} from '#/html';
-import {Duration} from '#/math/duration';
-import {Menu} from '#/menu';
-import {Renderer} from '#/renderer';
-import {GameStorage} from '#/storage';
+import { Color } from '#/color';
+import { EntityManager } from '#/entity/manager';
+import { Duration } from '#/math/duration';
+import { Menu } from '#/menu';
+import { Renderer } from '#/renderer';
+import { GameStorage } from '#/storage';
+import { css, CustomElement, ReactiveElement, ui } from '#/ui/html';
 
 const BEST_SCORE_KEY = 'best_score';
 

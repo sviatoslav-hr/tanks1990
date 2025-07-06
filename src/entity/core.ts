@@ -1,8 +1,8 @@
-import {EntityId, newEntityId} from '#/entity/id';
-import {Rect, clamp, isPosInsideRect, xn, yn} from '#/math';
-import {Duration} from '#/math/duration';
-import {EntityManager} from '#/entity/manager';
-import {Room} from '#/world';
+import { EntityId, newEntityId } from '#/entity/id';
+import { EntityManager } from '#/entity/manager';
+import { Rect, clamp, isPosInsideRect, xn, yn } from '#/math';
+import { Direction } from '#/math/direction';
+import { Room } from '#/world';
 
 export class Entity implements Rect {
     readonly id: EntityId = newEntityId();
@@ -23,26 +23,6 @@ export class Entity implements Rect {
 
     equals(other: Entity): boolean {
         return this.id === other.id;
-    }
-}
-
-export enum Direction {
-    NORTH = 0,
-    EAST = 90,
-    SOUTH = 180,
-    WEST = 270,
-}
-
-export function oppositeDirection(direction: Direction): Direction {
-    switch (direction) {
-        case Direction.NORTH:
-            return Direction.SOUTH;
-        case Direction.SOUTH:
-            return Direction.NORTH;
-        case Direction.EAST:
-            return Direction.WEST;
-        case Direction.WEST:
-            return Direction.EAST;
     }
 }
 
@@ -103,8 +83,4 @@ export function moveEntity(entity: Rect, offset: number, direction: Direction): 
             entity.x -= offset;
             break;
     }
-}
-
-export function scaleMovement(movement: number, dt: Duration): number {
-    return movement * dt.seconds;
 }

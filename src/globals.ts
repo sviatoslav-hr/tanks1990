@@ -1,5 +1,5 @@
 import {assert, assertError, throwError} from '#/utils';
-import {logger} from '#/logger';
+import {logger} from '#/common/logger';
 
 let BROWSER = true;
 if (!globalThis.window) {

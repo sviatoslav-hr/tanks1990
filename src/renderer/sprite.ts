@@ -1,8 +1,8 @@
-import {fmod, Rect} from '#/math';
-import {Duration} from '#/math/duration';
-import {Transform} from '#/math/transform';
-import {Vector2} from '#/math/vector';
-import {Renderer} from '#/renderer';
+import { fmod, Rect } from '#/math';
+import { Duration } from '#/math/duration';
+import { Transform } from '#/math/transform';
+import { Vector2 } from '#/math/vector';
+import { Renderer } from '#/renderer';
 
 const ASSETS_URL = './assets';
 // TODO: consider using a simpler data type for images instead of HTMLImageElement

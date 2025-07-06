@@ -1,5 +1,4 @@
 # TODO
-- [ ] Draw reload bar for the player tank
 
 ## DOING
 

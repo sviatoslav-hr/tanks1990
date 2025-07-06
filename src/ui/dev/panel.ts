@@ -1,5 +1,5 @@
-import {DevButton, DevFilePicker, DevNumberInput} from '#/dev-ui';
-import {css, CustomElement, HTMLElementOptions, ReactiveElement, ui} from '#/html';
+import {DevButton, DevFilePicker, DevNumberInput} from '#/ui/dev';
+import {css, CustomElement, HTMLElementOptions, ReactiveElement, ui} from '#/ui/html';
 
 @CustomElement('dev-panel')
 export class DevPanel extends ReactiveElement {

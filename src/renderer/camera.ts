@@ -1,5 +1,5 @@
-import {Vector2} from '#/math/vector';
-import {Rect} from '#/math';
+import { Rect } from '#/math';
+import { Vector2 } from '#/math/vector';
 
 // TODO: Have 2 Cameras: dev and player
 

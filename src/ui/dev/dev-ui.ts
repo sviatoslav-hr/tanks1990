@@ -1,71 +1,11 @@
-import {DevPanel, FPSMonitor} from '#/dev-ui';
-import {EntityManager} from '#/entity/manager';
-import {css, CustomElement, ReactiveElement, ui} from '#/html';
-import {notify, notifyError} from '#/notification';
-import {importRecording, toggleRecording} from '#/recording';
-import {Renderer} from '#/renderer';
-import {GameState} from '#/state';
-import {exportAsJson, GameStorage} from '#/storage';
-
-@CustomElement('dev-ui')
-export class DevUI extends ReactiveElement {
-    readonly devPanel = new DevPanel({className: 'dev-panel'});
-    readonly fpsMonitor = new FPSMonitor({className: 'fps-monitor'});
-
-    protected override render(): HTMLElement {
-        return ui.div({
-            className: ['dev-ui'],
-            children: [this.fpsMonitor, this.devPanel],
-        });
-    }
-
-    protected override styles(): HTMLStyleElement {
-        return css`
-            .dev-ui {
-                padding: 0;
-                margin: 0;
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100vw;
-                height: 0;
-                box-sizing: border-box;
-            }
-            .fps-monitor {
-                position: absolute;
-                top: 0;
-                left: 0;
-            }
-            .dev-panel {
-                position: absolute;
-                top: 0;
-                right: 0;
-                overflow-y: auto;
-                max-height: 100vh;
-            }
-        `;
-    }
-}
-
-const SHOW_FPS_KEY = 'show_fps';
-export function toggleFPSVisibility(fps: FPSMonitor, cache: GameStorage): void {
-    if (fps.visible) {
-        fps.hide();
-    } else {
-        fps.show();
-    }
-    cache.set(SHOW_FPS_KEY, fps.visible);
-}
-
-const SHOW_DEV_PANEL_KEY = 'show_dev_panel';
-export function toggleDevPanelVisibility(panel: DevPanel, cache: GameStorage): void {
-    if (panel.visible) {
-        panel.hide();
-    } else {
-        panel.show();
-    }
-    cache.set(SHOW_DEV_PANEL_KEY, panel.visible);
-}
+import { EntityManager } from '#/entity/manager';
+import { importRecording, toggleRecording } from '#/recording';
+import { Renderer } from '#/renderer';
+import { GameState } from '#/state';
+import { exportAsJson, GameStorage } from '#/storage';
+import { DevPanel, FPSMonitor } from '#/ui/dev';
+import { css, CustomElement, ReactiveElement, ui } from '#/ui/html';
+import { notify, notifyError } from '#/ui/notification';
 
 export function createDevUI(
     state: GameState,
@@ -160,4 +100,64 @@ export function createDevUI(
     // const world = devPanel.addFolder('World');
     // TODO: Checkboxes to show/hide boundary, grid, etc.
     return devUI;
+}
+
+@CustomElement('dev-ui')
+export class DevUI extends ReactiveElement {
+    readonly devPanel = new DevPanel({className: 'dev-panel'});
+    readonly fpsMonitor = new FPSMonitor({className: 'fps-monitor'});
+
+    protected override render(): HTMLElement {
+        return ui.div({
+            className: ['dev-ui'],
+            children: [this.fpsMonitor, this.devPanel],
+        });
+    }
+
+    protected override styles(): HTMLStyleElement {
+        return css`
+            .dev-ui {
+                padding: 0;
+                margin: 0;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 0;
+                box-sizing: border-box;
+            }
+            .fps-monitor {
+                position: absolute;
+                top: 0;
+                left: 0;
+            }
+            .dev-panel {
+                position: absolute;
+                top: 0;
+                right: 0;
+                overflow-y: auto;
+                max-height: 100vh;
+            }
+        `;
+    }
+}
+
+const SHOW_FPS_KEY = 'show_fps';
+export function toggleFPSVisibility(fps: FPSMonitor, cache: GameStorage): void {
+    if (fps.visible) {
+        fps.hide();
+    } else {
+        fps.show();
+    }
+    cache.set(SHOW_FPS_KEY, fps.visible);
+}
+
+const SHOW_DEV_PANEL_KEY = 'show_dev_panel';
+export function toggleDevPanelVisibility(panel: DevPanel, cache: GameStorage): void {
+    if (panel.visible) {
+        panel.hide();
+    } else {
+        panel.show();
+    }
+    cache.set(SHOW_DEV_PANEL_KEY, panel.visible);
 }

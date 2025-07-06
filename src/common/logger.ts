@@ -1,4 +1,4 @@
-import {notify, notifyError, notifyWarning} from '#/notification';
+import {notify, notifyError, notifyWarning} from '#/ui/notification';
 
 enum LogLevel {
     DEBUG,

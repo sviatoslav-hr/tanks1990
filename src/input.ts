@@ -1,7 +1,7 @@
-import {Vector2} from '#/math/vector';
+import { Vector2 } from '#/math/vector';
 
 // PERF: It might not be the very efficient to use string every time to check
-// if the button is pressed. Could be better to
+// if the button is pressed. Could be better to use a number even a number flag.
 export type KeyCode =
     | 'KeyQ'
     | 'KeyW'

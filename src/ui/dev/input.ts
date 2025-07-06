@@ -1,4 +1,4 @@
-import {css, CustomElement, ReactiveElement, ui} from '#/html';
+import {css, CustomElement, ReactiveElement, ui} from '#/ui/html';
 
 type NumberOnChangeCallback = (value: number) => void;
 

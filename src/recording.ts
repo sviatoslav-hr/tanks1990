@@ -1,9 +1,9 @@
-import type {EntityManager} from '#/entity/manager';
-import type {GameInputState} from '#/input-handler';
-import {random} from '#/math/rng';
-import type {Menu} from '#/menu';
-import {notify, notifyError} from '#/notification';
-import type {GameState} from '#/state';
+import type { EntityManager } from '#/entity/manager';
+import type { GameInputState } from '#/input-handler';
+import { random } from '#/math/rng';
+import type { Menu } from '#/menu';
+import type { GameState } from '#/state';
+import { notify, notifyError } from '#/ui/notification';
 
 export const RECORDING_VERSION = 0.1;
 

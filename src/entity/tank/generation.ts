@@ -1,8 +1,8 @@
-import {Direction} from '#/entity/core';
-import {Sprite} from '#/entity/sprite';
-import type {Rect} from '#/math';
-import {Duration} from '#/math/duration';
-import type {Renderer} from '#/renderer';
+import type { Rect } from '#/math';
+import { Direction } from '#/math/direction';
+import { Duration } from '#/math/duration';
+import type { Renderer } from '#/renderer';
+import { Sprite } from '#/renderer/sprite';
 
 const tankPartKinds = ['light', 'medium', 'heavy'] as const;
 export type TankPartKind = (typeof tankPartKinds)[number];

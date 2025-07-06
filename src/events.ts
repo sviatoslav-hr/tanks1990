@@ -1,6 +1,6 @@
-import {Vector2Like} from '#/math/vector';
+import {Direction} from '#/math/direction';
 import {EntityId} from '#/entity/id';
-import {Direction} from './entity/core';
+import {Vector2Like} from '#/math/vector';
 
 export type ShotEvent = {
     type: 'shot';

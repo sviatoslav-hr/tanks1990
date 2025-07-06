@@ -1,24 +1,24 @@
 import './globals';
 import './style.css';
 
-import {APP_ELEMENT_ID, DEV_MODE_KEY} from '#/const';
-import {createDevUI, DevUI} from '#/dev-ui';
-import {preloadEffectImages} from '#/entity/effect';
-import {EntityManager} from '#/entity/manager';
-import {eventQueue} from '#/events';
-import {handleGameEvents as processGameEvents} from '#/events-handler';
-import {GameInput} from '#/input';
-import {handleKeymaps, processInput} from '#/input-handler';
-import {logger} from '#/logger';
-import {Duration} from '#/math/duration';
-import {initMenu, Menu} from '#/menu';
-import {getNotificationBar} from '#/notification';
-import {maybeRecordInput} from '#/recording';
-import {Renderer} from '#/renderer';
-import {drawScoreMini, getBestScore, saveBestScore, updateScoreInMenu} from '#/score';
-import {SoundManager} from '#/sound';
-import {GameState} from '#/state';
-import {GameStorage} from '#/storage';
+import { logger } from '#/common/logger';
+import { APP_ELEMENT_ID, DEV_MODE_KEY } from '#/const';
+import { preloadEffectImages } from '#/effect';
+import { EntityManager } from '#/entity/manager';
+import { eventQueue } from '#/events';
+import { handleGameEvents as processGameEvents } from '#/events-handler';
+import { GameInput } from '#/input';
+import { handleKeymaps, processInput } from '#/input-handler';
+import { Duration } from '#/math/duration';
+import { initMenu, Menu } from '#/menu';
+import { maybeRecordInput } from '#/recording';
+import { Renderer } from '#/renderer';
+import { drawScoreMini, getBestScore, saveBestScore, updateScoreInMenu } from '#/score';
+import { SoundManager } from '#/sound';
+import { GameState } from '#/state';
+import { GameStorage } from '#/storage';
+import { createDevUI, DevUI } from '#/ui/dev';
+import { getNotificationBar } from '#/ui/notification';
 
 main();
 

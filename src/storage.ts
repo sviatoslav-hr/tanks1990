@@ -1,5 +1,5 @@
-import {JSONObjectParser} from '#/json';
-import {logger} from '#/logger';
+import { JSONObjectParser } from '#/common/json';
+import { logger } from '#/common/logger';
 
 export function exportAsJson(obj: object, fileName = 'data.json'): void {
     const jsonStr = JSON.stringify(obj); // Pretty-print with 2 spaces

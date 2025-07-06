@@ -1,7 +1,7 @@
-import {describe, it, expect} from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import {distanceV2, toDegrees, toRadians} from '#/math';
-import {Vector2} from '#/math/vector';
+import { distanceV2, toDegrees, toRadians } from '#/math';
+import { Vector2 } from '#/math/vector';
 
 describe('math', () => {
     it('should calculate the distance between two points', () => {
@@ -34,12 +34,7 @@ describe('math', () => {
         const distance = 10;
         const p0 = new Vector2(4, 6);
 
-        const d = p0
-            .clone()
-            .sub(c)
-            .normalize()
-            .multiplyScalar(distance)
-            .add(p0);
+        const d = p0.clone().sub(c).normalize().multiplyScalar(distance).add(p0);
 
         expect(p0.distanceTo(d)).toEqual(distance);
         expect([d.x, d.y]).toEqual([10, 14]);

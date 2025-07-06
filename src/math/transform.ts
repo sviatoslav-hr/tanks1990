@@ -1,5 +1,5 @@
-import {toRadians} from '#/math';
-import {Vector2} from '#/math/vector';
+import { toRadians } from '#/math';
+import { Vector2 } from '#/math/vector';
 
 type TransformMatrix = {
     a: number;
@@ -29,14 +29,7 @@ export class Transform implements TransformMatrix {
         public f: number,
     ) {}
 
-    static create(
-        a: number,
-        b: number,
-        c: number,
-        d: number,
-        e: number,
-        f: number,
-    ): Transform {
+    static create(a: number, b: number, c: number, d: number, e: number, f: number): Transform {
         return new Transform(a, b, c, d, e, f);
     }
 
