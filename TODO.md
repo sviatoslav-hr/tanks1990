@@ -1,9 +1,11 @@
 # TODO
+- [ ] Add a sound effect when the player/enemy is hit
+- [ ] Add a visual effect when the player/enemy is hit
 
 ## DOING
 
 ## NEXT TODO
-- [ ] Bug: Health bar is not visible when tank is close to a wall
+- [ ] Does score even makes sense since game is not unlimited now?
 - [ ] Power ups - needs more thought on what they should be and how they should work
       Examples: Time stop, damage increase, shield, speed increase, etc.
 
