@@ -37,7 +37,6 @@ export abstract class Tank extends Entity {
     protected lastAcceleration = 0;
     protected shieldTimer = Duration.zero();
     protected moving = false;
-    protected readonly SHOOTING_PERIOD = Duration.milliseconds(300);
     protected readonly SHIELD_TIME = Duration.milliseconds(1000);
     protected abstract readonly shieldSprite: Sprite<string>;
     private readonly shieldBoundary = {
@@ -49,7 +48,7 @@ export abstract class Tank extends Entity {
 
     protected abstract sprite: TankSpriteGroup;
     protected abstract schema: TankSchema;
-    protected shootingDelay = this.SHOOTING_PERIOD.clone();
+    protected shootingDelay = Duration.milliseconds(0);
     protected isStuck = false;
     private healthAnimation = new Animation(Duration.milliseconds(300), easeOut).end();
     private prevHealth = 0;
@@ -168,13 +167,14 @@ export abstract class Tank extends Entity {
 
     shoot(): void {
         if (this.shootingDelay.positive) return;
-        this.shootingDelay.setFrom(this.SHOOTING_PERIOD);
+        this.shootingDelay.setFrom(this.schema.shootingDelay);
         eventQueue.push({
             type: 'shot',
             entityId: this.id,
             bot: this.bot,
             origin: this.getShootingOrigin(),
             direction: this.direction,
+            damage: this.schema.damage,
         });
     }
 
@@ -184,7 +184,7 @@ export abstract class Tank extends Entity {
             this.health = this.maxHealth;
             this.prevHealth = this.health;
             this.shouldRespawn = false;
-            this.shootingDelay.setFrom(this.SHOOTING_PERIOD);
+            this.shootingDelay.setFrom(this.schema.shootingDelay);
             this.activateShield();
             return true;
         }
@@ -289,7 +289,6 @@ export abstract class Tank extends Entity {
 export class PlayerTank extends Tank implements Entity {
     public readonly maxSpeed = 0;
     public readonly topSpeedReachTime = Duration.milliseconds(50);
-    protected readonly SHOOTING_PERIOD = Duration.milliseconds(500);
     protected readonly shieldSprite = createShieldSprite('player');
     public readonly bot: boolean = false;
     public readonly survivedFor = Duration.zero();
@@ -381,7 +380,6 @@ export class PlayerTank extends Tank implements Entity {
 export class EnemyTank extends Tank implements Entity {
     private static readonly RESPAWN_DELAY = Duration.milliseconds(1000);
     protected moving = true;
-    protected readonly SHOOTING_PERIOD = Duration.milliseconds(1500);
     protected schema = makeTankSchema('enemy', 'medium');
     protected sprite = createTankSpriteGroup(this.schema);
     protected readonly shieldSprite = createShieldSprite('enemy');

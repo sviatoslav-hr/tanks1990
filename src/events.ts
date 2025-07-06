@@ -8,6 +8,7 @@ export type ShotEvent = {
     origin: Vector2Like;
     direction: Direction;
     entityId: EntityId;
+    damage: number;
 };
 
 export type TankDestroyedEvent = {

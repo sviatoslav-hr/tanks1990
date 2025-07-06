@@ -11,8 +11,6 @@ import {Vector2} from '#/math/vector';
 import {Renderer} from '#/renderer';
 import {EntityManager, isSameEntity} from './manager';
 
-const PROJECTILE_DAMAGE = 10;
-
 interface CreateProjectileOpts {
     x: number;
     y: number;
@@ -27,7 +25,7 @@ export class Projectile extends Entity {
     public ownerId: EntityId;
     private direction: Direction;
     private shotByPlayer: boolean;
-    private damage = PROJECTILE_DAMAGE;
+    public damage = 0;
 
     private readonly v = 600;
     private readonly sprite = new Sprite({

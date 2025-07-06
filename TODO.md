@@ -1,13 +1,5 @@
 # TODO
 - [ ] Draw reload bar for the player tank
-- [ ] Make different combinations of tank turrets and bodies
-  - [x] Split the tank body and turret into separate sprites
-  - [x] Create different tank bodies and turrets
-  - [x] Randomly select tank body and turret for the enemies
-  - [x] Assign health based on tank body
-  - [x] Assign speed based on tank body
-  - [ ] Assign damage based on tank turret
-  - [ ] Assign reload speed based on tank turret
 
 ## DOING
 

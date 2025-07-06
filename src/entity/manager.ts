@@ -122,11 +122,17 @@ export class EntityManager {
         this.updateProjectiles(dt, camera);
     }
 
-    spawnProjectile(ownerId: EntityId, origin: Vector2Like, direction: Direction): void {
+    spawnProjectile(
+        ownerId: EntityId,
+        origin: Vector2Like,
+        direction: Direction,
+        damage: number,
+    ): void {
         const deadProjectile = this.projectiles.find((p) => p.dead);
         if (deadProjectile) {
             // NOTE: reuse dead projectiles instead of creating new ones
             deadProjectile.reviveAt(ownerId, origin.x, origin.y, direction);
+            deadProjectile.damage = damage;
             return;
         }
 
@@ -138,6 +144,7 @@ export class EntityManager {
             ownerId,
             direction,
         });
+        projectile.damage = damage;
         // TODO: measure if dead projectiles should be cleaned up at some point
         this.projectiles.push(projectile);
     }

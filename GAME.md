@@ -47,19 +47,24 @@ Player tank can be improved in such ways:
 ## Enemies
 
 There only one enemy type - a tank.
-But there should be different types of tanks:
-- Basic tank - moves and shoots
-- Fast tank - moves faster than the basic tank, but has less HP
-- Slow tank - moves slower than the basic tank, but has more HP
+But there should be different types of tank bodies:
+- Light tank - moves fast but has less HP
+- Medium tank - moves at a normal speed and has normal HP
+- Heavy tank - moves slow but has more HP
 
 There also should be different turret types:
-- Basic turret - shoots straight
-- Fast turret - shoots faster than the basic turret, but has less damage
-- Slow turret - shoots slower than the basic turret, but has more damage
+- Light turret - shoots fast, but deals less damage
+- Medium turret - shoots at a normal speed and deals normal damage
+- Heavy turret - shoots slow, but deals more damage
 
-There could be different combinations of tanks and turrets, which is randomly defined.
-At the start of the game, player should only face the basic tanks.
-As the player progresses, the game should spawn different types of tanks and with different turrets.
+- One option is to have different combinations of tanks and turrets, but it's not clear to make this work and introduce the complexity gradually to the player.
+- Easier option is to connect same types of turret with same types of bodies. So, there will only 3 types of enemies:
+- Basic tank with basic turret
+- Fast tank with fast turret
+- Slow tank with slow turret
+
+At the start of the game, player will face only easy enemies.
+As the player progresses, game will introduce more mechanics to the player. The difficulty in the game should increase gradually.
 
 ## Final Boss
 

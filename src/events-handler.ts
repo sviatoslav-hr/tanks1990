@@ -18,7 +18,8 @@ export function handleGameEvents(
                     const volumeScale = event.bot ? 0.15 : 1;
                     sounds.playSound(SoundType.SHOOTING, volumeScale);
                 }
-                manager.spawnProjectile(event.entityId, event.origin, event.direction);
+                const {entityId, origin, direction, damage} = event;
+                manager.spawnProjectile(entityId, origin, direction, damage);
                 break;
             }
 

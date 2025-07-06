@@ -11,20 +11,25 @@ export interface TankSchema {
     type: 'player' | 'enemy';
     turret: TankPartKind;
     body: TankPartKind;
+    damage: number;
+    shootingDelay: Duration;
     maxHealth: number;
     maxSpeed: number;
 }
 
 export function makeTankSchema(type: 'player' | 'enemy', kind: TankPartKind): TankSchema {
     // NOTE: Player should be faster because the game feel better this way.
-    const mult = type === 'player' ? 1.5 : 1;
+    const speedMult = type === 'player' ? 1.5 : 1;
+    const shootingMult = type === 'player' ? 3 : 1;
     return {
         type,
         // NOTE: For now turret and body are the same kind for the sake of simplicity.
         turret: kind,
         body: kind,
+        damage: tankKindDamage[kind],
+        shootingDelay: Duration.milliseconds(tankKindShootingDelayMillis[kind] / shootingMult),
         maxHealth: tankKindMaxHealth[kind],
-        maxSpeed: tankKindSpeed[kind] * mult,
+        maxSpeed: tankKindSpeed[kind] * speedMult,
     };
 }
 
@@ -38,6 +43,18 @@ const tankKindSpeed: Record<TankPartKind, number> = {
     light: (400 * 1000) / (60 * 60), // in m/s
     medium: (300 * 1000) / (60 * 60),
     heavy: (200 * 1000) / (60 * 60),
+};
+
+const tankKindDamage: Record<TankPartKind, number> = {
+    light: 5,
+    medium: 10,
+    heavy: 15,
+};
+
+const tankKindShootingDelayMillis: Record<TankPartKind, number> = {
+    light: 1000,
+    medium: 1500,
+    heavy: 2000,
 };
 
 function makeTankTurretSprite(keyPrefix: string, kind: TankPartKind): Sprite<'static'> {
