@@ -1,3 +1,4 @@
+import {random} from '#/math/rng';
 import {
     RECORDING_VERSION,
     resetRecording,
@@ -5,7 +6,6 @@ import {
     type RecordingInfo,
     type RecordingStatus,
 } from '#/recording';
-import {random} from '#/math/rng';
 
 export enum GameStatus {
     INITIAL,
@@ -16,6 +16,7 @@ export enum GameStatus {
 
 export class GameState {
     status = GameStatus.INITIAL;
+    gameCompleted = false;
     debugUpdateTriggered = false;
     recording: RecordingStatus = {
         enabled: true,
@@ -79,6 +80,16 @@ export class GameState {
             this.recording.playing = false;
         }
         this.status = GameStatus.DEAD;
+    }
+
+    markCompleted(): void {
+        if (this.recording.active) {
+            toggleRecording(this);
+        }
+        if (this.recording.playing) {
+            this.recording.playing = false;
+        }
+        this.gameCompleted = true;
     }
 
     nextTick() {

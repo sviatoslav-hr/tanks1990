@@ -1,24 +1,25 @@
 import './globals';
 import './style.css';
 
-import { logger } from '#/common/logger';
-import { APP_ELEMENT_ID, DEV_MODE_KEY } from '#/const';
-import { preloadEffectImages } from '#/effect';
-import { EntityManager } from '#/entity/manager';
-import { eventQueue } from '#/events';
-import { handleGameEvents as processGameEvents } from '#/events-handler';
-import { GameInput } from '#/input';
-import { handleKeymaps, processInput } from '#/input-handler';
-import { Duration } from '#/math/duration';
-import { initMenu, Menu } from '#/menu';
-import { maybeRecordInput } from '#/recording';
-import { Renderer } from '#/renderer';
-import { drawScoreMini, getBestScore, saveBestScore, updateScoreInMenu } from '#/score';
-import { SoundManager } from '#/sound';
-import { GameState } from '#/state';
-import { GameStorage } from '#/storage';
-import { createDevUI, DevUI } from '#/ui/dev';
-import { getNotificationBar } from '#/ui/notification';
+import {logger} from '#/common/logger';
+import {APP_ELEMENT_ID, DEV_MODE_KEY} from '#/const';
+import {preloadEffectImages} from '#/effect';
+import {EntityManager} from '#/entity/manager';
+import {eventQueue} from '#/events';
+import {handleGameEvents as processGameEvents} from '#/events-handler';
+import {GameInput} from '#/input';
+import {handleKeymaps, processInput} from '#/input-handler';
+import {Duration} from '#/math/duration';
+import {initMenu, Menu} from '#/menu';
+import {maybeRecordInput} from '#/recording';
+import {Renderer} from '#/renderer';
+import {drawScoreMini, getBestScore, saveBestScore, updateScoreInMenu} from '#/score';
+import {SoundManager} from '#/sound';
+import {GameState} from '#/state';
+import {GameStorage} from '#/storage';
+import {createDevUI, DevUI} from '#/ui/dev';
+import {getNotificationBar, notify} from '#/ui/notification';
+import {Room} from '#/world';
 
 main();
 
@@ -146,8 +147,19 @@ function simulateGameTick(
         saveBestScore(storage, manager);
     }
 
+    if (!player.dead && justCompletedGame(state, manager.world.activeRoom)) {
+        player.completedGame = true;
+        state.markCompleted();
+        notify('Congratulation!');
+        notify(`Completed in ${player.survivedFor.toHumanString()}`);
+    }
+
     if (state.playing || state.dead || state.debugUpdateTriggered) {
         manager.updateEffects(dt);
         manager.updateAllEntities(dt, renderer.camera);
     }
+}
+
+function justCompletedGame(state: GameState, room: Room): boolean {
+    return state.playing && !state.gameCompleted && room.completed && !room.nextRoom;
 }

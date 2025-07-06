@@ -1,5 +1,5 @@
-import {Direction} from '#/math/direction';
 import {EntityId} from '#/entity/id';
+import {Direction} from '#/math/direction';
 import {Vector2Like} from '#/math/vector';
 
 export type ShotEvent = {

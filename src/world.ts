@@ -1,18 +1,18 @@
-import { Color } from '#/color';
-import { JSONObjectParser } from '#/common/json';
-import { BASE_HEIGHT, BASE_WIDTH, CELL_SIZE } from '#/const';
-import { PlayerTank } from '#/entity';
-import { Block, generateBlocks } from '#/entity/block';
-import { Entity, isIntesecting } from '#/entity/core';
-import { EnemyWave, wavePerRoom } from '#/entity/enemy-wave';
-import { EntityManager, isSameEntity } from '#/entity/manager';
-import { Rect, fmod, isPosInsideRect, oppositeDirection } from '#/math';
-import { Direction } from '#/math/direction';
-import { random } from '#/math/rng';
-import { Vector2, Vector2Like } from '#/math/vector';
-import { Renderer } from '#/renderer';
-import { createStaticSprite } from '#/renderer/sprite';
-import { GameStorage } from '#/storage';
+import {Color} from '#/color';
+import {JSONObjectParser} from '#/common/json';
+import {BASE_HEIGHT, BASE_WIDTH, CELL_SIZE} from '#/const';
+import {PlayerTank} from '#/entity';
+import {Block, generateBlocks} from '#/entity/block';
+import {Entity, isIntesecting} from '#/entity/core';
+import {EnemyWave, wavePerRoom} from '#/entity/enemy-wave';
+import {EntityManager, isSameEntity} from '#/entity/manager';
+import {Rect, fmod, isPosInsideRect, oppositeDirection} from '#/math';
+import {Direction} from '#/math/direction';
+import {random} from '#/math/rng';
+import {Vector2, Vector2Like} from '#/math/vector';
+import {Renderer} from '#/renderer';
+import {createStaticSprite} from '#/renderer/sprite';
+import {GameStorage} from '#/storage';
 
 const WORLD_CONFIG_KEY = 'world_config';
 export const roomSizeInCells = new Vector2(12, 8);
@@ -52,10 +52,10 @@ export class World {
     }
 
     drawRooms(renderer: Renderer): void {
-        this.activeRoom.draw(renderer, this);
         for (const b of this.iterateBlocks()) {
             b.draw(renderer);
         }
+        this.activeRoom.draw(renderer, this);
         this.drawWorldBoundary(renderer);
     }
 
@@ -227,7 +227,7 @@ export function isRectOccupied(
 function generateDungeon(
     startRoomPosition: Vector2,
     manager: EntityManager,
-    roomsCount = 6,
+    roomsCount: number,
 ): Room[] {
     assert(roomsCount <= MAX_ROOMS_COUNT);
     const rooms: Room[] = [];
@@ -403,6 +403,10 @@ export class Room {
         assert(this.roomIndex === 0 || this.prevRoomDoorBlocks.length === 2);
     }
 
+    get completed(): boolean {
+        return this.started && this.wave.cleared;
+    }
+
     shouldActivateNextRoom(player: Entity): boolean {
         if (!this.nextRoom || !this.nextRoomDoorOpen) return false;
         return isIntesecting(player, this.nextRoomTransitionRect);
@@ -448,19 +452,19 @@ export class Room {
     update(manager: EntityManager): void {
         if (!this.started) {
             this.maybeStartRoom(manager.player);
-        } else if (
-            this.nextRoom &&
-            this.started &&
-            this.wave.enemiesCount === 0 &&
-            !this.nextRoomDoorOpen
-        ) {
-            logger.debug(
-                '[Room] Room %i cleared. Opening door to room %i',
-                this.roomIndex,
-                this.nextRoom.roomIndex,
-            );
-            this.openNextRoomDoors();
-            this.nextRoomDoorOpen = true;
+        } else if (this.completed && !this.nextRoomDoorOpen) {
+            if (this.nextRoom) {
+                logger.debug(
+                    '[Room] Room %i cleared. Opening door to room %i',
+                    this.roomIndex,
+                    this.nextRoom.roomIndex,
+                );
+                this.openNextRoomDoors();
+            } else {
+                logger.debug('[Room] Last room %i cleared.', this.roomIndex);
+                // HACK: Last room doesn't have doors, we just mark to not flood with logs.
+                this.nextRoomDoorOpen = true;
+            }
         }
     }
 
@@ -492,6 +496,7 @@ export class Room {
         const block2 = this.blocks.find((b) => !b.dead && isIntesecting(b, searchRect));
         assert(block2 != null);
         block2.dead = true;
+        this.nextRoomDoorOpen = true;
     }
 
     private makeNextRoomTransitionRect(

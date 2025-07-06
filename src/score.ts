@@ -1,10 +1,10 @@
-import { Color } from '#/color';
-import { EntityManager } from '#/entity/manager';
-import { Duration } from '#/math/duration';
-import { Menu } from '#/menu';
-import { Renderer } from '#/renderer';
-import { GameStorage } from '#/storage';
-import { css, CustomElement, ReactiveElement, ui } from '#/ui/html';
+import {Color} from '#/color';
+import {EntityManager} from '#/entity/manager';
+import {Duration} from '#/math/duration';
+import {Menu} from '#/menu';
+import {Renderer} from '#/renderer';
+import {GameStorage} from '#/storage';
+import {css, CustomElement, ReactiveElement, ui} from '#/ui/html';
 
 const BEST_SCORE_KEY = 'best_score';
 
@@ -42,7 +42,8 @@ export function drawScoreMini(renderer: Renderer, manager: EntityManager): void 
     }
 
     {
-        const text = `Survived for ${player.survivedFor.toHumanString()}`;
+        const scoreText = player.completedGame ? 'Completed in' : 'Survived for';
+        const text = `${scoreText} ${player.survivedFor.toHumanString()}`;
         const x = roomBounds.x + roomBounds.width;
         renderer.setFont(font, 'right', 'top');
         renderer.fillText(text, {x, y, shadowColor: Color.BLACK_RAISIN});
@@ -55,6 +56,7 @@ interface ScoreState {
     bestScore: ScoreRecord | null;
     survivedFor: Duration;
     roomIndex: number;
+    completedGame: boolean;
 }
 
 function bestScoreEquals(a: ScoreRecord | null, b: ScoreRecord | null): boolean {
@@ -73,6 +75,7 @@ export class ScoreOverlay extends ReactiveElement {
     currentScore = 0;
     bestScore: ScoreRecord | null = null;
     survivedFor = Duration.zero();
+    completedGame = false;
     roomIndex = 0;
 
     updateState(state: ScoreState): void {
@@ -97,6 +100,10 @@ export class ScoreOverlay extends ReactiveElement {
             this.roomIndex = state.roomIndex;
             stateChanged = true;
         }
+        if (this.completedGame !== state.completedGame) {
+            this.completedGame = state.completedGame;
+            stateChanged = true;
+        }
         if (stateChanged) {
             this.rerender();
         }
@@ -107,11 +114,12 @@ export class ScoreOverlay extends ReactiveElement {
         const bestScoreText = best
             ? `Best Record (${shortDate(best.createdAt)})\nRoom: ${best.roomIndex + 1}, Score: ${best.score} `
             : null;
+        const scoreText = this.completedGame ? 'Completed in' : 'Survived for';
         return ui.div({
             className: ['score-overlay', this.bestScoreOnly ? 'score-overlay--best' : ''],
             children: [
                 !this.bestScoreOnly &&
-                    ui.div({textContent: `Survived for ${this.survivedFor.toHumanString()}`}),
+                    ui.div({textContent: `${scoreText} ${this.survivedFor.toHumanString()}`}),
                 !this.bestScoreOnly &&
                     ui.div({
                         textContent: `Current Record\nRoom: ${this.roomIndex + 1}, Score: ${this.currentScore}`,
@@ -154,6 +162,7 @@ export function updateScoreInMenu(menu: Menu, manager: EntityManager): void {
         survivedFor: manager.player.survivedFor,
         bestScoreOnly: menu.isMain,
         roomIndex: manager.world.activeRoom.roomIndex,
+        completedGame: manager.player.completedGame,
     });
 }
 

@@ -1,22 +1,26 @@
-import { Color } from '#/color';
-import { CELL_SIZE } from '#/const';
-import { Entity } from '#/entity/core';
-import { EntityManager } from '#/entity/manager';
-import { Tank } from '#/entity/tank/base';
-import { createTankSpriteGroup, makeTankSchema } from '#/entity/tank/generation';
-import { GameInput } from '#/input';
-import { Direction } from '#/math/direction';
-import { Duration } from '#/math/duration';
-import { Renderer } from '#/renderer';
-import { createShieldSprite } from '#/renderer/sprite';
-import { roomSizeInCells } from '#/world';
+import {Color} from '#/color';
+import {CELL_SIZE} from '#/const';
+import {Entity} from '#/entity/core';
+import {EntityManager} from '#/entity/manager';
+import {Tank} from '#/entity/tank/base';
+import {createTankSpriteGroup, makeTankSchema} from '#/entity/tank/generation';
+import {GameInput} from '#/input';
+import {Direction} from '#/math/direction';
+import {Duration} from '#/math/duration';
+import {Renderer} from '#/renderer';
+import {createShieldSprite} from '#/renderer/sprite';
+import {roomSizeInCells} from '#/world';
 
 export class PlayerTank extends Tank implements Entity {
     public readonly maxSpeed = 0;
     public readonly topSpeedReachTime = Duration.milliseconds(50);
     protected readonly shieldSprite = createShieldSprite('player');
     public readonly bot: boolean = false;
+    // TODO: This field shouldn't exist here, it should somewhere in the score layer, probably.
     public readonly survivedFor = Duration.zero();
+    // HACK: This field is used as a flag to indicate that the game is completed.
+    //       It should be removed once `survivedFor` will be moved out of this class.
+    public completedGame = false;
 
     public dead = true;
     public score = 0;
@@ -33,8 +37,7 @@ export class PlayerTank extends Tank implements Entity {
 
     override update(dt: Duration): void {
         super.update(dt);
-        if (this.dead) return;
-        this.survivedFor.add(dt);
+        if (!this.completedGame && !this.dead) this.survivedFor.add(dt);
     }
 
     override respawn(): boolean {
