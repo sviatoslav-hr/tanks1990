@@ -1,8 +1,7 @@
-import {random} from '#/math/rng';
 import {
+    activateRecording,
     RECORDING_VERSION,
-    resetRecording,
-    toggleRecording,
+    stopRecording,
     type RecordingInfo,
     type RecordingStatus,
 } from '#/recording';
@@ -14,6 +13,9 @@ export enum GameStatus {
     DEAD,
 }
 
+// TODO: I'm not sure what this class is really for.
+//       It seems to try to be a minimal state holder, but at the same time it's also responsive for recording.
+//       It should be decided if this class should be minila or if it should handle everything that happens during state changes.
 export class GameState {
     status = GameStatus.INITIAL;
     gameCompleted = false;
@@ -22,7 +24,7 @@ export class GameState {
         enabled: true,
         active: false,
         playing: false,
-        inputIndex: 0,
+        playingInputIndex: 0,
     };
     recordingInfo: RecordingInfo = {
         commitHash: COMMIT_HASH,
@@ -61,20 +63,16 @@ export class GameState {
     }
 
     start(): void {
-        if (!this.recording.playing) {
-            resetRecording(this);
-            if (this.recording.enabled) {
-                this.recording.active = true;
-                this.recordingInfo.seed = random.seed;
-                this.recordingInfo.startedAt = Date.now();
-            }
+        // NOTE: playing is set before the game starts, so it should be checked here.
+        if (!this.recording.playing && this.recording.enabled) {
+            activateRecording(this.recording, this.recordingInfo);
         }
         this.status = GameStatus.PLAYING;
     }
 
     markDead(): void {
         if (this.recording.active) {
-            toggleRecording(this);
+            stopRecording(this.recording, true);
         }
         if (this.recording.playing) {
             this.recording.playing = false;
@@ -84,7 +82,7 @@ export class GameState {
 
     markCompleted(): void {
         if (this.recording.active) {
-            toggleRecording(this);
+            stopRecording(this.recording, true);
         }
         if (this.recording.playing) {
             this.recording.playing = false;

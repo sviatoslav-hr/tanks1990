@@ -1,11 +1,11 @@
-import { EntityManager } from '#/entity/manager';
-import { importRecording, toggleRecording } from '#/recording';
-import { Renderer } from '#/renderer';
-import { GameState } from '#/state';
-import { exportAsJson, GameStorage } from '#/storage';
-import { DevPanel, FPSMonitor } from '#/ui/dev';
-import { css, CustomElement, ReactiveElement, ui } from '#/ui/html';
-import { notify, notifyError } from '#/ui/notification';
+import {EntityManager} from '#/entity/manager';
+import {importRecording, toggleRecordingEnabledOrStop} from '#/recording';
+import {Renderer} from '#/renderer';
+import {GameState} from '#/state';
+import {exportAsJson, GameStorage} from '#/storage';
+import {DevPanel, FPSMonitor} from '#/ui/dev';
+import {css, CustomElement, ReactiveElement, ui} from '#/ui/html';
+import {notify, notifyError} from '#/ui/notification';
 
 export function createDevUI(
     state: GameState,
@@ -75,7 +75,7 @@ export function createDevUI(
     toolsFolder
         .addButton()
         .setName('Toggle Recording')
-        .onClick(() => toggleRecording(state));
+        .onClick(() => toggleRecordingEnabledOrStop(state));
     toolsFolder
         .addFilePicker()
         .setPlaceholder('Import Recording')

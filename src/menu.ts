@@ -1,9 +1,8 @@
-import { EntityManager } from '#/entity/manager';
-import { random } from '#/math/rng';
-import { ScoreOverlay } from '#/score';
-import { SoundManager } from '#/sound';
-import { GameState } from '#/state';
-import { CustomElement, html, ui } from '#/ui/html';
+import {EntityManager} from '#/entity/manager';
+import {random} from '#/math/rng';
+import {SoundManager} from '#/sound';
+import {GameState} from '#/state';
+import {CustomElement, html, ui} from '#/ui/html';
 
 function setURLSeed(seed: string): void {
     const url = new URL(window.location.href);
@@ -240,7 +239,6 @@ export class Menu extends HTMLElement {
     private buttonContainer: HTMLElement;
     private buttons: MenuButton[] = [];
     private pages: MenuPage[] = [];
-    readonly score: ScoreOverlay;
     readonly fullscreenButton: HTMLButtonElement;
     fullscreenToggleExpected = false;
 
@@ -260,15 +258,6 @@ export class Menu extends HTMLElement {
         this.buttonContainer.append(...this.buttons);
         this.mainContainer.append(this.buttonContainer);
 
-        this.score = new ScoreOverlay({
-            style: {
-                position: 'absolute',
-                top: '25%',
-                left: '4rem',
-                display: 'block',
-            },
-        });
-        this.append(this.score);
         this.fullscreenButton = ui.button({
             className: 'button--fullscreen',
             textContent: '⛶',
@@ -388,13 +377,11 @@ export class Menu extends HTMLElement {
     private setMainVisibility(visible: boolean): void {
         if (visible) {
             this.mainContainer.hidden = false;
-            this.score.hidden = false;
             this.classList.add('bg-transparent-black');
             this.classList.add('fade-in');
             this.fullscreenButton.hidden = false;
         } else {
             this.mainContainer.hidden = true;
-            this.score.hidden = true;
             this.classList.remove('bg-transparent-black');
             this.classList.remove('fade-in');
             this.fullscreenButton.hidden = true;

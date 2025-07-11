@@ -13,7 +13,6 @@ import {Duration} from '#/math/duration';
 import {initMenu, Menu} from '#/menu';
 import {maybeRecordInput} from '#/recording';
 import {Renderer} from '#/renderer';
-import {drawScoreMini, getBestScore, saveBestScore, updateScoreInMenu} from '#/score';
 import {SoundManager} from '#/sound';
 import {GameState} from '#/state';
 import {GameStorage} from '#/storage';
@@ -42,7 +41,6 @@ function main(): void {
     const gameState = new GameState();
     const manager = new EntityManager();
     manager.world.load(storage);
-    manager.bestScore = getBestScore(storage);
 
     const menu = initMenu(gameState, manager, sounds);
     appElement.append(menu);
@@ -102,7 +100,7 @@ function runGame(
             processInput(inputState, renderer, state, manager, menu, devUI, storage);
             maybeRecordInput(state, inputState.game);
 
-            simulateGameTick(dt, state, manager, menu, storage, renderer);
+            simulateGameTick(dt, state, manager, menu, renderer);
             processGameEvents(eventQueue, state, manager, sounds);
             if (manager.world.needsSaving) {
                 manager.world.save(storage);
@@ -125,7 +123,6 @@ function simulateGameTick(
     state: GameState,
     manager: EntityManager,
     menu: Menu,
-    storage: GameStorage,
     renderer: Renderer,
 ) {
     renderer.setFillColor(manager.world.bgColor);
@@ -134,17 +131,10 @@ function simulateGameTick(
     manager.drawAll(renderer);
     const player = manager.player;
 
-    if (state.playing || (state.paused && !menu.visible)) {
-        drawScoreMini(renderer, manager);
-    } else if (menu.visible && !state.initial) {
-        updateScoreInMenu(menu, manager);
-    }
-
     if (state.playing && player.dead && player.healthAnimation.finished) {
         const playedRecording = state.recording.playing;
         state.markDead();
         if (!playedRecording) menu.showDead();
-        saveBestScore(storage, manager);
     }
 
     if (!player.dead && justCompletedGame(state, manager.world.activeRoom)) {

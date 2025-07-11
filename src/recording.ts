@@ -1,9 +1,9 @@
-import type { EntityManager } from '#/entity/manager';
-import type { GameInputState } from '#/input-handler';
-import { random } from '#/math/rng';
-import type { Menu } from '#/menu';
-import type { GameState } from '#/state';
-import { notify, notifyError } from '#/ui/notification';
+import type {EntityManager} from '#/entity/manager';
+import type {GameInputState} from '#/input-handler';
+import {random} from '#/math/rng';
+import type {Menu} from '#/menu';
+import type {GameState} from '#/state';
+import {notify} from '#/ui/notification';
 
 export const RECORDING_VERSION = 0.1;
 
@@ -13,7 +13,7 @@ export interface RecordingStatus {
     /** Indicates whether the current game session is currently being recorded. */
     active: boolean;
     playing: boolean;
-    inputIndex: number;
+    playingInputIndex: number;
 }
 
 export interface RecordingInfo {
@@ -24,18 +24,38 @@ export interface RecordingInfo {
     inputs: GameInputState[];
 }
 
-export function toggleRecording(state: GameState): void {
+export function activateRecording(recording: RecordingStatus, info: RecordingInfo): void {
+    assert(!recording.playing && recording.enabled);
+    resetRecording(recording, info);
+    recording.active = true;
+    info.seed = random.seed;
+    info.startedAt = Date.now();
+}
+
+function resetRecording(recording: RecordingStatus, info: RecordingInfo): void {
+    info.inputs = [];
+    recording.active = false;
+    recording.playingInputIndex = 0;
+}
+
+export function stopRecording(recording: RecordingStatus, skipNotification = false): void {
+    assert(recording.active);
+    recording.active = false;
+    if (__DEV_MODE && !skipNotification) notify('Recording stopped');
+}
+
+export function toggleRecordingEnabled(recording: RecordingStatus): void {
+    if (recording.active) stopRecording(recording);
+    recording.enabled = !recording.enabled;
+    notify(recording.enabled ? 'Recording enabled' : 'Recording disabled');
+}
+
+export function toggleRecordingEnabledOrStop(state: GameState): void {
     const recording = state.recording;
-    if (state.paused || state.playing) {
-        if (recording.active) {
-            recording.active = false;
-            if (__DEV_MODE) notify('Recording stopped');
-        } else {
-            notifyError('Cannot start recording while game is in playing state');
-        }
+    if ((state.paused || state.playing) && recording.active) {
+        stopRecording(recording);
     } else {
-        recording.enabled = !recording.enabled;
-        notify(recording.enabled ? 'Recording enabled' : 'Recording disabled');
+        toggleRecordingEnabled(recording);
     }
 }
 
@@ -45,15 +65,9 @@ export function maybeRecordInput(state: GameState, input: GameInputState): void 
     }
 }
 
-export function resetRecording(state: GameState): void {
-    state.recordingInfo.inputs = [];
-    state.recording.active = false;
-    state.recording.inputIndex = 0;
-}
-
 export function getNextRecordedInput(state: GameState): GameInputState | undefined {
     assert(state.recording.playing);
-    const inputIndex = state.recording.inputIndex++;
+    const inputIndex = state.recording.playingInputIndex++;
     const inputs = state.recordingInfo.inputs;
     const input = inputs[inputIndex];
     if (inputIndex === inputs.length - 1) {
@@ -74,11 +88,11 @@ export function playRecentRecording(state: GameState, manager: EntityManager, me
     }
     notify('Playing recording');
     // TODO: It's probably best to avoid asynchronous code.
-    //       Instead I can put a flat to trigger this right before
+    //       Instead, I can put a flag to trigger this right before
     //       the next frame or immediately after the current frame.
     setTimeout(() => {
         state.recording.playing = true;
-        state.recording.inputIndex = 0;
+        state.recording.playingInputIndex = 0;
         random.reset(state.recordingInfo.seed);
         state.start();
         manager.init();

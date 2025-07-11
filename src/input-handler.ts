@@ -8,7 +8,7 @@ import {
     exitRecording,
     getNextRecordedInput,
     playRecentRecording,
-    toggleRecording,
+    toggleRecordingEnabledOrStop,
 } from '#/recording';
 import {Renderer} from '#/renderer';
 import {GameState} from '#/state';
@@ -221,7 +221,7 @@ export function processInput(
     }
 
     if (input.extra.toggleRecording) {
-        toggleRecording(state);
+        toggleRecordingEnabledOrStop(state);
     }
 
     if (input.extra.playOrExitRecording) {

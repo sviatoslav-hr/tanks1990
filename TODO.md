@@ -5,7 +5,6 @@
 ## DOING
 
 ## NEXT TODO
-- [ ] Does score even makes sense since game is not unlimited now?
 - [ ] Power ups - needs more thought on what they should be and how they should work
       Examples: Time stop, damage increase, shield, speed increase, etc.
 

@@ -1,8 +1,8 @@
-import { Color } from '#/color';
-import { APP_ELEMENT_ID, BASE_FONT_SIZE } from '#/const';
-import { Rect } from '#/math';
-import { Transform } from '#/math/transform';
-import { Camera } from '#/renderer/camera';
+import {Color} from '#/color';
+import {APP_ELEMENT_ID, BASE_FONT_SIZE} from '#/const';
+import {Rect} from '#/math';
+import {Transform} from '#/math/transform';
+import {Camera} from '#/renderer/camera';
 
 type ShadowTextOpts = {
     x: number;
