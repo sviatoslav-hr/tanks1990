@@ -18,6 +18,7 @@ const WORLD_CONFIG_KEY = 'world_config';
 export const roomSizeInCells = new Vector2(12, 8);
 
 export class World {
+    // TODO: This should NOT be located in the world, in some sort of config.
     showBoundary = false;
     roomsLimit = MAX_ROOMS_COUNT;
     readonly startRoomPosition = new Vector2(0, 0);
