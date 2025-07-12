@@ -3,9 +3,9 @@ import {JSONObjectParser} from '#/common/json';
 import {BASE_HEIGHT, BASE_WIDTH, CELL_SIZE} from '#/const';
 import {PlayerTank} from '#/entity';
 import {Block, generateBlocks} from '#/entity/block';
-import {Entity, isIntesecting} from '#/entity/core';
+import {Entity, isIntesecting, isSameEntity} from '#/entity/core';
 import {EnemyWave, wavePerRoom} from '#/entity/enemy-wave';
-import {EntityManager, isSameEntity} from '#/entity/manager';
+import {EntityManager} from '#/entity/manager';
 import {Rect, fmod, isPosInsideRect, oppositeDirection} from '#/math';
 import {Direction} from '#/math/direction';
 import {random} from '#/math/rng';
@@ -18,6 +18,7 @@ const WORLD_CONFIG_KEY = 'world_config';
 export const roomSizeInCells = new Vector2(12, 8);
 
 export class World {
+    // TODO: This should NOT be located in the world, in some sort of config.
     showBoundary = false;
     roomsLimit = MAX_ROOMS_COUNT;
     readonly startRoomPosition = new Vector2(0, 0);
@@ -28,6 +29,7 @@ export class World {
         height: BASE_HEIGHT,
     };
     activeRoom = new Room(this.startRoomPosition, roomSizeInCells, [], null, Direction.NORTH, []);
+    activeRoomInFocus = false;
     rooms: Room[] = [this.activeRoom];
     #valuesDirty = false; // NOTE: Used to mark for saving
     readonly bgColor = Color.BLACK_RAISIN;
@@ -189,6 +191,7 @@ export class World {
     reset(): void {
         this.activeRoom = this.rooms[0] ?? this.activeRoom;
         this.activeRoom.reset();
+        this.activeRoomInFocus = false;
         this.rooms = [this.activeRoom];
     }
 }

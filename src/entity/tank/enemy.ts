@@ -1,25 +1,27 @@
-import { Animation } from '#/animation';
-import { Color } from '#/color';
-import { Entity } from '#/entity/core';
-import { Tank } from '#/entity/tank/base';
-import { createTankSpriteGroup, makeTankSchema } from '#/entity/tank/generation';
-import { sameSign } from '#/math';
-import { Direction } from '#/math/direction';
-import { Duration } from '#/math/duration';
-import { Vector2, Vector2Like } from '#/math/vector';
-import { findPath } from '#/pathfinding';
-import { Renderer } from '#/renderer';
-import { createShieldSprite } from '#/renderer/sprite';
+import {Animation} from '#/animation';
+import {Entity} from '#/entity/core';
+import {Tank} from '#/entity/tank/base';
+import {createTankSpriteGroup, makeTankSchema} from '#/entity/tank/generation';
+import {sameSign} from '#/math';
+import {Direction} from '#/math/direction';
+import {Duration} from '#/math/duration';
+import {Vector2, Vector2Like} from '#/math/vector';
+import {findPath} from '#/pathfinding';
+import {createShieldSprite} from '#/renderer/sprite';
+
+export function isEnemyTank(tank: Tank): tank is EnemyTank {
+    return tank.bot;
+}
 
 export class EnemyTank extends Tank implements Entity {
     private static readonly RESPAWN_DELAY = Duration.milliseconds(1000);
-    protected moving = true;
-    protected schema = makeTankSchema('enemy', 'medium');
-    protected sprite = createTankSpriteGroup(this.schema);
-    protected readonly shieldSprite = createShieldSprite('enemy');
-    private readonly SEARCH_DELAY = Duration.milliseconds(5000);
+    moving = true;
+    schema = makeTankSchema('enemy', 'medium');
+    sprite = createTankSpriteGroup(this.schema);
+    readonly shieldSprite = createShieldSprite('enemy');
+    readonly SEARCH_DELAY = Duration.milliseconds(5000);
     private targetSearchTimer = this.SEARCH_DELAY.clone();
-    private targetPath: Vector2[] = [];
+    targetPath: Vector2[] = [];
     private collided = false;
     private readonly collisionAnimation = new Animation(Duration.milliseconds(1000)).end();
     readonly respawnDelay = EnemyTank.RESPAWN_DELAY.clone();
@@ -54,28 +56,6 @@ export class EnemyTank extends Tank implements Entity {
             }
         } else {
             super.update(dt);
-        }
-        // TODO: Can we still achieve this check without providing the camera?
-        // if (camera.isRectVisible(this)) { this.shoot(); }
-        this.shoot();
-    }
-
-    draw(renderer: Renderer): void {
-        const world = this.manager.world;
-        super.draw(renderer);
-        if (this.dead) return;
-        if (world.showBoundary) {
-            // if (this.collisionAnimation.active) {
-            //     renderer.setStrokeColor(Color.WHITE_NAVAJO);
-            //     renderer.strokeBoundary(this, this.collisionAnimation.progress * 10);
-            // }
-            if (this.isStuck) {
-                renderer.setStrokeColor(Color.RED);
-                renderer.strokeBoundary(this, 1);
-            }
-            if (!this.manager.player.dead) {
-                this.drawPath(renderer);
-            }
         }
     }
 
@@ -188,25 +168,5 @@ export class EnemyTank extends Tank implements Entity {
             return dy > 0 ? Direction.SOUTH : Direction.NORTH;
         }
         return null;
-    }
-
-    private drawPath(renderer: Renderer): void {
-        if (this.targetPath.length < 2) {
-            return;
-        }
-        renderer.setStrokeColor('blue');
-        renderer.setFillColor('blue');
-        const p0 = this.targetPath[0]!;
-        renderer.strokeLine(p0.x, p0.y, this.x + this.width / 2, this.y + this.height / 2, 1);
-        renderer.setStrokeColor(Color.ORANGE_SAFFRON);
-        renderer.setFillColor(Color.ORANGE_SAFFRON);
-        for (let i = 0; i < this.targetPath.length - 1; i++) {
-            const p1 = this.targetPath[i];
-            assert(p1);
-            renderer.fillCircle(p1.x, p1.y, 2);
-            const p2 = this.targetPath[i + 1];
-            assert(p2);
-            renderer.strokeLine(p1.x, p1.y, p2.x, p2.y, 1);
-        }
     }
 }

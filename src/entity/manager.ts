@@ -4,16 +4,12 @@ import {EntityId} from '#/entity/id';
 import {Projectile} from '#/entity/projectile';
 import {EnemyTank, PlayerTank, Tank} from '#/entity/tank';
 import {TankPartKind} from '#/entity/tank/generation';
+import {EventQueue} from '#/events';
 import {Direction} from '#/math/direction';
 import {Duration} from '#/math/duration';
 import {Vector2Like} from '#/math/vector';
-import {Renderer} from '#/renderer';
 import {Camera} from '#/renderer/camera';
 import {World} from '#/world';
-
-export function isSameEntity(a: Entity, b: Entity): boolean {
-    return a.id === b.id;
-}
 
 export class EntityManager {
     readonly world = new World();
@@ -23,40 +19,11 @@ export class EntityManager {
     effects: ExplosionEffect[] = [];
     cachedBotExplosion: ExplosionEffect | null = null;
     cachedPlayerExplosion: ExplosionEffect | null = null;
-    private roomInFocus = false;
 
     init(): void {
         this.reset();
         this.player.respawn();
         this.world.init(this);
-        this.roomInFocus = false;
-    }
-
-    // TODO: Entity manager should not be responsible for drawing
-    drawAll(renderer: Renderer): void {
-        if (!this.roomInFocus) {
-            renderer.camera.focusOnRect(this.world.activeRoom.boundary);
-            this.roomInFocus = true;
-        }
-        this.world.drawTiles(renderer);
-        for (const effect of this.effects) {
-            effect.draw(renderer);
-        }
-        // FIXME: Tanks should be drawn before blocks to not overlap them.
-        //        But it causes some UI elements to be overlayed by blocks.
-        //        Probably, this should be split into two separate draw calls.
-        this.world.drawRooms(renderer);
-        for (const tank of this.tanks) {
-            if (tank.bot) {
-                tank.draw(renderer);
-            }
-        }
-        // NOTE: Player should be drawn last to be on top of the entities.
-        this.player.draw(renderer);
-        this.cacheExplosions(renderer);
-        for (const projectile of this.projectiles) {
-            projectile.draw(renderer);
-        }
     }
 
     *iterateCollidable(): Generator<Entity> {
@@ -102,25 +69,33 @@ export class EntityManager {
                 effectsToRemove.push(effect);
             }
         }
-        this.effects = this.effects.filter((e) => !effectsToRemove.includes(e));
+        if (effectsToRemove.length) {
+            this.effects = this.effects.filter((e) => !effectsToRemove.includes(e));
+        }
     }
 
-    updateAllEntities(dt: Duration, camera: Camera): void {
+    updateAllEntities(dt: Duration, camera: Camera, events: EventQueue): void {
         this.world.update(this);
         if (this.world.activeRoom.shouldActivateNextRoom(this.player)) {
             const nextRoom = this.world.activeRoom.nextRoom;
             assert(nextRoom);
             this.world.activeRoom = nextRoom;
-            this.roomInFocus = false;
+            this.world.activeRoomInFocus = false;
         }
+
+        if (!this.world.activeRoomInFocus) {
+            camera.focusOnRect(this.world.activeRoom.boundary);
+            this.world.activeRoomInFocus = true;
+        }
+
         {
             const wave = this.world.activeRoom.wave;
             while (wave.hasExpectedEnemies) {
                 this.spawnEnemy();
             }
         }
-        this.updateTanks(dt);
-        this.updateProjectiles(dt, camera);
+        this.updateTanks(dt, events);
+        this.updateProjectiles(dt, camera, events);
     }
 
     spawnProjectile(
@@ -166,8 +141,9 @@ export class EntityManager {
         const enemy = deadEnemy ?? new EnemyTank(this);
         assert(enemy.dead);
         if (!deadEnemy) {
+            // NOTE: Player should be drawn last, so enemies are added to the beginning of the array.
+            this.tanks.unshift(enemy);
             logger.debug('[Manager] Created new enemy tank', enemy.id);
-            this.tanks.push(enemy);
         } else {
             logger.debug('[Manager] Reused dead enemy tank', enemy.id);
         }
@@ -180,10 +156,14 @@ export class EntityManager {
         return enemy;
     }
 
-    updateTanks(dt: Duration): void {
+    updateTanks(dt: Duration, events: EventQueue): void {
         const wave = this.world.activeRoom.wave;
         for (const tank of this.tanks) {
             tank.update(dt);
+            if (tank.bot) {
+                const event = tank.shoot();
+                if (event) events.push(event);
+            }
 
             if (tank.bot && tank.shouldRespawn) {
                 assert(tank instanceof EnemyTank);
@@ -198,36 +178,17 @@ export class EntityManager {
         }
     }
 
-    private updateProjectiles(dt: Duration, camera: Camera): void {
+    private updateProjectiles(dt: Duration, camera: Camera, events: EventQueue): void {
         const garbageIndexes: number[] = [];
         for (const [index, projectile] of this.projectiles.entries()) {
             if (projectile.dead) {
                 garbageIndexes.push(index);
             } else {
-                projectile.update(dt, camera);
+                projectile.update(dt, camera, events);
             }
         }
         // TODO: optimize this. Is it more efficient to update existing array or create a new one?
         this.projectiles = this.projectiles.filter((_, i) => !garbageIndexes.includes(i));
-    }
-
-    private cacheExplosions(renderer: Renderer): void {
-        if (!this.cachedBotExplosion) {
-            const t = this.tanks.find((t) => t.bot && !t.dead && !t.hasShield);
-            if (t) {
-                const imageData = renderer.getImageData(t.x, t.y, t.width, t.height);
-                this.cachedBotExplosion = ExplosionEffect.fromImageData(imageData, t);
-            }
-        }
-        if (!this.cachedPlayerExplosion && !this.player.dead && !this.player.hasShield) {
-            const imageData = renderer.getImageData(
-                this.player.x,
-                this.player.y,
-                this.player.width,
-                this.player.height,
-            );
-            this.cachedPlayerExplosion = ExplosionEffect.fromImageData(imageData, this.player);
-        }
     }
 
     findCollided(target: Entity): Entity | undefined {

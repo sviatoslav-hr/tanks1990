@@ -149,3 +149,18 @@ function copyInto(source: AleaState, target: Partial<AleaState>): void {
     target.s1 = source.s1;
     target.s2 = source.s2;
 }
+
+// TODO: url seed functions really shouln't be here, since they are dependent on the browser API, but it's okay for now.
+export function setURLSeed(seed: string): void {
+    const url = new URL(window.location.href);
+    const key = 'seed';
+    if (url.searchParams.get(key) !== seed) {
+        url.searchParams.set('seed', seed);
+        window.history.replaceState({}, '', url);
+    }
+}
+
+export function getURLSeed(): string | null {
+    const url = new URL(window.location.href);
+    return url.searchParams.get('seed');
+}

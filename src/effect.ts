@@ -1,4 +1,5 @@
 import { Animation, easeOut2 } from '#/animation';
+import { EntityManager } from '#/entity/manager';
 import { Rect } from '#/math';
 import { Duration } from '#/math/duration';
 import { Vector2 } from '#/math/vector';
@@ -200,5 +201,22 @@ class Particle {
             .sub(this.initialPosition)
             .multiplyScalar(animationProgress);
         this.position.setFrom(distance.add(this.initialPosition));
+    }
+}
+
+export function tryCacheExplosions(renderer: Renderer, manager: EntityManager): void {
+    if (!manager.cachedBotExplosion) {
+        const t = manager.tanks.find(
+            (t) => t.bot && !t.dead && !t.hasShield && t.sprite.body.image.complete,
+        );
+        if (t) {
+            const imageData = renderer.getImageData(t.x, t.y, t.width, t.height);
+            manager.cachedBotExplosion = ExplosionEffect.fromImageData(imageData, t);
+        }
+    }
+    const player = manager.player;
+    if (!manager.cachedPlayerExplosion && !player.dead && !player.hasShield) {
+        const imageData = renderer.getImageData(player.x, player.y, player.width, player.height);
+        manager.cachedPlayerExplosion = ExplosionEffect.fromImageData(imageData, manager.player);
     }
 }

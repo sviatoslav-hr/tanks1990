@@ -66,7 +66,7 @@ export class EnemyWave {
         return enemyKind;
     }
 
-    handleEnemyDeath(enemyId: EntityId): void {
+    removeEnemyFromAlives(enemyId: EntityId): void {
         const index = this.aliveEnemies.indexOf(enemyId);
         if (index > -1) {
             this.aliveEnemies.splice(index, 1);
@@ -98,7 +98,7 @@ export const wavePerRoom = makeWaves(
     // {enemies: ['light', 'medium', 'heavy'], limitAtOnce: 3}, // NOTE: This is a test wave, only for dev purposes.
     // NOTE: In the next room we teach player that he can play against multiple enemies at once.
     {enemies: ['light', 'light'], limitAtOnce: 2},
-    // NOTE: In this room we show that more enemies can be spawned.
+    // NOTE: In this room we show that more enemies can respawn.
     {enemies: ['light', 'light', 'light']},
     {enemies: ['light', 'medium', 'light']},
     {enemies: ['light', 'medium', 'light', 'medium']},

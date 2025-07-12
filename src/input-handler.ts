@@ -1,5 +1,6 @@
 import {DEV_MODE_KEY} from '#/const';
 import {EntityManager} from '#/entity/manager';
+import type {EventQueue} from '#/events';
 import {GameInput} from '#/input';
 import {Direction} from '#/math/direction';
 import {Vector2Like} from '#/math/vector';
@@ -162,6 +163,7 @@ export function handleExtraKeymaps(input: GameInput, menu: Menu): ExtraInputStat
     return result;
 }
 
+// TODO: Turn params into an object because it's getting out of hand.
 export function processInput(
     input: InputState,
     renderer: Renderer,
@@ -170,12 +172,14 @@ export function processInput(
     menu: Menu,
     devUI: DevUI,
     storage: GameStorage,
+    events: EventQueue,
 ) {
     if (state.playing) {
         manager.player.changeDirection(input.game.playerDirection ?? null);
     }
     if (input.game.playerShooting) {
-        manager.player.shoot();
+        const event = manager.player.shoot();
+        if (event) events.push(event);
     }
 
     if (input.extra.toggleFullscreen) {

@@ -1,10 +1,15 @@
 # TODO
-- [ ] Add a sound effect when the player/enemy is hit
-- [ ] Add a visual effect when the player/enemy is hit
 
 ## DOING
+- [ ] Code Refactor
+    - [ ] Outline how objects/classes should access each other (global vars/props/DI etc) (eg Renderer, Input, Sound, EntityManager, Entity etc)
+    - [ ] Remove dev config fields from `World`
+    - [ ] Detach simulation out of entities and manager
 
 ## NEXT TODO
+- [ ] Add speed up option for recording playback
+- [ ] Add a sound effect when the player/enemy is hit
+- [ ] Add a visual effect when the player/enemy is hit
 - [ ] Power ups - needs more thought on what they should be and how they should work
       Examples: Time stop, damage increase, shield, speed increase, etc.
 
@@ -76,12 +81,10 @@
       This is needed so it feels like track actually reflect the movement.
 
 ### Refactoring
-- [ ] Should just every entity have the `Renderer` reference as a field?
-- [ ] Better coordinates system (consider defining something like `WorldPosition`)
 - [ ] Better way to store images and sprites (how bad Image is?)
-- [ ] Use transformation matrices for calculating rotation and translation
+- [ ] Better coordinates system (consider defining something like `WorldPosition`)
+- [ ] Use transformation matrices for calculating rotation and translation. Consider performance hits
 - [ ] Create a separate Sprite class for static objects / non-animated
-- [ ] Consider using interface instead of class for `Vector2`
 
 ### Not sure about
 - [ ] Try out Entity Component System (ECS)

@@ -1,6 +1,11 @@
-import {EntityId} from '#/entity/id';
-import {Direction} from '#/math/direction';
-import {Vector2Like} from '#/math/vector';
+import type {EntityId} from '#/entity/id';
+import type {Direction} from '#/math/direction';
+import type {Vector2Like} from '#/math/vector';
+
+export type GameControlEvent = {
+    type: 'game-control';
+    action: 'start' | 'resume' | 'init';
+};
 
 export type ShotEvent = {
     type: 'shot';
@@ -17,7 +22,7 @@ export type TankDestroyedEvent = {
     bot: boolean;
 };
 
-export type GameEvent = ShotEvent | TankDestroyedEvent;
+export type GameEvent = GameControlEvent | ShotEvent | TankDestroyedEvent;
 
 export class EventQueue {
     private events: GameEvent[] = [];
@@ -30,5 +35,3 @@ export class EventQueue {
         return this.events.shift();
     }
 }
-
-export const eventQueue = new EventQueue();

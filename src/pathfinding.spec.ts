@@ -4,6 +4,7 @@ import {isIntesecting} from '#/entity/core';
 import {EntityManager} from '#/entity/manager';
 import {EnemyTank} from '#/entity/tank';
 import {type TankSchema} from '#/entity/tank/generation';
+import {EventQueue} from '#/events';
 import {isPosInsideRect, Rect} from '#/math';
 import {Duration} from '#/math/duration';
 import {random} from '#/math/rng';
@@ -83,7 +84,8 @@ describe('Pathfinding', () => {
         manager.world.activeRoom.wave.clearExpected();
         manager.spawnEnemy('light', true);
         const enemy = manager.tanks.find((t) => t instanceof EnemyTank) as EnemyTank;
-        manager.updateTanks(Duration.milliseconds(0));
+        const eventQueue = new EventQueue();
+        manager.updateTanks(Duration.milliseconds(0), eventQueue);
         assert(enemy, 'Enemy tank not found');
         assert(!enemy.dead, 'Enemy tank should not be dead (should respawn)');
         assert(manager.tanks.length === 2, 'Expected only 2 tanks'); // Player + enemy

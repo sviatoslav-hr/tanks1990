@@ -1,8 +1,9 @@
 import {Color} from '#/color';
 import {CELL_SIZE} from '#/const';
-import {Entity, isInside, isIntesecting, moveEntity} from '#/entity/core';
+import {Entity, isInside, isIntesecting, isSameEntity, moveEntity} from '#/entity/core';
 import {EntityId} from '#/entity/id';
 import {EnemyTank, PlayerTank} from '#/entity/tank';
+import {EventQueue} from '#/events';
 import {bellCurveInterpolate, lerp} from '#/math';
 import {Direction} from '#/math/direction';
 import {Duration} from '#/math/duration';
@@ -10,7 +11,7 @@ import {Vector2} from '#/math/vector';
 import {Renderer} from '#/renderer';
 import {Camera} from '#/renderer/camera';
 import {Sprite} from '#/renderer/sprite';
-import {EntityManager, isSameEntity} from './manager';
+import {EntityManager} from './manager';
 
 interface CreateProjectileOpts {
     x: number;
@@ -50,7 +51,7 @@ export class Projectile extends Entity {
         this.shotByPlayer = manager.player.id === opts.ownerId;
     }
 
-    update(dt: Duration, camera: Camera): void {
+    update(dt: Duration, camera: Camera, events: EventQueue): void {
         if (this.dead) {
             return;
         }
@@ -81,7 +82,7 @@ export class Projectile extends Entity {
                     (this.shotByPlayer && entity instanceof EnemyTank) ||
                     (!this.shotByPlayer && entity instanceof PlayerTank)
                 ) {
-                    entity.takeDamage(this.damage);
+                    entity.takeDamage(this.damage, events);
                 }
             }
         }

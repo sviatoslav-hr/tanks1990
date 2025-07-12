@@ -45,7 +45,7 @@ export class Sprite<K extends string> {
     private readonly offset: Vector2;
     private readonly stateKeys: readonly K[];
     private readonly frameDuration = new Duration(100);
-    private readonly image: HTMLImageElement;
+    readonly image: HTMLImageElement;
     private readonly stateMap: SpriteStateMap<K>;
 
     constructor(opts: SpriteOpts<K>) {

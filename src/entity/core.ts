@@ -84,3 +84,7 @@ export function moveEntity(entity: Rect, offset: number, direction: Direction): 
             break;
     }
 }
+
+export function isSameEntity(a: Entity, b: Entity): boolean {
+    return a.id === b.id;
+}

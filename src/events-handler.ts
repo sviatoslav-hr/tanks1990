@@ -1,5 +1,6 @@
 import {EntityManager} from '#/entity/manager';
 import {EventQueue, GameEvent} from '#/events';
+import {getURLSeed, random, setURLSeed} from '#/math/rng';
 import {SoundManager, SoundType} from '#/sound';
 import {GameState} from '#/state';
 
@@ -29,10 +30,33 @@ export function handleGameEvents(
                     manager.player.score += 1;
                     const entity = manager.findTank(event.entityId);
                     if (entity) {
-                        entity.room.wave.handleEnemyDeath(entity.id);
+                        entity.room.wave.removeEnemyFromAlives(entity.id);
                     }
                 }
                 sounds.playSound(SoundType.EXPLOSION);
+                break;
+            }
+
+            case 'game-control': {
+                switch (event.action) {
+                    case 'start': {
+                        const seed = getURLSeed();
+                        random.reset(seed ?? undefined);
+                        setURLSeed(random.seed);
+                        game.recording.playing = false;
+                        game.start();
+                        manager.init();
+                        break;
+                    }
+                    case 'resume':
+                        game.resume();
+                        break;
+                    case 'init':
+                        game.init();
+                        break;
+                    default:
+                        throw new Error(`Unknown game control action: ${event.action}`);
+                }
                 break;
             }
         }

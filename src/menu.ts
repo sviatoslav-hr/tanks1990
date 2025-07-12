@@ -1,36 +1,17 @@
-import {EntityManager} from '#/entity/manager';
-import {random} from '#/math/rng';
+import {EventQueue} from '#/events';
 import {SoundManager} from '#/sound';
-import {GameState} from '#/state';
 import {CustomElement, html, ui} from '#/ui/html';
 
-function setURLSeed(seed: string): void {
-    const url = new URL(window.location.href);
-    const key = 'seed';
-    if (url.searchParams.get(key) !== seed) {
-        url.searchParams.set('seed', seed);
-        window.history.replaceState({}, '', url);
-    }
-}
-
-function getURLSeed(): string | null {
-    const url = new URL(window.location.href);
-    return url.searchParams.get('seed');
-}
-
 // TODO: refactor menu into ReactiveElement
-// TODO: Detach menu from game objects
-export function initMenu(state: GameState, manager: EntityManager, sounds: SoundManager): Menu {
+// TODO: Detach SoundManager from Menu
+export function initMenu(events: EventQueue, sounds: SoundManager): Menu {
     const menu = new Menu();
     menu.addButton(
         'NEW GAME',
         () => {
-            const seed = getURLSeed();
-            random.reset(seed ?? undefined); // TODO: This should not be done in menu code.
-            state.recording.playing = false;
-            state.start();
-            manager.init();
-            setURLSeed(random.seed);
+            // TODO: For now there is no difference between "new game" and "restart"
+            //       but later "new game" should generate a random seed.
+            events.push({type: 'game-control', action: 'start'});
             menu.hide();
         },
         [MenuState.START],
@@ -38,7 +19,7 @@ export function initMenu(state: GameState, manager: EntityManager, sounds: Sound
     menu.addButton(
         'RESUME',
         () => {
-            state.resume();
+            events.push({type: 'game-control', action: 'resume'});
             menu.hide();
         },
         [MenuState.PAUSE],
@@ -46,23 +27,18 @@ export function initMenu(state: GameState, manager: EntityManager, sounds: Sound
     menu.addButton(
         'RESTART',
         () => {
-            const seed = getURLSeed();
-            random.reset(seed ?? undefined); // TODO: This should not be done in menu code.
-            state.recording.playing = false;
-            state.start();
-            manager.init();
-            setURLSeed(random.seed);
+            events.push({type: 'game-control', action: 'start'});
             menu.hide();
         },
-        [MenuState.DEAD, MenuState.PAUSE],
+        [MenuState.DEAD, MenuState.PAUSE, MenuState.COMPLETED],
     );
     menu.addButton(
         'MAIN MENU',
         () => {
-            state.init();
+            events.push({type: 'game-control', action: 'init'});
             menu.showMain();
         },
-        [MenuState.PAUSE, MenuState.DEAD],
+        [MenuState.PAUSE, MenuState.DEAD, MenuState.COMPLETED],
     );
     const optionsPage = new MenuPage('OPTIONS', menu);
     {
@@ -108,11 +84,12 @@ export enum MenuState {
     START = 'start',
     PAUSE = 'pause',
     DEAD = 'dead',
+    COMPLETED = 'completed',
 }
 
 type MenuClickCallback = (button: MenuButton) => void;
 
-const DEFAULT_MENU_STATES = [MenuState.START, MenuState.PAUSE, MenuState.DEAD];
+const DEFAULT_MENU_STATES = [MenuState.START, MenuState.PAUSE, MenuState.DEAD, MenuState.COMPLETED];
 
 @CustomElement('game-menu-button')
 class MenuButton extends HTMLElement {
@@ -309,6 +286,12 @@ export class Menu extends HTMLElement {
         setTimeout(() => this.setDisabled(false), 300);
     }
 
+    showCompleted(): void {
+        this.update(MenuState.COMPLETED);
+        this.setDisabled(true);
+        setTimeout(() => this.setDisabled(false), 300);
+    }
+
     restore(): void {
         if (this.state === MenuState.HIDDEN && this.prevState) {
             this.update(this.prevState);
@@ -413,6 +396,8 @@ export class Menu extends HTMLElement {
                 return this.setHeading('Paused');
             case MenuState.DEAD:
                 return this.setHeading('You are dead');
+            case MenuState.COMPLETED:
+                return this.setHeading('You won!');
         }
     }
 

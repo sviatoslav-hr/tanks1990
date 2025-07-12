@@ -1,4 +1,4 @@
-import { css, CustomElement, HTMLElementOptions, ReactiveElement, ui } from '#/ui/html';
+import {css, CustomElement, HTMLElementOptions, ReactiveElement, ui} from '#/ui/html';
 
 @CustomElement('notification-bar')
 class NotificationBar extends ReactiveElement {
@@ -119,22 +119,29 @@ export function getNotificationBar() {
     return notificationsBar;
 }
 
-// TODO: Provide a way to pass an AbortController to the notification
-export function notify(message: string): void {
-    message = normalizeMessage(message);
-    notificationsBar?.addNotification(message, 'info', 2000);
+interface NotificationOptions {
+    timeoutMs?: number;
 }
 
-export function notifyWarning(message: string): void {
+// TODO: Provide a way to pass an AbortController to the notification
+export function notify(message: string, options?: NotificationOptions): void {
     message = normalizeMessage(message);
-    notificationsBar?.addNotification(message, 'warning', 3000);
+    const timeoutMs = options?.timeoutMs ?? 2000;
+    notificationsBar?.addNotification(message, 'info', timeoutMs);
+}
+
+export function notifyWarning(message: string, options?: NotificationOptions): void {
+    message = normalizeMessage(message);
+    const timeoutMs = options?.timeoutMs ?? 3000;
+    notificationsBar?.addNotification(message, 'warning', timeoutMs);
 }
 
 // TODO: When there is too many spamming errors, we should stop showing them individually
 // and instead show a single error message with a count of how many errors happened
-export function notifyError(message: string): void {
+export function notifyError(message: string, options?: NotificationOptions): void {
     message = normalizeMessage(message);
-    notificationsBar?.addNotification(message, 'error', 5000);
+    const timeoutMs = options?.timeoutMs ?? 5000;
+    notificationsBar?.addNotification(message, 'error', timeoutMs);
 }
 
 function normalizeMessage(message: string): string {

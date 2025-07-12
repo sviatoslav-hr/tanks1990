@@ -1,30 +1,31 @@
-import {Color} from '#/color';
-import {CELL_SIZE} from '#/const';
 import {Entity} from '#/entity/core';
 import {EntityManager} from '#/entity/manager';
 import {Tank} from '#/entity/tank/base';
 import {createTankSpriteGroup, makeTankSchema} from '#/entity/tank/generation';
+import {EventQueue} from '#/events';
 import {GameInput} from '#/input';
 import {Direction} from '#/math/direction';
 import {Duration} from '#/math/duration';
-import {Renderer} from '#/renderer';
 import {createShieldSprite} from '#/renderer/sprite';
-import {roomSizeInCells} from '#/world';
+
+export function isPlayerTank(tank: Tank): tank is PlayerTank {
+    return !tank.bot;
+}
 
 export class PlayerTank extends Tank implements Entity {
-    public readonly maxSpeed = 0;
-    public readonly topSpeedReachTime = Duration.milliseconds(50);
-    protected readonly shieldSprite = createShieldSprite('player');
-    public readonly bot: boolean = false;
+    readonly maxSpeed = 0;
+    readonly topSpeedReachTime = Duration.milliseconds(50);
+    readonly shieldSprite = createShieldSprite('player');
+    readonly bot: boolean = false;
     // TODO: This field shouldn't exist here, it should somewhere in the score layer, probably.
-    public readonly survivedFor = Duration.zero();
+    readonly survivedFor = Duration.zero();
     // HACK: This field is used as a flag to indicate that the game is completed.
     //       It should be removed once `survivedFor` will be moved out of this class.
-    public completedGame = false;
+    completedGame = false;
 
-    public dead = true;
-    public score = 0;
-    public invincible = false;
+    dead = true;
+    score = 0;
+    invincible = false;
 
     readonly schema = makeTankSchema('player', 'medium');
     readonly sprite = createTankSpriteGroup(this.schema);
@@ -54,9 +55,9 @@ export class PlayerTank extends Tank implements Entity {
         return true;
     }
 
-    override takeDamage(damage: number): boolean {
+    override takeDamage(damage: number, events: EventQueue): boolean {
         if (this.invincible) return false;
-        return super.takeDamage(damage);
+        return super.takeDamage(damage, events);
     }
 
     changeDirection(direction: Direction | null): void {
@@ -102,74 +103,5 @@ export class PlayerTank extends Tank implements Entity {
             }
             this.direction = newDirection;
         }
-    }
-
-    protected override drawHealthBar(renderer: Renderer): void {
-        // TODO: Refactor these draw methods to be more flexible and configurable.
-        renderer.useCameraCoords(true);
-        renderer.setGlobalAlpha(0.6);
-        const barWidth = 20;
-        const paddingX = 5;
-        const paddingY = 10;
-        const barHeight = Math.min(
-            renderer.canvas.height - paddingY * 2,
-            (roomSizeInCells.height + 2) * CELL_SIZE * renderer.camera.scale,
-        );
-        const barY = (renderer.canvas.height - barHeight) / 2;
-        const barX = paddingX;
-        let hpFraction = this.health / this.maxHealth || 0;
-        if (!this.healthAnimation.finished) {
-            const healthLostFraction = Math.abs(this.health - this.prevHealth) / this.maxHealth;
-            hpFraction += (1 - this.healthAnimation.progress) * healthLostFraction;
-        }
-        {
-            const redBarHeight = barHeight * (1 - hpFraction);
-            renderer.setFillColor(Color.GREEN_DARKEST);
-            renderer.fillRect(barX, barY, barWidth, redBarHeight);
-        }
-        if (hpFraction > 0) {
-            renderer.setFillColor(Color.GREEN);
-            const greenBarHeight = barHeight * hpFraction;
-            const greenBarY = barY + barHeight - greenBarHeight;
-            renderer.fillRect(barX, greenBarY, barWidth, greenBarHeight);
-        }
-        renderer.setGlobalAlpha(1);
-        renderer.setStrokeColor(Color.GREEN);
-        renderer.strokeBoundary2(barX, barY, barWidth, barHeight);
-        renderer.useCameraCoords(false);
-    }
-
-    protected override drawShootingBar(renderer: Renderer): void {
-        renderer.useCameraCoords(true);
-        renderer.setGlobalAlpha(0.8);
-        const fraction =
-            1 - this.shootingDelay.milliseconds / this.schema.shootingDelay.milliseconds;
-        const barWidth = 20;
-        const paddingX = 5;
-        const paddingY = 10;
-        const barHeight = Math.min(
-            renderer.canvas.height - paddingY * 2,
-            (roomSizeInCells.height + 2) * CELL_SIZE * renderer.camera.scale,
-        );
-        const barY = (renderer.canvas.height - barHeight) / 2;
-        const barX = renderer.canvas.width - paddingX - barWidth;
-        {
-            renderer.setFillColor('#493909');
-            renderer.fillRect(barX, barY, barWidth, barHeight * (1 - fraction));
-        }
-        const color = '#ffc107';
-        {
-            renderer.setFillColor(color);
-            renderer.fillRect(
-                barX,
-                barY + barHeight * (1 - fraction),
-                barWidth,
-                barHeight * fraction,
-            );
-        }
-        renderer.setGlobalAlpha(1);
-        renderer.setStrokeColor(color);
-        renderer.strokeBoundary2(barX, barY, barWidth, barHeight);
-        renderer.useCameraCoords(false);
     }
 }

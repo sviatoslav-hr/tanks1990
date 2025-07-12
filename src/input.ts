@@ -1,4 +1,4 @@
-import { Vector2 } from '#/math/vector';
+import {Vector2} from '#/math/vector';
 
 // PERF: It might not be the very efficient to use string every time to check
 // if the button is pressed. Could be better to use a number even a number flag.
@@ -105,9 +105,7 @@ export class GameInput {
         return this.mouse.currentWheenDelta;
     }
 
-    listen(element: HTMLElement, canvas: HTMLCanvasElement) {
-        assert(canvas);
-
+    listen(element: HTMLElement, mouseElement: HTMLElement) {
         element.addEventListener('keydown', (ev) => {
             const code = ev.code as KeyCode;
             this.setPressed(code);
@@ -143,19 +141,21 @@ export class GameInput {
             }
         });
         element.addEventListener('mousemove', (ev) => {
-            const x = ev.clientX - canvas.offsetLeft;
-            const y = ev.clientY - canvas.offsetTop;
+            // NOTE: We need a specific element just in case there are other elements on top
+            //       and we want mouse to be handled only for this specific element.
+            const x = ev.clientX - mouseElement.offsetLeft;
+            const y = ev.clientY - mouseElement.offsetTop;
             this.mouse.currentPosition
                 .set(x, y)
                 .max(0, 0)
-                .min(canvas.offsetWidth, canvas.offsetHeight);
+                .min(mouseElement.offsetWidth, mouseElement.offsetHeight);
         });
         element.addEventListener('wheel', (ev) => {
             this.mouse.currentWheenDelta = ev.deltaY;
         });
     }
 
-    endTick() {
+    nextTick() {
         this.previousPressed = {...this.currentPressed};
         this.mouse.previousPosition.setFrom(this.mouse.currentPosition);
         this.mouse.previousWheelDelta = this.mouse.currentWheenDelta;
