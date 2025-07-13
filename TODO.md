@@ -1,16 +1,12 @@
 # TODO
 
 ## DOING
-- [ ] Code Refactor
-    - [ ] Outline how objects/classes should access each other (global vars/props/DI etc) (eg Renderer, Input, Sound, EntityManager, Entity etc)
-    - [ ] Detach simulation out of entities and manager
 
 ## NEXT TODO
-- [ ] Add speed up option for recording playback
-- [ ] Add a sound effect when the player/enemy is hit
 - [ ] Add a visual effect when the player/enemy is hit
 - [ ] Power ups - needs more thought on what they should be and how they should work
       Examples: Time stop, damage increase, shield, speed increase, etc.
+- [ ] Add speed up option for recording playback
 
 ## SHOULD BE FIXED
 - [ ] During later levels, the pathfinding slows down the game significantly.
@@ -80,6 +76,8 @@
       This is needed so it feels like track actually reflect the movement.
 
 ### Refactoring
+- [ ] Outline how objects/classes should access each other (global vars/props/DI etc) (eg Renderer, Input, Sound, EntityManager, Entity etc)
+- [ ] Detach simulation out of entities and manager
 - [ ] Better way to store images and sprites (how bad Image is?)
 - [ ] Better coordinates system (consider defining something like `WorldPosition`)
 - [ ] Use transformation matrices for calculating rotation and translation. Consider performance hits

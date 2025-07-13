@@ -16,13 +16,19 @@ export type ShotEvent = {
     damage: number;
 };
 
+export type TankDamagedEvent = {
+    type: 'tank-damaged';
+    entityId: EntityId;
+    bot: boolean;
+};
+
 export type TankDestroyedEvent = {
     type: 'tank-destroyed';
     entityId: EntityId;
     bot: boolean;
 };
 
-export type GameEvent = GameControlEvent | ShotEvent | TankDestroyedEvent;
+export type GameEvent = GameControlEvent | ShotEvent | TankDamagedEvent | TankDestroyedEvent;
 
 export class EventQueue {
     private events: GameEvent[] = [];

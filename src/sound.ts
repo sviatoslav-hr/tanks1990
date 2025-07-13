@@ -3,42 +3,35 @@ import {clamp} from '#/math';
 import {GameStorage} from '#/storage';
 
 export enum SoundType {
-    EXPLOSION = '8bit_bomb_explosion',
+    EXPLOSION = 'explosion_8bit',
     SHOOTING = 'cannon_fire',
+    HIT = 'hit_8bit',
 }
 
 const GAME_VOLUME_KEY = 'game_volume';
 const VOLUME_SCALE = 0.3;
 
 export class SoundManager {
-    private _volume = 1 * VOLUME_SCALE;
+    #volume = 1 * VOLUME_SCALE;
     // TODO: This should be created only after user made any action on the page.
     private readonly soundsCache = new Map<SoundType, Sound[]>();
-    private static self?: SoundManager;
 
     constructor(
         private readonly storage: GameStorage,
         private readonly audioContext = new AudioContext(),
     ) {}
 
-    static get instance(): SoundManager {
-        if (!SoundManager.self) {
-            throw new Error('SoundManager not initialized');
-        }
-        return SoundManager.self;
-    }
-
     get volume(): number {
-        return Math.min(this._volume / VOLUME_SCALE, 1);
+        return Math.min(this.#volume / VOLUME_SCALE, 1);
     }
 
     updateVolume(volume: number) {
-        this._volume = volume * VOLUME_SCALE;
+        this.#volume = volume * VOLUME_SCALE;
         this.storage.set(GAME_VOLUME_KEY, volume.toString());
 
         for (const [_, sounds] of this.soundsCache) {
             for (const sound of sounds) {
-                sound.volume = this._volume;
+                sound.volume = this.#volume;
             }
         }
     }
@@ -47,12 +40,12 @@ export class SoundManager {
         let volume = this.storage.getNumber(GAME_VOLUME_KEY);
         if (volume != null) {
             volume = Math.max(Math.min(1, volume), 0);
-            this._volume = volume * VOLUME_SCALE;
+            this.#volume = volume * VOLUME_SCALE;
         }
         const promises: Promise<Result<void>>[] = [];
         for (const type of Object.values(SoundType)) {
             const sound = Sound.fromType(type, this.audioContext);
-            sound.volume = this._volume;
+            sound.volume = this.#volume;
             this.soundsCache.set(type, [sound]);
             promises.push(sound.load());
         }
@@ -115,7 +108,7 @@ class Sound {
     ) {}
 
     static fromType(type: SoundType, audioContext: AudioContext): Sound {
-        const src = `./sounds/${type}.wav`;
+        const src = type.includes('.') ? `sounds/${type}` : `./sounds/${type}.wav`;
         return new Sound(src, audioContext);
     }
 

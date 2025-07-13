@@ -16,11 +16,17 @@ export function handleGameEvents(
             case 'shot': {
                 if (game.playing) {
                     // NOTE: Play sounds only during active gameplay to not pollute the other states
-                    const volumeScale = event.bot ? 0.15 : 1;
+                    const volumeScale = event.bot ? 0.15 : 0.6;
                     sounds.playSound(SoundType.SHOOTING, volumeScale);
                 }
                 const {entityId, origin, direction, damage} = event;
                 manager.spawnProjectile(entityId, origin, direction, damage);
+                break;
+            }
+
+            case 'tank-damaged': {
+                const volumeScale = event.bot ? 0.3 : 0.6;
+                sounds.playSound(SoundType.HIT, volumeScale);
                 break;
             }
 
@@ -33,7 +39,8 @@ export function handleGameEvents(
                         entity.room.wave.removeEnemyFromAlives(entity.id);
                     }
                 }
-                sounds.playSound(SoundType.EXPLOSION);
+                const volumeScale = event.bot ? 0.6 : 1;
+                sounds.playSound(SoundType.EXPLOSION, volumeScale);
                 break;
             }
 
