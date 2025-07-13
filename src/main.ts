@@ -32,6 +32,7 @@ function main(): void {
 
     const storage = new GameStorage(localStorage);
     __DEV_MODE = storage.getBool(DEV_MODE_KEY) ?? false;
+    if (__DEV_MODE) notify('Dev mode is on', {timeoutMs: 1000});
 
     const sounds = new SoundManager(storage);
     sounds.loadAllSounds().then(() => logger.debug('[Sounds] All sounds loaded'));
@@ -49,7 +50,6 @@ function main(): void {
 
     const menu = initMenu(eventQueue, sounds);
     appElement.append(menu);
-    logger.info('Dev mode is %s', __DEV_MODE ? 'on' : 'off');
 
     const devUI = createDevUI(gameState, manager, renderer, storage);
     appElement.append(devUI);

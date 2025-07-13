@@ -71,28 +71,17 @@ export class Logger {
                 break;
             case LogLevel.INFO:
                 console.info(prefix, formattedMessage);
+                if (__DEV_MODE) notify(formattedMessage);
                 break;
             case LogLevel.WARN:
                 console.warn(prefix, formattedMessage);
+                if (__DEV_MODE) notifyWarning(formattedMessage);
                 break;
             case LogLevel.ERROR:
                 console.error(prefix, formattedMessage);
+                if (__DEV_MODE) notifyError(formattedMessage);
+                else notifyError('Error happened');
                 break;
-        }
-        if (__DEV_MODE) {
-            switch (level) {
-                case LogLevel.DEBUG:
-                    break;
-                case LogLevel.INFO:
-                    notify(formattedMessage);
-                    break;
-                case LogLevel.WARN:
-                    notifyWarning(formattedMessage);
-                    break;
-                case LogLevel.ERROR:
-                    notifyError(formattedMessage);
-                    break;
-            }
         }
     }
 }
