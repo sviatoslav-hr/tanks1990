@@ -85,6 +85,7 @@ export class Projectile extends Entity {
                 ) {
                     entity.takeDamage(this.damage, events);
                 }
+                break;
             }
         }
     }
