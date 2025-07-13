@@ -1,3 +1,4 @@
+import {GameConfig} from '#/config';
 import {tryCacheExplosions} from '#/effect';
 import type {EntityManager} from '#/entity/manager';
 import {
@@ -14,6 +15,7 @@ export interface DrawGameOptions {
 
 export function drawGame(
     renderer: Renderer,
+    config: GameConfig,
     manager: EntityManager,
     options: DrawGameOptions,
 ): void {
@@ -25,14 +27,14 @@ export function drawGame(
     for (const effect of manager.effects) {
         effect.draw(renderer);
     }
-    world.drawRooms(renderer);
+    world.drawRooms(renderer, config);
     drawAllTankModels(renderer, manager.tanks);
     tryCacheExplosions(renderer, manager);
     for (const projectile of manager.projectiles) {
-        projectile.draw(renderer);
+        projectile.draw(renderer, config);
     }
     if (drawUI) {
-        if (world.showBoundary) drawAllTanksDevUI(renderer, manager.tanks);
+        if (config.debugShowBoundaries) drawAllTanksDevUI(renderer, manager.tanks);
         drawEnemyTanksUI(renderer, manager.tanks);
         drawPlayerTankUI(renderer, manager.player);
     }

@@ -1,6 +1,6 @@
 import {Color} from '#/color';
-import {JSONObjectParser} from '#/common/json';
-import {BASE_HEIGHT, BASE_WIDTH, CELL_SIZE} from '#/const';
+import {GameConfig} from '#/config';
+import {CELL_SIZE} from '#/const';
 import {PlayerTank} from '#/entity';
 import {Block, generateBlocks} from '#/entity/block';
 import {Entity, isIntesecting, isSameEntity} from '#/entity/core';
@@ -12,53 +12,39 @@ import {random} from '#/math/rng';
 import {Vector2, Vector2Like} from '#/math/vector';
 import {Renderer} from '#/renderer';
 import {createStaticSprite} from '#/renderer/sprite';
-import {GameStorage} from '#/storage';
 
-const WORLD_CONFIG_KEY = 'world_config';
 export const roomSizeInCells = new Vector2(12, 8);
 
 export class World {
-    // TODO: This should NOT be located in the world, in some sort of config.
-    showBoundary = false;
     roomsLimit = MAX_ROOMS_COUNT;
     readonly startRoomPosition = new Vector2(0, 0);
-    readonly boundary: Rect = {
-        x: -BASE_WIDTH / 2,
-        y: -BASE_HEIGHT / 2,
-        width: BASE_WIDTH,
-        height: BASE_HEIGHT,
-    };
     activeRoom = new Room(this.startRoomPosition, roomSizeInCells, [], null, Direction.NORTH, []);
     activeRoomInFocus = false;
     rooms: Room[] = [this.activeRoom];
-    #valuesDirty = false; // NOTE: Used to mark for saving
     readonly bgColor = Color.BLACK_RAISIN;
     readonly gridColor = Color.BLACK_IERIE;
     readonly boundaryColor = Color.BLACK_IERIE;
     readonly boundaryThickness = 0.1 * CELL_SIZE;
-
-    get needsSaving(): boolean {
-        return this.#valuesDirty;
-    }
 
     init(manager: EntityManager): void {
         this.rooms = generateDungeon(this.startRoomPosition, manager, this.roomsLimit);
         const startRoom = this.rooms[0];
         assert(startRoom);
         this.activeRoom = startRoom;
-        this.markDirty();
     }
 
     update(manager: EntityManager): void {
         this.activeRoom.update(manager);
     }
 
-    drawRooms(renderer: Renderer): void {
+    drawRooms(renderer: Renderer, config: GameConfig): void {
         for (const b of this.iterateBlocks()) {
             b.draw(renderer);
         }
-        this.activeRoom.draw(renderer, this);
-        this.drawWorldBoundary(renderer);
+        if (config.debugShowBoundaries) {
+            this.drawWorldBoundary(renderer);
+            this.activeRoom.drawBoundary(renderer);
+        }
     }
 
     *iterateBlocks(): Generator<Block> {
@@ -137,54 +123,9 @@ export class World {
     }
 
     private drawWorldBoundary(renderer: Renderer): void {
-        if (this.showBoundary) {
-            for (const room of this.rooms) {
-                renderer.setStrokeColor(Color.RED);
-                renderer.strokeBoundary(room.boundary);
-            }
-        }
-    }
-
-    markDirty(): void {
-        this.#valuesDirty = true;
-    }
-
-    save(storage: GameStorage): void {
-        assert(this.#valuesDirty);
-        storage.set(WORLD_CONFIG_KEY, this.serialize());
-        this.#valuesDirty = false;
-    }
-
-    serialize(): string {
-        return JSON.stringify({
-            b: this.showBoundary,
-            bx: this.boundary.x,
-            by: this.boundary.y,
-            bw: this.boundary.width,
-            bh: this.boundary.height,
-        });
-    }
-
-    load(storage: GameStorage): void {
-        const data = storage.get(WORLD_CONFIG_KEY);
-        if (data) {
-            this.deserialize(data);
-            this.#valuesDirty = false;
-        }
-    }
-
-    deserialize(data: string): void {
-        const parser = new JSONObjectParser(data);
-        this.showBoundary = parser.getBoolean('b') ?? false;
-        const bx = parser.getNumber('bx');
-        const by = parser.getNumber('by');
-        const bw = parser.getNumber('bw');
-        const bh = parser.getNumber('bh');
-        if (bh != null && bw != null && bx != null && by != null) {
-            this.boundary.x = bx;
-            this.boundary.y = by;
-            this.boundary.width = bw;
-            this.boundary.height = bh;
+        for (const room of this.rooms) {
+            renderer.setStrokeColor(Color.RED);
+            renderer.strokeBoundary(room.boundary);
         }
     }
 
@@ -430,11 +371,7 @@ export class Room {
     }
 
     // TODO: Move block rendering from world into room for both modes.
-    draw(renderer: Renderer, world: World): void {
-        if (!world.showBoundary) {
-            return;
-        }
-
+    drawBoundary(renderer: Renderer): void {
         renderer.setStrokeColor('blue');
         renderer.strokeBoundary(this.nextRoomTransitionRect, 10);
 

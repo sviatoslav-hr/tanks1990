@@ -1,5 +1,4 @@
-import { JSONObjectParser } from '#/common/json';
-import { logger } from '#/common/logger';
+import {logger} from '#/common/logger';
 
 export function exportAsJson(obj: object, fileName = 'data.json'): void {
     const jsonStr = JSON.stringify(obj); // Pretty-print with 2 spaces
@@ -52,17 +51,6 @@ export class GameStorage {
             return null;
         }
         return date;
-    }
-
-    getObjectParser(key: string): JSONObjectParser | null {
-        const value = this.get(key);
-        if (value == null) return null;
-        try {
-            return new JSONObjectParser(value);
-        } catch (e) {
-            logger.warn('Storage: "%s" is not a valid JSON object %O', key, e);
-            return null;
-        }
     }
 }
 

@@ -2,6 +2,7 @@ import './globals';
 import './style.css';
 
 import {logger} from '#/common/logger';
+import {GameConfig} from '#/config';
 import {APP_ELEMENT_ID, DEV_MODE_KEY} from '#/const';
 import {drawGame, DrawGameOptions} from '#/drawing';
 import {preloadEffectImages} from '#/effect';
@@ -42,8 +43,9 @@ function main(): void {
     const input = new GameInput();
     const gameState = new GameState();
     const manager = new EntityManager();
-    manager.world.load(storage);
     const eventQueue = new EventQueue();
+    const config = new GameConfig(storage);
+    config.load();
 
     const menu = initMenu(eventQueue, sounds);
     appElement.append(menu);
@@ -57,11 +59,12 @@ function main(): void {
 
     menu.showMain();
     input.listen(document.body, renderer.canvas);
-    runGame(gameState, manager, menu, input, storage, devUI, renderer, sounds, eventQueue);
+    runGame(gameState, config, manager, menu, input, storage, devUI, renderer, sounds, eventQueue);
 }
 
 function runGame(
     state: GameState,
+    config: GameConfig,
     manager: EntityManager,
     menu: Menu,
     input: GameInput,
@@ -89,22 +92,30 @@ function runGame(
             } else {
                 inputState.game.dt = dt.milliseconds;
             }
-            processInput(inputState, renderer, state, manager, menu, devUI, storage, eventQueue);
+            processInput(
+                inputState,
+                config,
+                renderer,
+                state,
+                manager,
+                menu,
+                devUI,
+                storage,
+                eventQueue,
+            );
             maybeRecordInput(state, inputState.game);
 
             drawOptions.drawUI = !menu.visible;
-            drawGame(renderer, manager, drawOptions);
+            drawGame(renderer, config, manager, drawOptions);
             simulateGameTick(dt, state, manager, menu, renderer.camera, eventQueue);
             processGameEvents(eventQueue, state, manager, sounds);
-            if (manager.world.needsSaving) {
-                manager.world.save(storage);
-            }
             state.nextTick();
             input.nextTick();
         } catch (err) {
             logger.error('Error in animationCallback %O', err);
         }
         devUI.fpsMonitor.end();
+        if (config.changed) config.save();
 
         window.requestAnimationFrame(animationCallback);
     };

@@ -1,4 +1,5 @@
 import {Color} from '#/color';
+import {GameConfig} from '#/config';
 import {CELL_SIZE} from '#/const';
 import {Entity, isInside, isIntesecting, isSameEntity, moveEntity} from '#/entity/core';
 import {EntityId} from '#/entity/id';
@@ -88,13 +89,13 @@ export class Projectile extends Entity {
         }
     }
 
-    draw(renderer: Renderer): void {
+    draw(renderer: Renderer, config: GameConfig): void {
         if (this.dead) {
             return;
         }
         this.drawTrail(renderer);
         this.sprite.draw(renderer, this, this.direction);
-        if (this.manager.world.showBoundary) {
+        if (config.debugShowBoundaries) {
             renderer.setStrokeColor(Color.PINK);
             renderer.strokeBoundary(this, 1);
         }

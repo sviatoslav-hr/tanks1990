@@ -1,3 +1,4 @@
+import {GameConfig} from '#/config';
 import {DEV_MODE_KEY} from '#/const';
 import {EntityManager} from '#/entity/manager';
 import type {EventQueue} from '#/events';
@@ -166,6 +167,7 @@ export function handleExtraKeymaps(input: GameInput, menu: Menu): ExtraInputStat
 // TODO: Turn params into an object because it's getting out of hand.
 export function processInput(
     input: InputState,
+    config: GameConfig,
     renderer: Renderer,
     state: GameState,
     manager: EntityManager,
@@ -220,8 +222,7 @@ export function processInput(
     }
 
     if (input.extra.showBoundaries) {
-        manager.world.showBoundary = !manager.world.showBoundary;
-        manager.world.markDirty();
+        config.setDebugShowBoundaries(!config.debugShowBoundaries);
     }
 
     if (input.extra.toggleRecording) {
