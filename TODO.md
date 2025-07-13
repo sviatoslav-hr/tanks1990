@@ -4,7 +4,6 @@
 - [ ] Code Refactor
     - [ ] Outline how objects/classes should access each other (global vars/props/DI etc) (eg Renderer, Input, Sound, EntityManager, Entity etc)
     - [ ] Detach simulation out of entities and manager
-    - [ ] Separate drawing from world
 
 ## NEXT TODO
 - [ ] Add speed up option for recording playback

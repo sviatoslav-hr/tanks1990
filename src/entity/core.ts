@@ -1,8 +1,8 @@
-import { EntityId, newEntityId } from '#/entity/id';
-import { EntityManager } from '#/entity/manager';
-import { Rect, clamp, isPosInsideRect, xn, yn } from '#/math';
-import { Direction } from '#/math/direction';
-import { Room } from '#/world';
+import {EntityId, newEntityId} from '#/entity/id';
+import {EntityManager} from '#/entity/manager';
+import {Rect, clamp, isPosInsideRect, xn, yn} from '#/math';
+import {Direction} from '#/math/direction';
+import {Room} from '#/world/room';
 
 export class Entity implements Rect {
     readonly id: EntityId = newEntityId();

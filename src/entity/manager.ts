@@ -1,15 +1,16 @@
 import {ExplosionEffect} from '#/effect';
-import {Entity, isIntesecting} from '#/entity/core';
+import {Entity, isIntesecting, isSameEntity} from '#/entity/core';
 import {EntityId} from '#/entity/id';
 import {Projectile} from '#/entity/projectile';
 import {EnemyTank, PlayerTank, Tank} from '#/entity/tank';
 import {TankPartKind} from '#/entity/tank/generation';
 import {EventQueue} from '#/events';
+import {isPosInsideRect, type Rect} from '#/math';
 import {Direction} from '#/math/direction';
 import {Duration} from '#/math/duration';
 import {Vector2Like} from '#/math/vector';
 import {Camera} from '#/renderer/camera';
-import {World} from '#/world';
+import {World} from '#/world/world';
 
 export class EntityManager {
     readonly world = new World();
@@ -207,4 +208,34 @@ export class EntityManager {
         this.projectiles = [];
         this.effects = [];
     }
+}
+
+export function isOccupied(
+    pos: Vector2Like,
+    manager: EntityManager,
+    ignoredEntity?: Entity,
+): boolean {
+    for (const entity of manager.iterateCollidable()) {
+        if (entity === manager.player) continue;
+        if (ignoredEntity && isSameEntity(entity, ignoredEntity)) continue;
+        if (isPosInsideRect(pos.x, pos.y, entity)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+export function isRectOccupied(
+    rect: Rect,
+    entityManager: EntityManager,
+    ignoreEntity?: Entity,
+): boolean {
+    for (const entity of entityManager.iterateCollidable()) {
+        if (isSameEntity(entity, entityManager.player)) continue;
+        if (ignoreEntity && isSameEntity(entity, ignoreEntity)) continue;
+        if (isIntesecting(rect, entity)) {
+            return true;
+        }
+    }
+    return false;
 }

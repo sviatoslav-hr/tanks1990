@@ -4,7 +4,7 @@ import {Tank} from '#/entity/tank/base';
 import {EnemyTank, isEnemyTank} from '#/entity/tank/enemy';
 import {isPlayerTank, PlayerTank} from '#/entity/tank/player';
 import {Renderer} from '#/renderer';
-import {roomSizeInCells} from '#/world';
+import {roomSizeInCells} from '#/world/room';
 
 export function drawAllTankModels(renderer: Renderer, tanks: Tank[]): void {
     for (const tank of tanks) {

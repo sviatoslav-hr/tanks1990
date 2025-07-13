@@ -5,6 +5,7 @@ import {
     type RecordingInfo,
     type RecordingStatus,
 } from '#/recording';
+import type {Room} from '#/world/room';
 
 export enum GameStatus {
     INITIAL,
@@ -117,4 +118,8 @@ export class GameState {
                 logger.warn('Unhandled Game status %s', this.status);
         }
     }
+}
+
+export function justCompletedGame(state: GameState, room: Room): boolean {
+    return state.playing && !state.gameCompleted && room.completed && !room.nextRoom;
 }

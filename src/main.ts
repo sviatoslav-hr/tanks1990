@@ -17,11 +17,11 @@ import {maybeRecordInput} from '#/recording';
 import {Renderer} from '#/renderer';
 import {Camera} from '#/renderer/camera';
 import {SoundManager} from '#/sound';
-import {GameState} from '#/state';
+import {GameState, justCompletedGame} from '#/state';
 import {GameStorage} from '#/storage';
 import {createDevUI, DevUI} from '#/ui/dev';
 import {getNotificationBar, notify} from '#/ui/notification';
-import {Room, World} from '#/world';
+import {World} from '#/world/world';
 
 main();
 
@@ -155,10 +155,6 @@ function simulateGameTick(
         manager.updateEffects(dt);
         manager.updateAllEntities(dt, camera, events);
     }
-}
-
-function justCompletedGame(state: GameState, room: Room): boolean {
-    return state.playing && !state.gameCompleted && room.completed && !room.nextRoom;
 }
 
 function resizeGame(renderer: Renderer, menu: Menu, world: World): void {

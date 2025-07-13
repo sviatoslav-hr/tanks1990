@@ -92,7 +92,7 @@ interface EnemyWaveConfig {
 }
 
 // NOTE: Wave index corresponds to the room index.
-export const wavePerRoom = makeWaves(
+export const wavesPerRoom = makeWaves(
     // NOTE: Start with one medium tank: not overwhelming with many enemies, but also not too easy to kill.
     {enemies: ['medium'], limitAtOnce: 1},
     // {enemies: ['light', 'medium', 'heavy'], limitAtOnce: 3}, // NOTE: This is a test wave, only for dev purposes.
