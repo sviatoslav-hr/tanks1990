@@ -391,7 +391,7 @@ export class Menu extends HTMLElement {
             case MenuState.HIDDEN:
                 return;
             case MenuState.START:
-                return this.setHeading('Tanks 1990');
+                return this.setHeading('Panzerlock');
             case MenuState.PAUSE:
                 return this.setHeading('Paused');
             case MenuState.DEAD:
