@@ -1,8 +1,8 @@
-import type { Rect } from '#/math';
-import { Direction } from '#/math/direction';
-import { Duration } from '#/math/duration';
-import type { Renderer } from '#/renderer';
-import { Sprite } from '#/renderer/sprite';
+import type {Rect} from '#/math';
+import {Direction} from '#/math/direction';
+import {Duration} from '#/math/duration';
+import type {Renderer} from '#/renderer';
+import {Sprite} from '#/renderer/sprite';
 
 const tankPartKinds = ['light', 'medium', 'heavy'] as const;
 export type TankPartKind = (typeof tankPartKinds)[number];
@@ -20,14 +20,14 @@ export interface TankSchema {
 export function makeTankSchema(type: 'player' | 'enemy', kind: TankPartKind): TankSchema {
     // NOTE: Player should be faster because the game feel better this way.
     const speedCoef = type === 'player' ? 1.5 : 1;
-    const shootingCoef = type === 'player' ? 2 : 1;
+    const shootingCoef = type === 'player' ? 1 : 1;
     return {
         type,
         // NOTE: For now turret and body are the same kind for the sake of simplicity.
         turret: kind,
         body: kind,
         damage: tankKindDamage[kind],
-        shootingDelay: Duration.milliseconds(tankKindShootingDelayMillis[kind] / shootingCoef),
+        shootingDelay: Duration.milliseconds(tankKindShootingDelayMillis[kind] * shootingCoef),
         maxHealth: tankKindMaxHealth[kind],
         maxSpeed: tankKindSpeed[kind] * speedCoef,
     };
@@ -40,9 +40,9 @@ const tankKindMaxHealth: Record<TankPartKind, number> = {
 };
 
 const tankKindSpeed: Record<TankPartKind, number> = {
-    light: (400 * 1000) / (60 * 60), // in m/s
+    light: (360 * 1000) / (60 * 60), // in m/s
     medium: (300 * 1000) / (60 * 60),
-    heavy: (200 * 1000) / (60 * 60),
+    heavy: (240 * 1000) / (60 * 60),
 };
 
 const tankKindDamage: Record<TankPartKind, number> = {

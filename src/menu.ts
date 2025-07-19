@@ -395,7 +395,7 @@ export class Menu extends HTMLElement {
             case MenuState.PAUSE:
                 return this.setHeading('Paused');
             case MenuState.DEAD:
-                return this.setHeading('You are dead');
+                return this.setHeading('Game Over');
             case MenuState.COMPLETED:
                 return this.setHeading('You won!');
         }

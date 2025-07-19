@@ -3,7 +3,6 @@ import {EntityManager} from '#/entity/manager';
 import {Tank} from '#/entity/tank/base';
 import {createTankSpriteGroup, makeTankSchema} from '#/entity/tank/generation';
 import {EventQueue} from '#/events';
-import {GameInput} from '#/input';
 import {Direction} from '#/math/direction';
 import {Duration} from '#/math/duration';
 import {createShieldSprite} from '#/renderer/sprite';
@@ -49,7 +48,6 @@ export class PlayerTank extends Tank implements Entity {
         this.y = -this.height / 2;
         this.direction = Direction.NORTH;
         this.velocity = 0;
-        this.shootingDelay.milliseconds = 0;
         this.score = 0;
         this.survivedFor.milliseconds = 0;
         return true;
@@ -67,41 +65,6 @@ export class PlayerTank extends Tank implements Entity {
                 this.velocity = 0;
             }
             this.direction = direction;
-        }
-    }
-
-    // TODO: Should be handled in the main loop *probably*
-    handleKeyboard(keyboard: GameInput): void {
-        let newDirection: Direction | null = null;
-        if (keyboard.isDown('KeyA') || keyboard.isDown('ArrowLeft') || keyboard.isDown('KeyH')) {
-            newDirection = Direction.WEST;
-        }
-        if (keyboard.isDown('KeyD') || keyboard.isDown('ArrowRight') || keyboard.isDown('KeyL')) {
-            if (newDirection === Direction.WEST) {
-                newDirection = null;
-            } else {
-                newDirection = Direction.EAST;
-            }
-        }
-        if (keyboard.isDown('KeyW') || keyboard.isDown('ArrowUp') || keyboard.isDown('KeyK')) {
-            newDirection = Direction.NORTH;
-        }
-        if (keyboard.isDown('KeyS') || keyboard.isDown('ArrowDown') || keyboard.isDown('KeyJ')) {
-            if (newDirection === Direction.NORTH) {
-                newDirection = null;
-            } else {
-                newDirection = Direction.SOUTH;
-            }
-        }
-        if (keyboard.isDown('Space') && !this.shootingDelay.positive) {
-            this.shoot();
-        }
-        this.moving = newDirection != null;
-        if (newDirection != null) {
-            if (newDirection !== this.direction) {
-                this.velocity = 0;
-            }
-            this.direction = newDirection;
         }
     }
 }

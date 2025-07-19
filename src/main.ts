@@ -16,7 +16,7 @@ import {initMenu, Menu} from '#/menu';
 import {maybeRecordInput} from '#/recording';
 import {Renderer} from '#/renderer';
 import {Camera} from '#/renderer/camera';
-import {SoundManager} from '#/sound';
+import {SoundManager, SoundType} from '#/sound';
 import {GameState, justCompletedGame} from '#/state';
 import {GameStorage} from '#/storage';
 import {createDevUI, DevUI} from '#/ui/dev';
@@ -107,7 +107,7 @@ function runGame(
 
             drawOptions.drawUI = !menu.visible;
             drawGame(renderer, config, manager, drawOptions);
-            simulateGameTick(dt, state, manager, menu, renderer.camera, eventQueue);
+            simulateGameTick(dt, state, manager, menu, sounds, renderer.camera, eventQueue);
             processGameEvents(eventQueue, state, manager, sounds);
             state.nextTick();
             input.nextTick();
@@ -128,6 +128,7 @@ function simulateGameTick(
     state: GameState,
     manager: EntityManager,
     menu: Menu,
+    sounds: SoundManager,
     camera: Camera,
     events: EventQueue,
 ) {
@@ -137,7 +138,10 @@ function simulateGameTick(
         const playedRecording = state.recording.playing;
         state.markDead();
         // TODO: Menu should not be a part of simuilation and should be handled outside of this function.
-        if (!playedRecording) menu.showDead();
+        if (!playedRecording) {
+            menu.showDead();
+            sounds.playSound(SoundType.GAME_OVER, 1);
+        }
     }
 
     if (!player.dead && justCompletedGame(state, manager.world.activeRoom)) {

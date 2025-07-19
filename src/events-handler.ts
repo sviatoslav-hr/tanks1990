@@ -25,7 +25,7 @@ export function handleGameEvents(
             }
 
             case 'tank-damaged': {
-                const volumeScale = event.bot ? 0.3 : 0.6;
+                const volumeScale = event.bot ? 0.3 : 0.8;
                 sounds.playSound(SoundType.HIT, volumeScale);
                 break;
             }
@@ -47,6 +47,7 @@ export function handleGameEvents(
             case 'game-control': {
                 switch (event.action) {
                     case 'start': {
+                        sounds.playSound(SoundType.LEVEL_START, 1.5);
                         const seed = getURLSeed();
                         random.reset(seed ?? undefined);
                         setURLSeed(random.seed);

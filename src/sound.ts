@@ -1,11 +1,12 @@
 import {Result} from '#/common';
-import {clamp} from '#/math';
 import {GameStorage} from '#/storage';
 
 export enum SoundType {
     EXPLOSION = 'explosion_8bit',
     SHOOTING = 'cannon_fire',
-    HIT = 'hit_8bit',
+    HIT = 'hit',
+    GAME_OVER = 'game_over',
+    LEVEL_START = 'level_start',
 }
 
 const GAME_VOLUME_KEY = 'game_volume';
@@ -190,12 +191,12 @@ class Sound {
     }
 
     private getGainNode(volumeScale: number): GainNode {
-        if (volumeScale < 0 || volumeScale > 1) {
+        if (volumeScale < 0) {
             logger.warn(
-                `Sound: volume scale out of range: ${volumeScale}. Expected value between 0 and 1.`,
+                `Sound: volume scale out of range: ${volumeScale}. Expected value bigger than 0.`,
             );
         }
-        volumeScale = clamp(volumeScale, 0, 1);
+        volumeScale = Math.max(0, volumeScale);
         if (this.#volumeScale !== volumeScale || !this.gainNode) {
             this.gainNode = this.audioContext.createGain();
             this.gainNode.connect(this.audioContext.destination);

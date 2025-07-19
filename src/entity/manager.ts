@@ -3,6 +3,7 @@ import {Entity, isIntesecting, isSameEntity} from '#/entity/core';
 import {EntityId} from '#/entity/id';
 import {Projectile} from '#/entity/projectile';
 import {EnemyTank, PlayerTank, Tank} from '#/entity/tank';
+import {isEnemyTank} from '#/entity/tank/enemy';
 import {TankPartKind} from '#/entity/tank/generation';
 import {EventQueue} from '#/events';
 import {isPosInsideRect, type Rect} from '#/math';
@@ -161,7 +162,7 @@ export class EntityManager {
         const wave = this.world.activeRoom.wave;
         for (const tank of this.tanks) {
             tank.update(dt);
-            if (tank.bot) {
+            if (!tank.dead && isEnemyTank(tank)) {
                 const event = tank.shoot();
                 if (event) events.push(event);
             }
