@@ -123,7 +123,7 @@ export class RNG {
     }
 }
 
-export const random = new RNG('iamthebest');
+export const random = new RNG('stardard');
 
 function makeMash() {
     let n = 0xefc8249d;
