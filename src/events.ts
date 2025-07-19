@@ -28,7 +28,17 @@ export type TankDestroyedEvent = {
     bot: boolean;
 };
 
-export type GameEvent = GameControlEvent | ShotEvent | TankDamagedEvent | TankDestroyedEvent;
+export type ProjectileExplodedEvent = {
+    type: 'projectile-exploded';
+    entityId: EntityId;
+};
+
+export type GameEvent =
+    | GameControlEvent
+    | ShotEvent
+    | TankDamagedEvent
+    | TankDestroyedEvent
+    | ProjectileExplodedEvent;
 
 export class EventQueue {
     private events: GameEvent[] = [];

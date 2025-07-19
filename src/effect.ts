@@ -1,11 +1,12 @@
-import { Animation, easeOut2 } from '#/animation';
-import { EntityManager } from '#/entity/manager';
-import { Rect } from '#/math';
-import { Duration } from '#/math/duration';
-import { Vector2 } from '#/math/vector';
-import { Renderer } from '#/renderer';
-import { getCachedImage, setCachedImage } from '#/renderer/sprite';
-import { assert } from '#/utils';
+import {Animation, easeOut2} from '#/animation';
+import {CELL_SIZE} from '#/const';
+import {EntityManager} from '#/entity/manager';
+import {Rect} from '#/math';
+import {Duration} from '#/math/duration';
+import {Vector2} from '#/math/vector';
+import {Renderer} from '#/renderer';
+import {createExplosionSprite, getCachedImage, setCachedImage} from '#/renderer/sprite';
+import {assert} from '#/utils';
 
 const EXPLOSION_IMAGE_PATH = './assets/scorch.png';
 
@@ -26,13 +27,46 @@ function getExplosionImage(): HTMLImageElement {
     return image;
 }
 
-export class ExplosionEffect {
+export class Boom {
+    readonly animation: Animation;
+    private readonly sprite = createExplosionSprite();
+    private readonly boundary: Rect;
+
+    constructor(
+        private readonly center: Vector2,
+        timeout: Duration = Duration.milliseconds(300),
+    ) {
+        this.animation = new Animation(timeout, easeOut2);
+        const size = CELL_SIZE * 0.7;
+        this.boundary = {
+            x: this.center.x - size / 2,
+            y: this.center.y - size / 2,
+            width: size,
+            height: size,
+        };
+    }
+
+    update(dt: Duration): void {
+        if (this.animation.finished) return;
+        this.sprite.update(dt);
+        this.animation.update(dt);
+    }
+
+    draw(renderer: Renderer): void {
+        if (this.animation.finished) return;
+        renderer.setGlobalAlpha(Math.min(1, (1 - this.animation.progress) * 2));
+        this.sprite.draw(renderer, this.boundary, 0);
+        renderer.setGlobalAlpha(1);
+    }
+}
+
+export class ParticleExplosion {
     static readonly IMAGE_MAX_SCALE = 4;
     static readonly ANIMATION_DURATION = Duration.milliseconds(1500);
 
     // TODO: consider using a simpler data type for image instead of HTMLImageElement
     private explosionImage: HTMLImageElement;
-    readonly animation = new Animation(ExplosionEffect.ANIMATION_DURATION, easeOut2);
+    readonly animation = new Animation(ParticleExplosion.ANIMATION_DURATION, easeOut2);
 
     private constructor(
         public boundary: Rect,
@@ -42,9 +76,9 @@ export class ExplosionEffect {
         this.explosionImage = getExplosionImage();
     }
 
-    static fromImageData(image: ImageData, boundary: Rect): ExplosionEffect {
-        const particles = ExplosionEffect.generateParticles(image, boundary);
-        return new ExplosionEffect(boundary, particles, image);
+    static fromImageData(image: ImageData, boundary: Rect): ParticleExplosion {
+        const particles = ParticleExplosion.generateParticles(image, boundary);
+        return new ParticleExplosion(boundary, particles, image);
     }
 
     private static generateParticles(image: ImageData, boundary: Rect): Particle[] {
@@ -131,7 +165,7 @@ export class ExplosionEffect {
         }
 
         const imageScale =
-            Math.min(this.animation.progress * 2, 1) * ExplosionEffect.IMAGE_MAX_SCALE;
+            Math.min(this.animation.progress * 2, 1) * ParticleExplosion.IMAGE_MAX_SCALE;
 
         const xOffset = (this.boundary.width * imageScale - this.boundary.width) / 2;
         const yOffset = (this.boundary.height * imageScale - this.boundary.height) / 2;
@@ -158,9 +192,9 @@ export class ExplosionEffect {
         }
     }
 
-    clone(boundary: Rect = this.boundary): ExplosionEffect {
-        const particles = ExplosionEffect.generateParticles(this.sourceImageData, boundary);
-        const clone = new ExplosionEffect(boundary, particles, this.sourceImageData);
+    clone(boundary: Rect = this.boundary): ParticleExplosion {
+        const particles = ParticleExplosion.generateParticles(this.sourceImageData, boundary);
+        const clone = new ParticleExplosion(boundary, particles, this.sourceImageData);
         clone.animation.progress = 0;
         return clone;
     }
@@ -211,12 +245,12 @@ export function tryCacheExplosions(renderer: Renderer, manager: EntityManager): 
         );
         if (t) {
             const imageData = renderer.getImageData(t.x, t.y, t.width, t.height);
-            manager.cachedBotExplosion = ExplosionEffect.fromImageData(imageData, t);
+            manager.cachedBotExplosion = ParticleExplosion.fromImageData(imageData, t);
         }
     }
     const player = manager.player;
     if (!manager.cachedPlayerExplosion && !player.dead && !player.hasShield) {
         const imageData = renderer.getImageData(player.x, player.y, player.width, player.height);
-        manager.cachedPlayerExplosion = ExplosionEffect.fromImageData(imageData, manager.player);
+        manager.cachedPlayerExplosion = ParticleExplosion.fromImageData(imageData, manager.player);
     }
 }

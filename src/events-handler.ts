@@ -44,6 +44,11 @@ export function handleGameEvents(
                 break;
             }
 
+            case 'projectile-exploded': {
+                manager.spawnBoom(event.entityId);
+                break;
+            }
+
             case 'game-control': {
                 switch (event.action) {
                     case 'start': {

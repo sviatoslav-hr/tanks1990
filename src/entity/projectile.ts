@@ -65,6 +65,7 @@ export class Projectile extends Entity {
         // TODO: use movement equation instead
         moveEntity(this, this.v * dt.seconds, this.direction);
         if (!isInside(this, this.manager.world.activeRoom.boundary)) {
+            events.push({type: 'projectile-exploded', entityId: this.id});
             this.dead = true;
             return;
         }
@@ -75,6 +76,7 @@ export class Projectile extends Entity {
             }
             if (isIntesecting(this, entity)) {
                 this.dead = true;
+                events.push({type: 'projectile-exploded', entityId: this.id});
                 if (entity instanceof Projectile) {
                     entity.dead = true;
                 }
@@ -102,13 +104,20 @@ export class Projectile extends Entity {
         }
     }
 
-    reviveAt(ownerId: EntityId, x: number, y: number, direction: Direction): void {
+    reviveAt(
+        ownerId: EntityId,
+        x: number,
+        y: number,
+        direction: Direction,
+        shotByPlayer: boolean,
+    ): void {
         this.ownerId = ownerId;
         this.originalPosition.set(x, y);
         this.x = x;
         this.y = y;
         this.dead = false;
         this.direction = direction;
+        this.shotByPlayer = shotByPlayer;
         this.sprite.reset();
     }
 

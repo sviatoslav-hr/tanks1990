@@ -1,4 +1,4 @@
-import {ExplosionEffect} from '#/effect';
+import {Boom, ParticleExplosion} from '#/effect';
 import {Entity, isIntesecting, isSameEntity} from '#/entity/core';
 import {EntityId} from '#/entity/id';
 import {Projectile} from '#/entity/projectile';
@@ -9,7 +9,7 @@ import {EventQueue} from '#/events';
 import {isPosInsideRect, type Rect} from '#/math';
 import {Direction} from '#/math/direction';
 import {Duration} from '#/math/duration';
-import {Vector2Like} from '#/math/vector';
+import {Vector2, Vector2Like} from '#/math/vector';
 import {Camera} from '#/renderer/camera';
 import {World} from '#/world/world';
 
@@ -18,9 +18,10 @@ export class EntityManager {
     readonly player = new PlayerTank(this);
     tanks: Tank[] = [];
     projectiles: Projectile[] = [];
-    effects: ExplosionEffect[] = [];
-    cachedBotExplosion: ExplosionEffect | null = null;
-    cachedPlayerExplosion: ExplosionEffect | null = null;
+    effects: ParticleExplosion[] = [];
+    booms: Boom[] = [];
+    cachedBotExplosion: ParticleExplosion | null = null;
+    cachedPlayerExplosion: ParticleExplosion | null = null;
 
     init(): void {
         this.reset();
@@ -64,7 +65,7 @@ export class EntityManager {
     }
 
     updateEffects(dt: Duration): void {
-        const effectsToRemove: ExplosionEffect[] = [];
+        const effectsToRemove: ParticleExplosion[] = [];
         for (const effect of this.effects) {
             effect.update(dt);
             if (effect.animation.finished) {
@@ -73,6 +74,16 @@ export class EntityManager {
         }
         if (effectsToRemove.length) {
             this.effects = this.effects.filter((e) => !effectsToRemove.includes(e));
+        }
+        const boomsToRemove: Boom[] = [];
+        for (const boom of this.booms) {
+            boom.update(dt);
+            if (boom.animation.finished) {
+                boomsToRemove.push(boom);
+            }
+        }
+        if (boomsToRemove.length) {
+            this.booms = this.booms.filter((b) => !boomsToRemove.includes(b));
         }
     }
 
@@ -109,7 +120,8 @@ export class EntityManager {
         const deadProjectile = this.projectiles.find((p) => p.dead);
         if (deadProjectile) {
             // NOTE: reuse dead projectiles instead of creating new ones
-            deadProjectile.reviveAt(ownerId, origin.x, origin.y, direction);
+            const showByPlayer = this.player.id === ownerId;
+            deadProjectile.reviveAt(ownerId, origin.x, origin.y, direction, showByPlayer);
             deadProjectile.damage = damage;
             return;
         }
@@ -123,7 +135,6 @@ export class EntityManager {
             direction,
         });
         projectile.damage = damage;
-        // TODO: measure if dead projectiles should be cleaned up at some point
         this.projectiles.push(projectile);
     }
 
@@ -134,6 +145,16 @@ export class EntityManager {
         assert(cachedEffect, `Cached explosion effect not found, bot=${tank.bot}`);
         const effect = cachedEffect.clone(tank);
         this.effects.push(effect);
+    }
+
+    spawnBoom(sourceId: EntityId): void {
+        const projectile = this.projectiles.find((p) => p.id === sourceId);
+        if (!projectile) {
+            logger.warn(`Projectile with id ${sourceId} not found for boom effect`);
+            return;
+        }
+        const position = new Vector2(projectile.x, projectile.y);
+        this.booms.push(new Boom(position));
     }
 
     spawnEnemy(enemyKind?: TankPartKind, skipDelay = false): EnemyTank {
@@ -181,16 +202,11 @@ export class EntityManager {
     }
 
     private updateProjectiles(dt: Duration, camera: Camera, events: EventQueue): void {
-        const garbageIndexes: number[] = [];
-        for (const [index, projectile] of this.projectiles.entries()) {
-            if (projectile.dead) {
-                garbageIndexes.push(index);
-            } else {
+        for (const projectile of this.projectiles) {
+            if (!projectile.dead) {
                 projectile.update(dt, camera, events);
             }
         }
-        // TODO: optimize this. Is it more efficient to update existing array or create a new one?
-        this.projectiles = this.projectiles.filter((_, i) => !garbageIndexes.includes(i));
     }
 
     findCollided(target: Entity): Entity | undefined {

@@ -1,8 +1,8 @@
-import { fmod, Rect } from '#/math';
-import { Duration } from '#/math/duration';
-import { Transform } from '#/math/transform';
-import { Vector2 } from '#/math/vector';
-import { Renderer } from '#/renderer';
+import {fmod, Rect} from '#/math';
+import {Duration} from '#/math/duration';
+import {Transform} from '#/math/transform';
+import {Vector2} from '#/math/vector';
+import {Renderer} from '#/renderer';
 
 const ASSETS_URL = './assets';
 // TODO: consider using a simpler data type for images instead of HTMLImageElement
@@ -178,4 +178,15 @@ export function createShieldSprite(type: 'player' | 'enemy') {
 export function createStaticSprite(opts: Omit<SpriteOpts<'static'>, 'states'>): Sprite<'static'> {
     const states = [{name: 'static', frames: 1} as const];
     return new Sprite({...opts, states});
+}
+
+export function createExplosionSprite(): Sprite<'anim'> {
+    return new Sprite({
+        key: 'explosion',
+        frameWidth: 32,
+        frameHeight: 32,
+        framePadding: 0,
+        frameDuration: Duration.milliseconds(50),
+        states: [{name: 'anim', frames: 6}],
+    });
 }

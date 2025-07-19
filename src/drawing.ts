@@ -26,7 +26,9 @@ export function drawGame(
         effect.draw(renderer);
     }
     drawWorldBlocks(renderer, world);
-    if (config.debugShowBoundaries) drawWorldDebugUI(renderer, world);
+    for (const boom of manager.booms) {
+        boom.draw(renderer);
+    }
 
     drawAllTankModels(renderer, manager.tanks);
     tryCacheExplosions(renderer, manager);
@@ -34,6 +36,7 @@ export function drawGame(
         projectile.draw(renderer, config);
     }
     if (options.drawUI) {
+        if (config.debugShowBoundaries) drawWorldDebugUI(renderer, world);
         if (config.debugShowBoundaries) drawAllTanksDevUI(renderer, manager.tanks);
         drawEnemyTanksUI(renderer, manager.tanks);
         drawPlayerTankUI(renderer, manager.player);

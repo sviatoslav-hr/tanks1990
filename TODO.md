@@ -3,7 +3,9 @@
 ## DOING
 
 ## NEXT TODO
-- [ ] Add a visual effect when the player/enemy is hit
+- [ ] Better dungeon generation
+  - [ ] Allow generation in any direction (currently bottom direction is disabled to avoid cyclic paths)
+  - [ ] Consider maze-like generation (multiple possible paths)
 - [ ] Power ups - needs more thought on what they should be and how they should work
       Examples: Time stop, damage increase, shield, speed increase, etc.
 - [ ] Add speed up option for recording playback
@@ -25,7 +27,6 @@
 - [ ] Enemy spawning: Make the enemies spawn in waves, with each wave being stronger than the previous one.
 
 ### Sounds And Music
-- [ ] Background music?
 - [ ] Main screen music?
 
 ### UX improvements
@@ -39,15 +40,12 @@
       Another option is to display the controls to the right of the menu since that area if free.
 
 ### Visual improvements
-- [ ] Add a proper visual effect for the tanks when they are damaged
-      It could be something like a crack on the tank body or a small explosion effect or a smoke particles.
 - [ ] Make a proper sprite for the tank explosion effect
+- [ ] Add some fire effect inside of the explosion (doesn't look like explosion otherwise)
 - [ ] Fire effect to gun (when projectile is fired/spawned)
 - [ ] Spawning effect for the tanks (Shining/teleporting effect?)
 - [ ] Animation for opening the next room
       It might be best to have a piece of wall just collapse and become immediately passable so player doesn't have to wait for the animation to finish.
-- [ ] Explosion effect for the bullets (especially when they hit the wall/other bullet)
-- [ ] Add some fire effect inside of the explosion (doesn't look like explosion otherwise)
 - [ ] More random obstacles/more variety
 - [ ] Pick a better font for the menu (see kenney.nl)
 - [ ] Improve controls hints [kenney.nl](https://kenney.nl/assets/input-prompts)
