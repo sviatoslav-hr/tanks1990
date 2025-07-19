@@ -16,7 +16,7 @@ import {initMenu, Menu} from '#/menu';
 import {maybeRecordInput} from '#/recording';
 import {Renderer} from '#/renderer';
 import {Camera} from '#/renderer/camera';
-import {SoundManager, SoundType} from '#/sound';
+import {type Sound, SoundManager, SoundType} from '#/sound';
 import {GameState, justCompletedGame} from '#/state';
 import {GameStorage} from '#/storage';
 import {createDevUI, DevUI} from '#/ui/dev';
@@ -74,6 +74,8 @@ function runGame(
     sounds: SoundManager,
     eventQueue: EventQueue,
 ) {
+    let battleSound: Sound | undefined;
+
     let lastTimestamp = performance.now();
     const animationCallback = (): void => {
         const now = performance.now();
@@ -104,6 +106,24 @@ function runGame(
                 eventQueue,
             );
             maybeRecordInput(state, inputState.game);
+
+            // TODO: This is pretty bad, this code should not be in main.
+            //       Probably the best way to handle this is use play sound based on game events.
+            if (state.playing) {
+                const soundVolume = 0.5;
+                const loop = true;
+                if (!battleSound) {
+                    battleSound = sounds.playSound(SoundType.BATTLE_THEME, soundVolume, loop);
+                } else if (battleSound.paused) {
+                    battleSound.resume();
+                } else if (!battleSound.isPlaying) {
+                    battleSound.play(soundVolume, loop);
+                }
+            } else if (state.paused && battleSound?.isPlaying) {
+                battleSound.pause();
+            } else if (battleSound?.isPlaying) {
+                battleSound.stop();
+            }
 
             drawOptions.drawUI = !menu.visible;
             drawGame(renderer, config, manager, drawOptions);

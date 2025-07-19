@@ -7,6 +7,7 @@ export enum SoundType {
     HIT = 'hit',
     GAME_OVER = 'game_over',
     LEVEL_START = 'level_start',
+    BATTLE_THEME = 'too_strong',
 }
 
 const GAME_VOLUME_KEY = 'game_volume';
@@ -58,12 +59,12 @@ export class SoundManager {
         }
     }
 
-    playSound(type: SoundType, volumeScale?: number): void {
+    playSound(type: SoundType, volumeScale?: number, loop = false): Sound {
         const cachedSounds = this.soundsCache.get(type);
         const availableSound = cachedSounds?.find((sound) => !sound.isPlaying);
         if (availableSound) {
-            availableSound.play(volumeScale ?? 1);
-            return;
+            availableSound.play(volumeScale ?? 1, loop);
+            return availableSound;
         }
 
         // NOTE: All sounds of this type are currently playing, so we need to clone one of them.
@@ -71,8 +72,8 @@ export class SoundManager {
         if (firstSound) {
             const clonedSound = firstSound.clone();
             cachedSounds.push(clonedSound);
-            clonedSound.play(volumeScale ?? 1);
-            return;
+            clonedSound.play(volumeScale ?? 1, loop);
+            return clonedSound;
         }
 
         // NOTE: Can only happen if failed to preload the sound.
@@ -80,30 +81,35 @@ export class SoundManager {
         this.soundsCache.set(type, [sound]);
         sound.load().then((res) => {
             if (res.isOk()) {
-                sound.play(volumeScale ?? 1);
+                sound.play(volumeScale ?? 1, loop);
             } else {
                 logger.error(res.contextErr(`Failed to play sound: ${type}`).err);
             }
         });
+        return sound;
     }
 }
 
 enum SoundState {
-    NEW,
+    INIT,
     LOADING,
     LOADED,
     PLAYING,
     ERROR,
 }
 
-class Sound {
-    private state = SoundState.NEW;
+export class Sound {
+    private state = SoundState.INIT;
     private audioBuffer: AudioBuffer | null = null;
     private gainNode: GainNode | null = null;
+    private source: AudioBufferSourceNode | null = null;
     #volume = 1;
     #volumeScale = 1;
+    #startTime = 0;
+    #pauseTime = 0;
+    #loop = false;
 
-    constructor(
+    private constructor(
         private src: string,
         private audioContext: AudioContext,
     ) {}
@@ -130,16 +136,41 @@ class Sound {
         return this.state >= SoundState.LOADED;
     }
 
-    // NOTE: scale is needed to play the same sound with different volumes at the same time
-    play(volumeScale?: number): void {
-        if (this.loaded) {
-            const gainNode = this.getGainNode(volumeScale ?? 1);
-            const audioSource = this.createSource(gainNode);
-            audioSource.start(0);
-            this.state = SoundState.PLAYING;
-        } else {
-            logger.error(`Sound: cannot play, sound not loaded: "${this.src}"`);
-        }
+    get paused(): boolean {
+        return this.state === SoundState.LOADED && this.#pauseTime > 0;
+    }
+
+    play(volumeScale?: number, loop = false): void {
+        assert(this.loaded, `Sound: cannot play, sound not loaded: "${this.src}"`);
+        this.startAudioSource(volumeScale ?? 1, 0, loop);
+        this.#startTime = this.audioContext.currentTime;
+        this.#pauseTime = 0;
+    }
+
+    resume(): void {
+        this.startAudioSource(this.#volumeScale, this.#pauseTime, this.#loop);
+    }
+
+    private startAudioSource(volumeScale: number, startTime: number, loop: boolean): void {
+        const gainNode = this.getGainNode(volumeScale);
+        const audioSource = this.getAudioSourceNode(gainNode);
+        audioSource.loop = this.#loop = loop;
+        audioSource.start(0, startTime);
+        this.state = SoundState.PLAYING;
+    }
+
+    pause(): void {
+        this.source?.stop();
+        this.source = null; // NOTE: We can't pause the source, so we need to delete it.
+        this.state = SoundState.LOADED;
+        this.#pauseTime = this.audioContext.currentTime - this.#startTime;
+    }
+
+    stop(): void {
+        this.source?.stop();
+        this.source = null;
+        this.state = SoundState.LOADED;
+        this.#pauseTime = 0;
     }
 
     clone(): Sound {
@@ -183,10 +214,11 @@ class Sound {
         return Result.ok();
     }
 
-    private createSource(gainNode: GainNode): AudioBufferSourceNode {
+    private getAudioSourceNode(gainNode: GainNode): AudioBufferSourceNode {
         const source = this.audioContext.createBufferSource();
         source.buffer = this.audioBuffer;
         source.connect(gainNode);
+        this.source = source;
         return source;
     }
 
