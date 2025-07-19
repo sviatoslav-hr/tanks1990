@@ -1,6 +1,6 @@
 # Tanks 1990
 
-A game inspired by original Battle City game.
+Panzerlock - game inspired by original Battle City.
 [Play online](https://sviatoslav-hr.github.io/tanks1990/)
 
 ## How to build, run locally
