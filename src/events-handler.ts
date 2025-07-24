@@ -15,7 +15,7 @@ export function handleGameEvents(
         switch (event.type) {
             case 'shot': {
                 if (game.playing) {
-                    // NOTE: Play sounds only during active gameplay to not pollute the other states
+                    // NOTE: Play sounds only during active game-play to not pollute the other states
                     const volumeScale = event.bot ? 0.15 : 0.6;
                     sounds.playSound(SoundType.SHOOTING, volumeScale);
                 }
@@ -52,7 +52,7 @@ export function handleGameEvents(
             case 'game-control': {
                 switch (event.action) {
                     case 'start': {
-                        sounds.playSound(SoundType.LEVEL_START, 1.5);
+                        sounds.playSound(SoundType.LEVEL_START, 0.5);
                         const seed = getURLSeed();
                         random.reset(seed ?? undefined);
                         setURLSeed(random.seed);

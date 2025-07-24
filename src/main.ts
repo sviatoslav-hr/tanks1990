@@ -157,10 +157,10 @@ function simulateGameTick(
     if (state.playing && player.dead && player.healthAnimation.finished) {
         const playedRecording = state.recording.playing;
         state.markDead();
-        // TODO: Menu should not be a part of simuilation and should be handled outside of this function.
+        // TODO: Menu should not be a part of simulation and should be handled outside of this function.
         if (!playedRecording) {
             menu.showDead();
-            sounds.playSound(SoundType.GAME_OVER, 1.5);
+            sounds.playSound(SoundType.GAME_OVER, 1);
         }
     }
 
