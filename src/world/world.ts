@@ -13,9 +13,8 @@ export class World {
     rooms: Room[] = [];
 
     readonly startRoomPosition = new Vector2(0, 0);
-    readonly bgColor = Color.BLACK_RAISIN;
-    readonly gridColor = Color.BLACK_IERIE;
-    readonly boundaryColor = Color.BLACK_IERIE;
+    readonly bgColor = Color.BLACK_IERIE;
+    readonly gridColor = Color.BLACK_ONYX;
     readonly boundaryThickness = 0.1 * CELL_SIZE;
 
     init(manager: EntityManager): void {

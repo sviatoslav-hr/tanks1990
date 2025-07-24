@@ -9,8 +9,10 @@
 - [ ] Power ups - needs more thought on what they should be and how they should work
       Examples: Time stop, damage increase, shield, speed increase, etc.
 - [ ] Add speed up option for recording playback
+- [ ] Add a mute button (after unmuting volume should be at the same level)
 
 ## SHOULD BE FIXED
+- [ ] Make level start sound a bit quieter
 - [ ] During later levels, the pathfinding slows down the game significantly.
       Probably, need to put a smaller limit on the number of iterations for
       pathfinding. Or adjust the limit dynamically based on the number of entities
@@ -23,7 +25,7 @@
 
 ### Low priority features
 - [ ] Have different types of the projectiles - TBD.
-- [ ] Tank armor - TBD. Could be a power up or specisic to a separate tank type.
+- [ ] Tank armor - TBD. Could be a power up or specific to a separate tank type.
 - [ ] Enemy spawning: Make the enemies spawn in waves, with each wave being stronger than the previous one.
 
 ### Sounds And Music
@@ -31,7 +33,7 @@
 
 ### UX improvements
 - [ ] Figure out correct room generation algorithm
-- [ ] Add a Screenshake when player dies
+- [ ] Add a Screen-shake when player dies
 - [ ] Add friction to projectile movement
 - [ ] Change movement to move only by fractions of cells (e.g. 1/16 of a cell)
       This will be easier to pathfind. And also will *may* the UX by fixing the issue with the player being able to pass through blocks.
