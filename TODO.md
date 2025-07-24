@@ -9,19 +9,28 @@
 - [ ] Power ups - needs more thought on what they should be and how they should work
       Examples: Time stop, damage increase, shield, speed increase, etc.
 - [ ] Add speed up option for recording playback
-- [ ] Add a mute button (after unmuting volume should be at the same level)
 
 ## SHOULD BE FIXED
-- [ ] Make level start sound a bit quieter
 - [ ] During later levels, the pathfinding slows down the game significantly.
       Probably, need to put a smaller limit on the number of iterations for
       pathfinding. Or adjust the limit dynamically based on the number of entities
       in the room.
+- [ ] Pathfinding: Sometimes enemies build a path including a bunch of unnecessary turns (zigzag pattern)
+- [ ] Pathfinding: When enemy is right next to a target, but the turret is not aligned with the target, it's not smart enough to adjust it's position.
 
 ## BACKLOG
 
 ### Features
 - [ ] Final boss - describe it first.
+
+### Refactoring
+- [ ] Outline how objects/classes should access each other (global vars/props/DI etc) (eg Renderer, Input, Sound, EntityManager, Entity etc)
+- [ ] Rewrite menu - it should be flexible enough to be reused, detached from rest of the game, but also easy to use.
+- [ ] Detach simulation out of entities and manager
+- [ ] Better way to store images and sprites (how bad Image is?)
+- [ ] Better coordinates system (consider defining something like `WorldPosition`)
+- [ ] Use transformation matrices for calculating rotation and translation. Consider performance hits
+- [ ] Create a separate Sprite class for static objects / non-animated
 
 ### Low priority features
 - [ ] Have different types of the projectiles - TBD.
@@ -74,14 +83,6 @@
 - [ ] Make enemies shoot only when they see the player
 - [ ] Tracks animation speed should be dependent by the speed of the tank.
       This is needed so it feels like track actually reflect the movement.
-
-### Refactoring
-- [ ] Outline how objects/classes should access each other (global vars/props/DI etc) (eg Renderer, Input, Sound, EntityManager, Entity etc)
-- [ ] Detach simulation out of entities and manager
-- [ ] Better way to store images and sprites (how bad Image is?)
-- [ ] Better coordinates system (consider defining something like `WorldPosition`)
-- [ ] Use transformation matrices for calculating rotation and translation. Consider performance hits
-- [ ] Create a separate Sprite class for static objects / non-animated
 
 ### Not sure about
 - [ ] Try out Entity Component System (ECS)

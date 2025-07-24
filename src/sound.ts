@@ -15,6 +15,7 @@ const VOLUME_SCALE = 0.3;
 
 export class SoundManager {
     #volume = 1 * VOLUME_SCALE;
+    #mutePromise: Promise<void> | null = null;
     // TODO: This should be created only after user made any action on the page.
     private readonly soundsCache = new Map<SoundType, Sound[]>();
 
@@ -36,6 +37,24 @@ export class SoundManager {
                 sound.volume = this.#volume;
             }
         }
+    }
+
+    suspend(): void {
+        if (this.audioContext.state === 'suspended') return;
+        if (this.#mutePromise) return;
+
+        this.#mutePromise = this.audioContext.suspend().then(() => {
+            this.#mutePromise = null;
+        });
+    }
+
+    resume(): void {
+        if (this.audioContext.state === 'running') return;
+        if (this.#mutePromise) return;
+
+        this.#mutePromise = this.audioContext.resume().then(() => {
+            this.#mutePromise = null;
+        });
     }
 
     async loadAllSounds(): Promise<void> {
@@ -60,10 +79,11 @@ export class SoundManager {
     }
 
     playSound(type: SoundType, volumeScale?: number, loop = false): Sound {
+        const shouldPlay = this.audioContext.state === 'running' || loop;
         const cachedSounds = this.soundsCache.get(type);
         const availableSound = cachedSounds?.find((sound) => !sound.isPlaying);
         if (availableSound) {
-            availableSound.play(volumeScale ?? 1, loop);
+            if (shouldPlay) availableSound.play(volumeScale ?? 1, loop);
             return availableSound;
         }
 
@@ -72,7 +92,7 @@ export class SoundManager {
         if (firstSound) {
             const clonedSound = firstSound.clone();
             cachedSounds.push(clonedSound);
-            clonedSound.play(volumeScale ?? 1, loop);
+            if (shouldPlay) clonedSound.play(volumeScale ?? 1, loop);
             return clonedSound;
         }
 
@@ -81,7 +101,7 @@ export class SoundManager {
         this.soundsCache.set(type, [sound]);
         sound.load().then((res) => {
             if (res.isOk()) {
-                sound.play(volumeScale ?? 1, loop);
+                if (shouldPlay) sound.play(volumeScale ?? 1, loop);
             } else {
                 logger.error(res.contextErr(`Failed to play sound: ${type}`).err);
             }

@@ -55,6 +55,10 @@ export function initMenu(events: EventQueue, sounds: SoundManager): Menu {
         slider.onChange((value) => sounds.updateVolume(value / MAX_VOLUME));
         wrapper.append(slider);
         optionsPage.setContent(wrapper);
+        menu.onMuteClicked = (muted: boolean) => {
+            if (muted) sounds.suspend();
+            else sounds.resume();
+        };
     }
     menu.addPage(optionsPage);
     menu.addButton('OPTIONS', () => {
@@ -217,6 +221,8 @@ export class Menu extends HTMLElement {
     private buttons: MenuButton[] = [];
     private pages: MenuPage[] = [];
     readonly fullscreenButton: HTMLButtonElement;
+    readonly muteButton: HTMLButtonElement;
+    onMuteClicked: (muted: boolean) => void = () => {};
     fullscreenToggleExpected = false;
 
     constructor() {
@@ -235,21 +241,48 @@ export class Menu extends HTMLElement {
         this.buttonContainer.append(...this.buttons);
         this.mainContainer.append(this.buttonContainer);
 
-        this.fullscreenButton = ui.button({
-            className: 'button--fullscreen',
-            textContent: '⛶',
-            style: {
-                position: 'fixed',
-                top: '1rem',
-                right: '1rem',
-            },
-            onClick: (e) => {
-                e.preventDefault(); // NOTE: Prevent accidental movement of the camera
-                this.fullscreenToggleExpected = !this.fullscreenToggleExpected;
-                this.fullscreenButton.blur();
-            },
-        });
-        this.append(this.fullscreenButton);
+        // TODO: This is bad, this shouldn't be handled in the menu.
+        {
+            this.fullscreenButton = ui.button({
+                className: 'button--fullscreen',
+                textContent: '⛶',
+                style: {
+                    position: 'fixed',
+                    top: '1rem',
+                    right: '1rem',
+                },
+                onClick: (e) => {
+                    e.preventDefault(); // NOTE: Prevent accidental movement of the camera
+                    this.fullscreenToggleExpected = !this.fullscreenToggleExpected;
+                    this.fullscreenButton.blur();
+                },
+            });
+            this.append(this.fullscreenButton);
+        }
+
+        {
+            const volumeText = '🔊';
+            const mutedText = '🔇';
+            let muted = false;
+            this.muteButton = ui.button({
+                className: 'button--fullscreen',
+                textContent: volumeText,
+                style: {
+                    position: 'fixed',
+                    top: '1rem',
+                    right: '4rem',
+                    fontSize: '1.5rem',
+                },
+                onClick: (e) => {
+                    e.preventDefault();
+                    this.muteButton.textContent = muted ? volumeText : mutedText;
+                    muted = !muted;
+                    this.onMuteClicked(muted);
+                    this.muteButton.blur();
+                },
+            });
+            this.append(this.muteButton);
+        }
     }
 
     get isMain(): boolean {
@@ -363,11 +396,13 @@ export class Menu extends HTMLElement {
             this.classList.add('bg-transparent-black');
             this.classList.add('fade-in');
             this.fullscreenButton.hidden = false;
+            this.muteButton.hidden = false;
         } else {
             this.mainContainer.hidden = true;
             this.classList.remove('bg-transparent-black');
             this.classList.remove('fade-in');
             this.fullscreenButton.hidden = true;
+            this.muteButton.hidden = true;
         }
     }
 
