@@ -30,7 +30,7 @@ export class Projectile extends Entity {
     private shotByPlayer: boolean;
     public damage = 0;
 
-    private readonly v = 600;
+    private readonly velocity = (1800 * 1000) / (60 * 60);
     private readonly sprite = new Sprite({
         key: 'bullet',
         frameWidth: 16,
@@ -42,8 +42,8 @@ export class Projectile extends Entity {
 
     constructor(manager: EntityManager, opts: CreateProjectileOpts) {
         super(manager);
-        this.x = opts.x;
-        this.y = opts.y;
+        this.x = opts.x - opts.size / 2;
+        this.y = opts.y - opts.size / 2;
         this.width = opts.size;
         this.height = opts.size;
         this.originalPosition = new Vector2(this.x, this.y);
@@ -63,7 +63,7 @@ export class Projectile extends Entity {
 
         this.sprite.update(dt);
         // TODO: use movement equation instead
-        moveEntity(this, this.v * dt.seconds, this.direction);
+        moveEntity(this, this.velocity * dt.seconds, this.direction);
         if (!isInside(this, this.manager.world.activeRoom.boundary)) {
             events.push({type: 'projectile-exploded', entityId: this.id});
             this.dead = true;
@@ -112,9 +112,9 @@ export class Projectile extends Entity {
         shotByPlayer: boolean,
     ): void {
         this.ownerId = ownerId;
-        this.originalPosition.set(x, y);
-        this.x = x;
-        this.y = y;
+        this.x = x - this.width / 2;
+        this.y = y - this.height / 2;
+        this.originalPosition.set(this.x, this.y);
         this.dead = false;
         this.direction = direction;
         this.shotByPlayer = shotByPlayer;

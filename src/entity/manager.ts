@@ -128,8 +128,8 @@ export class EntityManager {
 
         const size = Projectile.SIZE;
         const projectile = new Projectile(this, {
-            x: origin.x - size / 2,
-            y: origin.y - size / 2,
+            x: origin.x,
+            y: origin.y,
             size,
             ownerId,
             direction,
