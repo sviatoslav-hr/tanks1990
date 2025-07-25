@@ -32,7 +32,7 @@ function main(): void {
 
     const storage = new GameStorage(localStorage);
     __DEV_MODE = storage.getBool(DEV_MODE_KEY) ?? false;
-    if (__DEV_MODE) notify('Dev mode is on', {timeoutMs: 1000});
+    if (__DEV_MODE) notify('Dev mode is on', {timeoutMs: 500});
 
     const sounds = new SoundManager(storage);
     sounds.loadAllSounds().then(() => logger.debug('[Sounds] All sounds loaded'));

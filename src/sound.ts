@@ -11,21 +11,35 @@ export enum SoundType {
 }
 
 const GAME_VOLUME_KEY = 'game_volume';
-const VOLUME_SCALE = 0.3;
+const GAME_MUTED_KEY = 'game_muted';
+const VOLUME_SCALE = 0.3; // Scale volume down because too loud by default.
 
 export class SoundManager {
     #volume = 1 * VOLUME_SCALE;
     #mutePromise: Promise<void> | null = null;
+    readonly storedMuted: boolean; // NOTE: This is only used during initialization.
+
     // TODO: This should be created only after user made any action on the page.
     private readonly soundsCache = new Map<SoundType, Sound[]>();
 
     constructor(
         private readonly storage: GameStorage,
         private readonly audioContext = new AudioContext(),
-    ) {}
+    ) {
+        this.storedMuted = storage.getBool(GAME_MUTED_KEY) ?? false;
+        if (this.storedMuted) this.suspend();
+    }
 
     get volume(): number {
         return Math.min(this.#volume / VOLUME_SCALE, 1);
+    }
+
+    get muted(): boolean {
+        return this.audioContext.state === 'suspended';
+    }
+
+    get running(): boolean {
+        return this.audioContext.state === 'running';
     }
 
     updateVolume(volume: number) {
@@ -40,18 +54,20 @@ export class SoundManager {
     }
 
     suspend(): void {
-        if (this.audioContext.state === 'suspended') return;
+        if (this.muted) return;
         if (this.#mutePromise) return;
 
+        this.storage.set(GAME_MUTED_KEY, true);
         this.#mutePromise = this.audioContext.suspend().then(() => {
             this.#mutePromise = null;
         });
     }
 
     resume(): void {
-        if (this.audioContext.state === 'running') return;
+        if (this.running) return;
         if (this.#mutePromise) return;
 
+        this.storage.set(GAME_MUTED_KEY, false);
         this.#mutePromise = this.audioContext.resume().then(() => {
             this.#mutePromise = null;
         });

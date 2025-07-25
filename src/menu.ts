@@ -5,7 +5,7 @@ import {CustomElement, html, ui} from '#/ui/html';
 // TODO: refactor menu into ReactiveElement
 // TODO: Detach SoundManager from Menu
 export function initMenu(events: EventQueue, sounds: SoundManager): Menu {
-    const menu = new Menu();
+    const menu = new Menu(sounds.storedMuted);
     menu.addButton(
         'NEW GAME',
         () => {
@@ -30,7 +30,7 @@ export function initMenu(events: EventQueue, sounds: SoundManager): Menu {
             events.push({type: 'game-control', action: 'start'});
             menu.hide();
         },
-        [MenuState.DEAD, MenuState.PAUSE, MenuState.COMPLETED],
+        [MenuState.PAUSE, MenuState.DEAD, MenuState.COMPLETED],
     );
     menu.addButton(
         'MAIN MENU',
@@ -225,7 +225,7 @@ export class Menu extends HTMLElement {
     onMuteClicked: (muted: boolean) => void = () => {};
     fullscreenToggleExpected = false;
 
-    constructor() {
+    constructor(defaultMuted: boolean) {
         super();
         this.classList.add('block');
 
@@ -263,10 +263,10 @@ export class Menu extends HTMLElement {
         {
             const volumeText = '🔊';
             const mutedText = '🔇';
-            let muted = false;
+            let muted = defaultMuted;
             this.muteButton = ui.button({
                 className: 'button--fullscreen',
-                textContent: volumeText,
+                textContent: muted ? mutedText : volumeText,
                 style: {
                     position: 'fixed',
                     top: '1rem',
@@ -275,8 +275,8 @@ export class Menu extends HTMLElement {
                 },
                 onClick: (e) => {
                     e.preventDefault();
-                    this.muteButton.textContent = muted ? volumeText : mutedText;
                     muted = !muted;
+                    this.muteButton.textContent = muted ? mutedText : volumeText;
                     this.onMuteClicked(muted);
                     this.muteButton.blur();
                 },

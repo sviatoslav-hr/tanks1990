@@ -31,14 +31,10 @@ export class EntityManager {
 
     *iterateCollidable(): Generator<Entity> {
         for (const t of this.tanks) {
-            if (!t.dead) {
-                yield t;
-            }
+            if (!t.dead) yield t;
         }
         for (const b of this.world.activeRoom.blocks) {
-            if (!b.dead) {
-                yield b;
-            }
+            if (!b.dead) yield b;
         }
     }
 
