@@ -22,7 +22,7 @@ export function drawEnemyTanksUI(renderer: Renderer, tanks: Tank[]): void {
         if (!isEnemyTank(tank)) continue;
         // NOTE: Draw health bar animation even if dead for dramatic effect.
         // NOTE: Draw hp bar only if the tank is not full health.
-        if ((!tank.dead || tank.healthAnimation.active) && tank.health < tank.maxHealth) {
+        if ((!tank.dead || tank.healthAnimation.active) && tank.health < tank.schema.maxHealth) {
             drawTankHealthBarAbove(renderer, tank);
         }
     }
@@ -46,7 +46,7 @@ export function drawAllTanksDevUI(renderer: Renderer, tanks: Tank[]): void {
             //     renderer.setStrokeColor(Color.WHITE_NAVAJO);
             //     renderer.strokeBoundary(this, this.collisionAnimation.progress * 10);
             // }
-            if (tank.isStuck) {
+            if (tank.collided) {
                 renderer.setStrokeColor(Color.RED);
                 renderer.strokeBoundary(tank, 1);
             }
@@ -66,9 +66,9 @@ function drawTankHealthBarAbove(renderer: Renderer, tank: Tank) {
     const barY = tank.y - barHeight - barOffset;
     renderer.setFillColor(Color.GREEN_DARKEST);
     renderer.fillRect(barX, barY, barWidth, barHeight);
-    let hpFraction = tank.health / tank.maxHealth || 0;
+    let hpFraction = tank.health / tank.schema.maxHealth || 0;
     if (!tank.healthAnimation.finished) {
-        const healthLostFraction = Math.abs(tank.health - tank.prevHealth) / tank.maxHealth;
+        const healthLostFraction = Math.abs(tank.health - tank.prevHealth) / tank.schema.maxHealth;
         hpFraction += (1 - tank.healthAnimation.progress) * healthLostFraction;
     }
     if (hpFraction) {
@@ -91,9 +91,10 @@ function drawPlayerHealthBar(renderer: Renderer, player: Tank): void {
     );
     const barY = (renderer.canvas.height - barHeight) / 2;
     const barX = paddingX;
-    let hpFraction = player.health / player.maxHealth || 0;
+    let hpFraction = player.health / player.schema.maxHealth || 0;
     if (!player.healthAnimation.finished) {
-        const healthLostFraction = Math.abs(player.health - player.prevHealth) / player.maxHealth;
+        const healthLostFraction =
+            Math.abs(player.health - player.prevHealth) / player.schema.maxHealth;
         hpFraction += (1 - player.healthAnimation.progress) * healthLostFraction;
     }
     {
@@ -164,7 +165,7 @@ function drawTankDevBoundary(renderer: Renderer, tank: Tank): void {
     const velocity = ((tank.velocity * 3600) / 1000).toFixed(2);
     const acc = tank.lastAcceleration.toFixed(2);
     renderer.fillText(
-        `${tank.id}: a=${acc};v=${velocity}km/h`,
+        `${tank.id}: m=${tank.speedMult};a=${acc};v=${velocity}km/h`,
         // `ID:${tank.id}: {${Math.floor(this.x)};${Math.floor(this.y)}}`,
         {
             x: tank.x + tank.width / 2,

@@ -33,7 +33,6 @@ export function handleGameEvents(
             case 'tank-destroyed': {
                 manager.spawnExplosionEffect(event.entityId);
                 if (event.bot) {
-                    manager.player.score += 1;
                     const entity = manager.findTank(event.entityId);
                     if (entity) {
                         entity.room.wave.removeEnemyFromAlives(entity.id);

@@ -1,4 +1,3 @@
-import {Animation} from '#/animation';
 import {Entity} from '#/entity/core';
 import {Tank} from '#/entity/tank/base';
 import {createTankSpriteGroup, makeTankSchema} from '#/entity/tank/generation';
@@ -13,30 +12,27 @@ export function isEnemyTank(tank: Tank): tank is EnemyTank {
     return tank.bot;
 }
 
+const TARGET_SEARCH_DELAY = Duration.milliseconds(5000);
+const RESPAWN_DELAY = Duration.milliseconds(1000);
+
 export class EnemyTank extends Tank implements Entity {
-    private static readonly RESPAWN_DELAY = Duration.milliseconds(1000);
+    readonly bot = true;
+    schema = makeTankSchema(this.bot, 'medium');
+    sprite = createTankSpriteGroup(this.bot, this.schema);
+    shieldSprite = createShieldSprite('enemy');
+
     moving = true;
-    schema = makeTankSchema('enemy', 'medium');
-    sprite = createTankSpriteGroup(this.schema);
-    readonly shieldSprite = createShieldSprite('enemy');
-    readonly SEARCH_DELAY = Duration.milliseconds(5000);
-    private targetSearchTimer = this.SEARCH_DELAY.clone();
     targetPath: Vector2[] = [];
-    private collided = false;
-    private readonly collisionAnimation = new Animation(Duration.milliseconds(1000)).end();
-    readonly respawnDelay = EnemyTank.RESPAWN_DELAY.clone();
+    targetSearchTimer = TARGET_SEARCH_DELAY.clone();
+    respawnDelay = RESPAWN_DELAY.clone();
 
     update(dt: Duration): void {
         if (this.dead && this.room.wave.hasRespawnPlace) {
             this.respawnDelay.sub(dt).max(0);
             return;
         }
-        const player = this.manager.player;
-        // NOTE: is collided, don't change the direction, allowing entities to move away from each other
-        if (this.collided) {
-            this.velocity = 0;
-        }
         if (!this.dead) {
+            const player = this.manager.player;
             // TODO: if player is dead, choose a random direction
             let newDirection = player.dead ? null : this.findTargetDirection(player, dt);
             if (newDirection != null && newDirection !== this.direction) {
@@ -44,14 +40,12 @@ export class EnemyTank extends Tank implements Entity {
                 this.direction = newDirection;
             }
         }
-        this.collisionAnimation.update(dt);
-        this.collided = false;
         const targetPoint = this.targetPath[0] ?? null;
         if (targetPoint && !this.dead) {
             const dxPrev = this.cx - targetPoint.x;
             const dyPrev = this.cy - targetPoint.y;
             super.update(dt);
-            if (!this.isStuck) {
+            if (!this.collided) {
                 this.handleMaybeMissedTargetPoint(targetPoint, dxPrev, dyPrev);
             }
         } else {
@@ -60,15 +54,14 @@ export class EnemyTank extends Tank implements Entity {
     }
 
     markForRespawn(): void {
-        this.respawnDelay.setFrom(EnemyTank.RESPAWN_DELAY);
+        this.respawnDelay.setFrom(RESPAWN_DELAY);
         this.shouldRespawn = true;
     }
 
     override respawn(): boolean {
         assert(this.shouldRespawn);
-        this.collided = false;
-        this.respawnDelay.setMilliseconds(0);
         this.targetPath = [];
+        this.respawnDelay.setMilliseconds(0);
         this.targetSearchTimer.setMilliseconds(0);
         return super.respawn();
     }
@@ -107,20 +100,15 @@ export class EnemyTank extends Tank implements Entity {
         }
     }
 
-    protected override handleCollision(target: Entity): void {
-        this.collided = true;
-        this.collisionAnimation.reset();
+    override handleCollision(target: Entity): void {
+        super.handleCollision(target);
         if (target.id !== this.manager.player.id && !this.manager.player.dead) {
             this.direction = this.recalculateDirectionPath(this.manager.player) ?? this.direction;
-        }
-        if (target instanceof EnemyTank) {
-            target.collided = true;
-            target.collisionAnimation.reset();
         }
     }
 
     protected override onDied(): void {
-        this.respawnDelay.setFrom(EnemyTank.RESPAWN_DELAY);
+        this.respawnDelay.setFrom(RESPAWN_DELAY);
     }
 
     private findTargetDirection(target: Entity, dt: Duration): Direction | null {
@@ -140,7 +128,7 @@ export class EnemyTank extends Tank implements Entity {
     }
 
     private recalculateDirectionPath(target: Entity): Direction | null {
-        this.targetSearchTimer.setFrom(this.SEARCH_DELAY);
+        this.targetSearchTimer.setFrom(TARGET_SEARCH_DELAY);
         const path = findPath(this, target, this.manager, 1000, undefined, false);
         if (path) {
             this.targetPath = path;

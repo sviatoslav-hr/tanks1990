@@ -11,44 +11,44 @@ import {
     TankSpriteGroup,
 } from '#/entity/tank/generation';
 import {EventQueue, ShotEvent} from '#/events';
-import {moveToRandomCorner} from '#/math';
+import {moveToRandomCorner, Rect} from '#/math';
 import {Direction} from '#/math/direction';
 import {Duration} from '#/math/duration';
 import {Vector2Like} from '#/math/vector';
 import {Sprite} from '#/renderer/sprite';
 
+const SHIELD_TIME = Duration.milliseconds(1000);
+const STOPPING_TIME = Duration.milliseconds(70);
+
 export abstract class Tank extends Entity {
+    abstract readonly bot: boolean;
+    readonly id = newEntityId();
     dead = true;
     hasShield = true;
     direction = Direction.NORTH;
     shouldRespawn = false;
-    // TODO: Is this really a good idea to have this field here?
-    readonly bot: boolean = true;
-    // TODO: No reason to store this in every tank instance, move this to a config.
-    maxSpeed = 0;
-    readonly topSpeedReachTime = Duration.milliseconds(150);
-    readonly stoppingTime = Duration.milliseconds(70);
-    readonly id = newEntityId();
 
-    public velocity: number = 0;
-    public lastAcceleration = 0;
-    shieldTimer = Duration.zero();
+    velocity = 0;
+    lastAcceleration = 0;
     moving = false;
-    readonly SHIELD_TIME = Duration.milliseconds(1000);
-    abstract readonly shieldSprite: Sprite<string>;
-    readonly shieldBoundary = {
+    collided = false;
+    speedMult = 1;
+    damageMult = 1;
+
+    shieldTimer = Duration.zero();
+    shootingDelay = Duration.milliseconds(0);
+    prevHealth = 0;
+    healthAnimation = new Animation(Duration.milliseconds(300), easeOut).end();
+
+    readonly shieldBoundary: Rect = {
         x: this.x - this.width / 2,
         y: this.y - this.height / 2,
         width: this.width * 2,
         height: this.height * 2,
     };
-
+    abstract readonly shieldSprite: Sprite<string>;
     abstract sprite: TankSpriteGroup;
     abstract schema: TankSchema;
-    shootingDelay = Duration.milliseconds(0);
-    isStuck = false;
-    readonly healthAnimation = new Animation(Duration.milliseconds(300), easeOut).end();
-    prevHealth = 0;
 
     constructor(manager: EntityManager) {
         super(manager);
@@ -56,7 +56,6 @@ export abstract class Tank extends Entity {
         this.y = 0;
         this.width = CELL_SIZE * 0.8;
         this.height = CELL_SIZE * 0.8;
-        this.maxHealth = 0;
     }
 
     get cx(): number {
@@ -77,16 +76,18 @@ export abstract class Tank extends Entity {
         if (this.moving) this.sprite.update(dt);
 
         {
+            const maxSpeed = this.schema.maxSpeed * this.speedMult;
             const acceleration = this.moving
-                ? this.maxSpeed / this.topSpeedReachTime.seconds
-                : -this.velocity / this.stoppingTime.seconds;
-            if (this.velocity > 0) {
-                this.isStuck = false;
+                ? maxSpeed / this.schema.topSpeedReachTime.seconds
+                : -this.velocity / STOPPING_TIME.seconds;
+            if (this.moving) {
+                // On every frame just assume that the tank is not colliding anymore.
+                this.collided = false;
             }
             this.lastAcceleration = acceleration;
             // v' = a*dt + v
             const newVelocity = acceleration * dt.seconds + this.velocity;
-            this.velocity = Math.min(Math.max(0, newVelocity), this.maxSpeed);
+            this.velocity = Math.min(Math.max(0, newVelocity), maxSpeed);
             assert(this.velocity >= 0);
             // p' = 1/2*a*dt^2 + v*dt + p   ==>    dp = p' - p = 1/2*a*dt^2 + v*dt
             const movementOffset =
@@ -99,14 +100,13 @@ export abstract class Tank extends Entity {
             this.handleCollision(collided);
             this.x = prevX;
             this.y = prevY;
-            this.stopMoving();
-            this.isStuck = true;
+            this.velocity = 0;
+            if (collided instanceof Tank) {
+                collided.handleCollision(this);
+                collided.collided = true;
+            }
         }
         this.updateShield(dt);
-    }
-
-    stopMoving(): void {
-        this.velocity = 0;
     }
 
     shoot(): ShotEvent | null {
@@ -118,15 +118,16 @@ export abstract class Tank extends Entity {
             bot: this.bot,
             origin: this.getShootingOrigin(),
             direction: this.direction,
-            damage: this.schema.damage,
+            damage: this.schema.damage * this.damageMult,
         };
     }
 
     respawn(force = false): boolean {
         if (force || this.tryRespawn(4)) {
             this.dead = false;
-            this.health = this.maxHealth;
+            this.health = this.schema.maxHealth;
             this.prevHealth = this.health;
+            this.collided = false;
             this.shouldRespawn = false;
             this.shootingDelay.setFrom(this.schema.shootingDelay);
             this.activateShield();
@@ -164,15 +165,9 @@ export abstract class Tank extends Entity {
     }
 
     changeKind(kind: TankPartKind): void {
-        const schema = makeTankSchema(this.bot ? 'enemy' : 'player', kind);
-        this.applySchema(schema);
-        this.sprite = createTankSpriteGroup(schema);
-    }
-
-    protected applySchema(schema: TankSchema): void {
+        const schema = makeTankSchema(this.bot, kind);
         this.schema = schema;
-        this.maxHealth = schema.maxHealth;
-        this.maxSpeed = schema.maxSpeed;
+        this.sprite = createTankSpriteGroup(this.bot, schema);
     }
 
     private tryRespawn(attemptLimit: number): boolean {
@@ -193,9 +188,15 @@ export abstract class Tank extends Entity {
         return false;
     }
 
+    restoreHealthAmount(amount: number): void {
+        assert(!this.dead);
+        this.prevHealth = this.health;
+        this.health = Math.min(this.schema.maxHealth, this.health + amount);
+    }
+
     activateShield(): void {
         this.hasShield = true;
-        this.shieldTimer.setFrom(this.SHIELD_TIME);
+        this.shieldTimer.setFrom(SHIELD_TIME);
         this.updateShieldBoundary();
     }
 
@@ -218,7 +219,9 @@ export abstract class Tank extends Entity {
         this.shieldBoundary.height = this.height + padding * 2;
     }
 
-    protected handleCollision(_target: Entity): void {}
+    handleCollision(_target: Entity): void {
+        this.collided = true;
+    }
 
     protected onDied(): void {}
 

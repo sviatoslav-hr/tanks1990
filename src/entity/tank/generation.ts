@@ -8,21 +8,20 @@ const tankPartKinds = ['light', 'medium', 'heavy'] as const;
 export type TankPartKind = (typeof tankPartKinds)[number];
 
 export interface TankSchema {
-    type: 'player' | 'enemy';
     turret: TankPartKind;
     body: TankPartKind;
     damage: number;
     shootingDelay: Duration;
     maxHealth: number;
     maxSpeed: number;
+    topSpeedReachTime: Duration;
 }
 
-export function makeTankSchema(type: 'player' | 'enemy', kind: TankPartKind): TankSchema {
+export function makeTankSchema(bot: boolean, kind: TankPartKind): TankSchema {
     // NOTE: Player should be faster because the game feel better this way.
-    const speedCoef = type === 'player' ? 1.5 : 1;
-    const shootingCoef = type === 'player' ? 1 : 1;
+    const speedCoef = bot ? 1 : 1.5;
+    const shootingCoef = bot ? 1 : 1;
     return {
-        type,
         // NOTE: For now turret and body are the same kind for the sake of simplicity.
         turret: kind,
         body: kind,
@@ -30,8 +29,13 @@ export function makeTankSchema(type: 'player' | 'enemy', kind: TankPartKind): Ta
         shootingDelay: Duration.milliseconds(tankKindShootingDelayMillis[kind] * shootingCoef),
         maxHealth: tankKindMaxHealth[kind],
         maxSpeed: tankKindSpeed[kind] * speedCoef,
+        topSpeedReachTime: Duration.milliseconds(bot ? 150 : 50),
     };
 }
+
+export const RESTORE_HP_AMOUNT = 10;
+export const SPEED_INCREASE_MULT = 1.2; // 20% speed increase per power-up
+export const DAMAGE_INCREASE_MULT = 1.2; // 20% damage increase per power-up
 
 const tankKindMaxHealth: Record<TankPartKind, number> = {
     light: 20,
@@ -86,18 +90,14 @@ function makeTankTurretSprite(keyPrefix: string, kind: TankPartKind): Sprite<'st
     }
 }
 
-function makeTankBodySprite(
-    keyPrefix: string,
-    kind: TankPartKind,
-    isPlayer: boolean,
-): Sprite<'moving'> {
+function makeTankBodySprite(keyPrefix: string, kind: TankPartKind, bot: boolean): Sprite<'moving'> {
     return new Sprite({
         key: `${keyPrefix}_body_${kind}`,
         frameWidth: 64,
         frameHeight: 64,
         framePadding: 3,
         // HACK: Tracks animation speed should be dependent by the speed of the tank.
-        frameDuration: Duration.milliseconds(isPlayer ? 40 : 60),
+        frameDuration: Duration.milliseconds(bot ? 60 : 40),
         states: [{name: 'moving', frames: 6}],
     });
 }
@@ -108,10 +108,10 @@ const turretYOffsets: Record<TankPartKind, number> = {
     heavy: 8,
 };
 
-export function createTankSpriteGroup(schema: TankSchema): TankSpriteGroup {
-    const keyPrefix = schema.type === 'player' ? 'tank_green' : 'tank_darkgray';
+export function createTankSpriteGroup(bot: boolean, schema: TankSchema): TankSpriteGroup {
+    const keyPrefix = bot ? 'tank_darkgray' : 'tank_green';
     const turret = makeTankTurretSprite(keyPrefix, schema.turret);
-    const body = makeTankBodySprite(keyPrefix, schema.body, schema.type === 'player');
+    const body = makeTankBodySprite(keyPrefix, schema.body, bot);
     return new TankSpriteGroup(turret, body, schema);
 }
 

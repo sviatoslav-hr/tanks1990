@@ -12,22 +12,18 @@ export function isPlayerTank(tank: Tank): tank is PlayerTank {
 }
 
 export class PlayerTank extends Tank implements Entity {
-    readonly maxSpeed = 0;
-    readonly topSpeedReachTime = Duration.milliseconds(50);
+    readonly bot = false;
+    readonly schema = makeTankSchema(this.bot, 'medium');
+    readonly sprite = createTankSpriteGroup(this.bot, this.schema);
     readonly shieldSprite = createShieldSprite('player');
-    readonly bot: boolean = false;
+
+    dead = true;
+    invincible = false;
     // TODO: This field shouldn't exist here, it should somewhere in the score layer, probably.
-    readonly survivedFor = Duration.zero();
+    survivedFor = Duration.zero();
     // HACK: This field is used as a flag to indicate that the game is completed.
     //       It should be removed once `survivedFor` will be moved out of this class.
     completedGame = false;
-
-    dead = true;
-    score = 0;
-    invincible = false;
-
-    readonly schema = makeTankSchema('player', 'medium');
-    readonly sprite = createTankSpriteGroup(this.schema);
 
     constructor(manager: EntityManager) {
         super(manager);
@@ -41,14 +37,12 @@ export class PlayerTank extends Tank implements Entity {
     }
 
     override respawn(): boolean {
-        this.applySchema(this.schema);
         const respawned = super.respawn(true);
         assert(respawned); // Player tank respawn should never fail
         this.x = -this.width / 2;
         this.y = -this.height / 2;
         this.direction = Direction.NORTH;
         this.velocity = 0;
-        this.score = 0;
         this.survivedFor.milliseconds = 0;
         return true;
     }
