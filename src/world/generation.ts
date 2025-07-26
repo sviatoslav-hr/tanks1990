@@ -2,6 +2,7 @@ import {CELL_SIZE} from '#/const';
 import {Block, generateBlocks} from '#/entity/block';
 import {wavesPerRoom} from '#/entity/enemy-wave';
 import {EntityManager} from '#/entity/manager';
+import {generatePickups} from '#/entity/pickup';
 import {Direction, oppositeDirection} from '#/math/direction';
 import {random} from '#/math/rng';
 import {Vector2} from '#/math/vector';
@@ -82,7 +83,7 @@ function generateRoom(
             continue;
         }
         if (prevDir !== Direction.NORTH) {
-            const northBlock = new Block(manager, {
+            const northBlock = new Block({
                 x: x * cellSize + minX,
                 y: roomPosition.y - (sizeInCells.height / 2 + 1) * cellSize,
                 width: cellSize,
@@ -93,7 +94,7 @@ function generateRoom(
             if (nextDoorDir === Direction.NORTH) nextRoomBlocks.push(northBlock);
         }
         if (prevDir !== Direction.SOUTH) {
-            const southBlock = new Block(manager, {
+            const southBlock = new Block({
                 x: x * cellSize + minX,
                 y: roomPosition.y + (sizeInCells.height / 2) * cellSize,
                 width: cellSize,
@@ -109,7 +110,7 @@ function generateRoom(
     const minY = roomPosition.y - (sizeInCells.height / 2) * cellSize;
     for (let y = 0; y < sizeInCells.height; y += 1) {
         if (prevDir !== Direction.WEST) {
-            const westBlock = new Block(manager, {
+            const westBlock = new Block({
                 x: roomPosition.x - (sizeInCells.width / 2 + 1) * cellSize,
                 y: y * cellSize + minY,
                 width: cellSize,
@@ -120,7 +121,7 @@ function generateRoom(
             if (nextDoorDir === Direction.WEST) nextRoomBlocks.push(westBlock);
         }
         if (prevDir !== Direction.EAST) {
-            const eastBlock = new Block(manager, {
+            const eastBlock = new Block({
                 x: roomPosition.x + (sizeInCells.width / 2) * cellSize,
                 y: y * cellSize + minY,
                 width: cellSize,
@@ -136,6 +137,8 @@ function generateRoom(
     const blocksCount = random.int32Range(16, 24);
     const insideBlocks = generateBlocks(manager, room.boundary, blocksCount, manager.player);
     room.blocks.push(...insideBlocks);
+
+    generatePickups(room, manager);
 
     return room;
 }

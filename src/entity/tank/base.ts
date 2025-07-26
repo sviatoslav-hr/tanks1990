@@ -6,6 +6,7 @@ import {EntityManager} from '#/entity/manager';
 import {
     createTankSpriteGroup,
     makeTankSchema,
+    SHIELD_SPAWN_DURATION,
     TankPartKind,
     TankSchema,
     TankSpriteGroup,
@@ -17,8 +18,7 @@ import {Duration} from '#/math/duration';
 import {Vector2Like} from '#/math/vector';
 import {Sprite} from '#/renderer/sprite';
 
-const SHIELD_TIME = Duration.milliseconds(1000);
-const STOPPING_TIME = Duration.milliseconds(70);
+const STOPPING_TIME = Duration.milliseconds(50);
 
 export abstract class Tank extends Entity {
     abstract readonly bot: boolean;
@@ -50,8 +50,8 @@ export abstract class Tank extends Entity {
     abstract sprite: TankSpriteGroup;
     abstract schema: TankSchema;
 
-    constructor(manager: EntityManager) {
-        super(manager);
+    constructor(protected manager: EntityManager) {
+        super();
         this.x = 0;
         this.y = 0;
         this.width = CELL_SIZE * 0.8;
@@ -73,20 +73,24 @@ export abstract class Tank extends Entity {
         this.shootingDelay.sub(dt).max(0);
         const prevX = this.x;
         const prevY = this.y;
-        if (this.moving) this.sprite.update(dt);
+
+        if (this.moving) {
+            this.sprite.update(dt);
+            // On every frame just assume that the tank is not colliding anymore if it's still moving.
+            this.collided = false;
+        }
 
         {
             const maxSpeed = this.schema.maxSpeed * this.speedMult;
+            // NOTE: Scale also the stopping time, otherwise the tank is too difficult to control.
+            const stoppingTime = STOPPING_TIME.seconds / this.speedMult;
             const acceleration = this.moving
                 ? maxSpeed / this.schema.topSpeedReachTime.seconds
-                : -this.velocity / STOPPING_TIME.seconds;
-            if (this.moving) {
-                // On every frame just assume that the tank is not colliding anymore.
-                this.collided = false;
-            }
+                : -this.velocity / stoppingTime;
+
             this.lastAcceleration = acceleration;
-            // v' = a*dt + v
             const newVelocity = acceleration * dt.seconds + this.velocity;
+            // v' = a*dt + v
             this.velocity = Math.min(Math.max(0, newVelocity), maxSpeed);
             assert(this.velocity >= 0);
             // p' = 1/2*a*dt^2 + v*dt + p   ==>    dp = p' - p = 1/2*a*dt^2 + v*dt
@@ -118,7 +122,8 @@ export abstract class Tank extends Entity {
             bot: this.bot,
             origin: this.getShootingOrigin(),
             direction: this.direction,
-            damage: this.schema.damage * this.damageMult,
+            // Round to avoid situations when entity has less than 1 hp.
+            damage: Math.round(this.schema.damage * this.damageMult),
         };
     }
 
@@ -176,7 +181,7 @@ export abstract class Tank extends Entity {
         const prevY = this.y;
         for (let attempt = 0; attempt < attemptLimit; attempt++) {
             // TODO: Be more creative with spawn points
-            moveToRandomCorner(this, this.room.boundary);
+            moveToRandomCorner(this, this.manager.world.activeRoom.boundary);
             const collided = this.manager.findCollided(this);
             if (!collided) {
                 return true;
@@ -194,9 +199,9 @@ export abstract class Tank extends Entity {
         this.health = Math.min(this.schema.maxHealth, this.health + amount);
     }
 
-    activateShield(): void {
+    activateShield(duration: Duration = SHIELD_SPAWN_DURATION): void {
         this.hasShield = true;
-        this.shieldTimer.setFrom(SHIELD_TIME);
+        this.shieldTimer.setFrom(duration);
         this.updateShieldBoundary();
     }
 

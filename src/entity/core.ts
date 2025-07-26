@@ -1,8 +1,6 @@
 import {EntityId, newEntityId} from '#/entity/id';
-import {EntityManager} from '#/entity/manager';
 import {Rect, clamp, isPosInsideRect, xn, yn} from '#/math';
 import {Direction} from '#/math/direction';
-import {Room} from '#/world/room';
 
 export class Entity implements Rect {
     readonly id: EntityId = newEntityId();
@@ -11,14 +9,9 @@ export class Entity implements Rect {
     public y = 0;
     public width = 0;
     public height = 0;
-    public room: Room;
     // NOTE: Negative values indicate that the entity is invisible.
     public health = -1;
     public DEBUG_collidedCount = 0;
-
-    constructor(protected manager: EntityManager) {
-        this.room = manager.world.activeRoom;
-    }
 
     equals(other: Entity): boolean {
         return this.id === other.id;
@@ -50,6 +43,15 @@ export function isIntesecting(a: Rect, b: Rect, allowEquals = true): boolean {
             a.y + a.height > b.y
         );
     }
+}
+
+export function findIntersectingAmong(testRect: Rect, rects: Rect[]): Rect | undefined {
+    for (const rect of rects) {
+        if (isIntesecting(testRect, rect)) {
+            return rect;
+        }
+    }
+    return undefined;
 }
 
 export function isInside(rect: Rect, bounds: Rect): boolean {

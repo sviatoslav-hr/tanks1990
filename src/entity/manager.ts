@@ -12,6 +12,7 @@ import {Duration} from '#/math/duration';
 import {Vector2, Vector2Like} from '#/math/vector';
 import {Camera} from '#/renderer/camera';
 import {World} from '#/world/world';
+import {simulatePickups} from './pickup';
 
 export class EntityManager {
     readonly world = new World();
@@ -105,6 +106,7 @@ export class EntityManager {
         }
         this.updateTanks(dt, events);
         this.updateProjectiles(dt, camera, events);
+        simulatePickups(this);
     }
 
     spawnProjectile(
@@ -123,12 +125,13 @@ export class EntityManager {
         }
 
         const size = Projectile.SIZE;
-        const projectile = new Projectile(this, {
+        const projectile = new Projectile({
             x: origin.x,
             y: origin.y,
             size,
             ownerId,
             direction,
+            shotByPlayer: this.player.id === ownerId,
         });
         projectile.damage = damage;
         this.projectiles.push(projectile);
@@ -166,11 +169,11 @@ export class EntityManager {
         } else {
             logger.debug('[Manager] Reused dead enemy tank', enemy.id);
         }
-        enemy.room = this.world.activeRoom;
+        const wave = this.world.activeRoom.wave;
         if (skipDelay) {
-            enemy.room.wave.spawnEnemy(enemy);
+            wave.spawnEnemy(enemy);
         } else {
-            enemy.room.wave.queueEnemy(enemy, enemyKind);
+            wave.queueEnemy(enemy, enemyKind);
         }
         return enemy;
     }
@@ -200,7 +203,7 @@ export class EntityManager {
     private updateProjectiles(dt: Duration, camera: Camera, events: EventQueue): void {
         for (const projectile of this.projectiles) {
             if (!projectile.dead) {
-                projectile.update(dt, camera, events);
+                projectile.update(dt, this, camera, events);
             }
         }
     }

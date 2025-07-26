@@ -1,4 +1,5 @@
 # TODO
+- [ ] Power ups - radonly select power ups to spawn in the room
 
 ## DOING
 
@@ -6,8 +7,6 @@
 - [ ] Better dungeon generation
   - [ ] Allow generation in any direction (currently bottom direction is disabled to avoid cyclic paths)
   - [ ] Consider maze-like generation (multiple possible paths)
-- [ ] Power ups - needs more thought on what they should be and how they should work
-      Examples: Time stop, damage increase, shield, speed increase, etc.
 - [ ] Add speed up option for recording playback
 
 ## SHOULD BE FIXED
@@ -87,3 +86,4 @@
 ### Not sure about
 - [ ] Try out Entity Component System (ECS)
 - [ ] Use states for animations ([see](https://www.youtube.com/watch?v=e3LGFrHqqiI))
+- [ ] Should power ups be chosen randomly or should they be preselected (like enemies in waves)?

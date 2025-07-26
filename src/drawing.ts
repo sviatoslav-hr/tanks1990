@@ -1,6 +1,7 @@
 import {GameConfig} from '#/config';
 import {tryCacheExplosions} from '#/effect';
 import type {EntityManager} from '#/entity/manager';
+import {drawPickups} from '#/entity/pickup';
 import {
     drawAllTankModels,
     drawAllTanksDevUI,
@@ -26,6 +27,8 @@ export function drawGame(
         effect.draw(renderer);
     }
     drawWorldBlocks(renderer, world);
+    drawPickups(renderer, world.activeRoom.pickups);
+
     for (const boom of manager.booms) {
         boom.draw(renderer);
     }

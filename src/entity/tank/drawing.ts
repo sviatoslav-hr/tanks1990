@@ -166,7 +166,7 @@ function drawTankDevBoundary(renderer: Renderer, tank: Tank): void {
     const acc = tank.lastAcceleration.toFixed(2);
     renderer.fillText(
         `${tank.id}: m=${tank.speedMult};a=${acc};v=${velocity}km/h`,
-        // `ID:${tank.id}: {${Math.floor(this.x)};${Math.floor(this.y)}}`,
+        // `ID:${tank.id}: {${Math.floor(tank.x)};${Math.floor(tank.y)}}`,
         {
             x: tank.x + tank.width / 2,
             y: tank.y - tank.height / 2,

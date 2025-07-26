@@ -5,6 +5,7 @@ import {Block} from '#/entity/block';
 import {Entity, isIntesecting} from '#/entity/core';
 import {EnemyWave, wavesPerRoom} from '#/entity/enemy-wave';
 import {EntityManager} from '#/entity/manager';
+import {Pickup} from '#/entity/pickup';
 import {Rect} from '#/math';
 import {Direction} from '#/math/direction';
 import {Vector2} from '#/math/vector';
@@ -21,6 +22,7 @@ export class Room {
     prevRoomDoorBlocks: Block[];
     roomIndex: number;
     wave: EnemyWave;
+    pickups: Pickup[] = [];
 
     constructor(
         public position: Vector2,

@@ -3,6 +3,7 @@ import {GameConfig} from '#/config';
 import {CELL_SIZE} from '#/const';
 import {Entity, isInside, isIntesecting, isSameEntity, moveEntity} from '#/entity/core';
 import {EntityId} from '#/entity/id';
+import {EntityManager} from '#/entity/manager';
 import {EnemyTank, PlayerTank} from '#/entity/tank';
 import {EventQueue} from '#/events';
 import {bellCurveInterpolate, lerp} from '#/math';
@@ -12,7 +13,6 @@ import {Vector2} from '#/math/vector';
 import {Renderer} from '#/renderer';
 import {Camera} from '#/renderer/camera';
 import {Sprite} from '#/renderer/sprite';
-import {EntityManager} from './manager';
 
 interface CreateProjectileOpts {
     x: number;
@@ -20,6 +20,7 @@ interface CreateProjectileOpts {
     size: number;
     ownerId: EntityId;
     direction: Direction;
+    shotByPlayer: boolean;
 }
 
 export class Projectile extends Entity {
@@ -40,8 +41,8 @@ export class Projectile extends Entity {
     });
     static readonly TRAIL_DISTANCE = CELL_SIZE * 2;
 
-    constructor(manager: EntityManager, opts: CreateProjectileOpts) {
-        super(manager);
+    constructor(opts: CreateProjectileOpts) {
+        super();
         this.x = opts.x - opts.size / 2;
         this.y = opts.y - opts.size / 2;
         this.width = opts.size;
@@ -49,10 +50,10 @@ export class Projectile extends Entity {
         this.originalPosition = new Vector2(this.x, this.y);
         this.ownerId = opts.ownerId;
         this.direction = opts.direction;
-        this.shotByPlayer = manager.player.id === opts.ownerId;
+        this.shotByPlayer = opts.shotByPlayer;
     }
 
-    update(dt: Duration, camera: Camera, events: EventQueue): void {
+    update(dt: Duration, manager: EntityManager, camera: Camera, events: EventQueue): void {
         if (this.dead) {
             return;
         }
@@ -64,13 +65,13 @@ export class Projectile extends Entity {
         this.sprite.update(dt);
         // TODO: use movement equation instead
         moveEntity(this, this.velocity * dt.seconds, this.direction);
-        if (!isInside(this, this.manager.world.activeRoom.boundary)) {
+        if (!isInside(this, manager.world.activeRoom.boundary)) {
             events.push({type: 'projectile-exploded', entityId: this.id});
             this.dead = true;
             return;
         }
 
-        for (const entity of this.manager.iterateEntities()) {
+        for (const entity of manager.iterateEntities()) {
             if (isSameEntity(entity, this) || entity.id === this.ownerId || entity.dead) {
                 continue;
             }

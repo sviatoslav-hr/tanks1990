@@ -43,7 +43,7 @@ export function generateBlocks(
             frameHeight: 64,
         });
 
-        const block = new Block(manager, {
+        const block = new Block({
             x: rect.x,
             y: rect.y,
             width: rect.width,
@@ -65,8 +65,8 @@ export class Block extends Entity {
     private readonly color: Color = Color.WHITE;
     private readonly sprite?: Sprite<string>;
 
-    constructor(manager: EntityManager, {x, y, width, height, texture}: BlockOpts) {
-        super(manager);
+    constructor({x, y, width, height, texture}: BlockOpts) {
+        super();
         this.x = x;
         this.y = y;
         this.width = width;

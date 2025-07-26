@@ -35,7 +35,8 @@ export function handleGameEvents(
                 if (event.bot) {
                     const entity = manager.findTank(event.entityId);
                     if (entity) {
-                        entity.room.wave.removeEnemyFromAlives(entity.id);
+                        const wave = manager.world.activeRoom.wave;
+                        wave.removeEnemyFromAlives(entity.id);
                     }
                 }
                 const volumeScale = event.bot ? 0.6 : 1;

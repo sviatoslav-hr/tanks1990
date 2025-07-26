@@ -35,7 +35,9 @@ export function makeTankSchema(bot: boolean, kind: TankPartKind): TankSchema {
 
 export const RESTORE_HP_AMOUNT = 10;
 export const SPEED_INCREASE_MULT = 1.2; // 20% speed increase per power-up
-export const DAMAGE_INCREASE_MULT = 1.2; // 20% damage increase per power-up
+export const DAMAGE_INCREASE_MULT = 1.3; // 30% damage increase per power-up
+export const SHIELD_PICKUP_DURATION = Duration.milliseconds(5000);
+export const SHIELD_SPAWN_DURATION = Duration.milliseconds(1000);
 
 const tankKindMaxHealth: Record<TankPartKind, number> = {
     light: 20,

@@ -27,7 +27,8 @@ export class EnemyTank extends Tank implements Entity {
     respawnDelay = RESPAWN_DELAY.clone();
 
     update(dt: Duration): void {
-        if (this.dead && this.room.wave.hasRespawnPlace) {
+        const wave = this.manager.world.activeRoom.wave;
+        if (this.dead && wave.hasRespawnPlace) {
             this.respawnDelay.sub(dt).max(0);
             return;
         }
