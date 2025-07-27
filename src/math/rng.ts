@@ -106,9 +106,29 @@ export class RNG {
         return values[this.int32Range(0, values.length)]!;
     }
 
+    selectMany<T>(values: T[], minCount = 1, maxCount = values.length): T[] {
+        if (values.length === 0) return [];
+        const n = values.length;
+        if (minCount > n) throw new Error('min cannot be greater than array length');
+
+        const k = this.int32Range(minCount, Math.min(n + 1, maxCount));
+        const result: T[] = [];
+
+        for (let i = 0; i < k; i++) {
+            const j = i + Math.floor(this.float() * (n - i));
+            const temp = values[i]!;
+            values[i] = values[j]!;
+            values[j] = temp;
+
+            result.push(values[i]!);
+        }
+
+        return result;
+    }
+
     private state(): AleaState {
         const state: Partial<AleaState> = {};
-        copyInto(this, state);
+        copyAleaInto(this, state);
         return state as AleaState;
     }
 
@@ -118,7 +138,7 @@ export class RNG {
             this.init(seed);
         } else {
             logger.debug(`[RNG] Resetting with same seed=${this._seed}`);
-            copyInto(this.initial, this);
+            copyAleaInto(this.initial, this);
         }
     }
 }
@@ -143,7 +163,7 @@ function makeMash() {
     };
 }
 
-function copyInto(source: AleaState, target: Partial<AleaState>): void {
+function copyAleaInto(source: AleaState, target: Partial<AleaState>): void {
     target.c = source.c;
     target.s0 = source.s0;
     target.s1 = source.s1;

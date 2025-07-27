@@ -66,6 +66,10 @@ export abstract class Tank extends Entity {
         return this.y + this.height / 2;
     }
 
+    get needsHealing(): boolean {
+        return this.health < this.schema.maxHealth;
+    }
+
     update(dt: Duration): void {
         this.healthAnimation.update(dt);
         if (this.dead) return;
@@ -134,6 +138,8 @@ export abstract class Tank extends Entity {
             this.prevHealth = this.health;
             this.collided = false;
             this.shouldRespawn = false;
+            this.damageMult = 1;
+            this.speedMult = 1;
             this.shootingDelay.setFrom(this.schema.shootingDelay);
             this.activateShield();
             return true;
@@ -193,16 +199,22 @@ export abstract class Tank extends Entity {
         return false;
     }
 
-    restoreHealthAmount(amount: number): void {
+    restoreHealthAmount(amount: number): boolean {
         assert(!this.dead);
+        assert(this.needsHealing);
         this.prevHealth = this.health;
         this.health = Math.min(this.schema.maxHealth, this.health + amount);
+        return true;
     }
 
     activateShield(duration: Duration = SHIELD_SPAWN_DURATION): void {
-        this.hasShield = true;
-        this.shieldTimer.setFrom(duration);
-        this.updateShieldBoundary();
+        if (this.hasShield) {
+            this.shieldTimer.add(duration);
+        } else {
+            this.hasShield = true;
+            this.shieldTimer.setFrom(duration);
+            this.updateShieldBoundary();
+        }
     }
 
     protected updateShield(dt: Duration): void {

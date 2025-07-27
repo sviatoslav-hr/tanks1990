@@ -1,5 +1,4 @@
 # TODO
-- [ ] Power ups - radonly select power ups to spawn in the room
 
 ## DOING
 
@@ -16,6 +15,8 @@
       in the room.
 - [ ] Pathfinding: Sometimes enemies build a path including a bunch of unnecessary turns (zigzag pattern)
 - [ ] Pathfinding: When enemy is right next to a target, but the turret is not aligned with the target, it's not smart enough to adjust it's position.
+- [ ] Web: It seems like browser caches the game files and game doesn't load correctly - reload with cache cleared fixes the issue.
+  - [ ] Add prefix to game files (scripts)?
 
 ## BACKLOG
 

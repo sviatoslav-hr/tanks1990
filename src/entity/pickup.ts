@@ -28,7 +28,7 @@ export class Pickup extends Entity {
     constructor(type: PickupType) {
         super();
         this.type = type;
-        this.dead = false;
+        this.dead = false; // NOTE: Basically alias for "collected" state.
         this.x = 0;
         this.y = 0;
         this.width = PICKUP_SIZE;
@@ -82,6 +82,7 @@ export function simulatePickups(manager: EntityManager): void {
             if (isIntesecting(pickup, tank)) {
                 applyPickup(pickup, tank);
                 logger.debug('Pickup %s applied to tank', pickup.type, tank.id);
+                break;
             }
         }
     }
@@ -89,27 +90,29 @@ export function simulatePickups(manager: EntityManager): void {
 
 function applyPickup(pickup: Pickup, tank: Tank): void {
     assert(!tank.dead);
+    let skipped = false;
     switch (pickup.type) {
         case PickupType.HEATH_RESTORE:
-            logger.debug('Restoring health for tank %s', tank.id);
-            tank.restoreHealthAmount(RESTORE_HP_AMOUNT);
+            if (tank.needsHealing) {
+                tank.restoreHealthAmount(RESTORE_HP_AMOUNT);
+            } else {
+                skipped = true;
+            }
             break;
         case PickupType.SHIELD:
-            logger.debug('Activating shield for tank %s', tank.id);
+            // NOTE: If tank already has shield, prolong it instead of overwriting.
             tank.activateShield(SHIELD_PICKUP_DURATION);
             break;
         case PickupType.SPEED_BOOST:
-            logger.debug('Increasing speed for tank %s', tank.id);
             tank.speedMult += SPEED_INCREASE_MULT - 1;
             break;
         case PickupType.DAMAGE_BOOST:
-            logger.debug('Increasing damage for tank %s', tank.id);
             tank.damageMult += DAMAGE_INCREASE_MULT - 1;
             break;
         default:
             assert(false);
     }
-    pickup.dead = true;
+    if (!skipped) pickup.dead = true;
 }
 
 export function generatePickups(room: Room, manager: EntityManager): void {
@@ -124,12 +127,16 @@ export function generatePickups(room: Room, manager: EntityManager): void {
     const maxYRel = maxY / CELL_SIZE;
 
     // TODO: Randomly generate pickups in the room (1-2 at most, probably).
-    const selectedPickups = [
-        PickupType.HEATH_RESTORE,
-        PickupType.SHIELD,
-        PickupType.SPEED_BOOST,
-        PickupType.DAMAGE_BOOST,
-    ];
+    const selectedPickups = random.selectMany(
+        [
+            PickupType.HEATH_RESTORE,
+            PickupType.SHIELD,
+            PickupType.SPEED_BOOST,
+            PickupType.DAMAGE_BOOST,
+        ],
+        2,
+        4,
+    );
 
     let pickupType: PickupType | undefined;
     const offset = (CELL_SIZE - PICKUP_SIZE) / 2;
