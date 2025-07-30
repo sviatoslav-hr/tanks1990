@@ -1,7 +1,7 @@
 import {Result} from '#/common';
 import {GameStorage} from '#/storage';
 
-export enum SoundType {
+export enum SoundName {
     EXPLOSION = 'explosion_8bit',
     SHOOTING = 'cannon_fire',
     HIT = 'hit',
@@ -10,9 +10,16 @@ export enum SoundType {
     BATTLE_THEME = 'too_strong',
 }
 
+const SOUNDS_PATH = './sounds';
 const GAME_VOLUME_KEY = 'game_volume';
 const GAME_MUTED_KEY = 'game_muted';
 const VOLUME_SCALE = 0.3; // Scale volume down because too loud by default.
+
+export interface SoundConfig {
+    name: SoundName;
+    volume: number;
+    loop?: boolean;
+}
 
 export class SoundManager {
     #volume = 1 * VOLUME_SCALE;
@@ -20,7 +27,7 @@ export class SoundManager {
     readonly storedMuted: boolean; // NOTE: This is only used during initialization.
 
     // TODO: This should be created only after user made any action on the page.
-    private readonly soundsCache = new Map<SoundType, Sound[]>();
+    private readonly soundsCache = new Map<SoundName, Sound[]>();
 
     constructor(
         private readonly storage: GameStorage,
@@ -80,7 +87,7 @@ export class SoundManager {
             this.#volume = volume * VOLUME_SCALE;
         }
         const promises: Promise<Result<void>>[] = [];
-        for (const type of Object.values(SoundType)) {
+        for (const type of Object.values(SoundName)) {
             const sound = Sound.fromType(type, this.audioContext);
             sound.volume = this.#volume;
             this.soundsCache.set(type, [sound]);
@@ -94,8 +101,10 @@ export class SoundManager {
         }
     }
 
-    playSound(type: SoundType, volumeScale?: number, loop = false): Sound {
+    playSound(config: SoundConfig): Sound {
+        const {name: type, volume: volumeScale = 1, loop = false} = config;
         const shouldPlay = this.audioContext.state === 'running' || loop;
+
         const cachedSounds = this.soundsCache.get(type);
         const availableSound = cachedSounds?.find((sound) => !sound.isPlaying);
         if (availableSound) {
@@ -150,8 +159,8 @@ export class Sound {
         private audioContext: AudioContext,
     ) {}
 
-    static fromType(type: SoundType, audioContext: AudioContext): Sound {
-        const src = type.includes('.') ? `sounds/${type}` : `./sounds/${type}.wav`;
+    static fromType(type: SoundName, audioContext: AudioContext): Sound {
+        const src = type.includes('.') ? `${SOUNDS_PATH}/${type}` : `${SOUNDS_PATH}/${type}.wav`;
         return new Sound(src, audioContext);
     }
 
@@ -176,9 +185,9 @@ export class Sound {
         return this.state === SoundState.LOADED && this.#pauseTime > 0;
     }
 
-    play(volumeScale?: number, loop = false): void {
+    play(volumeScale = this.#volumeScale, loop = false): void {
         assert(this.loaded, `Sound: cannot play, sound not loaded: "${this.src}"`);
-        this.startAudioSource(volumeScale ?? 1, 0, loop);
+        this.startAudioSource(volumeScale, 0, loop);
         this.#startTime = this.audioContext.currentTime;
         this.#pauseTime = 0;
     }

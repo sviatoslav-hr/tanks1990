@@ -32,7 +32,7 @@ export interface GameInputState {
 export interface ExtraInputState {
     // PERF: It will be more efficient to compress these into flags.
     //       Although I'm not sure how well it will work in the usage code.
-    toggleMenu?: 1;
+    toggleGamePause?: 1;
     toggleGamePauseIgnoreMenu?: 1;
     toggleFullscreen?: 1;
     triggerSingleUpdate?: 1;
@@ -101,10 +101,10 @@ export function handleExtraKeymaps(input: GameInput, menu: Menu): ExtraInputStat
     }
 
     if (input.isPressed('Escape')) {
-        result.toggleMenu = 1;
+        result.toggleGamePause = 1;
     } else if (input.isPressed('KeyP')) {
         if (__DEV_MODE && alt) result.toggleGamePauseIgnoreMenu = 1;
-        else result.toggleMenu = 1;
+        else result.toggleGamePause = 1;
     }
 
     if (alt && input.isPressed('Semicolon')) {
@@ -190,27 +190,13 @@ export function processInput(
             .catch((err) => logger.error('[Input] Failed to toggle fullscreen', err));
     }
 
-    if (input.extra.toggleMenu) {
-        if (state.dead) {
-            if (menu.visible) menu.hide();
-            else menu.showDead();
-        } else if (state.paused && !menu.paused) {
-            menu.showPause();
+    if (input.extra.toggleGamePause || input.extra.toggleGamePauseIgnoreMenu) {
+        if (state.dead || state.initial || state.gameCompleted) {
+            // NOTE: Game is not in playing state, so we cannot pause/unpause.
         } else {
-            if (!state.initial && !manager.player.dead) {
-                if (state.playing) menu.showPause();
-                else menu.hide();
-            }
-            state.togglePauseResume();
-        }
-    }
-
-    if (input.extra.toggleGamePauseIgnoreMenu) {
-        if (state.playing || state.paused) {
-            logger.info(state.playing ? 'Game paused' : 'Game resumed');
-            state.togglePauseResume();
-        } else {
-            logger.warn('Game is not in playing state, cannot pause/unpause');
+            const action = state.playing ? 'pause' : 'resume';
+            const ignoreMenu = Boolean(input.extra.toggleGamePauseIgnoreMenu);
+            events.push({type: 'game-control', action, ignoreMenu});
         }
     }
 

@@ -1,10 +1,12 @@
 import type {EntityId} from '#/entity/id';
 import type {Direction} from '#/math/direction';
 import type {Vector2Like} from '#/math/vector';
+import {SoundConfig} from '#/sound';
 
 export type GameControlEvent = {
     type: 'game-control';
-    action: 'start' | 'resume' | 'init';
+    action: 'init' | 'start' | 'pause' | 'resume' | 'game-over' | 'game-completed';
+    ignoreMenu?: boolean;
 };
 
 export type ShotEvent = {
@@ -14,12 +16,6 @@ export type ShotEvent = {
     direction: Direction;
     entityId: EntityId;
     damage: number;
-};
-
-export type TankDamagedEvent = {
-    type: 'tank-damaged';
-    entityId: EntityId;
-    bot: boolean;
 };
 
 export type TankDestroyedEvent = {
@@ -33,12 +29,17 @@ export type ProjectileExplodedEvent = {
     entityId: EntityId;
 };
 
+export type SoundEvent = {
+    type: 'sound';
+    config: SoundConfig;
+};
+
 export type GameEvent =
     | GameControlEvent
     | ShotEvent
-    | TankDamagedEvent
     | TankDestroyedEvent
-    | ProjectileExplodedEvent;
+    | ProjectileExplodedEvent
+    | SoundEvent;
 
 export class EventQueue {
     private events: GameEvent[] = [];

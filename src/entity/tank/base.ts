@@ -17,6 +17,7 @@ import {Direction} from '#/math/direction';
 import {Duration} from '#/math/duration';
 import {Vector2Like} from '#/math/vector';
 import {Sprite} from '#/renderer/sprite';
+import {soundEvent} from '#/sound-event';
 
 const STOPPING_TIME = Duration.milliseconds(50);
 
@@ -166,11 +167,7 @@ export abstract class Tank extends Entity {
             this.onDied();
             events.push({type: 'tank-destroyed', entityId: this.id, bot: this.bot});
         } else if (this.health < this.prevHealth) {
-            events.push({
-                type: 'tank-damaged',
-                entityId: this.id,
-                bot: this.bot,
-            });
+            soundEvent(events, this.bot ? 'enemy-damaged' : 'player-damaged');
         }
         return this.dead;
     }

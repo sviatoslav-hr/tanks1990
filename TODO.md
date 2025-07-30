@@ -3,6 +3,11 @@
 ## DOING
 
 ## NEXT TODO
+- [ ] Refactor/Rewrite Menu
+    - [ ] It should be flexible enough to be reused, detached from rest of the game, but also easy to use.
+      - [ ] Menu shouldn't know about game states, etc
+      - [ ] Maybe have a function like `updateMenu` that will work like a layer between the menu and the game 
+    - [ ] Look into where the menu is used/passed and check if menu can be detached from there (via events?)
 - [ ] Better dungeon generation
   - [ ] Allow generation in any direction (currently bottom direction is disabled to avoid cyclic paths)
   - [ ] Consider maze-like generation (multiple possible paths)
@@ -24,8 +29,7 @@
 - [ ] Final boss - describe it first.
 
 ### Refactoring
-- [ ] Outline how objects/classes should access each other (global vars/props/DI etc) (eg Renderer, Input, Sound, EntityManager, Entity etc)
-- [ ] Rewrite menu - it should be flexible enough to be reused, detached from rest of the game, but also easy to use.
+- [ ] Outline how objects/classes should access each other (global vars/props/DI etc) (eg Renderer, Input, EntityManager, Entity etc)
 - [ ] Detach simulation out of entities and manager
 - [ ] Better way to store images and sprites (how bad Image is?)
 - [ ] Better coordinates system (consider defining something like `WorldPosition`)
@@ -75,9 +79,9 @@
 - [ ] Disable smoothing in a way that it doesn't cause jittering.
 - [ ] Fix tanks moving too fast when the frame rate drops (usually this happens during explosions)
       Update (24.05.2025): This doesn't seem to preproduce anymore or at least it's a lot rarer now.
-- [ ] Fix sound explosion delay
 - [ ] Fix: `The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page.` on page load.
       Probably, need to blur the game and wait the user to click on the game area before starting the audio context.
+- [ ] Fix sound explosion delay - not sure it reproduces anymore.
 
 ### Low priority improvements
 - [ ] Make enemies shoot only when they see the player

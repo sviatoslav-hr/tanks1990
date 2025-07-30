@@ -9,10 +9,7 @@ export function initMenu(events: EventQueue, sounds: SoundManager): Menu {
     menu.addButton(
         'NEW GAME',
         () => {
-            // TODO: For now there is no difference between "new game" and "restart"
-            //       but later "new game" should generate a random seed.
             events.push({type: 'game-control', action: 'start'});
-            menu.hide();
         },
         [MenuState.START],
     );
@@ -20,7 +17,6 @@ export function initMenu(events: EventQueue, sounds: SoundManager): Menu {
         'RESUME',
         () => {
             events.push({type: 'game-control', action: 'resume'});
-            menu.hide();
         },
         [MenuState.PAUSE],
     );
@@ -28,7 +24,6 @@ export function initMenu(events: EventQueue, sounds: SoundManager): Menu {
         'RESTART',
         () => {
             events.push({type: 'game-control', action: 'start'});
-            menu.hide();
         },
         [MenuState.PAUSE, MenuState.DEAD, MenuState.COMPLETED],
     );
@@ -36,7 +31,6 @@ export function initMenu(events: EventQueue, sounds: SoundManager): Menu {
         'MAIN MENU',
         () => {
             events.push({type: 'game-control', action: 'init'});
-            menu.showMain();
         },
         [MenuState.PAUSE, MenuState.DEAD, MenuState.COMPLETED],
     );

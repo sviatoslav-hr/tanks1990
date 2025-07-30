@@ -77,6 +77,7 @@ export function getNextRecordedInput(state: GameState): GameInputState | undefin
     return input;
 }
 
+// TODO: Menu should not be passed here, but rather it should be handled via events.
 export function playRecentRecording(state: GameState, manager: EntityManager, menu: Menu): void {
     if (state.recording.playing) {
         logger.error('Recording is already playing');

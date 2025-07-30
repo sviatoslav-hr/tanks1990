@@ -16,7 +16,7 @@ import {initMenu, Menu} from '#/menu';
 import {maybeRecordInput} from '#/recording';
 import {Renderer} from '#/renderer';
 import {Camera} from '#/renderer/camera';
-import {type Sound, SoundManager, SoundType} from '#/sound';
+import {SoundManager} from '#/sound';
 import {GameState, justCompletedGame} from '#/state';
 import {GameStorage} from '#/storage';
 import {createDevUI, DevUI} from '#/ui/dev';
@@ -74,8 +74,6 @@ function runGame(
     sounds: SoundManager,
     eventQueue: EventQueue,
 ) {
-    let battleSound: Sound | undefined;
-
     let lastTimestamp = performance.now();
     const animationCallback = (): void => {
         const now = performance.now();
@@ -107,32 +105,14 @@ function runGame(
             );
             maybeRecordInput(state, inputState.game);
 
-            // TODO: This is pretty bad, this code should not be in main.
-            //       Probably the best way to handle this is use play sound based on game events.
-            if (state.playing) {
-                const soundVolume = 0.5;
-                const loop = true;
-                if (!battleSound) {
-                    battleSound = sounds.playSound(SoundType.BATTLE_THEME, soundVolume, loop);
-                } else if (battleSound.paused) {
-                    battleSound.resume();
-                } else if (!battleSound.isPlaying) {
-                    battleSound.play(soundVolume, loop);
-                }
-            } else if (state.paused && battleSound?.isPlaying) {
-                battleSound.pause();
-            } else if (battleSound?.isPlaying) {
-                battleSound.stop();
-            }
-
             drawOptions.drawUI = !menu.visible;
             drawGame(renderer, config, manager, drawOptions);
-            simulateGameTick(dt, state, manager, menu, sounds, renderer.camera, eventQueue);
-            processGameEvents(eventQueue, state, manager, sounds);
+            simulateGameTick(dt, state, manager, renderer.camera, eventQueue);
+            processGameEvents(eventQueue, state, manager, sounds, menu);
             state.nextTick();
             input.nextTick();
         } catch (err) {
-            logger.error('Error in animationCallback %O', err);
+            logger.error('Error in animationCallback\n%O', err);
         }
         devUI.fpsMonitor.end();
         if (config.changed) config.save();
@@ -147,34 +127,20 @@ function simulateGameTick(
     dt: Duration,
     state: GameState,
     manager: EntityManager,
-    menu: Menu,
-    sounds: SoundManager,
     camera: Camera,
     events: EventQueue,
 ) {
     const player = manager.player;
 
     if (state.playing && player.dead && player.healthAnimation.finished) {
-        const playedRecording = state.recording.playing;
-        state.markDead();
-        // TODO: Menu should not be a part of simulation and should be handled outside of this function.
-        if (!playedRecording) {
-            menu.showDead();
-            sounds.playSound(SoundType.GAME_OVER, 1);
-        }
+        events.push({type: 'game-control', action: 'game-over'});
     }
 
     if (!player.dead && justCompletedGame(state, manager.world.activeRoom)) {
-        player.completedGame = true;
-        state.markCompleted();
-        const timeoutMs = 5000;
-        notify('Congratulation!', {timeoutMs});
-        notify(`Completed in ${player.survivedFor.toHumanString()}`, {timeoutMs});
-        setTimeout(() => {
-            menu.showCompleted();
-        }, timeoutMs);
+        events.push({type: 'game-control', action: 'game-completed'});
     }
 
+    // NOTE: Showing enemies moving even when it's game-over to kind of troll the player "they continue living while you are dead".
     if (state.playing || state.dead || state.debugUpdateTriggered) {
         manager.updateEffects(dt);
         manager.updateAllEntities(dt, camera, events);

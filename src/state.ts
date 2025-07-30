@@ -5,6 +5,7 @@ import {
     type RecordingInfo,
     type RecordingStatus,
 } from '#/recording';
+import type {Sound} from '#/sound';
 import type {Room} from '#/world/room';
 
 export enum GameStatus {
@@ -34,6 +35,7 @@ export class GameState {
         inputs: [],
         startedAt: 0,
     };
+    battleMusic: Sound | null = null;
 
     get initial(): boolean {
         return this.status === GameStatus.INITIAL;
