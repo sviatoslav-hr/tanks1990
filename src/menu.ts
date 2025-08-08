@@ -237,20 +237,22 @@ export class Menu extends HTMLElement {
 
         // TODO: This is bad, this shouldn't be handled in the menu.
         {
-            this.fullscreenButton = ui.button({
-                className: 'button--fullscreen',
-                textContent: '⛶',
-                style: {
-                    position: 'fixed',
-                    top: '1rem',
-                    right: '1rem',
+            this.fullscreenButton = ui.button(
+                {
+                    className: 'button--fullscreen',
+                    style: {
+                        position: 'fixed',
+                        top: '1rem',
+                        right: '1rem',
+                    },
+                    onClick: (e) => {
+                        e.preventDefault(); // NOTE: Prevent accidental movement of the camera
+                        this.fullscreenToggleExpected = !this.fullscreenToggleExpected;
+                        this.fullscreenButton.blur();
+                    },
                 },
-                onClick: (e) => {
-                    e.preventDefault(); // NOTE: Prevent accidental movement of the camera
-                    this.fullscreenToggleExpected = !this.fullscreenToggleExpected;
-                    this.fullscreenButton.blur();
-                },
-            });
+                '⛶',
+            );
             this.append(this.fullscreenButton);
         }
 
@@ -258,23 +260,25 @@ export class Menu extends HTMLElement {
             const volumeText = '🔊';
             const mutedText = '🔇';
             let muted = defaultMuted;
-            this.muteButton = ui.button({
-                className: 'button--fullscreen',
-                textContent: muted ? mutedText : volumeText,
-                style: {
-                    position: 'fixed',
-                    top: '1rem',
-                    right: '4rem',
-                    fontSize: '1.5rem',
+            this.muteButton = ui.button(
+                {
+                    className: 'button--fullscreen',
+                    style: {
+                        position: 'fixed',
+                        top: '1rem',
+                        right: '4rem',
+                        fontSize: '1.5rem',
+                    },
+                    onClick: (e) => {
+                        e.preventDefault();
+                        muted = !muted;
+                        this.muteButton.textContent = muted ? mutedText : volumeText;
+                        this.onMuteClicked(muted);
+                        this.muteButton.blur();
+                    },
                 },
-                onClick: (e) => {
-                    e.preventDefault();
-                    muted = !muted;
-                    this.muteButton.textContent = muted ? mutedText : volumeText;
-                    this.onMuteClicked(muted);
-                    this.muteButton.blur();
-                },
-            });
+                muted ? mutedText : volumeText,
+            );
             this.append(this.muteButton);
         }
     }

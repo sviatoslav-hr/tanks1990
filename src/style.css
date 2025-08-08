@@ -1,6 +1,8 @@
 /** TODO: look into using there colors */
 /* border-image-source: linear-gradient(to left, #00C853, #B2FF59); */
-:root {
+:root,
+reactive-element,
+ui-component {
     --black-raisin: #242424;
     --black-raisin-0: #24242400;
     --black-raisin-75: #242424bf;
@@ -242,11 +244,12 @@ game-menu.fade-in .menu > .text-red {
     padding: 16px;
 }
 
+/*@CLENAUP: Remove*/
 .hints li {
     font-size: 16px;
     padding: 4px 0;
 }
-
+/*@CLENAUP: Remove*/
 code {
     font-size: inherit;
     padding: 0.2em 0.4em;

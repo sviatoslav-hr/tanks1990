@@ -16,10 +16,7 @@ export class DevNumberInput extends ReactiveElement {
         className: 'number-input',
         type: 'number',
     });
-    private readonly label = ui.label({
-        textContent: 'Value',
-        for: this.input.id,
-    });
+    private readonly label = ui.label({for: this.input.id}, 'Value');
     // TODO: Why duplicate here and in label?
     private name?: string;
     private min!: number;
@@ -51,10 +48,7 @@ export class DevNumberInput extends ReactiveElement {
     }
 
     protected override render(): HTMLElement {
-        return ui.div({
-            className: 'number-input-container',
-            children: [this.label, this.input],
-        });
+        return ui.div({className: 'number-input-container'}, this.label, this.input);
     }
 
     protected override styles(): HTMLStyleElement {
@@ -152,8 +146,8 @@ export class DevButton extends ReactiveElement {
         className: 'button',
     });
 
-    protected override render(): HTMLElement {
-        return this.button;
+    protected override render(): HTMLElement[] {
+        return [this.button];
     }
 
     protected override styles(): HTMLStyleElement {
@@ -170,7 +164,7 @@ export class DevButton extends ReactiveElement {
         `;
     }
 
-    onClick(callback: (bth: this) => void): void {
+    onClick(callback: (button: this) => void): void {
         this.button.addEventListener('click', () => callback(this));
     }
 
@@ -188,11 +182,7 @@ export class DevFilePicker extends ReactiveElement {
         type: 'file',
     });
     private placeholder = 'Select file';
-    private readonly label = ui.label({
-        textContent: this.placeholder,
-        for: this.input.id,
-        className: 'button',
-    });
+    private readonly label = ui.label({for: this.input.id, className: 'button'}, this.placeholder);
 
     protected override render(): HTMLElement[] {
         return [this.input, this.label];

@@ -14,21 +14,20 @@ export class DevPanel extends ReactiveElement {
         super(options);
     }
 
-    protected override render(): HTMLElement {
-        return ui.div({
-            className: this.parentPanel ? 'dev-panel' : ['dev-panel', 'root-panel'],
-            children: [
-                ui.div({
-                    textContent: this.name ?? 'Dev Panel',
-                    className: ['dev-panel-trigger'],
-                    onClick: () => this.toggleContainerVisibility(),
-                }),
-                ui.div({
-                    className: ['dev-panel-container'],
-                    children: [...this.panelChildren],
-                }),
-            ],
-        });
+    protected override render(): HTMLElement[] {
+        return [
+            ui.div(
+                {className: this.parentPanel ? 'dev-panel' : ['dev-panel', 'root-panel']},
+                ui.div(
+                    {
+                        className: ['dev-panel-trigger'],
+                        onClick: () => this.toggleContainerVisibility(),
+                    },
+                    this.name ?? 'Dev Panel',
+                ),
+                ui.div({className: ['dev-panel-container']}, ...this.panelChildren),
+            ),
+        ];
     }
 
     protected override styles(): HTMLStyleElement {

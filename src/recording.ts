@@ -1,7 +1,7 @@
 import type {EntityManager} from '#/entity/manager';
 import type {GameInputState} from '#/input-handler';
 import {random} from '#/math/rng';
-import type {Menu} from '#/menu';
+import {MenuController} from '#/menu2';
 import type {GameState} from '#/state';
 import {notify} from '#/ui/notification';
 
@@ -78,7 +78,11 @@ export function getNextRecordedInput(state: GameState): GameInputState | undefin
 }
 
 // TODO: Menu should not be passed here, but rather it should be handled via events.
-export function playRecentRecording(state: GameState, manager: EntityManager, menu: Menu): void {
+export function playRecentRecording(
+    state: GameState,
+    manager: EntityManager,
+    menu: MenuController,
+): void {
     if (state.recording.playing) {
         logger.error('Recording is already playing');
         return;
@@ -97,11 +101,11 @@ export function playRecentRecording(state: GameState, manager: EntityManager, me
         random.reset(state.recordingInfo.seed);
         state.start();
         manager.init();
-        menu.hide();
+        menu.selectPage(null);
     }, 0);
 }
 
-export function exitRecording(state: GameState, menu: Menu): void {
+export function exitRecording(state: GameState, menu: MenuController): void {
     if (!state.recording.playing) {
         logger.warn('Recording is not being played');
         return;
@@ -109,7 +113,7 @@ export function exitRecording(state: GameState, menu: Menu): void {
     state.recording.playing = false;
     state.recording.active = false;
     state.init();
-    menu.showMain();
+    menu.selectPage('home');
     notify('Recording playback stopped');
 }
 

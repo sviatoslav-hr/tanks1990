@@ -7,12 +7,13 @@ class NotificationBar extends ReactiveElement {
         super(options);
     }
 
-    protected render(): HTMLElement | HTMLElement[] {
-        return (this.container = ui.div({
-            className: 'notification-bar',
-            id: 'notification-bar',
-            children: [],
-        }));
+    protected render(): HTMLElement[] {
+        return [
+            (this.container = ui.div({
+                className: 'notification-bar',
+                id: 'notification-bar',
+            })),
+        ];
     }
     protected styles(): HTMLStyleElement | null {
         return css`
@@ -77,16 +78,13 @@ class NotificationItem extends ReactiveElement {
         }, timeoutMs);
     }
 
-    protected render(): HTMLElement | HTMLElement[] {
-        return (this.container = ui.div({
-            className: ['notification-item', 'notification-item--' + this.kind],
-            children: [
-                ui.div({
-                    textContent: this.message,
-                    className: 'notification-text',
-                }),
-            ],
-        }));
+    protected render(): HTMLElement[] {
+        return [
+            (this.container = ui.div(
+                {className: ['notification-item', 'notification-item--' + this.kind]},
+                ui.div({className: 'notification-text'}, this.message),
+            )),
+        ];
     }
 
     protected styles(): HTMLStyleElement | null {

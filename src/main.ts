@@ -12,7 +12,7 @@ import {handleGameEvents as processGameEvents} from '#/events-handler';
 import {GameInput} from '#/input';
 import {handleKeymaps, processInput} from '#/input-handler';
 import {Duration} from '#/math/duration';
-import {initMenu, Menu} from '#/menu';
+import {MenuComponent, MenuController} from '#/menu2';
 import {maybeRecordInput} from '#/recording';
 import {Renderer} from '#/renderer';
 import {Camera} from '#/renderer/camera';
@@ -20,6 +20,7 @@ import {SoundManager} from '#/sound';
 import {GameState, justCompletedGame} from '#/state';
 import {GameStorage} from '#/storage';
 import {createDevUI, DevUI} from '#/ui/dev';
+import {UIContext} from '#/ui/html';
 import {getNotificationBar, notify} from '#/ui/notification';
 import {World} from '#/world/world';
 
@@ -42,31 +43,47 @@ function main(): void {
     appElement.append(renderer.canvas);
 
     const input = new GameInput();
+    const ui = UIContext.init();
     const gameState = new GameState();
     const manager = new EntityManager();
     const eventQueue = new EventQueue();
     const config = new GameConfig(storage);
     config.load();
 
-    const menu = initMenu(eventQueue, sounds);
-    appElement.append(menu);
+    // const menu = initMenu(eventQueue, sounds);
+    // appElement.append(menu);
+    // const menu2 = createMenu();
+    // appElement.append(menu2);
+    const menuController = new MenuController();
+    const menu3 = MenuComponent(ui, menuController.props);
+    menu3.attachTo(appElement);
 
     const devUI = createDevUI(gameState, manager, renderer, storage);
     appElement.append(devUI);
 
-    resizeGame(renderer, menu, manager.world);
-    window.addEventListener('resize', () => resizeGame(renderer, menu, manager.world));
+    resizeGame(renderer, manager.world);
+    window.addEventListener('resize', () => resizeGame(renderer, manager.world));
 
-    menu.showMain();
     input.listen(document.body, renderer.canvas);
-    runGame(gameState, config, manager, menu, input, storage, devUI, renderer, sounds, eventQueue);
+    runGame(
+        gameState,
+        config,
+        manager,
+        menuController,
+        input,
+        storage,
+        devUI,
+        renderer,
+        sounds,
+        eventQueue,
+    );
 }
 
 function runGame(
     state: GameState,
     config: GameConfig,
     manager: EntityManager,
-    menu: Menu,
+    menu: MenuController,
     input: GameInput,
     storage: GameStorage,
     devUI: DevUI,
@@ -84,7 +101,7 @@ function runGame(
         devUI.fpsMonitor.begin();
         const drawOptions: DrawGameOptions = {drawUI: false};
         try {
-            const inputState = handleKeymaps(state, input, menu);
+            const inputState = handleKeymaps(state, input);
             if (state.recording.playing) {
                 // TODO: This substitution is not perfect and may make the game feel faster/slower than original recording.
                 //       But it's fine since it's only used for testing purposes and logically game replays as expected.
@@ -147,8 +164,7 @@ function simulateGameTick(
     }
 }
 
-function resizeGame(renderer: Renderer, menu: Menu, world: World): void {
+function resizeGame(renderer: Renderer, world: World): void {
     renderer.resizeCanvasByWindow(window);
     renderer.camera.focusOnRect(world.activeRoom.boundary);
-    menu.resize(renderer.canvas.offsetWidth, renderer.canvas.offsetHeight);
 }

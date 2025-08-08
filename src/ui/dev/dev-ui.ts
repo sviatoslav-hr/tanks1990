@@ -107,11 +107,8 @@ export class DevUI extends ReactiveElement {
     readonly devPanel = new DevPanel({className: 'dev-panel'});
     readonly fpsMonitor = new FPSMonitor({className: 'fps-monitor'});
 
-    protected override render(): HTMLElement {
-        return ui.div({
-            className: ['dev-ui'],
-            children: [this.fpsMonitor, this.devPanel],
-        });
+    protected override render(): HTMLElement[] {
+        return [ui.div({className: ['dev-ui']}, this.fpsMonitor, this.devPanel)];
     }
 
     protected override styles(): HTMLStyleElement {

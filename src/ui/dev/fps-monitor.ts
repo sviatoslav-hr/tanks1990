@@ -1,6 +1,6 @@
-import { numround } from '#/math';
-import { Duration } from '#/math/duration';
-import { CustomElement, HTMLElementOptions, ReactiveElement, css, ui } from '#/ui/html';
+import {numround} from '#/math';
+import {Duration} from '#/math/duration';
+import {CustomElement, HTMLElementOptions, ReactiveElement, css, ui} from '#/ui/html';
 
 // NOTE: Inspired by https://github.com/mrdoob/stats.js/blob/28632bd87e0ea56acafc9b8779d813eb95e62c08/src/Stats.js
 
@@ -84,11 +84,8 @@ export class FPSMonitor extends ReactiveElement {
         this.selectPanel(0);
     }
 
-    protected override render(): HTMLElement {
-        return ui.div({
-            className: ['monitor'],
-            children: this.panels.map((p) => p.dom),
-        });
+    protected override render(): HTMLElement[] {
+        return [ui.div({className: ['monitor']}, ...this.panels.map((p) => p.dom))];
     }
 
     protected override styles(): HTMLStyleElement {

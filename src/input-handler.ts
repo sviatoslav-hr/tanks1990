@@ -5,7 +5,7 @@ import type {EventQueue} from '#/events';
 import {GameInput} from '#/input';
 import {Direction} from '#/math/direction';
 import {Vector2Like} from '#/math/vector';
-import {Menu} from '#/menu';
+import {MenuController} from '#/menu2';
 import {
     exitRecording,
     getNextRecordedInput,
@@ -50,14 +50,14 @@ export interface ExtraInputState {
     playOrExitRecording?: 1;
 }
 
-export function handleKeymaps(state: GameState, input: GameInput, menu: Menu): InputState {
+export function handleKeymaps(state: GameState, input: GameInput): InputState {
     let gameInput: GameInputState | undefined;
     if (state.recording.playing) {
         gameInput = getNextRecordedInput(state) ?? {};
     } else {
         gameInput = handleGameKeymaps(input);
     }
-    const extraInput = handleExtraKeymaps(input, menu);
+    const extraInput = handleExtraKeymaps(input);
     return {game: gameInput, extra: extraInput};
 }
 
@@ -90,14 +90,13 @@ export function handleGameKeymaps(input: GameInput): GameInputState {
     return result;
 }
 
-export function handleExtraKeymaps(input: GameInput, menu: Menu): ExtraInputState {
+export function handleExtraKeymaps(input: GameInput): ExtraInputState {
     const result: ExtraInputState = {};
     const alt = input.isDown('AltLeft'); // NOTE: Alt is used for debug keymaps.
     const shift = input.isDown('ShiftLeft'); // NOTE: Shift is used for alternative actions.
 
-    if (input.isPressed('KeyF') || menu.fullscreenToggleExpected) {
+    if (input.isPressed('KeyF')) {
         result.toggleFullscreen = 1;
-        menu.fullscreenToggleExpected = false; // Reset the flag after processing.
     }
 
     if (input.isPressed('Escape')) {
@@ -143,7 +142,7 @@ export function handleExtraKeymaps(input: GameInput, menu: Menu): ExtraInputStat
         if (input.isDown('MouseMiddle')) {
             result.cameraManualOffset = input.getMouseDelta();
         } else if (input.isDown('MouseLeft')) {
-            // NOTE: Same as MouseMiddle but for touchpad. Nagating to make it feel like
+            // NOTE: Same as MouseMiddle but for touchpad. Negating to make it feel like
             // dragging the camera.
             result.cameraManualOffset = input.getMouseDelta().negate();
         }
@@ -171,7 +170,7 @@ export function processInput(
     renderer: Renderer,
     state: GameState,
     manager: EntityManager,
-    menu: Menu,
+    menu: MenuController,
     devUI: DevUI,
     storage: GameStorage,
     events: EventQueue,
@@ -202,7 +201,7 @@ export function processInput(
 
     if (input.extra.triggerSingleUpdate) {
         if (menu.visible) {
-            menu.hide();
+            menu.selectPage(null);
         }
         state.debugUpdateTriggered = true;
     }
