@@ -1,4 +1,4 @@
-import {css, CustomElement, ReactiveElement, ui} from '#/ui/core';
+import {css, CustomElement, ReactiveElement, oldUI} from '#/ui/core';
 
 type NumberOnChangeCallback = (value: number) => void;
 
@@ -11,12 +11,12 @@ type PickType<TSource extends object, TType> = Pick<TSource, PickTypeKeys<TSourc
 @CustomElement('dev-number-input')
 export class DevNumberInput extends ReactiveElement {
     private static idCounter = 0;
-    private readonly input = ui.input({
+    private readonly input = oldUI.input({
         id: 'number-input-' + DevNumberInput.idCounter++,
         class: 'number-input',
         type: 'number',
     });
-    private readonly label = ui.label({for: this.input.id}, 'Value');
+    private readonly label = oldUI.label({for: this.input.id}, 'Value');
     // TODO: Why duplicate here and in label?
     private name?: string;
     private min!: number;
@@ -48,7 +48,7 @@ export class DevNumberInput extends ReactiveElement {
     }
 
     protected override render(): HTMLElement {
-        return ui.div({class: 'number-input-container'}, this.label, this.input);
+        return oldUI.div({class: 'number-input-container'}, this.label, this.input);
     }
 
     protected override styles(): HTMLStyleElement {
@@ -142,7 +142,7 @@ export class DevNumberInput extends ReactiveElement {
 
 @CustomElement('dev-button')
 export class DevButton extends ReactiveElement {
-    private readonly button = ui.button({
+    private readonly button = oldUI.button({
         class: 'button',
     });
 
@@ -177,12 +177,12 @@ export class DevButton extends ReactiveElement {
 @CustomElement('dev-file-picker')
 export class DevFilePicker extends ReactiveElement {
     private static idCounter = 0;
-    private readonly input = ui.input({
+    private readonly input = oldUI.input({
         id: 'file-input-' + DevFilePicker.idCounter++,
         type: 'file',
     });
     private placeholder = 'Select file';
-    private readonly label = ui.label({for: this.input.id, class: 'button'}, this.placeholder);
+    private readonly label = oldUI.label({for: this.input.id, class: 'button'}, this.placeholder);
 
     protected override render(): HTMLElement[] {
         return [this.input, this.label];

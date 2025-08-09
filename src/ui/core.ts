@@ -144,7 +144,8 @@ interface HTMLLabelElementOptions extends HTMLElementOptions {
     for?: string;
 }
 
-export const ui = {
+/** @deprecated use UIContext instead */
+export const oldUI = {
     div(options?: HTMLElementOptions, ...children: HTMLElementChildren): HTMLElement {
         return htmlElement('div', options, children);
     },
@@ -671,6 +672,7 @@ export class UIComponentElement extends HTMLElement {
     }
 }
 
+/** @deprecated use UIComponent instead */
 export abstract class ReactiveElement extends HTMLElement {
     readonly shadowRoot: null = null;
     protected rendered = false;

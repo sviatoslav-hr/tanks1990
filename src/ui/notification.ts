@@ -1,4 +1,4 @@
-import {css, CustomElement, HTMLElementOptions, ReactiveElement, ui} from '#/ui/core';
+import {css, CustomElement, HTMLElementOptions, ReactiveElement, oldUI} from '#/ui/core';
 
 @CustomElement('notification-bar')
 class NotificationBar extends ReactiveElement {
@@ -9,7 +9,7 @@ class NotificationBar extends ReactiveElement {
 
     protected render(): HTMLElement[] {
         return [
-            (this.container = ui.div({
+            (this.container = oldUI.div({
                 class: 'notification-bar',
                 id: 'notification-bar',
             })),
@@ -80,9 +80,9 @@ class NotificationItem extends ReactiveElement {
 
     protected render(): HTMLElement[] {
         return [
-            (this.container = ui.div(
+            (this.container = oldUI.div(
                 {class: ['notification-item', 'notification-item--' + this.kind]},
-                ui.div({class: 'notification-text'}, this.message),
+                oldUI.div({class: 'notification-text'}, this.message),
             )),
         ];
     }

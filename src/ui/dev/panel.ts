@@ -1,5 +1,5 @@
 import {DevButton, DevFilePicker, DevNumberInput} from '#/ui/dev';
-import {css, CustomElement, HTMLElementOptions, ReactiveElement, ui} from '#/ui/core';
+import {css, CustomElement, HTMLElementOptions, ReactiveElement, oldUI} from '#/ui/core';
 
 @CustomElement('dev-panel')
 export class DevPanel extends ReactiveElement {
@@ -16,16 +16,16 @@ export class DevPanel extends ReactiveElement {
 
     protected override render(): HTMLElement[] {
         return [
-            ui.div(
+            oldUI.div(
                 {class: this.parentPanel ? 'dev-panel' : ['dev-panel', 'root-panel']},
-                ui.div(
+                oldUI.div(
                     {
                         class: ['dev-panel-trigger'],
                         onClick: () => this.toggleContainerVisibility(),
                     },
                     this.name ?? 'Dev Panel',
                 ),
-                ui.div({class: ['dev-panel-container']}, ...this.panelChildren),
+                oldUI.div({class: ['dev-panel-container']}, ...this.panelChildren),
             ),
         ];
     }

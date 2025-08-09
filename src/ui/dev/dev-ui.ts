@@ -4,7 +4,7 @@ import {Renderer} from '#/renderer';
 import {GameState} from '#/state';
 import {exportAsJson, GameStorage} from '#/storage';
 import {DevPanel, FPSMonitor} from '#/ui/dev';
-import {css, CustomElement, ReactiveElement, ui} from '#/ui/core';
+import {css, CustomElement, ReactiveElement, oldUI} from '#/ui/core';
 import {notify, notifyError} from '#/ui/notification';
 
 export function createDevUI(
@@ -108,7 +108,7 @@ export class DevUI extends ReactiveElement {
     readonly fpsMonitor = new FPSMonitor({class: 'fps-monitor'});
 
     protected override render(): HTMLElement[] {
-        return [ui.div({class: ['dev-ui']}, this.fpsMonitor, this.devPanel)];
+        return [oldUI.div({class: ['dev-ui']}, this.fpsMonitor, this.devPanel)];
     }
 
     protected override styles(): HTMLStyleElement {
