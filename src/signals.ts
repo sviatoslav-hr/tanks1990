@@ -43,7 +43,14 @@ export function signal<T>(initialValue?: T): Signal<typeof initialValue> {
         subscribers.add(subscriber);
     }
 
-    const s = {get, set, value: initialValue, update, subscribe, [SIGNAL_BRAND]: true as const};
+    const s = {
+        get,
+        set,
+        value: initialValue,
+        update,
+        subscribe,
+        [SIGNAL_BRAND]: true as const,
+    };
     return s;
 }
 

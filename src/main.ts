@@ -19,9 +19,9 @@ import {Camera} from '#/renderer/camera';
 import {SoundManager} from '#/sound';
 import {GameState, justCompletedGame} from '#/state';
 import {GameStorage} from '#/storage';
-import {UIContext} from '#/ui/core';
+import {uiGlobal} from '#/ui/core';
 import {createDevUI, DevUI} from '#/ui/dev';
-import {getNotificationBar, notify} from '#/ui/notification';
+import {createNotificationBar, notify} from '#/ui/notification';
 import {World} from '#/world/world';
 
 main();
@@ -29,7 +29,8 @@ main();
 function main(): void {
     const appElement = document.getElementById(APP_ELEMENT_ID);
     assert(appElement, 'No app element found');
-    appElement.append(getNotificationBar());
+
+    createNotificationBar(uiGlobal, appElement);
 
     const storage = new GameStorage(localStorage);
     __DEV_MODE = storage.getBool(DEV_MODE_KEY) ?? false;
@@ -49,13 +50,12 @@ function main(): void {
     const config = new GameConfig(storage);
     config.load();
 
-    const ui = UIContext.init();
     const menu = new MenuBridge(eventQueue);
     {
         menu.volume.set(sounds.volume);
         menu.volume.subscribe((value) => sounds.updateVolume(value));
-        const menuInstance = Menu(ui, menu.props);
-        menuInstance.attachTo(appElement);
+        const menuInstance = Menu(uiGlobal, menu.props);
+        menuInstance.appendTo(appElement);
     }
 
     const devUI = createDevUI(gameState, manager, renderer, storage);

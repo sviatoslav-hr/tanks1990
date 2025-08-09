@@ -112,10 +112,6 @@ export const Menu = UIComponent('menu', (ui, props: MenuProps) => {
                         children: 'Controls',
                     }),
                     Button(ui, {
-                        onClick: () => page.set('controls'),
-                        children: 'Controls',
-                    }),
-                    Button(ui, {
                         onClick: () => page.set('settings'),
                         children: 'Settings',
                     }),

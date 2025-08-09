@@ -1,22 +1,86 @@
-import {css, CustomElement, HTMLElementOptions, ReactiveElement, oldUI} from '#/ui/core';
+import {computed, ReadableSignal, signal} from '#/signals';
+import {UIComponent, UIContext} from '#/ui/core';
 
-@CustomElement('notification-bar')
-class NotificationBar extends ReactiveElement {
-    container: HTMLElement | null = null;
-    constructor(options?: HTMLElementOptions) {
-        super(options);
-    }
+interface NotifyOptions {
+    timeoutMs?: number;
+}
 
-    protected render(): HTMLElement[] {
-        return [
-            (this.container = oldUI.div({
-                class: 'notification-bar',
-                id: 'notification-bar',
-            })),
-        ];
+// TODO: Provide a way to pass an AbortController to the notification
+export function notify(message: string, options?: NotifyOptions): void {
+    message = normalizeMessage(message);
+    const timeoutMs = options?.timeoutMs ?? 2000;
+    appendNotification({message, kind: 'info', timeoutMs});
+}
+
+export function notifyWarning(message: string, options?: NotifyOptions): void {
+    message = normalizeMessage(message);
+    const timeoutMs = options?.timeoutMs ?? 3000;
+    appendNotification({message, kind: 'warning', timeoutMs});
+}
+
+// TODO: When there is too many spamming errors, we should stop showing them individually
+// and instead show a single error message with a count of how many errors happened
+export function notifyError(message: string, options?: NotifyOptions): void {
+    message = normalizeMessage(message);
+    const timeoutMs = options?.timeoutMs ?? 5000;
+    appendNotification({message, kind: 'error', timeoutMs});
+}
+
+function normalizeMessage(message: string): string {
+    const newLineIndex = message.indexOf('\n');
+    if (newLineIndex !== -1) {
+        message = message.substring(0, newLineIndex);
     }
-    protected styles(): HTMLStyleElement | null {
-        return css`
+    if (message.length > 100) {
+        message = message.substring(0, 100) + '...';
+    }
+    return message;
+}
+
+type NotificationKind = 'info' | 'warning' | 'error';
+
+interface NotificationOptions {
+    message: string;
+    kind: NotificationKind;
+    timeoutMs?: number;
+}
+
+interface Notification extends NotificationOptions {
+    hidden: boolean;
+    createdAt: number;
+}
+
+const notifications = signal<Notification[]>([]);
+const FADE_OUT_DURATION_MS = 500;
+
+function appendNotification(options: NotificationOptions): void {
+    const notification = {...options, hidden: false, createdAt: Date.now()};
+    notifications.update((current) => [...current, notification].filter((n) => !n.hidden));
+}
+
+export function createNotificationBar(ui: UIContext, parent: Element) {
+    const bar = NotificationBar(ui, {
+        notifications,
+    });
+    bar.appendTo(parent);
+}
+interface NotificationBarProps {
+    notifications: ReadableSignal<Notification[]>;
+}
+
+const NotificationBar = UIComponent('notification-bar', (ui, props: NotificationBarProps) => {
+    const {notifications} = props;
+    const css = ui.css;
+    return [
+        ui.div({class: 'notification-bar'}).children(
+            computed(() => {
+                const ns = notifications.get();
+                return ns.map((notification) => {
+                    return NotificationItem(ui, {notification});
+                });
+            }, [notifications]),
+        ),
+        css`
             .notification-bar {
                 position: fixed;
                 top: 0;
@@ -37,61 +101,60 @@ class NotificationBar extends ReactiveElement {
             .notification-bar:empty {
                 display: none;
             }
-        `;
-    }
+            .notification-bar > * {
+                transition: all ${FADE_OUT_DURATION_MS.toString()}ms ease-in-out;
+            }
+        `,
+    ];
+});
 
-    addNotification(message: string, kind: NotificationKind, timeoutMs = 2000, safe = true): void {
-        if (this.container) {
-            const notificationItem = new NotificationItem({message, kind, timeoutMs});
-            this.container?.append(notificationItem);
-        } else if (safe) {
-            setTimeout(() => {
-                this.addNotification(message, kind, timeoutMs, false);
-            }, 100);
+interface NotificationItemProps {
+    notification: Notification;
+}
+
+const NotificationItem = UIComponent('notification-item', (ui, props: NotificationItemProps) => {
+    const css = ui.css;
+    const {notification} = props;
+    const {message, kind, timeoutMs} = notification;
+    const aliveMs = Date.now() - notification.createdAt;
+    const fading = signal(false);
+    const hidden = signal(notification.hidden);
+    if (timeoutMs && !notification.hidden) {
+        if (aliveMs > timeoutMs && aliveMs < timeoutMs + FADE_OUT_DURATION_MS) {
+            fading.set(true);
+        } else if (aliveMs >= timeoutMs + FADE_OUT_DURATION_MS) {
+            hidden.set(true);
         }
-    }
-}
-
-type NotificationKind = 'info' | 'warning' | 'error';
-
-interface NotificationItemOptions extends HTMLElementOptions {
-    timeoutMs?: number;
-    message: string;
-    kind: NotificationKind;
-}
-
-@CustomElement('notification-item')
-class NotificationItem extends ReactiveElement {
-    private readonly message: string;
-    private readonly kind: NotificationKind;
-    private container: HTMLElement | null = null;
-    private readonly fadeOutMs = 500;
-
-    constructor(options: NotificationItemOptions) {
-        super(options);
-        this.message = options.message;
-        this.kind = options.kind;
-        const timeoutMs = options.timeoutMs ?? 3000;
-        setTimeout(() => {
-            this.container?.classList.add('notification-item--hidden');
-            setTimeout(() => this.remove(), this.fadeOutMs);
-        }, timeoutMs);
+        if (!hidden.get() && !fading.get()) {
+            setTimeout(() => {
+                fading.set(true);
+                const aliveMs = Date.now() - notification.createdAt;
+                setTimeout(() => hidden.set(true), timeoutMs + FADE_OUT_DURATION_MS - aliveMs);
+            }, timeoutMs - aliveMs);
+        } else if (fading.get()) {
+            setTimeout(() => hidden.set(true), timeoutMs + FADE_OUT_DURATION_MS - aliveMs);
+        }
+        hidden.subscribe(() => (notification.hidden = true));
     }
 
-    protected render(): HTMLElement[] {
-        return [
-            (this.container = oldUI.div(
-                {class: ['notification-item', 'notification-item--' + this.kind]},
-                oldUI.div({class: 'notification-text'}, this.message),
-            )),
-        ];
-    }
-
-    protected styles(): HTMLStyleElement | null {
-        return css`
+    return [
+        ui
+            .div({
+                class: computed(
+                    () => [
+                        'notification-item',
+                        'notification-item--' + kind,
+                        fading.get() ? 'notification-item--fading' : '',
+                        hidden.get() ? 'notification-item--hidden' : '',
+                    ],
+                    [fading, hidden],
+                ),
+            })
+            .children(ui.div({class: 'notification-text'}).children(message)),
+        css`
             .notification-item {
                 color: white;
-                transition: all ${this.fadeOutMs.toString()}ms ease-in-out;
+                transition: all ${FADE_OUT_DURATION_MS.toString()}ms ease-in-out;
             }
             .notification-item--info {
                 color: white;
@@ -102,53 +165,13 @@ class NotificationItem extends ReactiveElement {
             .notification-item--error {
                 color: red;
             }
-            .notification-item--hidden {
+            .notification-item--fading {
                 opacity: 0;
                 transform: translateY(-100%);
             }
-        `;
-    }
-}
-
-// NOTE: Keep it null for tests in Node.js.
-const notificationsBar = new NotificationBar();
-
-export function getNotificationBar() {
-    return notificationsBar;
-}
-
-interface NotificationOptions {
-    timeoutMs?: number;
-}
-
-// TODO: Provide a way to pass an AbortController to the notification
-export function notify(message: string, options?: NotificationOptions): void {
-    message = normalizeMessage(message);
-    const timeoutMs = options?.timeoutMs ?? 2000;
-    notificationsBar?.addNotification(message, 'info', timeoutMs);
-}
-
-export function notifyWarning(message: string, options?: NotificationOptions): void {
-    message = normalizeMessage(message);
-    const timeoutMs = options?.timeoutMs ?? 3000;
-    notificationsBar?.addNotification(message, 'warning', timeoutMs);
-}
-
-// TODO: When there is too many spamming errors, we should stop showing them individually
-// and instead show a single error message with a count of how many errors happened
-export function notifyError(message: string, options?: NotificationOptions): void {
-    message = normalizeMessage(message);
-    const timeoutMs = options?.timeoutMs ?? 5000;
-    notificationsBar?.addNotification(message, 'error', timeoutMs);
-}
-
-function normalizeMessage(message: string): string {
-    const newLineIndex = message.indexOf('\n');
-    if (newLineIndex !== -1) {
-        message = message.substring(0, newLineIndex);
-    }
-    if (message.length > 100) {
-        message = message.substring(0, 100) + '...';
-    }
-    return message;
-}
+            .notification-item--hidden {
+                display: none;
+            }
+        `,
+    ];
+});
