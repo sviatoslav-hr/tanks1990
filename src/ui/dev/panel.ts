@@ -17,15 +17,15 @@ export class DevPanel extends ReactiveElement {
     protected override render(): HTMLElement[] {
         return [
             ui.div(
-                {className: this.parentPanel ? 'dev-panel' : ['dev-panel', 'root-panel']},
+                {class: this.parentPanel ? 'dev-panel' : ['dev-panel', 'root-panel']},
                 ui.div(
                     {
-                        className: ['dev-panel-trigger'],
+                        class: ['dev-panel-trigger'],
                         onClick: () => this.toggleContainerVisibility(),
                     },
                     this.name ?? 'Dev Panel',
                 ),
-                ui.div({className: ['dev-panel-container']}, ...this.panelChildren),
+                ui.div({class: ['dev-panel-container']}, ...this.panelChildren),
             ),
         ];
     }

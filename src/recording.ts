@@ -1,7 +1,7 @@
 import type {EntityManager} from '#/entity/manager';
 import type {GameInputState} from '#/input-handler';
 import {random} from '#/math/rng';
-import {MenuBridge} from '#/menu2';
+import {MenuBridge} from '#/menu';
 import type {GameState} from '#/state';
 import {notify} from '#/ui/notification';
 
@@ -101,7 +101,7 @@ export function playRecentRecording(
         random.reset(state.recordingInfo.seed);
         state.start();
         manager.init();
-        menu.page.set(null);
+        menu.view.set(null);
     }, 0);
 }
 
@@ -113,7 +113,7 @@ export function exitRecording(state: GameState, menu: MenuBridge): void {
     state.recording.playing = false;
     state.recording.active = false;
     state.init();
-    menu.page.set('home');
+    menu.view.set('main');
     notify('Recording playback stopped');
 }
 

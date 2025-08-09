@@ -12,7 +12,7 @@ import {handleGameEvents as processGameEvents} from '#/events-handler';
 import {GameInput} from '#/input';
 import {handleKeymaps, processInput} from '#/input-handler';
 import {Duration} from '#/math/duration';
-import {MenuBridge, MenuComponent} from '#/menu2';
+import {MenuBridge, Menu} from '#/menu';
 import {maybeRecordInput} from '#/recording';
 import {Renderer} from '#/renderer';
 import {Camera} from '#/renderer/camera';
@@ -50,11 +50,11 @@ function main(): void {
     config.load();
 
     const ui = UIContext.init();
-    const menu = new MenuBridge();
+    const menu = new MenuBridge(eventQueue);
     {
         menu.volume.set(sounds.volume);
         menu.volume.subscribe((value) => sounds.updateVolume(value));
-        const menuInstance = MenuComponent(ui, menu.props);
+        const menuInstance = Menu(ui, menu.props);
         menuInstance.attachTo(appElement);
     }
 

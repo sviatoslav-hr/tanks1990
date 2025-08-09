@@ -1,486 +1,262 @@
-import {EventQueue} from '#/events';
-import {SoundManager} from '#/sound';
-import {CustomElement, html, ui} from '#/ui/core';
+import {computed, type Signal, signal} from '#/signals';
+import {Button, Slider} from '#/ui/components';
+import {UIComponent, type UIContext} from '#/ui/core';
+import {type EventQueue} from '#/events';
 
-// TODO: refactor menu into ReactiveElement
-// TODO: Detach SoundManager from Menu
-export function initMenu(events: EventQueue, sounds: SoundManager): Menu {
-    const menu = new Menu(sounds.storedMuted);
-    menu.addButton(
-        'NEW GAME',
-        () => {
-            events.push({type: 'game-control', action: 'start'});
-        },
-        [MenuState.START],
-    );
-    menu.addButton(
-        'RESUME',
-        () => {
-            events.push({type: 'game-control', action: 'resume'});
-        },
-        [MenuState.PAUSE],
-    );
-    menu.addButton(
-        'RESTART',
-        () => {
-            events.push({type: 'game-control', action: 'start'});
-        },
-        [MenuState.PAUSE, MenuState.DEAD, MenuState.COMPLETED],
-    );
-    menu.addButton(
-        'MAIN MENU',
-        () => {
-            events.push({type: 'game-control', action: 'init'});
-        },
-        [MenuState.PAUSE, MenuState.DEAD, MenuState.COMPLETED],
-    );
-    const optionsPage = new MenuPage('OPTIONS', menu);
-    {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'mx-auto w-fit p-4';
-        const MAX_VOLUME = 50;
-        const initValue = Math.floor(sounds.volume * MAX_VOLUME);
-        const slider = new Slider({
-            name: 'volume',
-            label: 'Volume',
-            max: MAX_VOLUME,
-            initValue,
-        });
-        slider.onChange((value) => sounds.updateVolume(value / MAX_VOLUME));
-        wrapper.append(slider);
-        optionsPage.setContent(wrapper);
-        menu.onMuteClicked = (muted: boolean) => {
-            if (muted) sounds.suspend();
-            else sounds.resume();
-        };
-    }
-    menu.addPage(optionsPage);
-    menu.addButton('OPTIONS', () => {
-        optionsPage.show();
-        menu.hide();
-    });
-    const controlsPage = new MenuPage('CONTROLS', menu);
-    controlsPage.setContent(html`
-        <ul class="mx-auto w-fit hints">
-            <li>Use <code>W</code> <code>S</code> <code>A</code> <code>D</code> to move</li>
-            <li>Press <code>Space</code> to shoot</li>
-            <li><code>P</code> to pause</li>
-            <li><code>\`</code> to toggle FPS</li>
-            <li><code>F</code> to toggle Fullscreen</li>
-        </ul>
-    `);
-    menu.addPage(controlsPage);
-    menu.addButton('CONTROLS', () => {
-        controlsPage.show();
-        menu.hide();
-    });
-    return menu;
-}
+export type MenuView = 'main' | 'pause' | 'dead' | 'completed';
+type MenuPage = 'settings' | 'controls';
 
-export enum MenuState {
-    HIDDEN = 'hidden',
-    START = 'start',
-    PAUSE = 'pause',
-    DEAD = 'dead',
-    COMPLETED = 'completed',
-}
+const VOLUME_MIN = 0;
+const VOLUME_MAX = 50;
+const VOLUME_DEFAULT = 25;
+const VOLUME_CHANGE_STEP = 1;
 
-type MenuClickCallback = (button: MenuButton) => void;
+export class MenuBridge {
+    view = signal<MenuView | null>('main');
+    volume = signal(VOLUME_DEFAULT);
 
-const DEFAULT_MENU_STATES = [MenuState.START, MenuState.PAUSE, MenuState.DEAD, MenuState.COMPLETED];
+    private events: EventQueue;
 
-@CustomElement('game-menu-button')
-class MenuButton extends HTMLElement {
-    private buttonEl: HTMLButtonElement;
-    constructor(
-        text: string,
-        onClick: MenuClickCallback,
-        public states: MenuState[] = DEFAULT_MENU_STATES,
-    ) {
-        super();
-        this.buttonEl = document.createElement('button');
-        this.append(this.buttonEl);
-        this.buttonEl.append(text);
-        this.buttonEl.classList.add('button');
-        this.buttonEl.tabIndex = 1;
-        this.buttonEl.addEventListener('click', () => onClick(this));
-    }
-
-    focus(options?: FocusOptions): void {
-        this.buttonEl.focus(options);
-    }
-
-    blur(): void {
-        this.buttonEl.blur();
-    }
-
-    setDisabled(disabled: boolean): void {
-        this.buttonEl.disabled = disabled;
-    }
-}
-
-// TODO: update width on window resize
-@CustomElement('game-menu-page')
-export class MenuPage extends HTMLElement {
-    private contentWrapper: HTMLDivElement;
-    private container: HTMLDivElement;
-
-    constructor(
-        title: string,
-        private readonly menu: Menu,
-    ) {
-        super();
-        this.initStyles();
-        this.hide();
-        this.append((this.container = this.createContainer()));
-        this.container.append(this.createCloseButton());
-        this.container.append(this.createTitle(title));
-        this.container.append((this.contentWrapper = this.createContentWrapper()));
+    constructor(events: EventQueue) {
+        this.events = events;
     }
 
     get visible(): boolean {
-        return this.style.display !== 'none';
+        return this.view.get() !== null;
     }
 
-    show(): void {
-        this.style.display = 'block';
-    }
-
-    hide(): void {
-        this.style.display = 'none';
-    }
-
-    setContent(html: string | HTMLElement): void {
-        if (typeof html === 'string') {
-            this.contentWrapper.innerHTML = html;
-        } else {
-            this.contentWrapper.replaceChildren(html);
-        }
-    }
-
-    private initStyles(): void {
-        this.classList.add('bg-transparent-black');
-        this.style.position = 'absolute';
-        this.style.width = '100%';
-        this.style.height = '100%';
-        this.style.top = '50%';
-        this.style.left = '50%';
-        this.style.padding = '16px';
-        this.style.transform = 'translate(-50%, -50%)';
-        this.style.zIndex = '999';
-    }
-
-    private createContainer(): HTMLDivElement {
-        const div = document.createElement('div');
-        div.classList.add('menu');
-        return div;
-    }
-
-    private createContentWrapper(): HTMLDivElement {
-        return document.createElement('div');
-    }
-
-    private createTitle(text: string): HTMLElement {
-        const element = document.createElement('h4');
-        element.textContent = text;
-        element.style.textAlign = 'center';
-        element.style.fontSize = '24px';
-        element.style.marginBottom = '16px';
-        return element;
-    }
-
-    private createCloseButton(): HTMLButtonElement {
-        const closeButton = document.createElement('button');
-        closeButton.style.position = 'absolute';
-        closeButton.style.top = '0';
-        closeButton.style.left = '-2rem';
-        closeButton.style.transform = 'translate(-100%, 0)';
-        closeButton.textContent = 'Back';
-        closeButton.classList.add('button');
-        closeButton.onclick = () => {
-            this.hide();
-            this.menu.restore();
+    get props(): MenuProps {
+        const onPlay = () => {
+            switch (this.view.get()) {
+                case 'main':
+                    this.view.set(null);
+                    this.events.push({type: 'game-control', action: 'start'});
+                    break;
+                case 'pause':
+                    this.view.set(null);
+                    this.events.push({type: 'game-control', action: 'resume'});
+                    break;
+                case 'dead':
+                    this.view.set(null);
+                    this.events.push({type: 'game-control', action: 'start'});
+                    break;
+                case 'completed':
+                    this.view.set(null);
+                    this.events.push({type: 'game-control', action: 'start'});
+                    break;
+                case null:
+                    assert(false, 'MenuBridge.onPlay called when view is null');
+            }
         };
-        return closeButton;
+        return {view: this.view, volume: this.volume, onPlay};
     }
 }
 
-@CustomElement('game-menu')
-export class Menu extends HTMLElement {
-    private state?: MenuState;
-    private prevState?: MenuState;
-    private heading: HTMLHeadingElement;
-    private mainContainer: HTMLDivElement;
-    private buttonContainer: HTMLElement;
-    private buttons: MenuButton[] = [];
-    private pages: MenuPage[] = [];
-    readonly fullscreenButton: HTMLButtonElement;
-    readonly muteButton: HTMLButtonElement;
-    onMuteClicked: (muted: boolean) => void = () => {};
-    fullscreenToggleExpected = false;
-
-    constructor(defaultMuted: boolean) {
-        super();
-        this.classList.add('block');
-
-        this.mainContainer = document.createElement('div');
-        this.append(this.mainContainer);
-        this.mainContainer.classList.add('menu');
-
-        this.heading = document.createElement('h2');
-        this.mainContainer.append(this.heading);
-
-        this.buttonContainer = document.createElement('div');
-        this.buttonContainer.classList.add('flex-col', 'w-full');
-        this.buttonContainer.append(...this.buttons);
-        this.mainContainer.append(this.buttonContainer);
-
-        // TODO: This is bad, this shouldn't be handled in the menu.
-        {
-            this.fullscreenButton = ui.button(
-                {
-                    className: 'button--fullscreen',
-                    style: {
-                        position: 'fixed',
-                        top: '1rem',
-                        right: '1rem',
-                    },
-                    onClick: (e) => {
-                        e.preventDefault(); // NOTE: Prevent accidental movement of the camera
-                        this.fullscreenToggleExpected = !this.fullscreenToggleExpected;
-                        this.fullscreenButton.blur();
-                    },
-                },
-                '⛶',
-            );
-            this.append(this.fullscreenButton);
-        }
-
-        {
-            const volumeText = '🔊';
-            const mutedText = '🔇';
-            let muted = defaultMuted;
-            this.muteButton = ui.button(
-                {
-                    className: 'button--fullscreen',
-                    style: {
-                        position: 'fixed',
-                        top: '1rem',
-                        right: '4rem',
-                        fontSize: '1.5rem',
-                    },
-                    onClick: (e) => {
-                        e.preventDefault();
-                        muted = !muted;
-                        this.muteButton.textContent = muted ? mutedText : volumeText;
-                        this.onMuteClicked(muted);
-                        this.muteButton.blur();
-                    },
-                },
-                muted ? mutedText : volumeText,
-            );
-            this.append(this.muteButton);
-        }
-    }
-
-    get isMain(): boolean {
-        return this.state === MenuState.START;
-    }
-
-    get dead(): boolean {
-        return this.state === MenuState.DEAD;
-    }
-
-    get visible(): boolean {
-        return !!this.state && this.state !== MenuState.HIDDEN;
-    }
-
-    get paused(): boolean {
-        return this.state === MenuState.PAUSE;
-    }
-
-    showMain(): void {
-        this.update(MenuState.START);
-    }
-
-    hide(): void {
-        this.update(MenuState.HIDDEN);
-    }
-
-    showPause(): void {
-        this.update(MenuState.PAUSE);
-    }
-
-    showDead(): void {
-        this.update(MenuState.DEAD);
-        this.setDisabled(true);
-        setTimeout(() => this.setDisabled(false), 300);
-    }
-
-    showCompleted(): void {
-        this.update(MenuState.COMPLETED);
-        this.setDisabled(true);
-        setTimeout(() => this.setDisabled(false), 300);
-    }
-
-    restore(): void {
-        if (this.state === MenuState.HIDDEN && this.prevState) {
-            this.update(this.prevState);
-        }
-    }
-
-    addButton(text: string, onClick: MenuClickCallback, states?: MenuState[]): void {
-        const button = new MenuButton(text, this.createButtonCallback(onClick), states);
-        this.buttons.push(button);
-        this.buttonContainer.append(button);
-    }
-
-    addPage(page: MenuPage): void {
-        this.pages.push(page);
-        this.append(page);
-    }
-
-    resize(width: number, height: number): void {
-        if (!width || !height) {
-            logger.error(
-                `Expected width and height to be non-zero, got width=${width}, height=${height}`,
-            );
-            return;
-        }
-        this.style.width = `${width}px`;
-        this.style.height = `${height}px`;
-    }
-
-    private setDisabled(disabled: boolean): void {
-        let focused = false;
-        for (const btn of this.buttons) {
-            btn.setDisabled(disabled);
-            if (!disabled && !focused && !btn.hidden) {
-                btn.focus();
-                focused = true;
-            }
-        }
-    }
-
-    private update(state: MenuState): void {
-        if (this.state === state) {
-            return;
-        }
-        const prevState = this.state;
-        this.state = state;
-        if (state === MenuState.HIDDEN) {
-            this.setMainVisibility(false);
-            if (prevState !== MenuState.HIDDEN) {
-                this.prevState = prevState;
-            }
-            return;
-        } else {
-            this.setMainVisibility(true);
-        }
-        this.setHeadingByState(state);
-        let focused = false;
-        for (const button of this.buttons) {
-            button.hidden = !button.states.includes(state);
-            if (!focused && !button.hidden) {
-                focused = true;
-                button.focus();
-            }
-        }
-    }
-
-    private setMainVisibility(visible: boolean): void {
-        if (visible) {
-            this.mainContainer.hidden = false;
-            this.classList.add('bg-transparent-black');
-            this.classList.add('fade-in');
-            this.fullscreenButton.hidden = false;
-            this.muteButton.hidden = false;
-        } else {
-            this.mainContainer.hidden = true;
-            this.classList.remove('bg-transparent-black');
-            this.classList.remove('fade-in');
-            this.fullscreenButton.hidden = true;
-            this.muteButton.hidden = true;
-        }
-    }
-
-    private createButtonCallback(callback: MenuClickCallback): MenuClickCallback {
-        return (button) => {
-            if (this.state === MenuState.HIDDEN) {
-                button.blur();
-                this.hide();
-            }
-            callback(button);
-        };
-    }
-
-    private setHeadingByState(state: MenuState): void {
-        if (state === MenuState.DEAD) {
-            this.heading.classList.add('text-red');
-        } else {
-            this.heading.classList.remove('text-red');
-        }
-        switch (state) {
-            case MenuState.HIDDEN:
-                return;
-            case MenuState.START:
-                return this.setHeading('Panzerlock');
-            case MenuState.PAUSE:
-                return this.setHeading('Paused');
-            case MenuState.DEAD:
-                return this.setHeading('Game Over');
-            case MenuState.COMPLETED:
-                return this.setHeading('You won!');
-        }
-    }
-
-    private setHeading(text: string): void {
-        this.heading.textContent = text;
-    }
+interface MenuProps {
+    view: Signal<MenuView | null>;
+    volume: Signal<number>;
+    onPlay: () => void;
 }
 
-interface SliderConfig {
-    name: string;
-    label?: string;
-    min?: number;
-    max?: number;
-    step?: number;
-    initValue?: number;
-}
-
-@CustomElement('game-slider')
-export class Slider extends HTMLElement {
-    static index = 0;
-    private index: number;
-    private input: HTMLInputElement;
-
-    constructor({name, label = name, min = 0, max = 50, step = 1, initValue = 0}: SliderConfig) {
-        super();
-        const labelElement = document.createElement('label');
-        labelElement.textContent = label;
-        this.index = Slider.index++;
-        const id = `slider-${this.index}`;
-        labelElement.htmlFor = id;
-        labelElement.style.marginRight = '16px';
-        this.style.display = 'flex';
-        this.style.alignItems = 'center';
-        this.style.justifyContent = 'center';
-        this.input = document.createElement('input');
-        this.input.id = id;
-        this.input.type = 'range';
-        this.input.name = name;
-        this.input.min = min.toString();
-        this.input.max = max.toString();
-        this.input.step = step.toString();
-        this.input.value = initValue.toString();
-        this.append(labelElement, this.input);
-    }
-
-    onChange(callback: ((value: number) => void) | null): void {
-        this.input.addEventListener('change', (ev) => {
-            if (ev.target === this.input) {
-                callback?.((ev.target as HTMLInputElement).valueAsNumber);
+export const Menu = UIComponent('menu', (ui, props: MenuProps) => {
+    const {volume, view, onPlay} = props;
+    const css = ui.css;
+    const page = signal<MenuPage | null>(null);
+    return [
+        ui
+            .div({
+                class: 'menu',
+                style: computed(() => {
+                    if (view.get() == null) {
+                        return {display: 'none'};
+                    }
+                    return {};
+                }, [view]),
+            })
+            .children([
+                ui.div({class: 'menu__sidebar'}).children([
+                    ui.h1().children(
+                        computed(() => {
+                            switch (view.get()) {
+                                case 'main':
+                                    return 'Main Menu';
+                                case 'pause':
+                                    return 'Paused';
+                                case 'dead':
+                                    return 'You Died';
+                                case 'completed':
+                                    return 'Game Completed';
+                                default:
+                                    return null;
+                            }
+                        }, [view]),
+                    ),
+                    Button(ui, {
+                        onClick: () => onPlay(),
+                        children: computed(() => {
+                            switch (view.get()) {
+                                case 'main':
+                                    return 'Start';
+                                case null:
+                                case 'pause':
+                                    return 'Resume';
+                                case 'dead':
+                                    return 'Restart';
+                                case 'completed':
+                                    return 'Play Again';
+                            }
+                        }, [view]),
+                    }),
+                    Button(ui, {
+                        onClick: () => page.set('controls'),
+                        children: 'Controls',
+                    }),
+                    Button(ui, {
+                        onClick: () => page.set('controls'),
+                        children: 'Controls',
+                    }),
+                    Button(ui, {
+                        onClick: () => page.set('settings'),
+                        children: 'Settings',
+                    }),
+                    computed(() => {
+                        switch (page.get()) {
+                            case null:
+                                return null;
+                            case 'controls':
+                            case 'settings':
+                                return Button(ui, {
+                                    onClick: () => page.set(null),
+                                    children: 'Go Back',
+                                });
+                        }
+                    }, [page]),
+                ]),
+                ui.div({class: 'menu__content'}).children(
+                    computed(() => {
+                        switch (page.get()) {
+                            case 'controls':
+                                return MenuControlsView(ui);
+                            case 'settings':
+                                return MenuSettingsView(ui, {volume});
+                            case null:
+                                return null;
+                        }
+                    }, [page]),
+                ),
+            ]),
+        css`
+            .menu {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background-color: var(--black-eirie-75);
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                color: white;
+                font-size: 24px;
             }
-        });
-    }
+            .menu__sidebar {
+                width: 33%;
+                height: 100%;
+                background-color: var(--red, #ff0000bf);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+            }
+            .menu__content {
+                flex-grow: 1;
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+            }
+        `,
+    ];
+});
+
+const MenuControlsView = UIComponent('menu-controls', (ui) => {
+    const css = ui.css;
+    return [
+        ui
+            .ul({class: 'menu-controls'})
+            .children([
+                ui
+                    .li()
+                    .children([
+                        'Use ',
+                        ui.code().children('W'),
+                        ' ',
+                        ui.code().children('S'),
+                        ' ',
+                        ui.code().children('A'),
+                        ' ',
+                        ui.code().children('D'),
+                        ' to move',
+                    ]),
+                ui.li().children(['Press ', ui.code().children('Space'), ' to shoot']),
+                ui.li().children([ui.code().children('P'), ' to pause']),
+                ui.li().children([ui.code().children('F'), ' to toggle Fullscreen']),
+            ]),
+        css`
+            .menu-controls {
+                list-style: none;
+                width: fit-content;
+            }
+            li {
+                font-size: 16px;
+                padding: 4px 0;
+            }
+            code {
+                font-size: inherit;
+                padding: 0.2em 0.4em;
+                border-radius: 0.3em;
+                background-color: rgba(255, 255, 255, 0.15);
+            }
+        `,
+    ];
+});
+
+interface MenuSettingsProps {
+    volume: Signal<number>;
 }
+
+const MenuSettingsView = UIComponent('menu-settings', (ui: UIContext, props: MenuSettingsProps) => {
+    const {volume: volumeInput} = props;
+    const volume = signal(volumeInput.get() * VOLUME_MAX);
+    volume.subscribe((value) => volumeInput.set(value / VOLUME_MAX));
+
+    const css = ui.css;
+    return [
+        ui.div({class: 'menu-settings'}).children([
+            ui.h2().children('Settings'),
+            ui.p().children('Adjust game settings below:'),
+            Slider(ui, {
+                class: 'volume-slider',
+                name: 'volume',
+                label: 'Volume',
+                min: VOLUME_MIN,
+                max: VOLUME_MAX,
+                step: VOLUME_CHANGE_STEP,
+                value: volume,
+            }),
+        ]),
+        css`
+            .menu-settings {
+                margin: 0 auto;
+                width: fit-content;
+                padding: 4rem;
+            }
+            .volume-slider {
+                display: block;
+                width: 300px;
+                margin: 1rem 0;
+            }
+        `,
+    ];
+});

@@ -10,7 +10,7 @@ class NotificationBar extends ReactiveElement {
     protected render(): HTMLElement[] {
         return [
             (this.container = ui.div({
-                className: 'notification-bar',
+                class: 'notification-bar',
                 id: 'notification-bar',
             })),
         ];
@@ -81,8 +81,8 @@ class NotificationItem extends ReactiveElement {
     protected render(): HTMLElement[] {
         return [
             (this.container = ui.div(
-                {className: ['notification-item', 'notification-item--' + this.kind]},
-                ui.div({className: 'notification-text'}, this.message),
+                {class: ['notification-item', 'notification-item--' + this.kind]},
+                ui.div({class: 'notification-text'}, this.message),
             )),
         ];
     }

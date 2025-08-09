@@ -104,11 +104,11 @@ export function createDevUI(
 
 @CustomElement('dev-ui')
 export class DevUI extends ReactiveElement {
-    readonly devPanel = new DevPanel({className: 'dev-panel'});
-    readonly fpsMonitor = new FPSMonitor({className: 'fps-monitor'});
+    readonly devPanel = new DevPanel({class: 'dev-panel'});
+    readonly fpsMonitor = new FPSMonitor({class: 'fps-monitor'});
 
     protected override render(): HTMLElement[] {
-        return [ui.div({className: ['dev-ui']}, this.fpsMonitor, this.devPanel)];
+        return [ui.div({class: ['dev-ui']}, this.fpsMonitor, this.devPanel)];
     }
 
     protected override styles(): HTMLStyleElement {

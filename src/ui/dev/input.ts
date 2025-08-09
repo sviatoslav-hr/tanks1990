@@ -13,7 +13,7 @@ export class DevNumberInput extends ReactiveElement {
     private static idCounter = 0;
     private readonly input = ui.input({
         id: 'number-input-' + DevNumberInput.idCounter++,
-        className: 'number-input',
+        class: 'number-input',
         type: 'number',
     });
     private readonly label = ui.label({for: this.input.id}, 'Value');
@@ -48,7 +48,7 @@ export class DevNumberInput extends ReactiveElement {
     }
 
     protected override render(): HTMLElement {
-        return ui.div({className: 'number-input-container'}, this.label, this.input);
+        return ui.div({class: 'number-input-container'}, this.label, this.input);
     }
 
     protected override styles(): HTMLStyleElement {
@@ -143,7 +143,7 @@ export class DevNumberInput extends ReactiveElement {
 @CustomElement('dev-button')
 export class DevButton extends ReactiveElement {
     private readonly button = ui.button({
-        className: 'button',
+        class: 'button',
     });
 
     protected override render(): HTMLElement[] {
@@ -182,7 +182,7 @@ export class DevFilePicker extends ReactiveElement {
         type: 'file',
     });
     private placeholder = 'Select file';
-    private readonly label = ui.label({for: this.input.id, className: 'button'}, this.placeholder);
+    private readonly label = ui.label({for: this.input.id, class: 'button'}, this.placeholder);
 
     protected override render(): HTMLElement[] {
         return [this.input, this.label];

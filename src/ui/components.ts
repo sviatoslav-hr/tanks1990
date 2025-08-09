@@ -27,7 +27,7 @@ export const Slider = UIComponent('slider', (ui, props: SliderProps) => {
     const inputId = 'slider-volume';
 
     return [
-        ui.div({className: 'menu-slider'}).children([
+        ui.div({class: 'menu-slider'}).children([
             ui.label({for: inputId}).children(label),
             ui.input({
                 id: inputId,

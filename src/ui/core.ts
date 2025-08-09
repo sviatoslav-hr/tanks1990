@@ -112,7 +112,7 @@ export function CustomElement(tagName: string): CustomElementDecorator {
 
 export interface HTMLElementOptions {
     id?: string;
-    className?: string | string[];
+    class?: string | string[];
     onClick?: (event: MouseEvent) => void;
     style?: CSSStyleInput;
 }
@@ -227,10 +227,8 @@ function applyOptionsToElement(
     if (options?.id) {
         element.id = options.id;
     }
-    if (options?.className) {
-        const className = Array.isArray(options.className)
-            ? options.className.join(' ')
-            : options.className;
+    if (options?.class) {
+        const className = Array.isArray(options.class) ? options.class.join(' ') : options.class;
         element.className = className;
     }
 
@@ -282,8 +280,17 @@ export type CSSStyleConfig = Partial<
 
 function applyStyleToElement(element: HTMLElement, style: CSSStyleInput) {
     if (isReadableSignal(style)) {
-        setStyleConfig(element, style.get());
-        style.subscribe((s) => setStyleConfig(element, s));
+        let prevStyleConfig = style.get();
+        setStyleConfig(element, prevStyleConfig);
+        style.subscribe((newStyleConfig) => {
+            for (const key of Object.keys(prevStyleConfig) as (keyof CSSStyleConfig)[]) {
+                if (newStyleConfig[key] == null) {
+                    newStyleConfig[key] = '';
+                }
+            }
+            setStyleConfig(element, newStyleConfig);
+            prevStyleConfig = newStyleConfig;
+        });
     } else {
         setStyleConfig(element, style);
     }

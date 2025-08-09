@@ -5,7 +5,7 @@ import {SoundName, type SoundManager} from '#/sound';
 import {soundEvent} from '#/sound-event';
 import type {GameState} from '#/state';
 import {notify} from '#/ui/notification';
-import {MenuBridge} from './menu2';
+import {MenuBridge} from './menu';
 
 export function handleGameEvents(
     eventQueue: EventQueue,
@@ -66,7 +66,7 @@ function handleGameControlEvent(
     switch (event.action) {
         case 'init':
             game.init();
-            menu.page.set('home');
+            menu.view.set('main');
             return true;
 
         // TODO: For now there is no difference between "new game" and "restart"
@@ -79,7 +79,7 @@ function handleGameControlEvent(
                 game.recording.playing = false;
                 game.start();
                 manager.init();
-                menu.page.set(null);
+                menu.view.set(null);
             }
 
             soundEvent(eventQueue, 'game-started');
@@ -98,20 +98,20 @@ function handleGameControlEvent(
         case 'pause':
             game.pause();
             game.battleMusic?.pause();
-            if (!event.ignoreMenu) menu.page.set('pause');
+            if (!event.ignoreMenu) menu.view.set('pause');
             return true;
 
         case 'resume':
             game.resume();
             game.battleMusic?.resume();
-            menu.page.set(null);
+            menu.view.set(null);
             return true;
 
         case 'game-over': {
             game.battleMusic?.stop();
             const playedRecording = game.recording.playing;
             game.markDead();
-            menu.page.set('dead');
+            menu.view.set('dead');
             if (!playedRecording) {
                 soundEvent(eventQueue, 'game-over');
             }
@@ -125,7 +125,7 @@ function handleGameControlEvent(
             notify('Congratulation!', {timeoutMs});
             notify(`Completed in ${manager.player.survivedFor.toHumanString()}`, {timeoutMs});
             setTimeout(() => {
-                menu.page.set('completed');
+                menu.view.set('completed');
             }, timeoutMs);
             return true;
         }

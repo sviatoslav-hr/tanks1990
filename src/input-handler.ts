@@ -5,7 +5,7 @@ import type {EventQueue} from '#/events';
 import {GameInput} from '#/input';
 import {Direction} from '#/math/direction';
 import {Vector2Like} from '#/math/vector';
-import {MenuBridge} from '#/menu2';
+import {MenuBridge} from '#/menu';
 import {
     exitRecording,
     getNextRecordedInput,
@@ -194,6 +194,11 @@ export function processInput(
             // NOTE: Game is not in playing state, so we cannot pause/unpause.
         } else {
             const action = state.playing ? 'pause' : 'resume';
+            if (action === 'pause') {
+                menu.view.set('pause');
+            } else {
+                menu.view.set(null);
+            }
             const ignoreMenu = Boolean(input.extra.toggleGamePauseIgnoreMenu);
             events.push({type: 'game-control', action, ignoreMenu});
         }
@@ -201,7 +206,7 @@ export function processInput(
 
     if (input.extra.triggerSingleUpdate) {
         if (menu.visible) {
-            menu.page.set(null);
+            menu.view.set(null);
         }
         state.debugUpdateTriggered = true;
     }

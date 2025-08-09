@@ -85,7 +85,7 @@ export class FPSMonitor extends ReactiveElement {
     }
 
     protected override render(): HTMLElement[] {
-        return [ui.div({className: ['monitor']}, ...this.panels.map((p) => p.dom))];
+        return [ui.div({class: ['monitor']}, ...this.panels.map((p) => p.dom))];
     }
 
     protected override styles(): HTMLStyleElement {
