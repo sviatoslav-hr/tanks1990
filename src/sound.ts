@@ -24,7 +24,7 @@ export interface SoundConfig {
 export class SoundManager {
     #volume = 1 * VOLUME_SCALE;
     #mutePromise: Promise<void> | null = null;
-    readonly storedMuted: boolean; // NOTE: This is only used during initialization.
+    readonly storedMuted: boolean; // NOTE: This is only used during initialization because context.state updates asynchronously.
 
     // TODO: This should be created only after user made any action on the page.
     private readonly soundsCache = new Map<SoundName, Sound[]>();

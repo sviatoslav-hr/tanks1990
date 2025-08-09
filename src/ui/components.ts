@@ -25,10 +25,11 @@ interface SliderProps extends HTMLElementOptions {
     max?: number;
     step?: number;
     value?: Signal<number>;
+    hideValue?: boolean;
 }
 
 export const Slider = UIComponent('slider', (ui, props: SliderProps) => {
-    const {name, label = name, min = 0, max = 50, step = 1, value = signal(0)} = props;
+    const {name, label, min = 0, max = 50, step = 1, value = signal(0), hideValue = false} = props;
     const css = ui.css;
     const inputId = 'slider-volume';
 
@@ -50,7 +51,7 @@ export const Slider = UIComponent('slider', (ui, props: SliderProps) => {
                 },
             }),
 
-            ui.span({}).children(value),
+            hideValue && ui.span({}).children(value),
         ),
         css`
             .menu-slider {

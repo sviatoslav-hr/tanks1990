@@ -4,7 +4,7 @@ import {CSSStyleConfig, extendUIChildren, UIComponent, type UIContext} from '#/u
 import {GameControlAction, type EventQueue} from '#/events';
 
 export type MenuView = 'main' | 'pause' | 'dead' | 'completed';
-type MenuPage = 'settings' | 'controls';
+type MenuPage = 'controls';
 
 const VOLUME_MIN = 0;
 const VOLUME_MAX = 50;
@@ -14,6 +14,8 @@ const VOLUME_CHANGE_STEP = 1;
 export class MenuBridge {
     view = signal<MenuView | null>('main');
     volume = signal(VOLUME_DEFAULT);
+    muted = signal(false);
+    fullscreenToggleExpected = false;
 
     private events: EventQueue;
 
@@ -25,29 +27,40 @@ export class MenuBridge {
         return this.view.get() !== null;
     }
 
-    get props(): MenuProps {
+    props(): MenuProps {
         const onGameControl = (action: GameControlAction) => {
             this.events.push({type: 'game-control', action});
         };
-        return {view: this.view, volume: this.volume, onGameControl};
+        const onFullscreenToggle = () => {
+            this.fullscreenToggleExpected = true;
+        };
+        return {
+            view: this.view,
+            volume: this.volume,
+            muted: this.muted,
+            onGameControl,
+            onFullscreenToggle,
+        };
     }
 }
 
 interface MenuProps {
     view: Signal<MenuView | null>;
     volume: Signal<number>;
+    muted: Signal<boolean>;
     onGameControl: (action: GameControlAction) => void;
+    onFullscreenToggle: () => void;
 }
 
 export const Menu = UIComponent('menu', (ui, props: MenuProps) => {
-    const {volume, view, onGameControl} = props;
+    const {volume, muted, view, onGameControl, onFullscreenToggle} = props;
     const css = ui.css;
     const page = signal<MenuPage | null>(null);
 
     const menuTitle = computed(() => {
         switch (view.get()) {
             case 'main':
-                return 'Main Menu';
+                return 'PanzerLock';
             case 'pause':
                 return 'Paused';
             case 'dead':
@@ -108,16 +121,11 @@ export const Menu = UIComponent('menu', (ui, props: MenuProps) => {
                         onClick: () => page.set('controls'),
                         children: 'Controls',
                     }),
-                    MenuButton(ui, {
-                        onClick: () => page.set('settings'),
-                        children: 'Settings',
-                    }),
                     computed(() => {
                         switch (page.get()) {
                             case null:
                                 return null;
                             case 'controls':
-                            case 'settings':
                                 return MenuButton(ui, {
                                     onClick: () => page.set(null),
                                     children: 'Go Back',
@@ -130,10 +138,8 @@ export const Menu = UIComponent('menu', (ui, props: MenuProps) => {
                         switch (page.get()) {
                             case 'controls':
                                 return MenuControlsView(ui);
-                            case 'settings':
-                                return MenuSettingsView(ui, {volume});
                             case null:
-                                return null;
+                                return MenuSettingsBar(ui, {volume, muted, onFullscreenToggle});
                         }
                     }, [page]),
                 ),
@@ -173,6 +179,7 @@ export const Menu = UIComponent('menu', (ui, props: MenuProps) => {
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
+                position: relative;
             }
         `,
     ];
@@ -207,8 +214,8 @@ const MenuControlsView = UIComponent('menu-controls', (ui) => {
                 width: fit-content;
             }
             li {
-                font-size: 16px;
-                padding: 4px 0;
+                font-size: 2rem;
+                padding: 1rem 0;
             }
             code {
                 font-size: inherit;
@@ -222,38 +229,47 @@ const MenuControlsView = UIComponent('menu-controls', (ui) => {
 
 interface MenuSettingsProps {
     volume: Signal<number>;
+    muted: Signal<boolean>;
+    onFullscreenToggle: () => void;
 }
 
-const MenuSettingsView = UIComponent('menu-settings', (ui: UIContext, props: MenuSettingsProps) => {
-    const {volume: volumeInput} = props;
-    const volume = signal(volumeInput.get() * VOLUME_MAX);
+const MenuSettingsBar = UIComponent('menu-settings', (ui: UIContext, props: MenuSettingsProps) => {
+    const css = ui.css;
+    const {volume: volumeInput, muted, onFullscreenToggle} = props;
+    const volume = signal(Math.round(volumeInput.get() * VOLUME_MAX));
     volume.subscribe((value) => volumeInput.set(value / VOLUME_MAX));
 
-    const css = ui.css;
     return [
-        ui.div({class: 'menu-settings'}).children(
-            ui.h2().children('Settings'),
-            ui.p().children('Adjust game settings below:'),
+        ui.div({class: 'settings'}).children(
             Slider(ui, {
                 class: 'volume-slider',
                 name: 'volume',
-                label: 'Volume',
                 min: VOLUME_MIN,
                 max: VOLUME_MAX,
                 step: VOLUME_CHANGE_STEP,
                 value: volume,
             }),
+            IconButton(ui, {
+                children: computed(() => (muted.get() ? '🔇' : '🔊'), [muted]),
+                onClick: () => muted.update((m) => !m),
+            }),
+            IconButton(ui, {
+                style: {fontSize: '2rem'},
+                children: '⛶',
+                onClick: () => onFullscreenToggle(),
+            }),
         ),
         css`
-            .menu-settings {
-                margin: 0 auto;
-                width: fit-content;
-                padding: 4rem;
+            .settings {
+                position: absolute;
+                right: 2rem;
+                top: 2rem;
+                display: flex;
+                gap: 1rem;
+                align-items: center;
             }
-            .volume-slider {
-                display: block;
-                width: 300px;
-                margin: 1rem 0;
+            .settings > * {
+                line-height: 0;
             }
         `,
     ];
@@ -294,5 +310,41 @@ const MenuButton = UIComponent('menu-button', (ui, props: ButtonProps) => {
                 width: 100%;
             }
         `,
+    ];
+});
+
+export const IconButton = UIComponent('mute-button', (ui, props: ButtonProps) => {
+    const css = ui.css;
+    return [
+        Button(ui, {
+            ...props,
+            children: extendUIChildren(
+                props.children,
+                css`
+                    button {
+                        display: inline-block;
+                        font-size: 1.5rem;
+                        line-height: 1.5rem;
+                        overflow: hidden;
+                        border-radius: 0.25rem;
+                        background-color: var(--gray-granite-50);
+                        width: 2rem;
+                        height: 2rem;
+                        padding: 0;
+                        margin: 0;
+                        text-align: center;
+                        transition-property: box-shadow, background-color, transform;
+                        transition-timing-function: ease-in-out;
+                        transition-duration: 0.2s;
+                        border: none;
+                        outline: none;
+                    }
+                    button:hover {
+                        transform: scale(1.1);
+                        background-color: var(--gray-granite-75);
+                    }
+                `,
+            ),
+        }),
     ];
 });

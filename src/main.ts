@@ -54,8 +54,9 @@ function main(): void {
     {
         menu.volume.set(sounds.volume);
         menu.volume.subscribe((value) => sounds.updateVolume(value));
-        const menuInstance = Menu(uiGlobal, menu.props);
-        menuInstance.appendTo(appElement);
+        menu.muted.set(sounds.storedMuted);
+        menu.muted.subscribe((muted) => (muted ? sounds.suspend() : sounds.resume()));
+        Menu(uiGlobal, menu.props()).appendTo(appElement);
     }
 
     const devUI = createDevUI(gameState, manager, renderer, storage);
@@ -98,6 +99,10 @@ function runGame(
                 dt.setMilliseconds(inputState.game.dt ?? 0);
             } else {
                 inputState.game.dt = dt.milliseconds;
+            }
+            if (menu.fullscreenToggleExpected) {
+                inputState.extra.toggleFullscreen ||= 1;
+                menu.fullscreenToggleExpected = false;
             }
             processInput(
                 inputState,
