@@ -286,14 +286,15 @@ const MenuButton = UIComponent('menu-button', (ui, props: ButtonProps) => {
                     button {
                         background-color: var(--gray-granite-25);
                         border: 1px var(--gray-granite) solid;
-                        padding: 0.5rem 1rem;
+                        padding: 0.5rem 2rem;
+                        font-weight: 500;
                         font-size: 2rem;
                         width: 100%;
                         text-align: left;
                         transition-property: box-shadow, background-color;
                         transition-timing-function: ease-in-out;
                         transition-duration: 0.2s;
-                        /*border-radius: 0.25rem;*/
+                        border-radius: 0.125rem;
                     }
                     button:hover {
                         background-color: var(--gray-granite-75);

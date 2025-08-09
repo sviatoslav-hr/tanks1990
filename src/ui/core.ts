@@ -113,6 +113,7 @@ export function CustomElement(tagName: string): CustomElementDecorator {
 export interface HTMLElementOptions {
     id?: string;
     class?: HTMLClassInput;
+    title?: string | ReadableSignal<string>;
     onClick?: (event: MouseEvent) => void;
     style?: CSSStyleInput;
 }
@@ -244,6 +245,14 @@ function applyOptionsToElement(
             options.class.subscribe((className) => applyClassName(element, className));
         } else {
             applyClassName(element, options.class);
+        }
+    }
+    if (options?.title) {
+        if (isReadableSignal(options.title)) {
+            element.title = options.title.get();
+            options.title.subscribe((title) => (element.title = title));
+        } else {
+            element.title = options.title;
         }
     }
 

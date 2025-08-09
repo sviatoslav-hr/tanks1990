@@ -1,4 +1,4 @@
-import {signal, type Signal} from '#/signals';
+import {computed, signal, type Signal} from '#/signals';
 import {
     CSSStyleInput,
     type HTMLElementOptions,
@@ -42,6 +42,7 @@ export const Slider = UIComponent('slider', (ui, props: SliderProps) => {
                 name: name,
                 value: value.get(),
                 min: min,
+                title: computed(() => value.get().toString(), [value]),
                 max: max,
                 step: step,
                 onInput: (ev) => {
