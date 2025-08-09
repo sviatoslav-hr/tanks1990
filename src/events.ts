@@ -3,9 +3,17 @@ import type {Direction} from '#/math/direction';
 import type {Vector2Like} from '#/math/vector';
 import {SoundConfig} from '#/sound';
 
+export type GameControlAction =
+    | 'init'
+    | 'start'
+    | 'pause'
+    | 'resume'
+    | 'game-over'
+    | 'game-completed';
+
 export type GameControlEvent = {
     type: 'game-control';
-    action: 'init' | 'start' | 'pause' | 'resume' | 'game-over' | 'game-completed';
+    action: GameControlAction;
     ignoreMenu?: boolean;
 };
 

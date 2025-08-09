@@ -1,15 +1,21 @@
 import {signal, type Signal} from '#/signals';
-import {CSSStyleInput, type HTMLElementOptions, UIChildrenInput, UIComponent} from '#/ui/core';
+import {
+    CSSStyleInput,
+    type HTMLElementOptions,
+    normalizeUIChildren,
+    UIChildrenInput,
+    UIComponent,
+} from '#/ui/core';
 
-interface ButtonProps {
+export interface ButtonProps {
     onClick?: () => void;
     style?: CSSStyleInput;
-    children?: UIChildrenInput;
+    children?: UIChildrenInput | UIChildrenInput[];
 }
 
 export const Button = UIComponent('button', (ui, props: ButtonProps) => {
-    const {onClick, children = [], style} = props;
-    return ui.button({onClick, style}).children(children);
+    const {onClick, children, style} = props;
+    return ui.button({onClick, style}).children(...normalizeUIChildren(children));
 });
 
 interface SliderProps extends HTMLElementOptions {
@@ -27,7 +33,7 @@ export const Slider = UIComponent('slider', (ui, props: SliderProps) => {
     const inputId = 'slider-volume';
 
     return [
-        ui.div({class: 'menu-slider'}).children([
+        ui.div({class: 'menu-slider'}).children(
             ui.label({for: inputId}).children(label),
             ui.input({
                 id: inputId,
@@ -45,7 +51,7 @@ export const Slider = UIComponent('slider', (ui, props: SliderProps) => {
             }),
 
             ui.span({}).children(value),
-        ]),
+        ),
         css`
             .menu-slider {
                 width: 100%;

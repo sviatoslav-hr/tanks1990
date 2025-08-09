@@ -80,6 +80,7 @@ function runGame(
     sounds: SoundManager,
     eventQueue: EventQueue,
 ) {
+    manager.init(); // Init the world to display it behind the main menu screen.
     let lastTimestamp = performance.now();
     const animationCallback = (): void => {
         const now = performance.now();

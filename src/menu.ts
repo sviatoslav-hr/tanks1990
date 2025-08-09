@@ -1,7 +1,7 @@
 import {computed, type Signal, signal} from '#/signals';
-import {Button, Slider} from '#/ui/components';
-import {UIComponent, type UIContext} from '#/ui/core';
-import {type EventQueue} from '#/events';
+import {Button, ButtonProps, Slider} from '#/ui/components';
+import {CSSStyleConfig, extendUIChildren, UIComponent, type UIContext} from '#/ui/core';
+import {GameControlAction, type EventQueue} from '#/events';
 
 export type MenuView = 'main' | 'pause' | 'dead' | 'completed';
 type MenuPage = 'settings' | 'controls';
@@ -26,92 +26,89 @@ export class MenuBridge {
     }
 
     get props(): MenuProps {
-        const onPlay = () => {
-            switch (this.view.get()) {
-                case 'main':
-                    this.view.set(null);
-                    this.events.push({type: 'game-control', action: 'start'});
-                    break;
-                case 'pause':
-                    this.view.set(null);
-                    this.events.push({type: 'game-control', action: 'resume'});
-                    break;
-                case 'dead':
-                    this.view.set(null);
-                    this.events.push({type: 'game-control', action: 'start'});
-                    break;
-                case 'completed':
-                    this.view.set(null);
-                    this.events.push({type: 'game-control', action: 'start'});
-                    break;
-                case null:
-                    assert(false, 'MenuBridge.onPlay called when view is null');
-            }
+        const onGameControl = (action: GameControlAction) => {
+            this.events.push({type: 'game-control', action});
         };
-        return {view: this.view, volume: this.volume, onPlay};
+        return {view: this.view, volume: this.volume, onGameControl};
     }
 }
 
 interface MenuProps {
     view: Signal<MenuView | null>;
     volume: Signal<number>;
-    onPlay: () => void;
+    onGameControl: (action: GameControlAction) => void;
 }
 
 export const Menu = UIComponent('menu', (ui, props: MenuProps) => {
-    const {volume, view, onPlay} = props;
+    const {volume, view, onGameControl} = props;
     const css = ui.css;
     const page = signal<MenuPage | null>(null);
+
+    const menuTitle = computed(() => {
+        switch (view.get()) {
+            case 'main':
+                return 'Main Menu';
+            case 'pause':
+                return 'Paused';
+            case 'dead':
+                return 'You Died';
+            case 'completed':
+                return 'Game Completed';
+            default:
+                return null;
+        }
+    }, [view]);
+    const startButtonText = computed(() => {
+        switch (view.get()) {
+            case 'main':
+                return 'Start';
+            case 'pause':
+            case 'dead':
+                return 'Restart';
+            case 'completed':
+                return 'Play Again';
+            case null:
+                return null;
+        }
+    }, [view]);
+
     return [
         ui
             .div({
                 class: 'menu',
                 style: computed(() => {
+                    const styles: CSSStyleConfig = {};
                     if (view.get() == null) {
-                        return {display: 'none'};
+                        styles.display = 'none';
                     }
-                    return {};
+                    return styles;
                 }, [view]),
             })
-            .children([
-                ui.div({class: 'menu__sidebar'}).children([
-                    ui.h1().children(
-                        computed(() => {
-                            switch (view.get()) {
-                                case 'main':
-                                    return 'Main Menu';
-                                case 'pause':
-                                    return 'Paused';
-                                case 'dead':
-                                    return 'You Died';
-                                case 'completed':
-                                    return 'Game Completed';
-                                default:
-                                    return null;
-                            }
-                        }, [view]),
-                    ),
-                    Button(ui, {
-                        onClick: () => onPlay(),
-                        children: computed(() => {
-                            switch (view.get()) {
-                                case 'main':
-                                    return 'Start';
-                                case null:
-                                case 'pause':
-                                    return 'Resume';
-                                case 'dead':
-                                    return 'Restart';
-                                case 'completed':
-                                    return 'Play Again';
-                            }
-                        }, [view]),
+            .children(
+                ui.div({class: 'menu__sidebar'}).children(
+                    ui.h1({class: 'sidebar__header'}).children(menuTitle),
+                    computed(() => {
+                        if (view.get() !== 'pause') return null;
+                        return MenuButton(ui, {
+                            onClick: () => {
+                                page.set(null);
+                                onGameControl('resume');
+                            },
+                            children: 'Resume',
+                        });
+                    }, [view]),
+                    MenuButton(ui, {
+                        onClick: () => {
+                            page.set(null);
+                            onGameControl('start');
+                        },
+                        children: startButtonText,
                     }),
-                    Button(ui, {
+                    MenuButton(ui, {
                         onClick: () => page.set('controls'),
                         children: 'Controls',
                     }),
-                    Button(ui, {
+                    MenuButton(ui, {
                         onClick: () => page.set('settings'),
                         children: 'Settings',
                     }),
@@ -121,13 +118,13 @@ export const Menu = UIComponent('menu', (ui, props: MenuProps) => {
                                 return null;
                             case 'controls':
                             case 'settings':
-                                return Button(ui, {
+                                return MenuButton(ui, {
                                     onClick: () => page.set(null),
                                     children: 'Go Back',
                                 });
                         }
                     }, [page]),
-                ]),
+                ),
                 ui.div({class: 'menu__content'}).children(
                     computed(() => {
                         switch (page.get()) {
@@ -140,7 +137,7 @@ export const Menu = UIComponent('menu', (ui, props: MenuProps) => {
                         }
                     }, [page]),
                 ),
-            ]),
+            ),
         css`
             .menu {
                 position: fixed;
@@ -156,13 +153,18 @@ export const Menu = UIComponent('menu', (ui, props: MenuProps) => {
                 font-size: 24px;
             }
             .menu__sidebar {
+                background-color: var(--gray-granite-25, #ff00ffbf);
                 width: 33%;
                 height: 100%;
-                background-color: var(--red, #ff0000bf);
+                padding: 1rem;
                 display: flex;
+                gap: 1rem;
                 flex-direction: column;
-                align-items: center;
+                align-items: stretch;
                 justify-content: center;
+            }
+            .sidebar__header {
+                text-align: center;
             }
             .menu__content {
                 flex-grow: 1;
@@ -181,10 +183,10 @@ const MenuControlsView = UIComponent('menu-controls', (ui) => {
     return [
         ui
             .ul({class: 'menu-controls'})
-            .children([
+            .children(
                 ui
                     .li()
-                    .children([
+                    .children(
                         'Use ',
                         ui.code().children('W'),
                         ' ',
@@ -194,11 +196,11 @@ const MenuControlsView = UIComponent('menu-controls', (ui) => {
                         ' ',
                         ui.code().children('D'),
                         ' to move',
-                    ]),
-                ui.li().children(['Press ', ui.code().children('Space'), ' to shoot']),
-                ui.li().children([ui.code().children('P'), ' to pause']),
-                ui.li().children([ui.code().children('F'), ' to toggle Fullscreen']),
-            ]),
+                    ),
+                ui.li().children('Press ', ui.code().children('Space'), ' to shoot'),
+                ui.li().children(ui.code().children('P'), ' to pause'),
+                ui.li().children(ui.code().children('F'), ' to toggle Fullscreen'),
+            ),
         css`
             .menu-controls {
                 list-style: none;
@@ -229,7 +231,7 @@ const MenuSettingsView = UIComponent('menu-settings', (ui: UIContext, props: Men
 
     const css = ui.css;
     return [
-        ui.div({class: 'menu-settings'}).children([
+        ui.div({class: 'menu-settings'}).children(
             ui.h2().children('Settings'),
             ui.p().children('Adjust game settings below:'),
             Slider(ui, {
@@ -241,7 +243,7 @@ const MenuSettingsView = UIComponent('menu-settings', (ui: UIContext, props: Men
                 step: VOLUME_CHANGE_STEP,
                 value: volume,
             }),
-        ]),
+        ),
         css`
             .menu-settings {
                 margin: 0 auto;
@@ -252,6 +254,44 @@ const MenuSettingsView = UIComponent('menu-settings', (ui: UIContext, props: Men
                 display: block;
                 width: 300px;
                 margin: 1rem 0;
+            }
+        `,
+    ];
+});
+
+const MenuButton = UIComponent('menu-button', (ui, props: ButtonProps) => {
+    const css = ui.css;
+    return [
+        Button(ui, {
+            ...props,
+            children: extendUIChildren(
+                props.children,
+                css`
+                    button {
+                        background-color: var(--gray-granite-25);
+                        border: 1px var(--gray-granite) solid;
+                        padding: 0.5rem 1rem;
+                        font-size: 2rem;
+                        width: 100%;
+                        text-align: left;
+                        transition-property: box-shadow, background-color;
+                        transition-timing-function: ease-in-out;
+                        transition-duration: 0.2s;
+                        /*border-radius: 0.25rem;*/
+                    }
+                    button:hover {
+                        background-color: var(--gray-granite-75);
+                    }
+                    button:focus-within {
+                        outline: none;
+                        box-shadow: 0 0 10px 1px var(--white);
+                    }
+                `,
+            ),
+        }),
+        css`
+            * {
+                width: 100%;
             }
         `,
     ];

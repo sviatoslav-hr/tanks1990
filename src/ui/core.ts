@@ -442,7 +442,8 @@ type UIComponentFunc<TProps> = (
     ctx: UIContext,
     props: TProps,
     instance: UIComponentInstance,
-) => UINode | UINode[];
+) => UIChildrenInput | UIChildrenInput[];
+
 type UIComponentInstanceFunc<TProps> = (ctx: UIContext, props: TProps) => UIComponentInstance;
 
 export function UIComponent<TProps = void>(
@@ -466,7 +467,7 @@ export function UIComponent<TProps>(
         const componentElement = new UIComponentElement(name);
         component.rootNode = new UINode(componentElement, null);
         const childNodes = componentFunc(ctx, props, component);
-        component.rootNode.children(childNodes);
+        component.rootNode.children(...normalizeUIChildren(childNodes));
         ctx.currentComponent = prevComponent;
         return component;
     };
@@ -493,7 +494,7 @@ export class UIComponentInstance {
     }
 }
 
-export type UIChildInput =
+export type UIChildInputValue =
     | string
     | number
     | false
@@ -503,10 +504,9 @@ export type UIChildInput =
     | UIComponentInstance;
 
 export type UIChildrenInput =
-    | UIChildInput
-    | ReadableSignal<UIChildInput>
-    | ReadableSignal<UIChildInput[]>
-    | (UIChildInput | ReadableSignal<UIChildInput> | ReadableSignal<UIChildInput[]>)[];
+    | UIChildInputValue
+    | ReadableSignal<UIChildInputValue>
+    | ReadableSignal<UIChildInputValue[]>;
 
 class UIChildrenCollection {
     readonly children = signal<(Element | Text)[]>([]);
@@ -573,7 +573,7 @@ class UINode {
         }
     }
 
-    children(children: UIChildrenInput): this {
+    children(...children: UIChildrenInput[]): this {
         if (this.element instanceof UIChildrenCollection) {
             throw new Error('UINode.children() does not support UIChildrenContainer.');
         }
@@ -732,7 +732,17 @@ class UINode {
     }
 }
 
-function normalizeUIChildren(children?: UIChildrenInput): UINode[] {
+export function extendUIChildren(
+    input: UIChildrenInput | UIChildrenInput[],
+    ...extention: UIChildrenInput[]
+): UIChildrenInput[] {
+    if (Array.isArray(input)) {
+        return [...input, ...extention];
+    }
+    return [input, ...extention];
+}
+
+export function normalizeUIChildren(children?: UIChildrenInput | UIChildrenInput[]): UINode[] {
     const arrayChildren = Array.isArray(children) ? children : [children];
     const result: UINode[] = [];
     for (const child of arrayChildren) {
@@ -785,7 +795,7 @@ function normalizeUIChildren(children?: UIChildrenInput): UINode[] {
     return result;
 }
 
-function makeNodeSourceFromInput(input: UIChildInput): UINodeSource | null {
+function makeNodeSourceFromInput(input: UIChildInputValue): UINodeSource | null {
     if (input === false || input == null) return null;
     // NOTE: Making source out of nodes and components is not allowed to prevent misuse.
     if (input instanceof UINode) {
@@ -834,7 +844,7 @@ export abstract class ReactiveElement extends HTMLElement {
         this.shadow = this.attachShadow({mode: 'open'});
         applyOptionsToElement(this, options);
         this.setAttribute('reactive-element', ''); // NOTE: This attribute is used to inherit styles from :root.
-        // HACK: this has to be executed in the next macrotask since render can try to access uninitialized properties
+        // HACK: this has to be executed in the next macro-task since render can try to access uninitialized properties
         setTimeout(() => {
             this.content = this.makeContentSignal();
             this.shadow.append(...this.content.get());
