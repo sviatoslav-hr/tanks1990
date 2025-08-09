@@ -114,7 +114,7 @@ export interface HTMLElementOptions {
     id?: string;
     className?: string | string[];
     onClick?: (event: MouseEvent) => void;
-    style?: CSSStyleConfig;
+    style?: CSSStyleInput;
 }
 
 type HTMLElementChildren = (string | number | false | null | undefined | HTMLElement)[];
@@ -263,7 +263,9 @@ function normalizeChildren(children: HTMLElementChildren): (string | HTMLElement
     return result;
 }
 
-type CSSStyleConfig = Partial<
+export type CSSStyleInput = CSSStyleConfig | ReadableSignal<CSSStyleConfig>;
+
+export type CSSStyleConfig = Partial<
     Omit<
         CSSStyleDeclaration,
         | 'parentRule'
@@ -278,7 +280,16 @@ type CSSStyleConfig = Partial<
     >
 >;
 
-function applyStyleToElement(element: HTMLElement, style: CSSStyleConfig) {
+function applyStyleToElement(element: HTMLElement, style: CSSStyleInput) {
+    if (isReadableSignal(style)) {
+        setStyleConfig(element, style.get());
+        style.subscribe((s) => setStyleConfig(element, s));
+    } else {
+        setStyleConfig(element, style);
+    }
+}
+
+function setStyleConfig(element: HTMLElement, style: CSSStyleConfig) {
     for (const pair of Object.entries(style)) {
         const key = pair[0] as keyof CSSStyleConfig;
         const value = pair[1] as CSSStyleDeclaration[typeof key];
@@ -405,20 +416,17 @@ export class UIContext {
     }
 }
 
-type UIComponentFunc<TProps extends object> = (ctx: UIContext, props: TProps) => UINode | UINode[];
-type UIComponentInstanceFunc<TProps extends object> = (
-    ctx: UIContext,
-    props: TProps,
-) => UIComponentInstance;
+type UIComponentFunc<TProps> = (ctx: UIContext, props: TProps) => UINode | UINode[];
+type UIComponentInstanceFunc<TProps> = (ctx: UIContext, props: TProps) => UIComponentInstance;
 
-export function UIComponent<TProps extends object>(
+export function UIComponent<TProps = void>(
     func: UIComponentFunc<TProps>,
 ): UIComponentInstanceFunc<TProps>;
-export function UIComponent<TProps extends object>(
+export function UIComponent<TProps = void>(
     name: string,
     func: UIComponentFunc<TProps>,
 ): UIComponentInstanceFunc<TProps>;
-export function UIComponent<TProps extends object>(
+export function UIComponent<TProps>(
     funcOrName: UIComponentFunc<TProps> | string,
     maybeFunc?: UIComponentFunc<TProps>,
 ): UIComponentInstanceFunc<TProps> {
@@ -432,7 +440,7 @@ export function UIComponent<TProps extends object>(
         const componentElement = new UIComponentElement(name);
         component.rootNode = new UINode(componentElement, null);
         const childNodes = componentFunc(ctx, props);
-        component.rootNode.children(...(Array.isArray(childNodes) ? childNodes : [childNodes]));
+        component.rootNode.children(childNodes);
         ctx.currentComponent = prevComponent;
         return component;
     };
@@ -454,7 +462,20 @@ class UIComponentInstance {
     }
 }
 
-type UINodeInputChild = string | number | false | null | undefined | UINode | UIComponentInstance;
+export type UIChildInput =
+    | string
+    | number
+    | false
+    | null
+    | undefined
+    | UINode
+    | UIComponentInstance;
+
+export type UIChildrenInput =
+    | UIChildInput
+    | ReadableSignal<UIChildInput>
+    | (UIChildInput | ReadableSignal<UIChildInput>)[];
+
 type UINodeSource = Element | string;
 
 class UINode {
@@ -489,7 +510,7 @@ class UINode {
         }
     }
 
-    children(...children: (UINodeInputChild | ReadableSignal<UINodeInputChild>)[]): this {
+    children(children: UIChildrenInput): this {
         const currentNode = this.node.get();
         if (currentNode instanceof Text) {
             throw new Error('UINode.children() cannot be called on a Text node.');
@@ -589,28 +610,10 @@ class UINode {
     }
 }
 
-function makeNodeSourceFromInput(input: UINodeInputChild): UINodeSource | null {
-    if (input === false || input == null) return null;
-    // NOTE: Making source out of nodes and components is not allowed to prevent misuse.
-    if (input instanceof UINode) {
-        const source = input.node.get();
-        if (source instanceof Text) return source.textContent ?? '';
-        return source;
-    }
-    if (input instanceof UIComponentInstance) {
-        const source = input.rootNode.node.get();
-        if (source instanceof Text) return source.textContent ?? '';
-        return source;
-    }
-    if (typeof input === 'number') return input.toString();
-    return input;
-}
-
-function normalizeUIChildren(
-    children: (UINodeInputChild | ReadableSignal<UINodeInputChild>)[],
-): UINode[] {
+function normalizeUIChildren(children?: UIChildrenInput): UINode[] {
+    const arrayChildren = Array.isArray(children) ? children : [children];
     const result: UINode[] = [];
-    for (const child of children) {
+    for (const child of arrayChildren) {
         if (isReadableSignal(child)) {
             const childSignal = child;
             const nodeSource = makeNodeSourceFromInput(childSignal.get());
@@ -631,6 +634,23 @@ function normalizeUIChildren(
         }
     }
     return result;
+}
+
+function makeNodeSourceFromInput(input: UIChildInput): UINodeSource | null {
+    if (input === false || input == null) return null;
+    // NOTE: Making source out of nodes and components is not allowed to prevent misuse.
+    if (input instanceof UINode) {
+        const source = input.node.get();
+        if (source instanceof Text) return source.textContent ?? '';
+        return source;
+    }
+    if (input instanceof UIComponentInstance) {
+        const source = input.rootNode.node.get();
+        if (source instanceof Text) return source.textContent ?? '';
+        return source;
+    }
+    if (typeof input === 'number') return input.toString();
+    return input;
 }
 
 @CustomElement('ui-component')

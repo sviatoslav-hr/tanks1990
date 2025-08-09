@@ -1,6 +1,6 @@
 import {EventQueue} from '#/events';
 import {SoundManager} from '#/sound';
-import {CustomElement, html, ui} from '#/ui/html';
+import {CustomElement, html, ui} from '#/ui/core';
 
 // TODO: refactor menu into ReactiveElement
 // TODO: Detach SoundManager from Menu

@@ -19,8 +19,8 @@ import {Camera} from '#/renderer/camera';
 import {SoundManager} from '#/sound';
 import {GameState, justCompletedGame} from '#/state';
 import {GameStorage} from '#/storage';
+import {UIContext} from '#/ui/core';
 import {createDevUI, DevUI} from '#/ui/dev';
-import {UIContext} from '#/ui/html';
 import {getNotificationBar, notify} from '#/ui/notification';
 import {World} from '#/world/world';
 
@@ -43,13 +43,13 @@ function main(): void {
     appElement.append(renderer.canvas);
 
     const input = new GameInput();
-    const ui = UIContext.init();
     const gameState = new GameState();
     const manager = new EntityManager();
     const eventQueue = new EventQueue();
     const config = new GameConfig(storage);
     config.load();
 
+    const ui = UIContext.init();
     const menu = new MenuBridge();
     {
         menu.volume.set(sounds.volume);

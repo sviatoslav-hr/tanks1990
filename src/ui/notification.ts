@@ -1,4 +1,4 @@
-import {css, CustomElement, HTMLElementOptions, ReactiveElement, ui} from '#/ui/html';
+import {css, CustomElement, HTMLElementOptions, ReactiveElement, ui} from '#/ui/core';
 
 @CustomElement('notification-bar')
 class NotificationBar extends ReactiveElement {

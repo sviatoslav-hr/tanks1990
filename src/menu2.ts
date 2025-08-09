@@ -1,15 +1,11 @@
-import {computed, Signal, signal} from '#/signals';
-import {HTMLElementOptions, UIComponent, UIContext} from '#/ui/html';
+import {computed, type Signal, signal} from '#/signals';
+import {Button, Slider} from '#/ui/components';
+import {UIComponent, type UIContext} from '#/ui/core';
 
 export type MenuPage = 'home' | 'settings' | 'controls' | 'pause' | 'dead' | 'completed';
 
-interface MenuProps {
-    page: Signal<MenuPage | null>;
-    volume: Signal<number>;
-}
-
 const VOLUME_MIN = 0;
-export const VOLUME_MAX = 50;
+const VOLUME_MAX = 50;
 const VOLUME_DEFAULT = 25;
 const VOLUME_CHANGE_STEP = 1;
 
@@ -26,36 +22,41 @@ export class MenuBridge {
     }
 }
 
+interface MenuProps {
+    page: Signal<MenuPage | null>;
+    volume: Signal<number>;
+}
+
 export const MenuComponent = UIComponent('menu', (ui, props: MenuProps) => {
     const {page, volume} = props;
     const css = ui.css;
     return [
-        ui.div({className: 'menu'}).children(
-            ui.div({className: 'menu__sidebar'}).children(
-                MenuButton(ui, {
+        ui.div({className: 'menu'}).children([
+            ui.div({className: 'menu__sidebar'}).children([
+                Button(ui, {
                     onClick: () => page.set('home'),
-                    text: 'Home',
+                    children: 'Home',
                 }),
-                MenuButton(ui, {
+                Button(ui, {
                     onClick: () => page.set('controls'),
-                    text: 'Controls',
+                    children: 'Controls',
                 }),
-                MenuButton(ui, {
+                Button(ui, {
                     onClick: () => page.set('settings'),
-                    text: 'Settings',
+                    children: 'Settings',
                 }),
-                MenuButton(ui, {
+                Button(ui, {
                     onClick: () => page.set(null),
-                    text: 'Hide Menu',
+                    children: 'Hide Menu',
                 }),
-            ),
+            ]),
             ui.div({className: 'menu__content'}).children(
                 computed(() => {
                     switch (page.get()) {
                         case 'home':
                             return 'Home!';
                         case 'controls':
-                            return MenuControlsView(ui, {});
+                            return MenuControlsView(ui);
                         case 'settings':
                             return MenuSettingsView(ui, {volume});
                         case 'pause':
@@ -69,7 +70,7 @@ export const MenuComponent = UIComponent('menu', (ui, props: MenuProps) => {
                     }
                 }, [page]),
             ),
-        ),
+        ]),
         css`
             .menu {
                 position: fixed;
@@ -105,25 +106,15 @@ export const MenuComponent = UIComponent('menu', (ui, props: MenuProps) => {
     ];
 });
 
-interface MenuButtonProps {
-    onClick: () => void;
-    text: string;
-}
-
-const MenuButton = UIComponent('menu-button', (ui, props: MenuButtonProps) => {
-    const {onClick, text} = props;
-    return ui.button({onClick: onClick}).children(text);
-});
-
 const MenuControlsView = UIComponent('menu-controls', (ui) => {
     const css = ui.css;
     return [
         ui
             .ul({className: 'menu-controls'})
-            .children(
+            .children([
                 ui
                     .li()
-                    .children(
+                    .children([
                         'Use ',
                         ui.code().children('W'),
                         ' ',
@@ -133,11 +124,11 @@ const MenuControlsView = UIComponent('menu-controls', (ui) => {
                         ' ',
                         ui.code().children('D'),
                         ' to move',
-                    ),
-                ui.li().children('Press ', ui.code().children('Space'), ' to shoot'),
-                ui.li().children(ui.code().children('P'), ' to pause'),
-                ui.li().children(ui.code().children('F'), ' to toggle Fullscreen'),
-            ),
+                    ]),
+                ui.li().children(['Press ', ui.code().children('Space'), ' to shoot']),
+                ui.li().children([ui.code().children('P'), ' to pause']),
+                ui.li().children([ui.code().children('F'), ' to toggle Fullscreen']),
+            ]),
         css`
             .menu-controls {
                 list-style: none;
@@ -168,7 +159,7 @@ const MenuSettingsView = UIComponent('menu-settings', (ui: UIContext, props: Men
 
     const css = ui.css;
     return [
-        ui.div({className: 'menu-settings'}).children(
+        ui.div({className: 'menu-settings'}).children([
             ui.h2().children('Settings'),
             ui.p().children('Adjust game settings below:'),
             Slider(ui, {
@@ -180,65 +171,17 @@ const MenuSettingsView = UIComponent('menu-settings', (ui: UIContext, props: Men
                 step: VOLUME_CHANGE_STEP,
                 value: volume,
             }),
-            css`
-                .menu-settings {
-                    margin: 0 auto;
-                    width: fit-content;
-                    padding: 4rem;
-                }
-                .volume-slider {
-                    display: block;
-                    width: 300px;
-                    margin: 1rem 0;
-                }
-            `,
-        ),
-    ];
-});
-
-interface SliderProps extends HTMLElementOptions {
-    name: string;
-    label?: string;
-    min?: number;
-    max?: number;
-    step?: number;
-    value?: Signal<number>;
-}
-
-const Slider = UIComponent('slider', (ui, props: SliderProps) => {
-    const {name, label = name, min = 0, max = 50, step = 1, value = signal(0)} = props;
-    const css = ui.css;
-    const inputId = 'slider-volume';
-
-    return [
-        ui.div({className: 'menu-slider'}).children(
-            ui.label({for: inputId}).children(label),
-            ui.input({
-                id: inputId,
-                type: 'range',
-                name: name,
-                value: value.get(),
-                min: min,
-                max: max,
-                step: step,
-                onInput: (ev) => {
-                    if (!ev.target) return;
-                    const inputValue = (ev.target as HTMLInputElement).valueAsNumber;
-                    value.set(inputValue);
-                },
-            }),
-
-            ui.span({}).children(value),
-        ),
+        ]),
         css`
-            .menu-slider {
-                width: 100%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
+            .menu-settings {
+                margin: 0 auto;
+                width: fit-content;
+                padding: 4rem;
             }
-            #${inputId} {
-                flex-grow: 1;
+            .volume-slider {
+                display: block;
+                width: 300px;
+                margin: 1rem 0;
             }
         `,
     ];

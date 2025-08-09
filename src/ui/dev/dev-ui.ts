@@ -4,7 +4,7 @@ import {Renderer} from '#/renderer';
 import {GameState} from '#/state';
 import {exportAsJson, GameStorage} from '#/storage';
 import {DevPanel, FPSMonitor} from '#/ui/dev';
-import {css, CustomElement, ReactiveElement, ui} from '#/ui/html';
+import {css, CustomElement, ReactiveElement, ui} from '#/ui/core';
 import {notify, notifyError} from '#/ui/notification';
 
 export function createDevUI(
