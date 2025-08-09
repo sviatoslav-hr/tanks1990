@@ -5,26 +5,29 @@ export type MenuPage = 'home' | 'settings' | 'controls' | 'pause' | 'dead' | 'co
 
 interface MenuProps {
     page: Signal<MenuPage | null>;
+    volume: Signal<number>;
 }
 
-export class MenuController {
-    private page = signal<MenuPage | null>('home');
+const VOLUME_MIN = 0;
+export const VOLUME_MAX = 50;
+const VOLUME_DEFAULT = 25;
+const VOLUME_CHANGE_STEP = 1;
+
+export class MenuBridge {
+    page = signal<MenuPage | null>('home');
+    volume = signal(VOLUME_DEFAULT);
 
     get visible(): boolean {
         return this.page.get() !== null;
     }
 
-    selectPage(page: MenuPage | null): void {
-        this.page.set(page);
-    }
-
     get props(): MenuProps {
-        return {page: this.page};
+        return {page: this.page, volume: this.volume};
     }
 }
 
 export const MenuComponent = UIComponent('menu', (ui, props: MenuProps) => {
-    const {page} = props;
+    const {page, volume} = props;
     const css = ui.css;
     return [
         ui.div({className: 'menu'}).children(
@@ -54,7 +57,7 @@ export const MenuComponent = UIComponent('menu', (ui, props: MenuProps) => {
                         case 'controls':
                             return MenuControlsView(ui, {});
                         case 'settings':
-                            return MenuSettingsView(ui, {});
+                            return MenuSettingsView(ui, {volume});
                         case 'pause':
                             return 'Game is paused';
                         case 'dead':
@@ -154,27 +157,16 @@ const MenuControlsView = UIComponent('menu-controls', (ui) => {
     ];
 });
 
-const MenuSettingsView = UIComponent('menu-settings', (ui: UIContext) => {
+interface MenuSettingsProps {
+    volume: Signal<number>;
+}
+
+const MenuSettingsView = UIComponent('menu-settings', (ui: UIContext, props: MenuSettingsProps) => {
+    const {volume: volumeInput} = props;
+    const volume = signal(volumeInput.get() * VOLUME_MAX);
+    volume.subscribe((value) => volumeInput.set(value / VOLUME_MAX));
+
     const css = ui.css;
-    /*
-    const wrapper = document.createElement('div');
-    wrapper.className = 'mx-auto w-fit p-4';
-    const MAX_VOLUME = 50;
-    const initValue = Math.floor(sounds.volume * MAX_VOLUME);
-    const slider = new Slider({
-        name: 'volume',
-        label: 'Volume',
-        max: MAX_VOLUME,
-        initValue,
-    });
-    slider.onChange((value) => sounds.updateVolume(value / MAX_VOLUME));
-    wrapper.append(slider);
-    optionsPage.setContent(wrapper);
-    menu.onMuteClicked = (muted: boolean) => {
-        if (muted) sounds.suspend();
-        else sounds.resume();
-    };
-    */
     return [
         ui.div({className: 'menu-settings'}).children(
             ui.h2().children('Settings'),
@@ -183,10 +175,10 @@ const MenuSettingsView = UIComponent('menu-settings', (ui: UIContext) => {
                 className: 'volume-slider',
                 name: 'volume',
                 label: 'Volume',
-                min: 0,
-                max: 50,
-                step: 1,
-                initValue: 25,
+                min: VOLUME_MIN,
+                max: VOLUME_MAX,
+                step: VOLUME_CHANGE_STEP,
+                value: volume,
             }),
             css`
                 .menu-settings {
@@ -210,16 +202,13 @@ interface SliderProps extends HTMLElementOptions {
     min?: number;
     max?: number;
     step?: number;
-    initValue?: number;
+    value?: Signal<number>;
 }
 
-let sliderIndex = 0;
 const Slider = UIComponent('slider', (ui, props: SliderProps) => {
-    const {name, label = name, min = 0, max = 50, step = 1, initValue = 0} = props;
+    const {name, label = name, min = 0, max = 50, step = 1, value = signal(0)} = props;
     const css = ui.css;
-    const index = sliderIndex++;
-    const inputId = `slider-${index}`;
-    const value = signal(initValue);
+    const inputId = 'slider-volume';
 
     return [
         ui.div({className: 'menu-slider'}).children(
@@ -232,7 +221,7 @@ const Slider = UIComponent('slider', (ui, props: SliderProps) => {
                 min: min,
                 max: max,
                 step: step,
-                onChange: (ev) => {
+                onInput: (ev) => {
                     if (!ev.target) return;
                     const inputValue = (ev.target as HTMLInputElement).valueAsNumber;
                     value.set(inputValue);

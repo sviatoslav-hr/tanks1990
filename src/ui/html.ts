@@ -137,6 +137,7 @@ interface HTMLInputElementOptions extends HTMLElementOptions {
     max?: number;
     step?: number;
     onChange?: (event: Event) => void;
+    onInput?: (event: Event) => void;
 }
 
 interface HTMLLabelElementOptions extends HTMLElementOptions {
@@ -293,45 +294,37 @@ export class UIContext {
         return new UIContext();
     }
 
-    begin(): void {
-        // TODO: start capturing UI events
-    }
-
-    end(): void {
-        // TODO: end capturing UI events and calculate the tree..
-    }
-
-    div(options?: HTMLElementOptions) {
+    div(options?: HTMLElementOptions): UINode {
         return this.element('div', options);
     }
-    h1(options?: HTMLElementOptions) {
+    h1(options?: HTMLElementOptions): UINode {
         return this.element('h1', options);
     }
-    h2(options?: HTMLElementOptions) {
+    h2(options?: HTMLElementOptions): UINode {
         return this.element('h2', options);
     }
-    h3(options?: HTMLElementOptions) {
+    h3(options?: HTMLElementOptions): UINode {
         return this.element('h3', options);
     }
-    h4(options?: HTMLElementOptions) {
+    h4(options?: HTMLElementOptions): UINode {
         return this.element('h4', options);
     }
-    h5(options?: HTMLElementOptions) {
+    h5(options?: HTMLElementOptions): UINode {
         return this.element('h5', options);
     }
-    h6(options?: HTMLElementOptions) {
+    h6(options?: HTMLElementOptions): UINode {
         return this.element('h6', options);
     }
-    p(options?: HTMLElementOptions) {
+    p(options?: HTMLElementOptions): UINode {
         return this.element('p', options);
     }
-    span(options?: HTMLElementOptions) {
+    span(options?: HTMLElementOptions): UINode {
         return this.element('span', options);
     }
-    button(options?: HTMLElementOptions) {
+    button(options?: HTMLElementOptions): UINode {
         return this.element('button', options);
     }
-    input(options?: HTMLInputElementOptions) {
+    input(options?: HTMLInputElementOptions): UINode {
         const node = this.element('input', options);
         const element = node.node.get() as HTMLInputElement;
         if (options?.type) {
@@ -355,11 +348,14 @@ export class UIContext {
         if (options?.onChange) {
             element.addEventListener('change', options.onChange);
         }
+        if (options?.onInput) {
+            element.addEventListener('input', options.onInput);
+        }
 
         return node;
     }
 
-    label(options?: HTMLLabelElementOptions) {
+    label(options?: HTMLLabelElementOptions): UINode {
         const node = this.element('label', options);
         const element = node.node.get() as HTMLLabelElement;
         if (options?.for) {
@@ -368,13 +364,13 @@ export class UIContext {
         return node;
     }
 
-    ul(options?: HTMLElementOptions) {
+    ul(options?: HTMLElementOptions): UINode {
         return this.element('ul', options);
     }
-    li(options?: HTMLElementOptions) {
+    li(options?: HTMLElementOptions): UINode {
         return this.element('li', options);
     }
-    code(options?: HTMLElementOptions) {
+    code(options?: HTMLElementOptions): UINode {
         return this.element('code', options);
     }
 

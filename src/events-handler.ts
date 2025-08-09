@@ -5,14 +5,14 @@ import {SoundName, type SoundManager} from '#/sound';
 import {soundEvent} from '#/sound-event';
 import type {GameState} from '#/state';
 import {notify} from '#/ui/notification';
-import {MenuController} from './menu2';
+import {MenuBridge} from './menu2';
 
 export function handleGameEvents(
     eventQueue: EventQueue,
     game: GameState,
     manager: EntityManager,
     sounds: SoundManager,
-    menu: MenuController,
+    menu: MenuBridge,
 ): void {
     let event: GameEvent | undefined;
     while ((event = eventQueue.pop())) {
@@ -61,12 +61,12 @@ function handleGameControlEvent(
     manager: EntityManager,
     sounds: SoundManager,
     eventQueue: EventQueue,
-    menu: MenuController,
+    menu: MenuBridge,
 ): boolean {
     switch (event.action) {
         case 'init':
             game.init();
-            menu.selectPage('home');
+            menu.page.set('home');
             return true;
 
         // TODO: For now there is no difference between "new game" and "restart"
@@ -79,7 +79,7 @@ function handleGameControlEvent(
                 game.recording.playing = false;
                 game.start();
                 manager.init();
-                menu.selectPage(null);
+                menu.page.set(null);
             }
 
             soundEvent(eventQueue, 'game-started');
@@ -98,20 +98,20 @@ function handleGameControlEvent(
         case 'pause':
             game.pause();
             game.battleMusic?.pause();
-            if (!event.ignoreMenu) menu.selectPage('pause');
+            if (!event.ignoreMenu) menu.page.set('pause');
             return true;
 
         case 'resume':
             game.resume();
             game.battleMusic?.resume();
-            menu.selectPage(null);
+            menu.page.set(null);
             return true;
 
         case 'game-over': {
             game.battleMusic?.stop();
             const playedRecording = game.recording.playing;
             game.markDead();
-            menu.selectPage('dead');
+            menu.page.set('dead');
             if (!playedRecording) {
                 soundEvent(eventQueue, 'game-over');
             }
@@ -125,7 +125,7 @@ function handleGameControlEvent(
             notify('Congratulation!', {timeoutMs});
             notify(`Completed in ${manager.player.survivedFor.toHumanString()}`, {timeoutMs});
             setTimeout(() => {
-                menu.selectPage('completed');
+                menu.page.set('completed');
             }, timeoutMs);
             return true;
         }

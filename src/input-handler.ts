@@ -5,7 +5,7 @@ import type {EventQueue} from '#/events';
 import {GameInput} from '#/input';
 import {Direction} from '#/math/direction';
 import {Vector2Like} from '#/math/vector';
-import {MenuController} from '#/menu2';
+import {MenuBridge} from '#/menu2';
 import {
     exitRecording,
     getNextRecordedInput,
@@ -170,7 +170,7 @@ export function processInput(
     renderer: Renderer,
     state: GameState,
     manager: EntityManager,
-    menu: MenuController,
+    menu: MenuBridge,
     devUI: DevUI,
     storage: GameStorage,
     events: EventQueue,
@@ -201,7 +201,7 @@ export function processInput(
 
     if (input.extra.triggerSingleUpdate) {
         if (menu.visible) {
-            menu.selectPage(null);
+            menu.page.set(null);
         }
         state.debugUpdateTriggered = true;
     }

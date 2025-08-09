@@ -12,7 +12,7 @@ import {handleGameEvents as processGameEvents} from '#/events-handler';
 import {GameInput} from '#/input';
 import {handleKeymaps, processInput} from '#/input-handler';
 import {Duration} from '#/math/duration';
-import {MenuComponent, MenuController} from '#/menu2';
+import {MenuBridge, MenuComponent} from '#/menu2';
 import {maybeRecordInput} from '#/recording';
 import {Renderer} from '#/renderer';
 import {Camera} from '#/renderer/camera';
@@ -50,13 +50,13 @@ function main(): void {
     const config = new GameConfig(storage);
     config.load();
 
-    // const menu = initMenu(eventQueue, sounds);
-    // appElement.append(menu);
-    // const menu2 = createMenu();
-    // appElement.append(menu2);
-    const menuController = new MenuController();
-    const menu3 = MenuComponent(ui, menuController.props);
-    menu3.attachTo(appElement);
+    const menu = new MenuBridge();
+    {
+        menu.volume.set(sounds.volume);
+        menu.volume.subscribe((value) => sounds.updateVolume(value));
+        const menuInstance = MenuComponent(ui, menu.props);
+        menuInstance.attachTo(appElement);
+    }
 
     const devUI = createDevUI(gameState, manager, renderer, storage);
     appElement.append(devUI);
@@ -65,25 +65,14 @@ function main(): void {
     window.addEventListener('resize', () => resizeGame(renderer, manager.world));
 
     input.listen(document.body, renderer.canvas);
-    runGame(
-        gameState,
-        config,
-        manager,
-        menuController,
-        input,
-        storage,
-        devUI,
-        renderer,
-        sounds,
-        eventQueue,
-    );
+    runGame(gameState, config, manager, menu, input, storage, devUI, renderer, sounds, eventQueue);
 }
 
 function runGame(
     state: GameState,
     config: GameConfig,
     manager: EntityManager,
-    menu: MenuController,
+    menu: MenuBridge,
     input: GameInput,
     storage: GameStorage,
     devUI: DevUI,
