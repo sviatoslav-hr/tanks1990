@@ -118,8 +118,8 @@ function drawPlayerShootingBar(renderer: Renderer, player: Tank): void {
     assert(isPlayerTank(player));
     renderer.useCameraCoords(true);
     renderer.setGlobalAlpha(0.8);
-    const fraction =
-        1 - player.shootingDelay.milliseconds / player.schema.shootingDelay.milliseconds;
+    const reloadTime = player.schema.reloadTime.milliseconds / player.reloadMult;
+    const fraction = 1 - player.shootingDelay.milliseconds / reloadTime;
     const barWidth = 20;
     const paddingX = 5;
     const paddingY = 10;
@@ -153,7 +153,8 @@ function drawTankDevShootingBarAbove(renderer: Renderer, tank: Tank): void {
     const barX = tank.x + (tank.width - barWidth) / 2;
     const barY = tank.y - barHeight - barOffset;
     renderer.setFillColor(Color.ORANGE_SAFFRON);
-    const fraction = 1 - tank.shootingDelay.milliseconds / tank.schema.shootingDelay.milliseconds;
+    const reloadTime = tank.schema.reloadTime.milliseconds / tank.reloadMult;
+    const fraction = 1 - tank.shootingDelay.milliseconds / reloadTime;
     renderer.fillRect(barX, barY, barWidth * fraction, barHeight);
 }
 

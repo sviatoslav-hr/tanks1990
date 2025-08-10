@@ -35,6 +35,7 @@ export abstract class Tank extends Entity {
     collided = false;
     speedMult = 1;
     damageMult = 1;
+    reloadMult = 1;
 
     shieldTimer = Duration.zero();
     shootingDelay = Duration.milliseconds(0);
@@ -120,7 +121,7 @@ export abstract class Tank extends Entity {
 
     shoot(): ShotEvent | null {
         if (this.shootingDelay.positive) return null;
-        this.shootingDelay.setFrom(this.schema.shootingDelay);
+        this.shootingDelay.setMilliseconds(this.schema.reloadTime.milliseconds / this.reloadMult);
         return {
             type: 'shot',
             entityId: this.id,
@@ -141,7 +142,9 @@ export abstract class Tank extends Entity {
             this.shouldRespawn = false;
             this.damageMult = 1;
             this.speedMult = 1;
-            this.shootingDelay.setFrom(this.schema.shootingDelay);
+            this.shootingDelay.setMilliseconds(
+                this.schema.reloadTime.milliseconds / this.reloadMult,
+            );
             this.activateShield();
             return true;
         }

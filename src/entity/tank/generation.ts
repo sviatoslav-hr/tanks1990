@@ -11,7 +11,7 @@ export interface TankSchema {
     turret: TankPartKind;
     body: TankPartKind;
     damage: number;
-    shootingDelay: Duration;
+    reloadTime: Duration;
     maxHealth: number;
     maxSpeed: number;
     topSpeedReachTime: Duration;
@@ -26,7 +26,7 @@ export function makeTankSchema(bot: boolean, kind: TankPartKind): TankSchema {
         turret: kind,
         body: kind,
         damage: tankKindDamage[kind],
-        shootingDelay: Duration.milliseconds(tankKindShootingDelayMillis[kind] * shootingCoef),
+        reloadTime: Duration.milliseconds(tankKindReloadTimeMillis[kind] * shootingCoef),
         maxHealth: tankKindMaxHealth[kind],
         maxSpeed: tankKindSpeed[kind] * speedCoef,
         topSpeedReachTime: Duration.milliseconds(bot ? 150 : 50),
@@ -34,10 +34,11 @@ export function makeTankSchema(bot: boolean, kind: TankPartKind): TankSchema {
 }
 
 export const RESTORE_HP_AMOUNT = 10;
-export const SPEED_INCREASE_MULT = 1.2; // 20% speed increase per power-up
-export const DAMAGE_INCREASE_MULT = 1.3; // 30% damage increase per power-up
-export const SHIELD_PICKUP_DURATION = Duration.milliseconds(5000);
-export const SHIELD_SPAWN_DURATION = Duration.milliseconds(1000);
+export const SPEED_INCREASE_MULT = 0.1; // 10% speed increase per power-up
+export const DAMAGE_INCREASE_MULT = 0.35; // 35% damage increase per power-up
+export const RELOAD_INCREASE_MULT = 0.1; // 10% reload time decrease per power-up
+export const SHIELD_PICKUP_DURATION = Duration.milliseconds(10000);
+export const SHIELD_SPAWN_DURATION = Duration.milliseconds(1500);
 
 const tankKindMaxHealth: Record<TankPartKind, number> = {
     light: 20,
@@ -57,7 +58,7 @@ const tankKindDamage: Record<TankPartKind, number> = {
     heavy: 15,
 };
 
-const tankKindShootingDelayMillis: Record<TankPartKind, number> = {
+const tankKindReloadTimeMillis: Record<TankPartKind, number> = {
     light: 1000,
     medium: 1500,
     heavy: 2000,

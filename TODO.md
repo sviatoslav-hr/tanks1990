@@ -1,13 +1,9 @@
 # TODO
+- [ ] Add icons for power ups
 
 ## DOING
 
 ## NEXT TODO
-- [ ] Refactor/Rewrite Menu
-    - [ ] It should be flexible enough to be reused, detached from rest of the game, but also easy to use.
-      - [ ] Menu shouldn't know about game states, etc
-      - [ ] Maybe have a function like `updateMenu` that will work like a layer between the menu and the game 
-    - [ ] Look into where the menu is used/passed and check if menu can be detached from there (via events?)
 - [ ] Better dungeon generation
   - [ ] Allow generation in any direction (currently bottom direction is disabled to avoid cyclic paths)
   - [ ] Consider maze-like generation (multiple possible paths)
@@ -35,6 +31,7 @@
 - [ ] Better coordinates system (consider defining something like `WorldPosition`)
 - [ ] Use transformation matrices for calculating rotation and translation. Consider performance hits
 - [ ] Create a separate Sprite class for static objects / non-animated
+- [ ] Look into where the menu is used/passed and check if menu can be detached from there (via events?)
 
 ### Low priority features
 - [ ] Have different types of the projectiles - TBD.
