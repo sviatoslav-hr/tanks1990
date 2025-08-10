@@ -185,7 +185,7 @@ export class Sound {
         return this.state === SoundState.LOADED && this.#pauseTime > 0;
     }
 
-    play(volumeScale = this.#volumeScale, loop = false): void {
+    play(volumeScale = this.#volumeScale, loop = this.#loop): void {
         assert(this.loaded, `Sound: cannot play, sound not loaded: "${this.src}"`);
         this.startAudioSource(volumeScale, 0, loop);
         this.#startTime = this.audioContext.currentTime;

@@ -84,6 +84,7 @@ function handleGameControlEvent(
 
             soundEvent(eventQueue, 'game-started');
             if (game.battleMusic) {
+                game.battleMusic.stop();
                 game.battleMusic.play();
             } else {
                 game.battleMusic = sounds.playSound({
@@ -97,13 +98,11 @@ function handleGameControlEvent(
 
         case 'pause':
             game.pause();
-            game.battleMusic?.pause();
             if (!event.ignoreMenu) menu.view.set('pause');
             return true;
 
         case 'resume':
             game.resume();
-            game.battleMusic?.resume();
             menu.view.set(null);
             return true;
 
