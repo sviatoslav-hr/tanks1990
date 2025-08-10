@@ -194,11 +194,6 @@ export function processInput(
             // NOTE: Game is not in playing state, so we cannot pause/unpause.
         } else {
             const action = state.playing ? 'pause' : 'resume';
-            if (action === 'pause') {
-                menu.view.set('pause');
-            } else {
-                menu.view.set(null);
-            }
             const ignoreMenu = Boolean(input.extra.toggleGamePauseIgnoreMenu);
             events.push({type: 'game-control', action, ignoreMenu});
         }
