@@ -153,6 +153,12 @@ export class Sprite<K extends string> {
         this.frameIndex = 0;
     }
 
+    selectFrame(frameIndex: number): void {
+        const maxFrames = this.state?.frames ?? 1;
+        assert(frameIndex >= 0 && frameIndex < maxFrames);
+        this.frameIndex = frameIndex;
+    }
+
     reset(): void {
         const stateKey = this.stateKeys[0];
         if (!stateKey) {

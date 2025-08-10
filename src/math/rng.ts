@@ -110,6 +110,8 @@ export class RNG {
         if (values.length === 0) return [];
         const n = values.length;
         if (minCount > n) throw new Error('min cannot be greater than array length');
+        // TODO/PERF: Figure out how to avoid this copy, so we created only 1 array.
+        values = values.slice();
 
         const k = this.int32Range(minCount, Math.min(n + 1, maxCount));
         const result: T[] = [];

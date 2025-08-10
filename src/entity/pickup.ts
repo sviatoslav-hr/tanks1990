@@ -9,72 +9,74 @@ import {
     SHIELD_PICKUP_DURATION,
     SPEED_INCREASE_MULT,
 } from '#/entity/tank/generation';
-import {Rect} from '#/math';
+import {Rect, scaleRectCentered} from '#/math';
 import {random} from '#/math/rng';
 import {Renderer} from '#/renderer';
+import {Sprite} from '#/renderer/sprite';
 import {Room} from '#/world/room';
 
 export enum PickupType {
-    HEATH_RESTORE = 'health-restore',
-    SHIELD = 'shield',
-    SPEED_BOOST = 'speed-boost',
-    DAMAGE_BOOST = 'damage-boost',
+    REPAIR = 'repair',
     RELOAD_BOOST = 'reload-boost',
+    SHIELD = 'shield',
+    DAMAGE_BOOST = 'damage-boost',
+    SPEED_BOOST = 'speed-boost',
 }
 
-const allPickupTypes = Object.values(PickupType);
+const allPickupTypes = [
+    PickupType.REPAIR,
+    PickupType.RELOAD_BOOST,
+    PickupType.SHIELD,
+    PickupType.DAMAGE_BOOST,
+    PickupType.SPEED_BOOST,
+];
 
 const PICKUP_SIZE = CELL_SIZE * 0.5;
+const PICKUP_SPRITE_SCALE = 0.7;
 
 export class Pickup extends Entity {
     readonly type: PickupType;
+    readonly sprite: Sprite<string>;
+    readonly spriteRect: Rect;
+    readonly frameIndex: number;
 
-    constructor(type: PickupType) {
+    constructor(type: PickupType, x: number, y: number) {
         super();
         this.type = type;
         this.dead = false; // NOTE: Basically alias for "collected" state.
-        this.x = 0;
-        this.y = 0;
+        this.x = x;
+        this.y = y;
         this.width = PICKUP_SIZE;
         this.height = PICKUP_SIZE;
+        this.spriteRect = scaleRectCentered(this, PICKUP_SPRITE_SCALE);
+        this.sprite = new Sprite({
+            key: 'pickups',
+            frameWidth: 275,
+            frameHeight: 275,
+            states: [{name: 'anim', frames: allPickupTypes.length}],
+        });
+        this.frameIndex = allPickupTypes.findIndex((t) => t === type);
+        this.sprite.selectFrame(this.frameIndex);
     }
 }
 const pickupColors: Record<PickupType, string> = {
-    [PickupType.HEATH_RESTORE]: '#00ff00',
+    [PickupType.REPAIR]: '#00ff00',
     [PickupType.SHIELD]: '#00ffff',
     [PickupType.SPEED_BOOST]: '#ffffff',
     [PickupType.DAMAGE_BOOST]: '#ff0000',
-    [PickupType.RELOAD_BOOST]: '#ff6f00',
-};
-
-const pickupTexts: Record<PickupType, string> = {
-    [PickupType.HEATH_RESTORE]: '+HP',
-    [PickupType.SHIELD]: 'Shield',
-    [PickupType.SPEED_BOOST]: '+SPD',
-    [PickupType.DAMAGE_BOOST]: '+DMG',
-    [PickupType.RELOAD_BOOST]: '+RLD',
+    [PickupType.RELOAD_BOOST]: '#ffc107',
 };
 
 export function drawPickups(renderer: Renderer, pickups: Pickup[]): void {
+    const bgOpacity = Math.round(0.33 * 255).toString(16);
     for (const pickup of pickups) {
         if (pickup.dead) continue;
         const color = pickupColors[pickup.type];
-        renderer.setFillColor(color + '54'); // 33% opacity
+        renderer.setFillColor(color + bgOpacity);
         renderer.fillRect2(pickup);
         renderer.setStrokeColor(color);
         renderer.strokeBoundary(pickup, 2);
-        const code = pickupTexts[pickup.type];
-        renderer.setFont('bold 16px sans-serif');
-        const metrics = renderer.measureText(code);
-        const scale = renderer.camera.scale;
-        renderer.fillText(code, {
-            x: pickup.x + (pickup.width - metrics.width / scale) / 2,
-            y:
-                pickup.y +
-                pickup.height / 2 +
-                (metrics.actualBoundingBoxAscent - metrics.actualBoundingBoxDescent) / 2 / scale,
-            color: color,
-        });
+        pickup.sprite.draw(renderer, pickup.spriteRect);
     }
 }
 
@@ -97,7 +99,7 @@ function applyPickup(pickup: Pickup, tank: Tank): void {
     assert(!tank.dead);
     let skipped = false;
     switch (pickup.type) {
-        case PickupType.HEATH_RESTORE:
+        case PickupType.REPAIR:
             if (tank.needsHealing) {
                 tank.restoreHealthAmount(RESTORE_HP_AMOUNT);
             } else {
@@ -154,9 +156,7 @@ export function generatePickups(room: Room, manager: EntityManager): void {
         if (findIntersectingAmong(testRect, room.blocks)) continue;
         if (findIntersectingAmong(testRect, room.pickups)) continue;
 
-        const pickup = new Pickup(pickupType);
-        pickup.x = testRect.x;
-        pickup.y = testRect.y;
+        const pickup = new Pickup(pickupType, testRect.x, testRect.y);
         room.pickups.push(pickup);
         selectedPickups.shift();
     }

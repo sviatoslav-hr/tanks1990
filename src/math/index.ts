@@ -1,6 +1,6 @@
-import { Direction } from '#/math/direction';
-import { random } from '#/math/rng';
-import { Vector2Like } from '#/math/vector';
+import {Direction} from '#/math/direction';
+import {random} from '#/math/rng';
+import {Vector2Like} from '#/math/vector';
 
 export type Rect = {
     x: number;
@@ -56,6 +56,22 @@ export function rotateRect(rect: Rect, cx: number, cy: number, deg: 0 | 90 | 180
         y: ny - (swap ? width : height) / 2,
         width: swap ? height : width,
         height: swap ? width : height,
+    };
+}
+
+export function scaleRectCentered(rect: Rect, scale: number): Rect {
+    const {x, y, width, height} = rect;
+    const cx = x + width / 2;
+    const cy = y + height / 2;
+    const scaledWidth = width * scale;
+    const scaledHeight = height * scale;
+    const scaledX = cx - scaledWidth / 2;
+    const scaledY = cy - scaledHeight / 2;
+    return {
+        x: scaledX,
+        y: scaledY,
+        width: scaledWidth,
+        height: scaledHeight,
     };
 }
 

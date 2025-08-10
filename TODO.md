@@ -1,9 +1,9 @@
 # TODO
-- [ ] Add icons for power ups
 
 ## DOING
 
 ## NEXT TODO
+- [ ] Add mute/unmute keymap
 - [ ] Better dungeon generation
   - [ ] Allow generation in any direction (currently bottom direction is disabled to avoid cyclic paths)
   - [ ] Consider maze-like generation (multiple possible paths)
@@ -37,6 +37,10 @@
 - [ ] Have different types of the projectiles - TBD.
 - [ ] Tank armor - TBD. Could be a power up or specific to a separate tank type.
 - [ ] Enemy spawning: Make the enemies spawn in waves, with each wave being stronger than the previous one.
+- [ ] Add VFX to pickups
+    - [ ] Add bouncing animation so they look more alive
+    - [ ] Add a visual effect when the pickup is consumed
+    - [ ] Add a sound effect when the pickup is cosumed by played
 
 ### Sounds And Music
 - [ ] Main screen music?
