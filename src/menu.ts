@@ -64,7 +64,7 @@ export const Menu = UIComponent('menu', (ui, props: MenuProps) => {
             case 'pause':
                 return 'Paused';
             case 'dead':
-                return 'You Died';
+                return 'Game Over';
             case 'completed':
                 return 'Game Completed';
             default:

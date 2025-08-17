@@ -148,6 +148,7 @@ export class Sound {
     private audioBuffer: AudioBuffer | null = null;
     private gainNode: GainNode | null = null;
     private source: AudioBufferSourceNode | null = null;
+    private shouldPlayOnceLoaded = false;
     #volume = 1;
     #volumeScale = 1;
     #startTime = 0;
@@ -186,7 +187,13 @@ export class Sound {
     }
 
     play(volumeScale = this.#volumeScale, loop = this.#loop): void {
-        assert(this.loaded, `Sound: cannot play, sound not loaded: "${this.src}"`);
+        if (!this.loaded && loop) {
+            // NOTE: Do this only for looped sounds, because not looped sounds may be timing-specific.
+            this.shouldPlayOnceLoaded = true;
+            this.#volumeScale = volumeScale;
+            this.#loop = loop;
+            return;
+        }
         this.startAudioSource(volumeScale, 0, loop);
         this.#startTime = this.audioContext.currentTime;
         this.#pauseTime = 0;
@@ -256,6 +263,7 @@ export class Sound {
 
         this.audioBuffer = bufferResult.value;
         this.state = SoundState.LOADED;
+        if (this.shouldPlayOnceLoaded) this.play();
         return Result.ok();
     }
 

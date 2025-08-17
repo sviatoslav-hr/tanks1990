@@ -1,6 +1,7 @@
 # TODO
 
 ## DOING
+- [ ] Fix battle theme not working when sound has not been loaded yet
 
 ## NEXT TODO
 - [ ] Better dungeon generation
