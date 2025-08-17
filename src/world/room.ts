@@ -1,4 +1,3 @@
-import {Color} from '#/color';
 import {CELL_SIZE} from '#/const';
 import {PlayerTank} from '#/entity';
 import {Block} from '#/entity/block';
@@ -7,29 +6,31 @@ import {EnemyWave, wavesPerRoom} from '#/entity/enemy-wave';
 import {EntityManager} from '#/entity/manager';
 import {Pickup} from '#/entity/pickup';
 import {Rect} from '#/math';
-import {Direction} from '#/math/direction';
+import {Direction, getDirectionBetween} from '#/math/direction';
 import {Vector2} from '#/math/vector';
+import {WorldNode} from './graph';
 
 export const roomSizeInCells = new Vector2(12, 8);
 
+// TODO: Room code needs to be refactored, it's too complex, intermingled and messy #roomgen
 export class Room {
     started = false;
-    readonly boundaryColor = Color.RED;
     readonly boundary: Rect;
-    readonly nextRoomTransitionRect: Rect;
-    nextRoom: Room | null = null;
+    readonly nextRoomTransitionRects: Rect[];
+    nextRooms: Room[] = [];
     nextRoomDoorOpen = false;
     prevRoomDoorBlocks: Block[];
-    roomIndex: number;
+    depth: number;
     wave: EnemyWave;
     pickups: Pickup[] = [];
 
     constructor(
+        public node: WorldNode,
         public position: Vector2,
         public sizeInCells: Vector2,
         public blocks: Block[],
-        public prevRoom: Room | null,
-        public nextRoomDir: Direction,
+        public prevRooms: Room[],
+        public nextRoomDirs: Direction[],
         public readonly nextRoomCommonBlocks: Block[],
     ) {
         this.boundary = {
@@ -38,56 +39,70 @@ export class Room {
             width: CELL_SIZE * this.sizeInCells.width,
             height: CELL_SIZE * this.sizeInCells.height,
         };
-        if (prevRoom) {
-            prevRoom.nextRoom = this;
+        for (const p of prevRooms) {
+            p.nextRooms.push(this);
         }
-        this.nextRoomTransitionRect = this.makeNextRoomTransitionRect(
-            position,
-            sizeInCells,
-            this.nextRoomDir,
+        this.nextRoomTransitionRects = this.nextRoomDirs.map((nextDir) =>
+            this.makeNextRoomTransitionRect(position, sizeInCells, nextDir),
         );
-        this.roomIndex = prevRoom ? prevRoom.roomIndex + 1 : 0;
+        this.depth = node.depth;
         {
-            const wave = wavesPerRoom[this.roomIndex];
+            const wave = wavesPerRoom[this.depth - 1];
             assert(wave);
+            // TODO: Clone the wave, just in case. But currently, there shouldn't be any problems with it.
             wave.reset();
             this.wave = wave;
         }
-        const prevRoomCommonBlocks = prevRoom?.nextRoomCommonBlocks ?? [];
-        this.prevRoomDoorBlocks =
-            prevRoomCommonBlocks.filter((b) => {
-                return isIntesecting(b, prevRoom!.nextRoomTransitionRect);
-            }) ?? [];
-        assert(this.roomIndex === 0 || this.prevRoomDoorBlocks.length === 2);
+        // const prevRoomCommonBlocks = prevRooms.flatMap((p) => p.nextRoomCommonBlocks.slice());
+        // this.prevRoomDoorBlocks = prevRoomCommonBlocks.filter((block) => {
+        //     prevRooms.some((p) => p.nextRoomTransitionRects.some((r) => isIntesecting(block, r)));
+        // });
+        // TODO: For some reason, previous code doesn't work, but this does...
+        // PERF: Also, this is not optimal - too much looping.
+        this.prevRoomDoorBlocks = prevRooms.flatMap((p) =>
+            p.nextRoomCommonBlocks.filter((b) =>
+                p.nextRoomTransitionRects.some((r) => isIntesecting(b, r)),
+            ),
+        );
+        assert(this.depth === 1 || this.prevRoomDoorBlocks.length >= 2);
     }
 
     // NOTE: This is only used as a temprorary replaced for the first room to not make it nullable.
     static temp(): Room {
-        return new Room(new Vector2(0, 0), roomSizeInCells, [], null, Direction.NORTH, []);
+        const zero: WorldNode = {x: 0, y: 0, depth: 1, connectedNodes: {}};
+        return new Room(zero, new Vector2(0, 0), roomSizeInCells, [], [], [Direction.NORTH], []);
     }
 
     get completed(): boolean {
         return this.started && this.wave.cleared;
     }
 
-    shouldActivateNextRoom(player: Entity): boolean {
-        if (!this.nextRoom || !this.nextRoomDoorOpen) return false;
-        return isIntesecting(player, this.nextRoomTransitionRect);
+    shouldActivateNextRoom(player: Entity): Room | null {
+        if (!this.nextRooms.length || !this.nextRoomDoorOpen) return null;
+        const rectIndex = this.nextRoomTransitionRects.findIndex((r) => isIntesecting(player, r));
+        if (rectIndex === -1) return null;
+        const nextDirection = this.nextRoomDirs[rectIndex];
+        assert(nextDirection);
+        const nextRoom = this.nextRooms.find(
+            (r) => getDirectionBetween(this.node, r.node) === nextDirection,
+        );
+        assert(nextRoom);
+        return nextRoom;
     }
 
     update(manager: EntityManager): void {
         if (!this.started) {
             this.maybeStartRoom(manager.player);
         } else if (this.completed && !this.nextRoomDoorOpen) {
-            if (this.nextRoom) {
+            if (this.nextRooms.length) {
                 logger.debug(
                     '[Room] Room %i cleared. Opening door to room %i',
-                    this.roomIndex,
-                    this.nextRoom.roomIndex,
+                    this.depth,
+                    this.depth + 1,
                 );
                 this.openNextRoomDoors();
             } else {
-                logger.debug('[Room] Last room %i cleared.', this.roomIndex);
+                logger.debug('[Room] Last room %i cleared.', this.depth);
                 // HACK: Last room doesn't have doors, we just mark to not flood with logs.
                 this.nextRoomDoorOpen = true;
             }
@@ -110,14 +125,15 @@ export class Room {
     }
 
     private openNextRoomDoors(): void {
-        const searchRect = this.nextRoomTransitionRect;
-        // TODO: Instead of just removing the blocks, animate door opening.
-        const block1 = this.blocks.find((b) => !b.dead && isIntesecting(b, searchRect));
-        assert(block1 != null);
-        block1.dead = true;
-        const block2 = this.blocks.find((b) => !b.dead && isIntesecting(b, searchRect));
-        assert(block2 != null);
-        block2.dead = true;
+        for (const searchRect of this.nextRoomTransitionRects) {
+            // TODO: Instead of just removing the blocks, animate door opening.
+            const block1 = this.blocks.find((b) => !b.dead && isIntesecting(b, searchRect));
+            assert(block1 != null);
+            block1.dead = true;
+            const block2 = this.blocks.find((b) => !b.dead && isIntesecting(b, searchRect));
+            assert(block2 != null);
+            block2.dead = true;
+        }
         this.nextRoomDoorOpen = true;
     }
 

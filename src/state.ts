@@ -1,6 +1,5 @@
 import {
     activateRecording,
-    RECORDING_VERSION,
     stopRecording,
     type RecordingInfo,
     type RecordingStatus,
@@ -30,7 +29,7 @@ export class GameState {
     };
     recordingInfo: RecordingInfo = {
         commitHash: COMMIT_HASH,
-        version: RECORDING_VERSION,
+        version: GAME_VERSION,
         seed: 'default',
         inputs: [],
         startedAt: 0,
@@ -123,5 +122,5 @@ export class GameState {
 }
 
 export function justCompletedGame(state: GameState, room: Room): boolean {
-    return state.playing && !state.gameCompleted && room.completed && !room.nextRoom;
+    return state.playing && !state.gameCompleted && room.completed && !room.nextRooms.length;
 }

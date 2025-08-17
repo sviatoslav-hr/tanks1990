@@ -23,59 +23,20 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-interface AleaState {
-    c: number;
-    s0: number;
-    s1: number;
-    s2: number;
-}
+// TODO: Rename file to 'random' for consistency
+export class Random {
+    source: RngSource;
 
-type Seed = string | number;
-
-export class RNG {
-    c!: number;
-    s0!: number;
-    s1!: number;
-    s2!: number;
-    private initial!: AleaState;
-    private _seed!: string;
-
-    constructor(seed: string) {
-        this.init(seed);
+    constructor(source: RngSource) {
+        this.source = source;
     }
 
     get seed(): string {
-        return this._seed;
-    }
-
-    private init(seed: string): void {
-        this._seed = seed;
-        let mash = makeMash();
-        this.c = 1;
-        this.s0 = mash(' ');
-        this.s1 = mash(' ');
-        this.s2 = mash(' ');
-        this.s0 -= mash(seed);
-        if (this.s0 < 0) {
-            this.s0 += 1;
-        }
-        this.s1 -= mash(seed);
-        if (this.s1 < 0) {
-            this.s1 += 1;
-        }
-        this.s2 -= mash(seed);
-        if (this.s2 < 0) {
-            this.s2 += 1;
-        }
-        mash = null as any;
-        this.initial = this.state();
+        return this.source.getSeed();
     }
 
     float(): number {
-        const t = 2091639 * this.s0 + this.c * 2.3283064365386963e-10; // 2^-32
-        this.s0 = this.s1;
-        this.s1 = this.s2;
-        return (this.s2 = t - (this.c = t | 0));
+        return this.source.float();
     }
 
     double(): number {
@@ -96,10 +57,6 @@ export class RNG {
 
     uint32(): number {
         return this.int32() >>> 0;
-    }
-
-    quick(): number {
-        return this.float();
     }
 
     selectFrom<T>(...values: T[]): T {
@@ -128,41 +85,119 @@ export class RNG {
         return result;
     }
 
+    shuffle<T>(values: T[]): T[] {
+        if (values.length === 0) return [];
+
+        const n = values.length;
+        for (let i = 0; i < n; i++) {
+            const j = this.int32Range(i, n);
+            const temp = values[i]!;
+            values[i] = values[j]!;
+            values[j] = temp;
+        }
+
+        return values;
+    }
+
+    reset(seed?: string): void {
+        this.source.reset(seed ?? this.seed);
+    }
+}
+
+export interface RngSource {
+    float(): number;
+    getSeed(): string;
+    reset(seed: string): void;
+}
+
+interface AleaState {
+    c: number;
+    s0: number;
+    s1: number;
+    s2: number;
+}
+
+type Seed = string | number;
+
+export class AleaRngSource implements RngSource {
+    c!: number;
+    s0!: number;
+    s1!: number;
+    s2!: number;
+    private initial!: AleaState;
+    private seed!: string;
+
+    constructor(seed: Seed) {
+        this.init(seed.toString());
+    }
+
+    getSeed(): string {
+        return this.seed;
+    }
+
+    float(): number {
+        const t = 2091639 * this.s0 + this.c * 2.3283064365386963e-10; // 2^-32
+        this.s0 = this.s1;
+        this.s1 = this.s2;
+        return (this.s2 = t - (this.c = t | 0));
+    }
+
+    reset(seed?: string): void {
+        if (seed && seed !== this.seed) {
+            logger.debug(`[RNG] Resetting with new seed=${seed}. Previous seed=${this.seed}`);
+            this.init(seed);
+        } else {
+            logger.debug(`[RNG] Resetting with same seed=${this.seed}`);
+            copyAleaInto(this.initial, this);
+        }
+    }
+
+    private init(seed: string): void {
+        this.seed = seed;
+        let mash = makeMash();
+        this.c = 1;
+        this.s0 = mash(' ');
+        this.s1 = mash(' ');
+        this.s2 = mash(' ');
+        this.s0 -= mash(seed);
+        if (this.s0 < 0) {
+            this.s0 += 1;
+        }
+        this.s1 -= mash(seed);
+        if (this.s1 < 0) {
+            this.s1 += 1;
+        }
+        this.s2 -= mash(seed);
+        if (this.s2 < 0) {
+            this.s2 += 1;
+        }
+        mash = null as any;
+        this.initial = this.state();
+
+        function makeMash() {
+            let n = 0xefc8249d;
+            return (data: Seed): number => {
+                data = String(data);
+                for (let i = 0; i < data.length; i++) {
+                    n += data.charCodeAt(i);
+                    let h = 0.02519603282416938 * n;
+                    n = h >>> 0;
+                    h -= n;
+                    h *= n;
+                    n = h >>> 0;
+                    h -= n;
+                    n += h * 0x100000000; // 2^32
+                }
+                return (n >>> 0) * 2.3283064365386963e-10; // 2^-32
+            };
+        }
+    }
+
     private state(): AleaState {
         const state: Partial<AleaState> = {};
         copyAleaInto(this, state);
         return state as AleaState;
     }
-
-    reset(seed?: string): void {
-        if (seed && seed !== this._seed) {
-            logger.debug(`[RNG] Resetting with new seed=${seed}. Previous seed=${this._seed}`);
-            this.init(seed);
-        } else {
-            logger.debug(`[RNG] Resetting with same seed=${this._seed}`);
-            copyAleaInto(this.initial, this);
-        }
-    }
-}
-
-export const random = new RNG('stardard');
-
-function makeMash() {
-    let n = 0xefc8249d;
-    return (data: Seed): number => {
-        data = String(data);
-        for (let i = 0; i < data.length; i++) {
-            n += data.charCodeAt(i);
-            let h = 0.02519603282416938 * n;
-            n = h >>> 0;
-            h -= n;
-            h *= n;
-            n = h >>> 0;
-            h -= n;
-            n += h * 0x100000000; // 2^32
-        }
-        return (n >>> 0) * 2.3283064365386963e-10; // 2^-32
-    };
 }
 
 function copyAleaInto(source: AleaState, target: Partial<AleaState>): void {
@@ -172,7 +207,7 @@ function copyAleaInto(source: AleaState, target: Partial<AleaState>): void {
     target.s2 = source.s2;
 }
 
-// TODO: url seed functions really shouln't be here, since they are dependent on the browser API, but it's okay for now.
+// TODO: url seed functions really shoultn't be here, since they are dependent on the browser API, but it's okay for now.
 export function setURLSeed(seed: string): void {
     const url = new URL(window.location.href);
     const key = 'seed';
@@ -186,3 +221,6 @@ export function getURLSeed(): string | null {
     const url = new URL(window.location.href);
     return url.searchParams.get('seed');
 }
+
+const rngSource = new AleaRngSource('stardard');
+export const random = new Random(rngSource);

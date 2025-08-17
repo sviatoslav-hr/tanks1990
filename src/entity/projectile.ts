@@ -7,7 +7,7 @@ import {EntityManager} from '#/entity/manager';
 import {EnemyTank, PlayerTank} from '#/entity/tank';
 import {EventQueue} from '#/events';
 import {bellCurveInterpolate, lerp} from '#/math';
-import {Direction} from '#/math/direction';
+import {Direction, getDirectionAngle} from '#/math/direction';
 import {Duration} from '#/math/duration';
 import {Vector2} from '#/math/vector';
 import {Renderer} from '#/renderer';
@@ -98,7 +98,7 @@ export class Projectile extends Entity {
             return;
         }
         this.drawTrail(renderer);
-        this.sprite.draw(renderer, this, this.direction);
+        this.sprite.draw(renderer, this, getDirectionAngle(this.direction));
         if (config.debugShowBoundaries) {
             renderer.setStrokeColor(Color.PINK);
             renderer.strokeBoundary(this, 1);

@@ -3,14 +3,18 @@ import {CELL_SIZE} from '#/const';
 import {Block} from '#/entity/block';
 import {EntityManager} from '#/entity/manager';
 import {Vector2} from '#/math/vector';
-import {generateDungeon, MAX_ROOMS_COUNT} from '#/world/generation';
+import {createRoomsFromGraph, MAX_ROOMS_COUNT} from '#/world/generation';
+import {generateWorldGraph, type WorldGraph} from '#/world/graph';
 import {Room} from '#/world/room';
+
+const FINAL_ROOMS_COUNT = 3;
 
 export class World {
     roomsLimit = MAX_ROOMS_COUNT;
     activeRoom = Room.temp();
     activeRoomInFocus = false;
     rooms: Room[] = [];
+    graph: WorldGraph | null = null;
 
     readonly startRoomPosition = new Vector2(0, 0);
     readonly bgColor = Color.BLACK_IERIE;
@@ -18,7 +22,12 @@ export class World {
     readonly boundaryThickness = 0.1 * CELL_SIZE;
 
     init(manager: EntityManager): void {
-        this.rooms = generateDungeon(this.startRoomPosition, manager, this.roomsLimit);
+        this.graph = generateWorldGraph({
+            depth: this.roomsLimit,
+            finalNodesCount: FINAL_ROOMS_COUNT,
+        });
+        this.rooms = createRoomsFromGraph(this.graph, manager);
+
         const startRoom = this.rooms[0];
         assert(startRoom);
         this.activeRoom = startRoom;

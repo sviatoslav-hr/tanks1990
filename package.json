@@ -1,7 +1,7 @@
 {
     "name": "tanks1990",
     "private": true,
-    "version": "0.0.0",
+    "version": "0.2.0",
     "homepage": "https://sviatoslav-hr.github.io/tanks1990/",
     "type": "module",
     "scripts": {

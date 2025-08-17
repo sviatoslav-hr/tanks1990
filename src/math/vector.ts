@@ -205,3 +205,17 @@ export interface Vector2Like {
     x: number;
     y: number;
 }
+
+export function v2AddMut(a: Vector2Like, b: Vector2Like): Vector2Like {
+    a.x += b.x;
+    a.y += b.y;
+    return a;
+}
+
+export function v2Equals(a: Vector2Like, b: Vector2Like): boolean {
+    return a.x === b.x && a.y === b.y;
+}
+
+export function v2ManhattanDistance(a: Vector2Like, b: Vector2Like): number {
+    return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+}

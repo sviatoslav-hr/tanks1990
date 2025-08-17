@@ -86,13 +86,13 @@ export class EntityManager {
 
     updateAllEntities(dt: Duration, camera: Camera, events: EventQueue): void {
         this.world.update(this);
-        if (this.world.activeRoom.shouldActivateNextRoom(this.player)) {
-            const nextRoom = this.world.activeRoom.nextRoom;
-            assert(nextRoom);
+        const nextRoom = this.world.activeRoom.shouldActivateNextRoom(this.player);
+        if (nextRoom) {
             this.world.activeRoom = nextRoom;
             this.world.activeRoomInFocus = false;
         }
 
+        // TODO: Why does this has to exist as a separate block and not merged with the previous block?
         if (!this.world.activeRoomInFocus) {
             camera.focusOnRect(this.world.activeRoom.boundary);
             this.world.activeRoomInFocus = true;

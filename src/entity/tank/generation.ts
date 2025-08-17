@@ -1,5 +1,5 @@
 import type {Rect} from '#/math';
-import {Direction} from '#/math/direction';
+import {Direction, getDirectionAngle} from '#/math/direction';
 import {Duration} from '#/math/duration';
 import type {Renderer} from '#/renderer';
 import {Sprite} from '#/renderer/sprite';
@@ -126,10 +126,11 @@ export class TankSpriteGroup {
     ) {}
 
     draw(renderer: Renderer, boundary: Rect, direction: Direction): void {
+        const directionAngle = getDirectionAngle(direction);
         // FIXME: Sprites look better (not blurry) when smoothing is disabled,
         //        but is also causes jittering on big screens. (Not sure how to fix it yet)
         if (renderer.imageSmoothingDisabled) renderer.ctx.imageSmoothingEnabled = false;
-        this.body.draw(renderer, boundary, direction - 180);
+        this.body.draw(renderer, boundary, directionAngle - 180);
         {
             const turret = this.turret;
             const bodyHeight = this.body.frameHeight - this.body.framePadding * 2;
@@ -151,9 +152,9 @@ export class TankSpriteGroup {
                 },
                 cx,
                 cy,
-                direction - 180,
+                directionAngle - 180,
             );
-            this.turret.draw(renderer, spriteBoundary, direction - 180);
+            this.turret.draw(renderer, spriteBoundary, directionAngle - 180);
         }
         if (renderer.imageSmoothingDisabled) renderer.ctx.imageSmoothingEnabled = true;
     }

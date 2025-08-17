@@ -1,15 +1,13 @@
 # TODO
 
 ## DOING
-- [ ] Fix battle theme not working when sound has not been loaded yet
 
 ## NEXT TODO
-- [ ] Better dungeon generation
-  - [ ] Allow generation in any direction (currently bottom direction is disabled to avoid cyclic paths)
-  - [ ] Consider maze-like generation (multiple possible paths)
+- [ ] Add animation/SFX to room door opening to hint player that's where he needs to go next.
 - [ ] Add speed up option for recording playback
 
 ## SHOULD BE FIXED
+- [ ] Enemies can spawn before the door to previous room closes and player can still be in the previous room.
 - [ ] During later levels, the pathfinding slows down the game significantly.
       Probably, need to put a smaller limit on the number of iterations for
       pathfinding. Or adjust the limit dynamically based on the number of entities
@@ -26,6 +24,7 @@
 
 ### Refactoring
 - [ ] Outline how objects/classes should access each other (global vars/props/DI etc) (eg Renderer, Input, EntityManager, Entity etc)
+- [ ] Room creation code is too complex and intermingled... (see #roomgen)
 - [ ] Detach simulation out of entities and manager
 - [ ] Better way to store images and sprites (how bad Image is?)
 - [ ] Better coordinates system (consider defining something like `WorldPosition`)

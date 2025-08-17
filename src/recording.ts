@@ -5,8 +5,6 @@ import {MenuBridge} from '#/menu';
 import type {GameState} from '#/state';
 import {notify} from '#/ui/notification';
 
-export const RECORDING_VERSION = 0.1;
-
 export interface RecordingStatus {
     /** Indicates whether the next game sessions should be recorded. */
     enabled: boolean;
@@ -17,7 +15,7 @@ export interface RecordingStatus {
 }
 
 export interface RecordingInfo {
-    version: number;
+    version: string;
     commitHash: string;
     seed: string;
     startedAt: number;
@@ -119,8 +117,8 @@ export function exitRecording(state: GameState, menu: MenuBridge): void {
 
 export function importRecording(state: GameState, data: string): void {
     const recordingInfo = JSON.parse(data) as RecordingInfo;
-    if (recordingInfo.version !== RECORDING_VERSION) {
-        logger.error('Invalid recording version');
+    if (recordingInfo.version !== GAME_VERSION) {
+        logger.error('Unsupported game verions in the recording');
         return;
     }
     state.recordingInfo = recordingInfo;

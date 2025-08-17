@@ -1,4 +1,3 @@
-import {GameConfig} from '#/config';
 import {DEV_MODE_KEY} from '#/const';
 import {EntityManager} from '#/entity/manager';
 import type {EventQueue} from '#/events';
@@ -49,6 +48,9 @@ export interface ExtraInputState {
     cameraReset?: 1;
     toggleRecording?: 1;
     playOrExitRecording?: 1;
+    reserved1?: 1;
+    reserved2?: 1;
+    reserved3?: 1;
 }
 
 export function handleKeymaps(state: GameState, input: GameInput): InputState {
@@ -133,6 +135,18 @@ export function handleExtraKeymaps(input: GameInput): ExtraInputState {
             result.playOrExitRecording = 1;
         }
 
+        if (input.isPressed('KeyN')) {
+            result.reserved1 = 1;
+        }
+
+        if (input.isPressed('KeyV')) {
+            result.reserved2 = 1;
+        }
+
+        if (input.isPressed('KeyH')) {
+            result.reserved3 = 1;
+        }
+
         if (input.isPressed('Backquote'))
             if (shift) {
                 result.toggleFPSMonitorPause = 1;
@@ -144,12 +158,9 @@ export function handleExtraKeymaps(input: GameInput): ExtraInputState {
             result.toggleDevPanel = 1;
         }
 
-        if (input.isDown('MouseMiddle')) {
+        if (input.isDown('MouseMiddle') || input.isDown('MouseLeft')) {
+            // NOTE: Support also mouse left to have a convenient way to move camera on touchpad
             result.cameraManualOffset = input.getMouseDelta();
-        } else if (input.isDown('MouseLeft')) {
-            // NOTE: Same as MouseMiddle but for touchpad. Negating to make it feel like
-            // dragging the camera.
-            result.cameraManualOffset = input.getMouseDelta().negate();
         }
 
         if (input.isPressed('Digit0')) {
@@ -171,7 +182,6 @@ export function handleExtraKeymaps(input: GameInput): ExtraInputState {
 // TODO: Turn params into an object because it's getting out of hand.
 export function processInput(
     input: InputState,
-    config: GameConfig,
     renderer: Renderer,
     state: GameState,
     manager: EntityManager,
@@ -219,7 +229,7 @@ export function processInput(
     }
 
     if (input.extra.showBoundaries) {
-        config.setDebugShowBoundaries(!config.debugShowBoundaries);
+        // config.setDebugShowBoundaries(!config.debugShowBoundaries);
     }
 
     if (input.extra.toggleRecording) {
@@ -261,7 +271,10 @@ export function processInput(
 
     if (input.extra.cameraManualScaleOffset != null) {
         renderer.camera.manualMode = true;
-        renderer.camera.setScale(renderer.camera.scale - input.extra.cameraManualScaleOffset);
+        const newScale = renderer.camera.scale - input.extra.cameraManualScaleOffset;
+        if (Number.isFinite(newScale) && newScale > 0) {
+            renderer.camera.setScale(newScale);
+        }
     } else if (input.extra.cameraManualScale != null) {
         renderer.camera.manualMode = true;
         renderer.camera.setScale(renderer.camera.scale - input.extra.cameraManualScale);

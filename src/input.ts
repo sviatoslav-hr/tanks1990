@@ -10,6 +10,7 @@ export type KeyCode =
     | 'KeyS'
     | 'KeyD'
     | 'KeyF'
+    | 'KeyV'
     | 'KeyB'
     | 'KeyI'
     | 'KeyO'

@@ -23,6 +23,8 @@ import {uiGlobal} from '#/ui/core';
 import {createDevUI, DevUI} from '#/ui/dev';
 import {createNotificationBar, notify} from '#/ui/notification';
 import {World} from '#/world/world';
+import {Color} from './color';
+import {getURLSeed, random, setURLSeed} from './math/rng';
 
 main();
 
@@ -81,6 +83,9 @@ function runGame(
     sounds: SoundManager,
     eventQueue: EventQueue,
 ) {
+    const seed = getURLSeed();
+    random.reset(seed ?? undefined);
+    setURLSeed(random.seed);
     manager.init(); // Init the world to display it behind the main menu screen.
     let lastTimestamp = performance.now();
     const animationCallback = (): void => {
@@ -104,20 +109,12 @@ function runGame(
                 inputState.extra.toggleFullscreen ||= 1;
                 menu.fullscreenToggleExpected = false;
             }
-            processInput(
-                inputState,
-                config,
-                renderer,
-                state,
-                manager,
-                menu,
-                devUI,
-                storage,
-                eventQueue,
-            );
+            processInput(inputState, renderer, state, manager, menu, devUI, storage, eventQueue);
             maybeRecordInput(state, inputState.game);
 
             drawOptions.drawUI = !menu.visible;
+            renderer.setFillColor(Color.BLACK);
+            renderer.fillScreen();
             drawGame(renderer, config, manager, drawOptions);
             simulateGameTick(dt, state, manager, renderer.camera, eventQueue);
             processGameEvents(eventQueue, state, manager, sounds, menu);

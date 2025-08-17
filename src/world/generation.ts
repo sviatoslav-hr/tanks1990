@@ -3,137 +3,136 @@ import {Block, generateBlocks} from '#/entity/block';
 import {wavesPerRoom} from '#/entity/enemy-wave';
 import {EntityManager} from '#/entity/manager';
 import {generatePickups} from '#/entity/pickup';
-import {Direction, oppositeDirection} from '#/math/direction';
+import {Direction} from '#/math/direction';
 import {random} from '#/math/rng';
 import {Vector2} from '#/math/vector';
 import {createStaticSprite} from '#/renderer/sprite';
 import {Room, roomSizeInCells} from '#/world/room';
+import {
+    bfsWorldGraph,
+    getPrevDepthWorldNodes,
+    getWorldNodeDirections,
+    getWorldNodeKey,
+    type WorldNode,
+    type WorldGraph,
+    type WorldNodeKey,
+} from '#/world/graph';
 
 export const MAX_ROOMS_COUNT = wavesPerRoom.length;
 
 // TODO: Figure out generation algorithm that would avoid overlapping rooms
-export function generateDungeon(
-    startRoomPosition: Vector2,
-    manager: EntityManager,
-    roomsCount: number,
-): Room[] {
-    assert(roomsCount <= MAX_ROOMS_COUNT);
-    const rooms: Room[] = [];
-    const roomPosition = startRoomPosition.clone();
-    for (let i = 0; i < roomsCount; i++) {
-        const prevRoom = rooms[i - 1];
-        if (prevRoom) {
-            roomPosition.setFrom(prevRoom.position);
-            switch (prevRoom.nextRoomDir) {
-                case Direction.NORTH:
-                    roomPosition.y -= roomSizeInCells.height * CELL_SIZE + CELL_SIZE;
-                    break;
-                case Direction.EAST:
-                    roomPosition.x += roomSizeInCells.width * CELL_SIZE + CELL_SIZE;
-                    break;
-                case Direction.SOUTH:
-                    roomPosition.y += roomSizeInCells.height * CELL_SIZE + CELL_SIZE;
-                    break;
-                case Direction.WEST:
-                    roomPosition.x -= roomSizeInCells.width * CELL_SIZE + CELL_SIZE;
-                    break;
-            }
-        }
-        const room = generateRoom(roomPosition.clone(), roomSizeInCells, manager, prevRoom);
-        rooms.push(room);
+export function createRoomsFromGraph(graph: WorldGraph, manager: EntityManager): Room[] {
+    assert(graph.depth <= MAX_ROOMS_COUNT);
+    const createdRooms: Map<WorldNodeKey, Room> = new Map();
+    for (const node of bfsWorldGraph(graph.startNode)) {
+        const nodeKey = getWorldNodeKey(node);
+        if (createdRooms.has(nodeKey)) continue;
+        const prevNodes = getPrevDepthWorldNodes(node);
+        const prevRooms = prevNodes.map((prevNode) => {
+            const room = createdRooms.get(getWorldNodeKey(prevNode));
+            assert(room);
+            return room;
+        });
+        const room = generateRoom(node, manager, prevRooms);
+        createdRooms.set(nodeKey, room);
     }
-    return rooms;
+    return Array.from(createdRooms.values());
 }
 
-// TODO: Custom random number generator for deterministic generation
-function generateRoom(
-    roomPosition: Vector2,
-    sizeInCells: Vector2,
-    manager: EntityManager,
-    prevRoom: Room | null = null,
-): Room {
+// TODO: This room generation code is awful, too intermingled and hard to follow #roomgen
+function generateRoom(node: WorldNode, manager: EntityManager, prevRooms: Room[]): Room {
     const sprite = createStaticSprite({
         key: 'bricks',
         frameWidth: 64,
         frameHeight: 64,
     });
 
-    const prevDir = prevRoom?.nextRoomDir != null ? oppositeDirection(prevRoom.nextRoomDir) : null;
-    // TODO: South direction is excluded for now to avoid cyclic room structure.
-    //       In future this should be replaced with a better generation algorithm.
-    const dirs = [Direction.NORTH, Direction.EAST, /*Direction.SOUTH,*/ Direction.WEST];
-    if (prevDir) {
-        dirs.splice(dirs.indexOf(prevDir), 1);
-    }
+    const {next: directionsToNextRooms, prev: directionsToPrevRooms} = getWorldNodeDirections(node);
 
-    const nextDoorDir = prevRoom != null ? random.selectFrom(...dirs) : Direction.NORTH;
     // NOTE: Room reuses common border blocks with the previous room
     const nextRoomBlocks: Block[] = [];
-    const blocks: Block[] = prevRoom?.nextRoomCommonBlocks?.slice() ?? [];
+    const blocks: Block[] = prevRooms.flatMap((p) => p.nextRoomCommonBlocks.slice());
     const cellSize = CELL_SIZE;
+    const roomOffset = Vector2.from(node).multiplyScalar(cellSize);
+    const roomPosition = Vector2.from(node)
+        .multiply(roomSizeInCells)
+        .multiplyScalar(cellSize)
+        .add(roomOffset);
 
     // north and south walls
-    const minX = roomPosition.x - (sizeInCells.width / 2) * cellSize;
-    for (let x = -1; x <= sizeInCells.width; x += 1) {
+    const minX = roomPosition.x - (roomSizeInCells.width / 2) * cellSize;
+    for (let x = -1; x <= roomSizeInCells.width; x += 1) {
         // NOTE: north and south walls also include the corners
-        if (x === -1 && prevDir === Direction.WEST) {
+        if (x === -1 && directionsToPrevRooms.includes(Direction.WEST)) {
             continue;
         }
-        if (x === sizeInCells.width && prevDir === Direction.EAST) {
+        if (x === roomSizeInCells.width && directionsToPrevRooms.includes(Direction.EAST)) {
             continue;
         }
-        if (prevDir !== Direction.NORTH) {
+        if (!directionsToPrevRooms.includes(Direction.NORTH)) {
             const northBlock = new Block({
                 x: x * cellSize + minX,
-                y: roomPosition.y - (sizeInCells.height / 2 + 1) * cellSize,
+                y: roomPosition.y - (roomSizeInCells.height / 2 + 1) * cellSize,
                 width: cellSize,
                 height: cellSize,
                 texture: sprite,
             });
             blocks.push(northBlock);
-            if (nextDoorDir === Direction.NORTH) nextRoomBlocks.push(northBlock);
+            if (directionsToNextRooms.includes(Direction.NORTH)) nextRoomBlocks.push(northBlock);
         }
-        if (prevDir !== Direction.SOUTH) {
+        if (!directionsToPrevRooms.includes(Direction.SOUTH)) {
             const southBlock = new Block({
                 x: x * cellSize + minX,
-                y: roomPosition.y + (sizeInCells.height / 2) * cellSize,
+                y: roomPosition.y + (roomSizeInCells.height / 2) * cellSize,
                 width: cellSize,
                 height: cellSize,
                 texture: sprite,
             });
             blocks.push(southBlock);
-            if (nextDoorDir === Direction.SOUTH) nextRoomBlocks.push(southBlock);
+            if (directionsToNextRooms.includes(Direction.SOUTH)) nextRoomBlocks.push(southBlock);
         }
     }
 
     // west and east walls
-    const minY = roomPosition.y - (sizeInCells.height / 2) * cellSize;
-    for (let y = 0; y < sizeInCells.height; y += 1) {
-        if (prevDir !== Direction.WEST) {
+    const minY = roomPosition.y - (roomSizeInCells.height / 2) * cellSize;
+    for (let y = 0; y < roomSizeInCells.height; y += 1) {
+        if (!directionsToPrevRooms.includes(Direction.WEST)) {
             const westBlock = new Block({
-                x: roomPosition.x - (sizeInCells.width / 2 + 1) * cellSize,
+                x: roomPosition.x - (roomSizeInCells.width / 2 + 1) * cellSize,
                 y: y * cellSize + minY,
                 width: cellSize,
                 height: cellSize,
                 texture: sprite,
             });
             blocks.push(westBlock);
-            if (nextDoorDir === Direction.WEST) nextRoomBlocks.push(westBlock);
+            if (directionsToNextRooms.includes(Direction.WEST)) nextRoomBlocks.push(westBlock);
         }
-        if (prevDir !== Direction.EAST) {
+        if (!directionsToPrevRooms.includes(Direction.EAST)) {
             const eastBlock = new Block({
-                x: roomPosition.x + (sizeInCells.width / 2) * cellSize,
+                x: roomPosition.x + (roomSizeInCells.width / 2) * cellSize,
                 y: y * cellSize + minY,
                 width: cellSize,
                 height: cellSize,
                 texture: sprite,
             });
             blocks.push(eastBlock);
-            if (nextDoorDir === Direction.EAST) nextRoomBlocks.push(eastBlock);
+            if (directionsToNextRooms.includes(Direction.EAST)) nextRoomBlocks.push(eastBlock);
         }
     }
 
-    const room = new Room(roomPosition, sizeInCells, blocks, prevRoom, nextDoorDir, nextRoomBlocks);
+    if (directionsToNextRooms.length) {
+        assert(nextRoomBlocks.length > 0);
+    }
+
+    const room = new Room(
+        node,
+        roomPosition,
+        roomSizeInCells,
+        blocks,
+        prevRooms,
+        directionsToNextRooms,
+        nextRoomBlocks,
+    );
     const blocksCount = random.int32Range(16, 24);
     const insideBlocks = generateBlocks(manager, room.boundary, blocksCount, manager.player);
     room.blocks.push(...insideBlocks);

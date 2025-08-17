@@ -5,6 +5,8 @@ import {Renderer} from '#/renderer';
 import {Room} from '#/world/room';
 import {World} from '#/world/world';
 
+const ROOM_BOUNDARY_COLOR = Color.RED;
+
 export function drawWorldBlocks(renderer: Renderer, world: World): void {
     for (const b of world.iterateBlocks()) {
         b.draw(renderer);
@@ -15,7 +17,11 @@ export function drawWorldBackground(renderer: Renderer, world: World): void {
     renderer.fillScreen();
     if (true) {
         drawWorldGrid(renderer, world.gridColor);
-        drawRoomNumber(renderer, world.activeRoom);
+        for (const room of world.rooms) {
+            if (renderer.camera.isRectVisible(room.boundary)) {
+                drawRoomNumber(renderer, room);
+            }
+        }
         return;
     }
     // TODO: Figure out a performance way to deal with tiles.
@@ -81,7 +87,7 @@ function drawWorldGrid(renderer: Renderer, gridColor: string): void {
 }
 
 function drawRoomNumber(renderer: Renderer, room: Room): void {
-    const text = `${room.roomIndex + 1}`;
+    const text = `${room.depth}`;
     const scale = renderer.camera.scale;
     const fontSize = CELL_SIZE * 8 * scale;
     renderer.setFont(`700 ${fontSize}px Arial`, 'center', 'middle');
@@ -108,10 +114,11 @@ export function drawWorldDebugUI(renderer: Renderer, world: World): void {
 
 // TODO: Move block rendering from world into room for both modes.
 function drawRoomDebugUI(renderer: Renderer, room: Room): void {
-    renderer.setStrokeColor('blue');
-    renderer.strokeBoundary(room.nextRoomTransitionRect, 10);
-
-    renderer.setStrokeColor(room.boundaryColor);
+    for (const nextRect of room.nextRoomTransitionRects) {
+        renderer.setStrokeColor('blue');
+        renderer.strokeBoundary(nextRect, 10);
+    }
+    renderer.setStrokeColor(ROOM_BOUNDARY_COLOR);
     const boundaryThickness = 0.05 * CELL_SIZE;
     const boundary = room.boundary;
     renderer.strokeBoundary(
