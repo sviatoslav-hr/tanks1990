@@ -3,7 +3,6 @@
 ## DOING
 
 ## NEXT TODO
-- [ ] Add mute/unmute keymap
 - [ ] Better dungeon generation
   - [ ] Allow generation in any direction (currently bottom direction is disabled to avoid cyclic paths)
   - [ ] Consider maze-like generation (multiple possible paths)

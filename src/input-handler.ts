@@ -35,6 +35,7 @@ export interface ExtraInputState {
     toggleGamePause?: 1;
     toggleGamePauseIgnoreMenu?: 1;
     toggleFullscreen?: 1;
+    toggleMute?: 1;
     triggerSingleUpdate?: 1;
     showBoundaries?: 1;
     toggleDevMode?: 1;
@@ -97,6 +98,10 @@ export function handleExtraKeymaps(input: GameInput): ExtraInputState {
 
     if (input.isPressed('KeyF')) {
         result.toggleFullscreen = 1;
+    }
+
+    if (input.isPressed('KeyM')) {
+        result.toggleMute = 1;
     }
 
     if (input.isPressed('Escape')) {
@@ -197,6 +202,13 @@ export function processInput(
             const ignoreMenu = Boolean(input.extra.toggleGamePauseIgnoreMenu);
             events.push({type: 'game-control', action, ignoreMenu});
         }
+    }
+
+    if (input.extra.toggleMute) {
+        // HACK: It's kind of janky to bind this to menu, ideally it should be unrelated, but still updated in the menu.
+        //       But this way is simpler, so it's fine for now.
+        menu.muted.update((v) => !v);
+        notify(`Sound ${menu.muted.get() ? 'muted' : 'unmuted'}`);
     }
 
     if (input.extra.triggerSingleUpdate) {
