@@ -23,6 +23,9 @@ import {uiGlobal} from '#/ui/core';
 import {createDevUI, DevUI} from '#/ui/dev';
 import {createNotificationBar, notify} from '#/ui/notification';
 import {World} from '#/world/world';
+import {drawWorldGraph, generateWorldGraph} from './world/gen2';
+import {Color} from './color';
+import {getURLSeed, random, setURLSeed} from './math/rng';
 
 main();
 
@@ -57,6 +60,7 @@ function main(): void {
         menu.muted.set(sounds.storedMuted);
         menu.muted.subscribe((muted) => (muted ? sounds.suspend() : sounds.resume()));
         Menu(uiGlobal, menu.props()).appendTo(appElement);
+        menu.view.set(null); // @CLEANUP: debug
     }
 
     const devUI = createDevUI(gameState, manager, renderer, storage);
@@ -81,7 +85,16 @@ function runGame(
     sounds: SoundManager,
     eventQueue: EventQueue,
 ) {
+    const seed = getURLSeed();
+    random.reset(seed ?? undefined);
+    setURLSeed(random.seed);
     manager.init(); // Init the world to display it behind the main menu screen.
+    const g = generateWorldGraph({
+        depth: 10,
+        maxExitsPerRoom: 2,
+        finalRoomsCount: 4,
+        rng: () => random.float(),
+    });
     let lastTimestamp = performance.now();
     const animationCallback = (): void => {
         const now = performance.now();
@@ -118,8 +131,11 @@ function runGame(
             maybeRecordInput(state, inputState.game);
 
             drawOptions.drawUI = !menu.visible;
-            drawGame(renderer, config, manager, drawOptions);
-            simulateGameTick(dt, state, manager, renderer.camera, eventQueue);
+            renderer.setFillColor(Color.BLACK);
+            renderer.fillScreen();
+            drawWorldGraph(renderer, g);
+            // drawGame(renderer, config, manager, drawOptions);
+            // simulateGameTick(dt, state, manager, renderer.camera, eventQueue);
             processGameEvents(eventQueue, state, manager, sounds, menu);
             state.nextTick();
             input.nextTick();

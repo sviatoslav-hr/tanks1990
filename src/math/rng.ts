@@ -172,7 +172,7 @@ function copyAleaInto(source: AleaState, target: Partial<AleaState>): void {
     target.s2 = source.s2;
 }
 
-// TODO: url seed functions really shouln't be here, since they are dependent on the browser API, but it's okay for now.
+// TODO: url seed functions really shoultn't be here, since they are dependent on the browser API, but it's okay for now.
 export function setURLSeed(seed: string): void {
     const url = new URL(window.location.href);
     const key = 'seed';

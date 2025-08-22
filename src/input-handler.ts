@@ -144,12 +144,9 @@ export function handleExtraKeymaps(input: GameInput): ExtraInputState {
             result.toggleDevPanel = 1;
         }
 
-        if (input.isDown('MouseMiddle')) {
+        if (input.isDown('MouseMiddle') || input.isDown('MouseLeft')) {
+            // NOTE: Support also mouse left to have a convenient way to move camera on touchpad
             result.cameraManualOffset = input.getMouseDelta();
-        } else if (input.isDown('MouseLeft')) {
-            // NOTE: Same as MouseMiddle but for touchpad. Negating to make it feel like
-            // dragging the camera.
-            result.cameraManualOffset = input.getMouseDelta().negate();
         }
 
         if (input.isPressed('Digit0')) {

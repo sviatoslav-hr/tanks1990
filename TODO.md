@@ -4,6 +4,7 @@
 - [ ] Fix battle theme not working when sound has not been loaded yet
 
 ## NEXT TODO
+- [ ] Add animation/SFX to room door opening to hint player that's where he needs to go next.
 - [ ] Better dungeon generation
   - [ ] Allow generation in any direction (currently bottom direction is disabled to avoid cyclic paths)
   - [ ] Consider maze-like generation (multiple possible paths)
