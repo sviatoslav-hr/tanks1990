@@ -23,7 +23,9 @@ vi.mock('#/renderer/sprite', () => {
         createStaticSprite: () => spriteMock(),
         createTileSprite: () => spriteMock(),
         createShieldSprite: () => spriteMock(),
-        Sprite: class {},
+        Sprite: class {
+            selectFrame = () => void 0;
+        },
     };
 });
 vi.mock('#/entity/tank/generation', async (importOriginal) => {

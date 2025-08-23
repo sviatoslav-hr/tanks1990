@@ -9,7 +9,7 @@ const ALL_DIRECTIONS: Direction[] = ['north', 'south', 'east', 'west'];
 
 type RoomId = number;
 
-interface Room {
+export interface Room {
     id: RoomId;
     x: number;
     y: number;
@@ -27,7 +27,9 @@ interface RoomNode {
 
 export interface WorldGraph {
     rooms: Record<RoomId, Room>;
-    startRoomId: RoomId;
+    paths: Room[][];
+    rootRoom: Room;
+    finalRoom: Room;
     depth: number;
     totalPaths: number;
     currentPathIndex: number;
@@ -123,6 +125,16 @@ function findRoomPaths(leaf: RoomNode, final: Room, desiredDepth: number): boole
     return hasValidLeaf;
 }
 
+export function getChildRooms(room: Room, graph: WorldGraph): Room[] {
+    const result: Room[] = [];
+    for (const exitRoomId of Object.values(room.exits)) {
+        const exitRoom = graph.rooms[exitRoomId];
+        assert(exitRoom);
+        result.push(exitRoom);
+    }
+    return result;
+}
+
 export function generateWorldGraph(options: WorldGraphOptions): WorldGraph {
     const {
         depth: DEPTH,
@@ -200,7 +212,19 @@ export function generateWorldGraph(options: WorldGraphOptions): WorldGraph {
 
     traverseAndBuild(startNode, rootRoom, finalRoom, DEPTH);
 
-    return {rooms, startRoomId: rootRoom.id, depth: DEPTH, totalPaths, currentPathIndex: 0};
+    const graph: WorldGraph = {
+        rooms,
+        paths: [],
+        rootRoom,
+        finalRoom,
+        depth: DEPTH,
+        totalPaths,
+        currentPathIndex: 0,
+    };
+
+    graph.paths = collectAllPaths(graph);
+
+    return graph;
 }
 
 export function drawWorldGraph(renderer: Renderer, graph: WorldGraph): void {
@@ -212,12 +236,10 @@ export function drawWorldGraph(renderer: Renderer, graph: WorldGraph): void {
 
     const limit = 99;
 
-    const rootRoom = graph.rooms[graph.startRoomId];
-    assert(rootRoom);
+    const rootRoom = graph.rootRoom;
     renderer.setStrokeColor(Color.WHITE);
-    const allPaths = collectAllPaths(graph);
-    graph.totalPaths = allPaths.length;
-    const selectedPath = allPaths[graph.currentPathIndex];
+    // graph.totalPaths = allPaths.length;
+    const selectedPath = graph.paths[graph.currentPathIndex];
     assert(selectedPath);
     drawRoomPath2(renderer, selectedPath);
     // drawRoomPath(renderer, rootRoom, graph);
@@ -257,9 +279,7 @@ function collectAllPaths(graph: WorldGraph): Room[][] {
             dfs(nextRoom, [...path, node]);
         }
     }
-    const start = graph.rooms[graph.startRoomId];
-    assert(start);
-    dfs(start, []);
+    dfs(graph.rootRoom, []);
     return results;
 }
 
