@@ -1,9 +1,11 @@
 import {Color} from '#/color';
 import {CELL_SIZE} from '#/const';
-import {type Vector2Like} from '#/math/vector'; // {x,y}
+import {v2AddMut, v2Equals, type Vector2Like} from '#/math/vector'; // {x,y}
 import {type Renderer} from '#/renderer';
 
 type Direction = 'north' | 'south' | 'east' | 'west';
+
+const ALL_DIRECTIONS: Direction[] = ['north', 'south', 'east', 'west'];
 
 type RoomId = number;
 
@@ -16,10 +18,19 @@ interface Room {
     exits: Partial<Record<Direction, RoomId>>; // maps direction -> neighbor room id
 }
 
-interface WorldGraph {
+interface RoomNode {
+    position: Vector2Like;
+    depth: number;
+    prevRoom: RoomNode | null;
+    nextRooms: Partial<Record<Direction, RoomNode>>;
+}
+
+export interface WorldGraph {
     rooms: Record<RoomId, Room>;
     startRoomId: RoomId;
     depth: number;
+    totalPaths: number;
+    currentPathIndex: number;
 }
 
 interface WorldGraphOptions {
@@ -35,6 +46,83 @@ function positionKey(p: Vector2Like): string {
     return `${p.x},${p.y}`;
 }
 
+const ROOM_OFFSET = 1;
+function directionOffset(d: Direction): Vector2Like {
+    switch (d) {
+        case 'north':
+            return {x: 0, y: -ROOM_OFFSET};
+        case 'south':
+            return {x: 0, y: ROOM_OFFSET};
+        case 'east':
+            return {x: ROOM_OFFSET, y: 0};
+        case 'west':
+            return {x: -ROOM_OFFSET, y: 0};
+    }
+}
+
+let currentRoomId = 0;
+function roomId(): number {
+    return currentRoomId++;
+}
+
+function areNeighborPositions(r1: Vector2Like, r2: Vector2Like): boolean {
+    const dx = Math.abs(r1.x - r2.x);
+    const dy = Math.abs(r1.y - r2.y);
+    return (dx === ROOM_OFFSET && dy === 0) || (dx === 0 && dy === ROOM_OFFSET);
+}
+
+function prevRoomExistsAt(end: RoomNode, pos: Vector2Like): boolean {
+    if (!end.prevRoom) return false;
+    if (v2Equals(end.prevRoom.position, pos)) return true;
+    return prevRoomExistsAt(end.prevRoom, pos);
+}
+
+function getDirection(source: Vector2Like, target: Vector2Like): Direction | null {
+    if (source.x === target.x) {
+        if (source.y < target.y) return 'south';
+        if (source.y > target.y) return 'north';
+    } else if (source.y === target.y) {
+        if (source.x < target.x) return 'east';
+        if (source.x > target.x) return 'west';
+    }
+    return null; // Not aligned horizontally or vertically
+}
+
+function findRoomPaths(leaf: RoomNode, final: Room, desiredDepth: number): boolean {
+    let hasValidLeaf = false;
+    for (const dir of ALL_DIRECTIONS) {
+        const position = directionOffset(dir);
+        v2AddMut(position, leaf.position);
+        if ((leaf.prevRoom && prevRoomExistsAt(leaf, position)) || v2Equals(position, final)) {
+            // Do not allow room to collide with any previous room in the path
+            continue;
+        }
+        let isValidRoom = false;
+        const room: RoomNode = {position, depth: leaf.depth + 1, prevRoom: leaf, nextRooms: {}};
+        if (room.depth === desiredDepth - 1) {
+            if (areNeighborPositions(final, position)) {
+                const finalDirection = getDirection(room.position, final);
+                assert(finalDirection != null);
+                room.nextRooms[finalDirection] = {
+                    position: {x: final.x, y: final.y},
+                    depth: desiredDepth,
+                    prevRoom: room,
+                    nextRooms: {},
+                };
+                isValidRoom = true;
+            }
+        } else {
+            const found = findRoomPaths(room, final, desiredDepth);
+            if (found) isValidRoom = true;
+        }
+        if (isValidRoom) {
+            leaf.nextRooms[dir] = room;
+            hasValidLeaf = true;
+        }
+    }
+    return hasValidLeaf;
+}
+
 export function generateWorldGraph(options: WorldGraphOptions): WorldGraph {
     const {
         depth: DEPTH,
@@ -44,7 +132,6 @@ export function generateWorldGraph(options: WorldGraphOptions): WorldGraph {
         rng = Math.random,
     } = options;
     assert(DEPTH >= 3);
-    const roomOffset = 1;
     let finalRoomDistance = Math.max(3, Math.floor(DEPTH / 3));
     if (DEPTH % 2 === 0 && finalRoomDistance % 2 === 1) {
         finalRoomDistance++;
@@ -56,39 +143,12 @@ export function generateWorldGraph(options: WorldGraphOptions): WorldGraph {
 
     logger.debug('Generating world: %O', {DEPTH, finalRoomDistance});
 
-    let currentRoomId = 0;
-    function roomId(): number {
-        return currentRoomId++;
-    }
-
     function makeRoom(r: Room): Room {
         rooms[r.id] = r;
         positionsMap.set(positionKey(r), r.id);
         return r;
     }
-    function directionOffset(d: Direction): Vector2Like {
-        switch (d) {
-            case 'north':
-                return {x: 0, y: -roomOffset};
-            case 'south':
-                return {x: 0, y: roomOffset};
-            case 'east':
-                return {x: roomOffset, y: 0};
-            case 'west':
-                return {x: -roomOffset, y: 0};
-        }
-    }
-    const directions: Direction[] = ['north', 'south', 'east', 'west'];
-    function randomDirection(): Direction {
-        return directions[Math.floor(rng() * directions.length)]!;
-    }
-    const rootRoom = makeRoom({
-        id: roomId(),
-        x: 0,
-        y: 0,
-        depth: 0,
-        exits: {},
-    });
+    const rootRoom = makeRoom({id: roomId(), x: 0, y: 0, depth: 0, exits: {}});
     let leafRoom = rootRoom;
     const finalRoom = makeRoom({
         id: roomId(),
@@ -98,125 +158,53 @@ export function generateWorldGraph(options: WorldGraphOptions): WorldGraph {
         exits: {},
     });
 
-    function areNeighbors(r1: Room, r2: Room): boolean {
-        const dx = Math.abs(r1.x - r2.x);
-        const dy = Math.abs(r1.y - r2.y);
-        return (dx === roomOffset && dy === 0) || (dx === 0 && dy === roomOffset);
-    }
-
-    function getRoomDirection(source: Room, target: Room): Direction | null {
-        if (source.x === target.x) {
-            if (source.y < target.y) return 'south';
-            if (source.y > target.y) return 'north';
-        } else if (source.y === target.y) {
-            if (source.x < target.x) return 'east';
-            if (source.x > target.x) return 'west';
-        }
-        return null; // Not a neighbor
-    }
-
-    function clearRooms(start: Room): void {
-        let roomParent = start;
-        inner: while (true) {
-            // FIXME: This doesn't handle well with multiple exits.
-            const roomId = Object.values(roomParent.exits).pop();
-            if (!roomId) break inner;
-            const room = rooms[roomId];
-            assert(room);
-            positionsMap.delete(positionKey(room));
-            delete rooms[roomId];
-            roomParent.exits = {};
-            roomParent = room;
-        }
-        leafRoom = rootRoom;
-    }
-
-    // debugger;
-
     // TODO: Find all possible room paths
     // TODO: Pick random leafs (finalRoomsCount)
     // TODO: Eliminate invalid paths, except for the paths that lead to final rooms.
     // TODO: Merge paths, remove them, etc
     // TODO: Add support to specify how far final rooms can be from the root.
-    const DIRECTION_RETRY_LIMIT = 99;
-    const FULL_RETRY_LIMIT = 9999;
-    const INFINITE_LOOP_LIMIT = 100_000;
-    let actualLoopCount = 0;
-    let fullTriesCount = 0;
-    outer: while (true) {
-        actualLoopCount++;
-        if (actualLoopCount > INFINITE_LOOP_LIMIT) {
-            logger.warn('infinite loop detected, breaking');
-            break;
-        }
 
-        if (fullTriesCount > FULL_RETRY_LIMIT) {
-            logger.warn('exceeded full tries limit, breaking');
-            break;
-        }
-
-        if (leafRoom.depth + 1 === DEPTH) {
-            if (areNeighbors(leafRoom, finalRoom)) {
-                const direction = getRoomDirection(leafRoom, finalRoom);
-                assert(direction);
-                leafRoom.exits[direction] = finalRoom.id;
-                logger.debug(
-                    'found final room %d at %d,%d',
-                    finalRoom.id,
-                    finalRoom.x,
-                    finalRoom.y,
-                );
-                break outer;
-            } else {
-                fullTriesCount++;
-                if (fullTriesCount < FULL_RETRY_LIMIT) clearRooms(rootRoom);
-                continue outer;
-            }
-        }
-
-        // TODO: This condition now is kind of useless...
-        // while (leafRoom.depth < DEPTH) {
-        let triesCount = 0;
-        let found = false;
-        inner: while (triesCount < DIRECTION_RETRY_LIMIT) {
-            const direction = randomDirection();
-            const position = directionOffset(direction);
-            position.x += leafRoom.x;
-            position.y += leafRoom.y;
-            if (positionsMap.has(positionKey(position))) {
-                triesCount++;
-                continue inner; // Already exists, try again
-            }
-
-            const nextRoom = makeRoom({
-                id: roomId(),
-                x: position.x,
-                y: position.y,
-                depth: leafRoom.depth + 1,
-                exits: {},
-            });
-            leafRoom.exits[direction] = nextRoom.id;
-            leafRoom = nextRoom;
-            found = true;
-            break inner;
-        }
-
-        if (!found) {
-            fullTriesCount++;
-            if (fullTriesCount < FULL_RETRY_LIMIT) clearRooms(rootRoom);
-            continue outer; // No more directions to try, break the outer loop
-        }
-
-        // }
+    const startNode: RoomNode = {
+        position: {x: rootRoom.x, y: rootRoom.y},
+        depth: 0,
+        prevRoom: null,
+        nextRooms: {},
+    };
+    const graphValid = findRoomPaths(startNode, finalRoom, DEPTH);
+    if (!graphValid) {
+        throw new Error('Failed to generate world graph: no valid paths found');
     }
 
-    logger.debug('took %d tries', fullTriesCount);
+    let totalPaths = 0;
 
-    return {rooms, startRoomId: rootRoom.id, depth: DEPTH};
+    function traverseAndBuild(roomNode: RoomNode, room: Room, final: Room, depth: number): void {
+        const nextRoomsEntries = Object.entries(roomNode.nextRooms) as [Direction, RoomNode][];
+        for (const [dir, nextRoomNode] of nextRoomsEntries) {
+            const p = nextRoomNode.position;
+            if (v2Equals(p, final)) {
+                room.exits[dir] = final.id;
+                totalPaths++;
+                continue;
+            }
+            const nextRoom = makeRoom({
+                id: roomId(),
+                x: nextRoomNode.position.x,
+                y: nextRoomNode.position.y,
+                depth: nextRoomNode.depth,
+                exits: {},
+            });
+            traverseAndBuild(nextRoomNode, nextRoom, final, depth);
+            room.exits[dir] = nextRoom.id;
+        }
+    }
+
+    traverseAndBuild(startNode, rootRoom, finalRoom, DEPTH);
+
+    return {rooms, startRoomId: rootRoom.id, depth: DEPTH, totalPaths, currentPathIndex: 0};
 }
 
 export function drawWorldGraph(renderer: Renderer, graph: WorldGraph): void {
-    drawWorldRooms(renderer, graph);
+    // drawWorldRooms(renderer, graph);
     const scale = CELL_SIZE;
     const w = 1 * scale;
     const h = 1 * scale;
@@ -227,7 +215,89 @@ export function drawWorldGraph(renderer: Renderer, graph: WorldGraph): void {
     const rootRoom = graph.rooms[graph.startRoomId];
     assert(rootRoom);
     renderer.setStrokeColor(Color.WHITE);
-    drawRoomPath(renderer, rootRoom, graph);
+    const allPaths = collectAllPaths(graph);
+    graph.totalPaths = allPaths.length;
+    const selectedPath = allPaths[graph.currentPathIndex];
+    assert(selectedPath);
+    drawRoomPath2(renderer, selectedPath);
+    // drawRoomPath(renderer, rootRoom, graph);
+    renderer.useCameraCoords(true);
+    {
+        renderer.setFont('24px sans-serif');
+        renderer.fillText(`Total paths: ${graph.totalPaths}`, {
+            x: 10,
+            y: 30,
+            color: Color.WHITE,
+            shadowColor: Color.BLACK,
+        });
+        renderer.fillText(`Current path: ${graph.currentPathIndex + 1}`, {
+            x: 10,
+            y: 60,
+            color: Color.WHITE,
+            shadowColor: Color.BLACK,
+        });
+    }
+    renderer.useCameraCoords(false);
+}
+
+function collectAllPaths(graph: WorldGraph): Room[][] {
+    const results: Room[][] = [];
+
+    function dfs(node: Room, path: Room[]): void {
+        const exitRoomIds = Object.values(node.exits);
+        if (exitRoomIds.length === 0) {
+            const fullPath = [...path, node];
+            assert(fullPath.length === graph.depth + 1);
+            results.push(fullPath);
+            return;
+        }
+        for (const roomId of exitRoomIds) {
+            const nextRoom = graph.rooms[roomId];
+            assert(nextRoom);
+            dfs(nextRoom, [...path, node]);
+        }
+    }
+    const start = graph.rooms[graph.startRoomId];
+    assert(start);
+    dfs(start, []);
+    return results;
+}
+
+function drawRoomPath2(renderer: Renderer, path: Room[]): void {
+    const scale = CELL_SIZE;
+    const w = 0.9 * scale;
+    const h = 0.9 * scale;
+    const fontSize = 24 * renderer.camera.scale;
+    renderer.setFont(`${fontSize}px sans-serif`);
+
+    for (const room of path) {
+        let {x, y} = room;
+        x *= scale;
+        y *= scale;
+        renderer.setGlobalAlpha(0.3);
+        renderer.setFillColor(Color.GREEN);
+        renderer.fillRect(x, y, w, h);
+        renderer.setGlobalAlpha(1);
+        renderer.setFillColor(Color.BLACK);
+        const text = room.depth.toString();
+        const textOffset = 3;
+        renderer.fillText(text, {x: x + textOffset, y: y + textOffset, color: Color.BLACK});
+    }
+
+    renderer.setStrokeColor(Color.WHITE);
+    for (let i = 0; i < path.length - 1; i++) {
+        const room = path[i];
+        assert(room);
+
+        const nextRoom = path[i + 1];
+        if (nextRoom) {
+            const x1 = room.x * CELL_SIZE + CELL_SIZE / 2;
+            const y1 = room.y * CELL_SIZE + CELL_SIZE / 2;
+            const x2 = nextRoom.x * CELL_SIZE + CELL_SIZE / 2;
+            const y2 = nextRoom.y * CELL_SIZE + CELL_SIZE / 2;
+            renderer.strokeLine(x1, y1, x2, y2, 1);
+        }
+    }
 }
 
 function drawRoomPath(renderer: Renderer, room: Room, world: WorldGraph): void {
@@ -237,12 +307,12 @@ function drawRoomPath(renderer: Renderer, room: Room, world: WorldGraph): void {
         return nextRoom;
     });
     for (const n of nextRooms) {
+        drawRoomPath(renderer, n, world);
         const x1 = room.x * CELL_SIZE + CELL_SIZE / 2;
         const y1 = room.y * CELL_SIZE + CELL_SIZE / 2;
         const x2 = n.x * CELL_SIZE + CELL_SIZE / 2;
         const y2 = n.y * CELL_SIZE + CELL_SIZE / 2;
         renderer.strokeLine(x1, y1, x2, y2, 1);
-        drawRoomPath(renderer, n, world);
     }
 }
 

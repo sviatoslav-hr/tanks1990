@@ -17,6 +17,7 @@ import {GameState} from '#/state';
 import {GameStorage} from '#/storage';
 import {DevUI, toggleDevPanelVisibility, toggleFPSVisibility} from '#/ui/dev';
 import {notify} from '#/ui/notification';
+import {fmod} from './math';
 
 export interface InputState {
     game: GameInputState;
@@ -49,6 +50,7 @@ export interface ExtraInputState {
     cameraReset?: 1;
     toggleRecording?: 1;
     playOrExitRecording?: 1;
+    nextPath?: 1;
 }
 
 export function handleKeymaps(state: GameState, input: GameInput): InputState {
@@ -131,6 +133,10 @@ export function handleExtraKeymaps(input: GameInput): ExtraInputState {
 
         if (input.isPressed('KeyI')) {
             result.playOrExitRecording = 1;
+        }
+
+        if (input.isPressed('KeyN')) {
+            result.nextPath = 1;
         }
 
         if (input.isPressed('Backquote'))
@@ -216,7 +222,7 @@ export function processInput(
     }
 
     if (input.extra.showBoundaries) {
-        config.setDebugShowBoundaries(!config.debugShowBoundaries);
+        // config.setDebugShowBoundaries(!config.debugShowBoundaries);
     }
 
     if (input.extra.toggleRecording) {
@@ -267,5 +273,25 @@ export function processInput(
     if (input.extra.cameraReset) {
         renderer.camera.reset();
         renderer.camera.focusOnRect(manager.world.activeRoom.boundary);
+    }
+
+    if (input.extra.showBoundaries) {
+        const graph = manager.world.graph;
+        if (graph) {
+            graph.currentPathIndex = fmod(graph.currentPathIndex - 1, graph.totalPaths);
+            assert(!isNaN(graph.currentPathIndex));
+        } else {
+            logger.error('No graph found to select next path');
+        }
+    }
+
+    if (input.extra.nextPath) {
+        const graph = manager.world.graph;
+        if (graph) {
+            graph.currentPathIndex = fmod(graph.currentPathIndex + 1, graph.totalPaths);
+            assert(!isNaN(graph.currentPathIndex));
+        } else {
+            logger.error('No graph found to select next path');
+        }
     }
 }

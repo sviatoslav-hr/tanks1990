@@ -5,12 +5,14 @@ import {EntityManager} from '#/entity/manager';
 import {Vector2} from '#/math/vector';
 import {generateDungeon, MAX_ROOMS_COUNT} from '#/world/generation';
 import {Room} from '#/world/room';
+import type {WorldGraph} from './gen2'; // @CLEANUP:
 
 export class World {
     roomsLimit = MAX_ROOMS_COUNT;
     activeRoom = Room.temp();
     activeRoomInFocus = false;
     rooms: Room[] = [];
+    graph: WorldGraph | null = null;
 
     readonly startRoomPosition = new Vector2(0, 0);
     readonly bgColor = Color.BLACK_IERIE;

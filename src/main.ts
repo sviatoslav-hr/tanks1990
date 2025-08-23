@@ -90,11 +90,12 @@ function runGame(
     setURLSeed(random.seed);
     manager.init(); // Init the world to display it behind the main menu screen.
     const g = generateWorldGraph({
-        depth: 10,
+        depth: 7,
         maxExitsPerRoom: 2,
         finalRoomsCount: 4,
         rng: () => random.float(),
     });
+    manager.world.graph = g;
     let lastTimestamp = performance.now();
     const animationCallback = (): void => {
         const now = performance.now();

@@ -1,5 +1,5 @@
 import type {assert, assertError, throwError, wrapError} from '#/utils';
-import type {Logger} from '#/logger';
+import type {Logger} from '#/common/logger';
 
 type AssertFn = typeof assert;
 type AssertErrorFn = typeof assertError;
