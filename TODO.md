@@ -3,6 +3,7 @@
 ## DOING
 
 ## NEXT TODO
+- [ ] Add version text somewhere in the menu screen
 - [ ] Add animation/SFX to room door opening to hint player that's where he needs to go next.
 - [ ] Add speed up option for recording playback
 
