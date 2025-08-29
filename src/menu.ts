@@ -4,7 +4,6 @@ import {CSSStyleConfig, extendUIChildren, UIComponent, type UIContext} from '#/u
 import {GameControlAction, type EventQueue} from '#/events';
 
 export type MenuView = 'main' | 'pause' | 'dead' | 'completed';
-type MenuPage = 'controls';
 
 const VOLUME_MIN = 0;
 const VOLUME_MAX = 50;
@@ -55,7 +54,6 @@ interface MenuProps {
 export const Menu = UIComponent('menu', (ui, props: MenuProps) => {
     const {volume, muted, view, onGameControl, onFullscreenToggle} = props;
     const css = ui.css;
-    const page = signal<MenuPage | null>(null);
 
     const menuTitle = computed(() => {
         switch (view.get()) {
@@ -104,7 +102,6 @@ export const Menu = UIComponent('menu', (ui, props: MenuProps) => {
                         if (view.get() !== 'pause') return null;
                         return MenuButton(ui, {
                             onClick: () => {
-                                page.set(null);
                                 onGameControl('resume');
                             },
                             children: 'Resume',
@@ -112,38 +109,18 @@ export const Menu = UIComponent('menu', (ui, props: MenuProps) => {
                     }, [view]),
                     MenuButton(ui, {
                         onClick: () => {
-                            page.set(null);
                             onGameControl('start');
                         },
                         children: startButtonText,
                     }),
-                    MenuButton(ui, {
-                        onClick: () => page.set('controls'),
-                        children: 'Controls',
-                    }),
-                    computed(() => {
-                        switch (page.get()) {
-                            case null:
-                                return null;
-                            case 'controls':
-                                return MenuButton(ui, {
-                                    onClick: () => page.set(null),
-                                    children: 'Go Back',
-                                });
-                        }
-                    }, [page]),
                     ui.div({class: 'menu__version'}).children(`v${GAME_VERSION}-${COMMIT_HASH}`),
                 ),
-                ui.div({class: 'menu__content'}).children(
-                    computed(() => {
-                        switch (page.get()) {
-                            case 'controls':
-                                return MenuControlsView(ui);
-                            case null:
-                                return MenuSettingsBar(ui, {volume, muted, onFullscreenToggle});
-                        }
-                    }, [page]),
-                ),
+                ui
+                    .div({class: 'menu__content'})
+                    .children(
+                        MenuSettingsBar(ui, {volume, muted, onFullscreenToggle}),
+                        MenuControlsView(ui),
+                    ),
             ),
         css`
             /* HACK: for some reason this is not inherited from the root */
@@ -211,7 +188,6 @@ const MenuControlsView = UIComponent('menu-controls', (ui) => {
                 ui
                     .li()
                     .children(
-                        'Use ',
                         ui.code().children('W'),
                         ' ',
                         ui.code().children('S'),
@@ -219,20 +195,25 @@ const MenuControlsView = UIComponent('menu-controls', (ui) => {
                         ui.code().children('A'),
                         ' ',
                         ui.code().children('D'),
-                        ' to move',
+                        ' - Move',
                     ),
-                ui.li().children('Press ', ui.code().children('Space'), ' to shoot'),
-                ui.li().children(ui.code().children('P'), ' to pause'),
-                ui.li().children(ui.code().children('F'), ' to toggle Fullscreen'),
+                ui.li().children(ui.code().children('Space'), ' - Shoot'),
+                ui.li().children(ui.code().children('P'), ' - Pause/Resume'),
+                ui.li().children(ui.code().children('F'), ' - Toggle Fullscreen'),
+                ui.li().children(ui.code().children('M'), ' - Toggle Music and Sounds'),
             ),
         css`
             .menu-controls {
+                background: var(--gray-granite-25, #ff00ff);
+                border-radius: 0.3em;
+                padding: 1rem;
                 list-style: none;
                 width: fit-content;
             }
             li {
                 font-size: 2rem;
                 padding: 1rem 0;
+                text-shadow: 0 0 0.3em var(--black-raisin);
             }
             code {
                 font-size: inherit;

@@ -50,9 +50,6 @@
 - [ ] Add friction to projectile movement
 - [ ] Change movement to move only by fractions of cells (e.g. 1/16 of a cell)
       This will be easier to pathfind. And also will *may* the UX by fixing the issue with the player being able to pass through blocks.
-- [ ] Display the control hints during the start of the game in a non-intrusive way
-      For example, display the controls in the bottom left corner of the screen for a few seconds or have them half-transparent.
-      Another option is to display the controls to the right of the menu since that area if free.
 
 ### Visual improvements
 - [ ] Make a proper sprite for the tank explosion effect
