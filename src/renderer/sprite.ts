@@ -34,11 +34,14 @@ type SpriteOpts<K extends string> = {
 type SpriteState<K extends string> = {name: K; index: number; frames: number};
 type SpriteStateMap<K extends string> = {[Key in K]: SpriteState<Key>};
 
+type SpriteLoadingStatus = 'loading' | 'loaded' | 'failed';
+
 export class Sprite<K extends string> {
     private frameIndex = 0;
     private animationDt = Duration.zero();
-    private loaded = false;
+    private loadingStatus: SpriteLoadingStatus = 'loading';
     private state?: SpriteState<K>;
+    private spriteKey: string;
     readonly frameWidth: number;
     readonly frameHeight: number;
     readonly framePadding: number;
@@ -53,6 +56,7 @@ export class Sprite<K extends string> {
         this.frameWidth = frameWidth;
         this.frameHeight = frameHeight;
         this.framePadding = opts.framePadding ?? 0;
+        this.spriteKey = key;
         if (frameDuration) {
             this.frameDuration.setFrom(frameDuration);
         }
@@ -60,26 +64,14 @@ export class Sprite<K extends string> {
         const cached = getCachedImage(src);
         if (cached) {
             this.image = cached;
-            this.loaded = this.image.complete;
+            this.handleImageLoad(true);
         } else {
             this.image = new Image();
-            this.image.alt = `Asset ${key}`;
+            this.image.alt = `Sprite ${key}`;
+            // NOTE: onload should be handled *before* src is set, in case the image is loaded from browser cache.
+            this.handleImageLoad(false);
             this.image.src = src;
             setCachedImage(src, this.image);
-        }
-        if (!this.image.complete) {
-            const self = this;
-            const prevOnload = this.image.onload;
-            this.image.onload = function (...args) {
-                self.loaded = true;
-                prevOnload?.call(this, ...args);
-            };
-            const prevOnerror = this.image.onerror;
-            this.image.onerror = function (...args) {
-                if (!cached) logger.error('Failed to load asset "%s"', key);
-                self.loaded = false;
-                prevOnerror?.call(this, ...args);
-            };
         }
         this.stateMap = {} as SpriteStateMap<K>;
         for (const [index, {name, frames}] of states.entries()) {
@@ -91,6 +83,10 @@ export class Sprite<K extends string> {
         }
         this.stateKeys = states.map((s) => s.name);
         this.offset = new Vector2(opts.offsetX ?? 0, opts.offsetY ?? 0);
+    }
+
+    get loaded(): boolean {
+        return this.loadingStatus === 'loaded';
     }
 
     update(dt: Duration): void {
@@ -166,6 +162,27 @@ export class Sprite<K extends string> {
             return;
         }
         this.selectState(stateKey);
+    }
+
+    private handleImageLoad(cached: boolean): void {
+        if (this.image.complete) {
+            this.loadingStatus = 'loaded';
+            return;
+        }
+        const self = this;
+        const prevOnload = this.image.onload;
+        this.image.onload = function (...args) {
+            if (!cached) logger.debug('Sprite image loaded: %s', self.spriteKey);
+            self.loadingStatus = 'loaded';
+            prevOnload?.call(this, ...args);
+        };
+        const prevOnerror = this.image.onerror;
+        this.image.onerror = function (...args) {
+            if (!cached) logger.error('Failed to sprite image "%s"', self.spriteKey);
+            logger.warn('Failed to sprite image "%s"', self.spriteKey);
+            self.loadingStatus = 'failed';
+            prevOnerror?.call(this, ...args);
+        };
     }
 }
 
