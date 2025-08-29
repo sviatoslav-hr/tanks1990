@@ -132,6 +132,7 @@ export const Menu = UIComponent('menu', (ui, props: MenuProps) => {
                                 });
                         }
                     }, [page]),
+                    ui.div({class: 'menu__version'}).children(`v${GAME_VERSION}-${COMMIT_HASH}`),
                 ),
                 ui.div({class: 'menu__content'}).children(
                     computed(() => {
@@ -145,6 +146,12 @@ export const Menu = UIComponent('menu', (ui, props: MenuProps) => {
                 ),
             ),
         css`
+            /* HACK: for some reason this is not inherited from the root */
+            * {
+                box-sizing: border-box;
+                padding: 0;
+                margin: 0;
+            }
             .menu {
                 position: fixed;
                 top: 0;
@@ -159,6 +166,7 @@ export const Menu = UIComponent('menu', (ui, props: MenuProps) => {
                 font-size: 24px;
             }
             .menu__sidebar {
+                position: relative;
                 background-color: var(--gray-granite-25, #ff00ffbf);
                 width: 33%;
                 height: 100%;
@@ -180,6 +188,15 @@ export const Menu = UIComponent('menu', (ui, props: MenuProps) => {
                 align-items: center;
                 justify-content: center;
                 position: relative;
+            }
+            .menu__version {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                text-align: center;
+                font-size: 16px;
+                color: var(--gray-granite-75, #ff00ffbf);
             }
         `,
     ];
