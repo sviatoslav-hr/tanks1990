@@ -142,7 +142,7 @@ export class Projectile extends Entity {
             const dt = lerp(distanceRestFraction, 1, indexProgress);
             const endX = origin.x + diff.x * dt;
             const endY = origin.y + diff.y * dt;
-            renderer.setStrokeColor(Color.GRAY);
+            renderer.setStrokeColor(Color.GRAY_GRANITE);
             const alpha = lerp(0.0, 0.3, indexProgress);
             renderer.setGlobalAlpha(alpha);
             const trailThickness = bellCurveInterpolate(minThickness, maxThickness, indexProgress);

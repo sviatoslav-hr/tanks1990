@@ -31,6 +31,7 @@
 - [ ] Use transformation matrices for calculating rotation and translation. Consider performance hits
 - [ ] Create a separate Sprite class for static objects / non-animated
 - [ ] Look into where the menu is used/passed and check if menu can be detached from there (via events?)
+- [ ] Cleanup color variables (.css and .color files)
 
 ### Low priority features
 - [ ] Have different types of the projectiles - TBD.

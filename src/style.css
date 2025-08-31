@@ -3,26 +3,46 @@
 :root,
 reactive-element,
 ui-component {
-    --black-raisin: #242424;
-    --black-raisin-0: #24242400;
-    --black-raisin-75: #242424bf;
-    --black-eirie: #191919;
-    --black-eirie-0: #19191900;
-    --black-eirie-75: #191919bf;
-    --gray-granite: #777777;
-    --gray-granite-25: #77777740;
-    --gray-granite-50: #77777780;
-    --gray-granite-75: #777777bf;
-    /* --gray-granite: #616161; */
-    --white: rgba(255, 255, 255, 0.87);
-    --red-carnelian: #b71c1c;
+    /* TODO: Deprecated: get rid of these color names and use --color instead. */
+    --black-raisin: oklch(0.26 0 0);
+    --black-eirie: oklch(0.21 0 0);
+    --black-eirie-0: oklch(0.21 0 0 / 0);
+    --black-eirie-50: oklch(0.21 0 0 / 50);
+    --black-eirie-75: oklch(0.21 0 0 / 0.75);
+    --gray-granite: oklch(0.57 0 0);
+    --gray-granite-25: oklch(0.57 0 0 / 0.25);
+    --gray-granite-50: oklch(0.57 0 0 / 0.5);
+    --gray-granite-75: oklch(0.57 0 0 / 0.75);
+    --white: oklch(0.98 0.02 103);
+
+    --color-primary: oklch(0.82 0.09 253);
+    --color-primary-light: oklch(0.92 0.04 253);
+    --color-secondary: oklch(0.82 0.09 73);
+    --color-secondary-light: oklch(0.92 0.04 73);
+    --color-bg-dark: oklch(0.2 0 0);
+    --color-bg: oklch(0.3 0 0);
+    --color-bg-light: oklch(0.45 0 0);
+    --color-text: oklch(0.9 0 0);
+    --color-text-muted: oklch(0.7 0 0);
+    --color-border: oklch(0.4 0 0);
+    --color-highlight: oklch(0.6 0 0);
+
+    --btn-primary-bg: oklch(from var(--color-primary-light) l c h / 0.15);
+    --btn-primary-bg-hover: oklch(from var(--color-primary-light) l c h / 0.25);
+    --btn-primary-text: oklch(from var(--color-primary-light) l c h / 1);
+    --btn-primary-border: oklch(from var(--color-primary-light) l c h / 1);
+    --btn-primary-focus-shadow: 0 0 0 2px var(--btn-primary-bg);
+
+    --btn-secondary-bg: oklch(from var(--color-secondary) l c h / 0.5);
+    --btn-neutral-bg: oklch(from var(--color-bg-light) l c h / 0.5);
+
     /** TODO: Pick a better font (for menu mostly) */
     font-family: Helvetica, Arial, sans-serif;
     line-height: 1.5;
     font-weight: 400;
 
     color-scheme: light dark;
-    color: var(--white);
+    color: var(--color-text);
     background-color: var(--black-raisin);
 
     font-synthesis: none;
@@ -57,10 +77,6 @@ canvas {
     margin: 0 auto;
 }
 
-:is(h2, button) > * {
-    display: none;
-}
-
 #app {
     position: relative;
     width: 100%;
@@ -71,201 +87,6 @@ canvas {
     align-items: center;
 }
 
-game-menu {
-    display: block;
-    position: absolute;
-    left: 50%;
-    transform: translate(-50%, 0);
-    --fade-in-duration: 1s;
-    --fade-in-fn: ease-in;
-}
-
-game-menu.fade-in g-score-overlay {
-    animation-duration: var(--fade-in-duration);
-    animation-name: fade-in-opacity;
-    animation-timing-function: var(--fade-in-fn);
-}
-
-game-menu.fade-in .menu {
-    animation-duration: var(--fade-in-duration);
-    animation-name: fade-in-bg-black;
-    animation-timing-function: var(--fade-in-fn);
-}
-
-game-menu.fade-in .menu > *:not(.text-red) {
-    animation-duration: var(--fade-in-duration);
-    animation-name: fade-in-opacity;
-    animation-timing-function: var(--fade-in-fn);
-}
-
-game-menu.fade-in .menu > .text-red {
-    animation-duration: 1s;
-    animation-name: fade-in-opacity;
-    animation-timing-function: var(--fade-in-fn);
-}
-
-@keyframes fade-in-opacity {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
-
-@keyframes fade-in-bg-black {
-    from {
-        background-color: var(--black-raisin-0);
-    }
-    to {
-        background-color: var(--black-raisin-75);
-    }
-}
-
-@keyframes fade-in-bg-transparent-black {
-    from {
-        /* background-color: color-mix(in srgb, var(--black-eirie) 1%, transparent); */
-        background-color: var(--black-eirie-0);
-    }
-    to {
-        /* background-color: color-mix(in srgb, var(--black-eirie) 75%, transparent); */
-        background-color: var(--black-eirie-75);
-    }
-}
-
-.menu {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    background-color: var(--black-raisin-75);
-    min-width: 360px;
-    padding: 48px 24px;
-    border-radius: 12px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-height: 320px;
-    transition-timing-function: ease-in-out;
-    transition-duration: 3s;
-}
-
 *[hidden] {
     display: none !important;
-}
-
-.menu h2 {
-    margin-bottom: 32px;
-    font-size: 36px;
-    font-weight: 600;
-    text-transform: uppercase;
-}
-
-.menu .button {
-    min-width: 200px;
-}
-
-.button {
-    /* background-color: var(--black-raisin); */
-    background: linear-gradient(180deg, #383838, var(--black-eirie));
-    box-shadow: 0 0 0 var(--gray-granite);
-    border: 5px solid var(--gray-granite);
-    border-radius: 4px;
-    font-size: 16px;
-    font-weight: 600;
-    padding: 16px 24px;
-    transition-property: box-shadow, background-color, color, transform;
-    transition-timing-function: ease-in-out;
-    transition-duration: 0.2s;
-    cursor: pointer;
-    text-align: center;
-    color: var(--white);
-}
-
-.button--fullscreen {
-    font-size: 2rem;
-    height: 2rem;
-    width: 2rem;
-    border: none;
-    border-radius: 0.25rem;
-    background-color: var(--gray-granite-50);
-    box-shadow: none;
-    overflow: hidden;
-    line-height: 1.5rem;
-    padding: 0;
-    transition-property: box-shadow, background-color, color, transform;
-    transition-timing-function: ease-in-out;
-    transition-duration: 0.2s;
-}
-.button--fullscreen:hover {
-    transform: scale(1.1);
-}
-.button--fullscreen:active {
-    background-color: var(--gray-granite-75);
-}
-
-.button:focus-visible:not(:disabled),
-.button:hover:not(:disabled) {
-    /* box-shadow: inset 0 0 10px var(--gray-granite), 0 0 10px var(--gray-granite); */
-    /* transform: scale(1.05); */
-    /* box-shadow: inset 0 0 4px 1px var(--gray-granite), 0 0 4px 1px var(--gray-granite); */
-    /* box-shadow: 0 0 10px 1px var(--gray-granite); */
-    border-color: var(--white);
-    outline: none;
-}
-
-.button:active:not(:disabled) {
-    transform: none;
-}
-
-.text-red {
-    color: var(--red-carnelian);
-    text-shadow: 0 0 0.3em var(--red-carnelian);
-}
-
-.mx-auto {
-    margin-left: auto;
-    margin-right: auto;
-}
-
-.w-full {
-    width: 100%;
-}
-
-.w-fit {
-    width: fit-content;
-}
-
-.flex-col {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 28px;
-}
-
-.p-4 {
-    padding: 16px;
-}
-
-/*@CLENAUP: Remove*/
-.hints li {
-    font-size: 16px;
-    padding: 4px 0;
-}
-/*@CLENAUP: Remove*/
-code {
-    font-size: inherit;
-    padding: 0.2em 0.4em;
-    border-radius: 0.3em;
-    background-color: rgba(255, 255, 255, 0.15);
-}
-
-.bg-black-ierie {
-    background-color: var(--black-eirie);
-}
-
-.bg-transparent-black {
-    /* background-color: color-mix(in srgb, var(--black-eirie) 75%, transparent); */
-    background-color: var(--black-eirie-75);
 }

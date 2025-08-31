@@ -135,27 +135,34 @@ export const Menu = UIComponent('menu', (ui, props: MenuProps) => {
                 left: 0;
                 width: 100vw;
                 height: 100vh;
-                background-color: var(--black-eirie-75);
+                background-color: oklch(from var(--color-bg-dark) l c h / 0.75);
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                color: white;
+                color: var(--color-text);
                 font-size: 24px;
             }
             .menu__sidebar {
                 position: relative;
-                background-color: var(--gray-granite-25, #ff00ffbf);
+                background-color: oklch(from var(--color-bg) l c h / 0.95);
                 width: 33%;
+                max-width: 27rem;
                 height: 100%;
                 padding: 1rem;
                 display: flex;
                 gap: 1rem;
                 flex-direction: column;
-                align-items: stretch;
+                align-items: center;
                 justify-content: center;
+                border-right: 1px solid var(--color-border);
+            }
+            .menu__sidebar > * {
+                width: 100%;
+                max-width: 20rem;
             }
             .sidebar__header {
                 text-align: center;
+                margin-bottom: 1.25rem;
             }
             .menu__content {
                 flex-grow: 1;
@@ -173,7 +180,8 @@ export const Menu = UIComponent('menu', (ui, props: MenuProps) => {
                 width: 100%;
                 text-align: center;
                 font-size: 16px;
-                color: var(--gray-granite-75, #ff00ffbf);
+                color: var(--color-text-muted, #ff00ffbf);
+                max-width: 100%;
             }
         `,
     ];
@@ -183,35 +191,51 @@ const MenuControlsView = UIComponent('menu-controls', (ui) => {
     const css = ui.css;
     return [
         ui
-            .ul({class: 'menu-controls'})
+            .div({class: 'menu-controls'})
             .children(
+                ui.h2().children('Controls'),
                 ui
-                    .li()
+                    .ul({class: 'controls-list'})
                     .children(
-                        ui.code().children('W'),
-                        ' ',
-                        ui.code().children('S'),
-                        ' ',
-                        ui.code().children('A'),
-                        ' ',
-                        ui.code().children('D'),
-                        ' - Move',
+                        ui
+                            .li()
+                            .children(
+                                ui.code().children('W'),
+                                ' ',
+                                ui.code().children('S'),
+                                ' ',
+                                ui.code().children('A'),
+                                ' ',
+                                ui.code().children('D'),
+                                ' - Move',
+                            ),
+                        ui.li().children(ui.code().children('Space'), ' - Shoot'),
+                        ui.li().children(ui.code().children('P'), ' - Pause/Resume'),
+                        ui.li().children(ui.code().children('F'), ' - Toggle Fullscreen'),
+                        ui.li().children(ui.code().children('M'), ' - Toggle Music and Sounds'),
                     ),
-                ui.li().children(ui.code().children('Space'), ' - Shoot'),
-                ui.li().children(ui.code().children('P'), ' - Pause/Resume'),
-                ui.li().children(ui.code().children('F'), ' - Toggle Fullscreen'),
-                ui.li().children(ui.code().children('M'), ' - Toggle Music and Sounds'),
             ),
         css`
             .menu-controls {
-                background: var(--gray-granite-25, #ff00ff);
+                background-color: oklch(from var(--color-bg) l c h / 0.95);
+                border: 1px solid var(--color-border);
                 border-radius: 0.3em;
                 padding: 1rem;
-                list-style: none;
                 width: fit-content;
             }
-            li {
+            h2 {
                 font-size: 2rem;
+                font-weight: bold;
+                margin: 0 0 1rem;
+                text-align: center;
+            }
+            ul {
+                margin: 0;
+                padding: 0;
+                list-style: none;
+            }
+            li {
+                font-size: 1.5rem;
                 padding: 1rem 0;
                 text-shadow: 0 0 0.3em var(--black-raisin);
             }
@@ -219,7 +243,9 @@ const MenuControlsView = UIComponent('menu-controls', (ui) => {
                 font-size: inherit;
                 padding: 0.2em 0.4em;
                 border-radius: 0.3em;
-                background-color: rgba(255, 255, 255, 0.15);
+                background-color: oklch(from var(--color-bg-light) l c h / 0.5);
+                border: 1px solid var(--color-border);
+                border-top: 1px solid var(--color-highlight);
             }
         `,
     ];
@@ -240,12 +266,12 @@ const MenuSettingsBar = UIComponent('menu-settings', (ui: UIContext, props: Menu
     return [
         ui.div({class: 'settings'}).children(
             Slider(ui, {
-                class: 'volume-slider',
                 name: 'volume',
                 min: VOLUME_MIN,
                 max: VOLUME_MAX,
                 step: VOLUME_CHANGE_STEP,
                 value: volume,
+                style: {width: '10rem'},
             }),
             IconButton(ui, {
                 children: computed(() => (muted.get() ? '🔇' : '🔊'), [muted]),
@@ -282,24 +308,29 @@ const MenuButton = UIComponent('menu-button', (ui, props: ButtonProps) => {
                 props.children,
                 css`
                     button {
-                        background-color: var(--gray-granite-25);
-                        border: 1px var(--gray-granite) solid;
+                        background-color: var(--btn-primary-bg);
+                        /*border: none;*/
+                        border: 3px solid var(--btn-primary-border);
+                        color: var(--btn-primary-text);
                         padding: 0.5rem 2rem;
                         font-weight: 500;
                         font-size: 2rem;
                         width: 100%;
-                        text-align: left;
+                        text-align: center;
                         transition-property: box-shadow, background-color;
                         transition-timing-function: ease-in-out;
                         transition-duration: 0.2s;
-                        border-radius: 0.125rem;
+                        border-radius: 0.25rem;
+                        cursor: pointer;
                     }
-                    button:hover {
-                        background-color: var(--gray-granite-75);
+                    button:hover,
+                    button:focus-within {
+                        background-color: var(--btn-primary-bg-hover);
                     }
                     button:focus-within {
-                        outline: none;
-                        box-shadow: 0 0 10px 1px var(--white);
+                        /*outline: 3px solid var(--btn-primary-border);*/
+                        /*outline-offset: 3px;*/
+                        /*box-shadow: 0 0 8px 2px var(--btn-primary-border);*/
                     }
                 `,
             ),
@@ -322,11 +353,13 @@ export const IconButton = UIComponent('mute-button', (ui, props: ButtonProps) =>
                 css`
                     button {
                         display: inline-block;
-                        font-size: 1.5rem;
+                        font-size: 1.25rem;
                         line-height: 1.5rem;
                         overflow: hidden;
                         border-radius: 0.25rem;
-                        background-color: var(--gray-granite-50);
+                        background-color: var(--btn-primary-bg);
+                        color: var(--btn-primary-text);
+                        border: none;
                         width: 2rem;
                         height: 2rem;
                         padding: 0;
@@ -335,12 +368,16 @@ export const IconButton = UIComponent('mute-button', (ui, props: ButtonProps) =>
                         transition-property: box-shadow, background-color, transform;
                         transition-timing-function: ease-in-out;
                         transition-duration: 0.2s;
-                        border: none;
                         outline: none;
+                        cursor: pointer;
                     }
                     button:hover {
                         transform: scale(1.1);
-                        background-color: var(--gray-granite-75);
+                        background-color: oklch(from var(--color-bg-light) l c h / 0.75);
+                    }
+                    button:focus-within {
+                        outline: 3px solid var(--btn-primary-border);
+                        outline-offset: 3px;
                     }
                 `,
             ),

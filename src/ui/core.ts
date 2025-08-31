@@ -324,7 +324,11 @@ function setStyleConfig(element: HTMLElement, style: CSSStyleConfig) {
     for (const pair of Object.entries(style)) {
         const key = pair[0] as keyof CSSStyleConfig;
         const value = pair[1] as CSSStyleDeclaration[typeof key];
-        element.style[key] = value;
+        if (key.startsWith('--')) {
+            element.style.setProperty(key, value); // css variables
+        } else {
+            element.style[key] = value;
+        }
     }
 }
 
