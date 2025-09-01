@@ -7,7 +7,6 @@
 - [ ] Add speed up option for recording playback
 
 ## SHOULD BE FIXED
-- [ ] Enemies can spawn before the door to previous room closes and player can still be in the previous room.
 - [ ] During later levels, the pathfinding slows down the game significantly.
       Probably, need to put a smaller limit on the number of iterations for
       pathfinding. Or adjust the limit dynamically based on the number of entities

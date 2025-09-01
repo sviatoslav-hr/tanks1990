@@ -98,7 +98,7 @@ export class EntityManager {
             this.world.activeRoomInFocus = true;
         }
 
-        {
+        if (this.world.activeRoom.started) {
             const wave = this.world.activeRoom.wave;
             while (wave.hasExpectedEnemies) {
                 this.spawnEnemy();
