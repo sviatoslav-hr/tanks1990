@@ -5,27 +5,32 @@
 ## NEXT TODO
 - [ ] Add animation/SFX to room door opening to hint player that's where he needs to go next.
 - [ ] Add speed up option for recording playback
+- [ ] **Movement improvement!** (Chose one approach)
+    a. Change movement to move only by fractions of cells (e.g. 1/16 of a cell)
+        This will be easier to pathfind. And also will *may* the UX by fixing the issue with the player being able to pass through blocks.
+    b. Make tank model behave like it's more "rounded" so it sort of squeezes between blocks
 
 ## SHOULD BE FIXED
-- [ ] During later levels, the pathfinding slows down the game significantly.
+- [ ] Pathfinding: During later levels, the pathfinding slows down the game significantly.
       Probably, need to put a smaller limit on the number of iterations for
       pathfinding. Or adjust the limit dynamically based on the number of entities
       in the room.
 - [ ] Pathfinding: Sometimes enemies build a path including a bunch of unnecessary turns (zigzag pattern)
 - [ ] Pathfinding: When enemy is right next to a target, but the turret is not aligned with the target, it's not smart enough to adjust it's position.
-- [ ] Web: It seems like browser caches the game files and game doesn't load correctly - reload with cache cleared fixes the issue.
-  - [ ] Add prefix to game files (scripts)?
 
 ## BACKLOG
 
 ### Features
+- [ ] Add bouncing animation to pickups so they look more alive
 - [ ] Final boss - describe it first.
 
 ### Refactoring
+- [ ] Pathfinding: Double check the pathfinding implementation if it fully implements A*;
+- [ ] Camera: have two different instances: player and dev;
 - [ ] Outline how objects/classes should access each other (global vars/props/DI etc) (eg Renderer, Input, EntityManager, Entity etc)
-- [ ] Room creation code is too complex and intermingled... (see #roomgen)
 - [ ] Detach simulation out of entities and manager
 - [ ] Better way to store images and sprites (how bad Image is?)
+- [ ] Room creation code is too complex and intermingled... (see #roomgen)
 - [ ] Better coordinates system (consider defining something like `WorldPosition`)
 - [ ] Use transformation matrices for calculating rotation and translation. Consider performance hits
 - [ ] Create a separate Sprite class for static objects / non-animated
@@ -33,23 +38,19 @@
 - [ ] Cleanup color variables (.css and .color files)
 
 ### Low priority features
+- [ ] Add a visual effect when the pickup is consumed
+- [ ] Add a sound effect when the pickup is consumed by played
+- [ ] Display somewhere what and how many "buffs" player has applied
 - [ ] Have different types of the projectiles - TBD.
 - [ ] Tank armor - TBD. Could be a power up or specific to a separate tank type.
-- [ ] Enemy spawning: Make the enemies spawn in waves, with each wave being stronger than the previous one.
-- [ ] Add VFX to pickups
-    - [ ] Add bouncing animation so they look more alive
-    - [ ] Add a visual effect when the pickup is consumed
-    - [ ] Add a sound effect when the pickup is cosumed by played
 
 ### Sounds And Music
 - [ ] Main screen music?
+- [ ] Better hit sound
 
 ### UX improvements
-- [ ] Figure out correct room generation algorithm
 - [ ] Add a Screen-shake when player dies
 - [ ] Add friction to projectile movement
-- [ ] Change movement to move only by fractions of cells (e.g. 1/16 of a cell)
-      This will be easier to pathfind. And also will *may* the UX by fixing the issue with the player being able to pass through blocks.
 
 ### Visual improvements
 - [ ] Make a proper sprite for the tank explosion effect
@@ -65,7 +66,6 @@
 ### Dev Mode improvements
 - [ ] Improve Camera handling
     - [ ] Logic to not draw offscreen entities is not working correctly during zooming
-    - [ ] Split camera into Player camera and Dev Camera
     - [ ] Zoom towards the mouse position
     - [ ] Add smooth zooming in and out
 - [ ] Hot reload for development?
