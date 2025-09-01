@@ -106,13 +106,13 @@ export const Slider = UIComponent('slider', (ui, props: SliderProps) => {
                     var(--color-primary-light) 100%
                 );
                 --track-border-radius: 3px;
-                --track-transition: box-shadow 0.1s ease-in-out;
-                --track-focus-shadow: 0 0 8px 1px var(--color-primary-light);
                 --thumb-height: 1.25rem;
                 --thumb-width: 1.25rem;
-                --thumb-border-radius: 50%;
-                --thumb-border: 1px solid var(--thumb-background);
                 --thumb-background: var(--color-primary);
+                --thumb-border-radius: 50%;
+                --thumb-transition: outline 0.2s ease-in-out;
+                --thumb-focus-outline: 3px solid var(--thumb-background);
+                --thumb-focus-outline-offset: 3px;
             }
 
             /* NOTE: This has to be duplicated for each browser because
@@ -121,19 +121,11 @@ export const Slider = UIComponent('slider', (ui, props: SliderProps) => {
                 height: var(--track-height);
                 background: var(--track-background);
                 border-radius: var(--track-border-radius);
-                transition: var(--track-transition);
-            }
-            input[type='range']:focus-within::-webkit-slider-runnable-track {
-                box-shadow: var(--track-focus-shadow);
             }
             input[type='range']::-moz-range-track {
                 height: var(--track-height);
                 background: var(--track-background);
                 border-radius: var(--track-border-radius);
-                transition: var(--track-transition);
-            }
-            input[type='range']:focus-within::-moz-range-track {
-                box-shadow: var(--track-focus-shadow);
             }
 
             /* Thumb */
@@ -146,7 +138,11 @@ export const Slider = UIComponent('slider', (ui, props: SliderProps) => {
                 margin-top: calc(
                     (var(--track-height) - var(--thumb-height)) / 2
                 ); /* center thumb on track */
-                border: var(--thumb-border);
+                transition: var(--thumb-transition);
+            }
+            input[type='range']:focus-visible::-webkit-slider-thumb {
+                outline: var(--thumb-focus-outline);
+                outline-offset: var(--thumb-focus-outline-offset);
             }
 
             input[type='range']::-moz-range-thumb {
@@ -154,7 +150,11 @@ export const Slider = UIComponent('slider', (ui, props: SliderProps) => {
                 width: var(--thumb-width);
                 border-radius: var(--thumb-border-radius);
                 background: var(--color-primary);
-                border: var(--thumb-border);
+                transition: var(--thumb-transition);
+            }
+            input[type='range']:focus-visible::-moz-range-thumb {
+                outline: var(--thumb-focus-outline);
+                outline-offset: var(--thumb-focus-outline-offset);
             }
         `,
     ];

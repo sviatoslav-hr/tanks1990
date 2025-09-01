@@ -3,7 +3,7 @@ const path = require('path');
 
 const LIST_FILENAME = 'list.json';
 const PUBLIC_PATH = path.join(__dirname, '..', 'public');
-const IGNORE_FIELS = ['.DS_Store', LIST_FILENAME, 'assets.html'];
+const IGNORE_FILES = ['.DS_Store', LIST_FILENAME, 'assets.html'];
 
 let fileCounts = {};
 let dirsCount = 0;
@@ -18,7 +18,7 @@ async function readDir(dirPath) {
     const result = {};
     const files = await fs.readdir(path.join(PUBLIC_PATH, dirPath));
     for (const filename of files) {
-        if (IGNORE_FIELS.includes(filename)) {
+        if (IGNORE_FILES.includes(filename)) {
             continue;
         }
         const filePath = path.join(dirPath, filename);

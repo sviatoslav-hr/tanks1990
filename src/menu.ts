@@ -317,20 +317,20 @@ const MenuButton = UIComponent('menu-button', (ui, props: ButtonProps) => {
                         font-size: 2rem;
                         width: 100%;
                         text-align: center;
-                        transition-property: box-shadow, background-color;
+                        transition-property: outline, background-color;
                         transition-timing-function: ease-in-out;
                         transition-duration: 0.2s;
                         border-radius: 0.25rem;
                         cursor: pointer;
+                        outline: 0 solid transparent;
+                        outline-offset: 3px;
                     }
                     button:hover,
-                    button:focus-within {
+                    button:active {
                         background-color: var(--btn-primary-bg-hover);
                     }
-                    button:focus-within {
-                        /*outline: 3px solid var(--btn-primary-border);*/
-                        /*outline-offset: 3px;*/
-                        /*box-shadow: 0 0 8px 2px var(--btn-primary-border);*/
+                    button:focus-visible {
+                        outline: 3px solid var(--btn-primary-border);
                     }
                 `,
             ),
@@ -365,19 +365,19 @@ export const IconButton = UIComponent('mute-button', (ui, props: ButtonProps) =>
                         padding: 0;
                         margin: 0;
                         text-align: center;
-                        transition-property: box-shadow, background-color, transform;
+                        transition-property: background-color, transform, outline;
                         transition-timing-function: ease-in-out;
                         transition-duration: 0.2s;
-                        outline: none;
                         cursor: pointer;
+                        outline: 0 solid transparent;
+                        outline-offset: 3px;
                     }
                     button:hover {
                         transform: scale(1.1);
                         background-color: oklch(from var(--color-bg-light) l c h / 0.75);
                     }
-                    button:focus-within {
+                    button:focus-visible {
                         outline: 3px solid var(--btn-primary-border);
-                        outline-offset: 3px;
                     }
                 `,
             ),

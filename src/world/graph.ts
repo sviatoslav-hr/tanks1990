@@ -14,7 +14,6 @@ export interface WorldNode {
     x: number;
     y: number;
     depth: number;
-    // Conections are undirected "holes" in the walls to adjacent nodes.
     // Connections can be: entrances (prev depth) and exits (next depth).
     connectedNodes: Partial<Record<Direction, WorldNode>>;
 }
@@ -389,33 +388,33 @@ export function drawWorldGraph(renderer: Renderer, graph: WorldGraph): void {
             dy *= CELL_SIZE;
             let dw = w / 2;
             let dh = h / 2;
-            let doffset = w / 5;
+            const dOffset = w / 5;
             switch (dir) {
                 case 'north': {
                     dh = h / 1.5;
                     dw = w / 8;
                     dx += w / 2 - dw / 2;
-                    dy += -doffset;
+                    dy += -dOffset;
                     break;
                 }
                 case 'south': {
                     dh = h / 1.5;
                     dw = w / 8;
                     dx += w / 2 - dw / 2;
-                    dy += h - dh + doffset;
+                    dy += h - dh + dOffset;
                     break;
                 }
                 case 'west': {
                     dw = w / 1.5;
                     dh = h / 8;
-                    dx += -doffset;
+                    dx += -dOffset;
                     dy += h / 2 - dh / 2;
                     break;
                 }
                 case 'east': {
                     dw = w / 1.5;
                     dh = h / 8;
-                    dx += w - dw + doffset;
+                    dx += w - dw + dOffset;
                     dy += h / 2 - dh / 2;
                     break;
                 }

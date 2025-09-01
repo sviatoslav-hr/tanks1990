@@ -2,7 +2,26 @@
   "assets": {
     "bricks.png": "assets/bricks.png",
     "bullet.png": "assets/bullet.png",
+    "explosion.png": "assets/explosion.png",
     "kenney_particle-pack": {
+      "Rotated": {
+        "flame_05_rotated.png": "assets/kenney_particle-pack/Rotated/flame_05_rotated.png",
+        "flame_06_rotated.png": "assets/kenney_particle-pack/Rotated/flame_06_rotated.png",
+        "muzzle_01_rotated.png": "assets/kenney_particle-pack/Rotated/muzzle_01_rotated.png",
+        "muzzle_02_rotated.png": "assets/kenney_particle-pack/Rotated/muzzle_02_rotated.png",
+        "muzzle_03_rotated.png": "assets/kenney_particle-pack/Rotated/muzzle_03_rotated.png",
+        "muzzle_04_rotated.png": "assets/kenney_particle-pack/Rotated/muzzle_04_rotated.png",
+        "muzzle_05_rotated.png": "assets/kenney_particle-pack/Rotated/muzzle_05_rotated.png",
+        "spark_05_rotated.png": "assets/kenney_particle-pack/Rotated/spark_05_rotated.png",
+        "spark_06_rotated.png": "assets/kenney_particle-pack/Rotated/spark_06_rotated.png",
+        "trace_01_rotated.png": "assets/kenney_particle-pack/Rotated/trace_01_rotated.png",
+        "trace_02_rotated.png": "assets/kenney_particle-pack/Rotated/trace_02_rotated.png",
+        "trace_03_rotated.png": "assets/kenney_particle-pack/Rotated/trace_03_rotated.png",
+        "trace_04_rotated.png": "assets/kenney_particle-pack/Rotated/trace_04_rotated.png",
+        "trace_05_rotated.png": "assets/kenney_particle-pack/Rotated/trace_05_rotated.png",
+        "trace_06_rotated.png": "assets/kenney_particle-pack/Rotated/trace_06_rotated.png",
+        "trace_07_rotated.png": "assets/kenney_particle-pack/Rotated/trace_07_rotated.png"
+      },
       "circle_01.png": "assets/kenney_particle-pack/circle_01.png",
       "circle_02.png": "assets/kenney_particle-pack/circle_02.png",
       "circle_03.png": "assets/kenney_particle-pack/circle_03.png",
@@ -33,24 +52,6 @@
       "muzzle_03.png": "assets/kenney_particle-pack/muzzle_03.png",
       "muzzle_04.png": "assets/kenney_particle-pack/muzzle_04.png",
       "muzzle_05.png": "assets/kenney_particle-pack/muzzle_05.png",
-      "Rotated": {
-        "flame_05_rotated.png": "assets/kenney_particle-pack/Rotated/flame_05_rotated.png",
-        "flame_06_rotated.png": "assets/kenney_particle-pack/Rotated/flame_06_rotated.png",
-        "muzzle_01_rotated.png": "assets/kenney_particle-pack/Rotated/muzzle_01_rotated.png",
-        "muzzle_02_rotated.png": "assets/kenney_particle-pack/Rotated/muzzle_02_rotated.png",
-        "muzzle_03_rotated.png": "assets/kenney_particle-pack/Rotated/muzzle_03_rotated.png",
-        "muzzle_04_rotated.png": "assets/kenney_particle-pack/Rotated/muzzle_04_rotated.png",
-        "muzzle_05_rotated.png": "assets/kenney_particle-pack/Rotated/muzzle_05_rotated.png",
-        "spark_05_rotated.png": "assets/kenney_particle-pack/Rotated/spark_05_rotated.png",
-        "spark_06_rotated.png": "assets/kenney_particle-pack/Rotated/spark_06_rotated.png",
-        "trace_01_rotated.png": "assets/kenney_particle-pack/Rotated/trace_01_rotated.png",
-        "trace_02_rotated.png": "assets/kenney_particle-pack/Rotated/trace_02_rotated.png",
-        "trace_03_rotated.png": "assets/kenney_particle-pack/Rotated/trace_03_rotated.png",
-        "trace_04_rotated.png": "assets/kenney_particle-pack/Rotated/trace_04_rotated.png",
-        "trace_05_rotated.png": "assets/kenney_particle-pack/Rotated/trace_05_rotated.png",
-        "trace_06_rotated.png": "assets/kenney_particle-pack/Rotated/trace_06_rotated.png",
-        "trace_07_rotated.png": "assets/kenney_particle-pack/Rotated/trace_07_rotated.png"
-      },
       "scorch_01.png": "assets/kenney_particle-pack/scorch_01.png",
       "scorch_02.png": "assets/kenney_particle-pack/scorch_02.png",
       "scorch_03.png": "assets/kenney_particle-pack/scorch_03.png",
@@ -102,6 +103,12 @@
       "window_03.png": "assets/kenney_particle-pack/window_03.png",
       "window_04.png": "assets/kenney_particle-pack/window_04.png"
     },
+    "kenney_top-down-tanks-redux": {
+      "Vector": {
+        "topdownTanks_vector.swf": "assets/kenney_top-down-tanks-redux/Vector/topdownTanks_vector.swf"
+      }
+    },
+    "pickups.png": "assets/pickups.png",
     "scorch.png": "assets/scorch.png",
     "shield6_blue.png": "assets/shield6_blue.png",
     "shield6_red.png": "assets/shield6_red.png",
@@ -123,8 +130,12 @@
     "tank_green_turret_medium.png": "assets/tank_green_turret_medium.png"
   },
   "sounds": {
-    "8bit_bomb_explosion.wav": "sounds/8bit_bomb_explosion.wav",
-    "cannon_fire.wav": "sounds/cannon_fire.wav"
+    "cannon_fire.wav": "sounds/cannon_fire.wav",
+    "explosion_8bit.wav": "sounds/explosion_8bit.wav",
+    "game_over.wav": "sounds/game_over.wav",
+    "hit.wav": "sounds/hit.wav",
+    "level_start.wav": "sounds/level_start.wav",
+    "too_strong.wav": "sounds/too_strong.wav"
   },
   "tanks1990.ico": "tanks1990.ico"
 }
