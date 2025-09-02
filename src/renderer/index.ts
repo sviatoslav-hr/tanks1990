@@ -14,13 +14,13 @@ type ShadowTextOpts = {
 export class Renderer {
     readonly canvas: HTMLCanvasElement;
     readonly ctx: CanvasRenderingContext2D;
-    readonly camera: Camera;
+    camera: Camera;
     #usingCameraCoords = false;
     imageSmoothingDisabled = false;
 
-    constructor() {
+    constructor(camera: Camera) {
         this.canvas = document.createElement('canvas');
-        this.camera = new Camera(this.canvas.width, this.canvas.height);
+        this.camera = camera;
 
         const ctx2d = this.canvas.getContext('2d');
         if (!ctx2d) {
@@ -50,6 +50,7 @@ export class Renderer {
         lineWidth = 1,
         force = false,
     ): void {
+        assert(this.camera);
         if (!this.#usingCameraCoords && !force && !this.camera.isRectVisible(x, y, width, height)) {
             return;
         }
@@ -61,6 +62,7 @@ export class Renderer {
     }
 
     fillRect(x: number, y: number, width: number, height: number): void {
+        assert(this.camera);
         if (!this.#usingCameraCoords && !this.camera.isRectVisible(x, y, width, height)) {
             return;
         }
@@ -72,6 +74,7 @@ export class Renderer {
     }
 
     fillRect2({x, y, width, height}: Rect): void {
+        assert(this.camera);
         if (!this.#usingCameraCoords && !this.camera.isRectVisible(x, y, width, height)) {
             return;
         }
@@ -83,6 +86,7 @@ export class Renderer {
     }
 
     fillCircle(cx: number, cy: number, radius: number): void {
+        assert(this.camera);
         if (!this.#usingCameraCoords && !this.camera.isCircleVisible(cx, cy, radius)) {
             return;
         }
@@ -95,6 +99,7 @@ export class Renderer {
     }
 
     strokeLine(x0: number, y0: number, x1: number, y1: number, width = 1): void {
+        assert(this.camera);
         if (!this.#usingCameraCoords && !this.camera.isLineVisible(x0, y0, x1, y1, width)) {
             return;
         }
@@ -226,7 +231,6 @@ export class Renderer {
         this.canvas.style.height = height + 'px';
         this.canvas.width = width;
         this.canvas.height = height;
-        this.camera.screenSize.set(width, height);
     }
 
     async toggleFullscreen(window: Window): Promise<void> {

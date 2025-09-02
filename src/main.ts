@@ -16,7 +16,6 @@ import {getURLSeed, random, setURLSeed} from '#/math/rng';
 import {Menu, MenuBridge} from '#/menu';
 import {isRecording, recordGameInput} from '#/recording';
 import {Renderer} from '#/renderer';
-import {Camera} from '#/renderer/camera';
 import {SoundManager} from '#/sound';
 import {GameState, justCompletedGame} from '#/state';
 import {GameStorage} from '#/storage';
@@ -41,15 +40,16 @@ function main(): void {
     sounds.loadAllSounds().then(() => logger.debug('[Sounds] All sounds loaded'));
     preloadEffectImages();
 
-    const renderer = new Renderer();
-    appElement.append(renderer.canvas);
+    const gameState = new GameState();
 
     const input = new GameInput();
-    const gameState = new GameState();
     const manager = new EntityManager();
     const eventQueue = new EventQueue();
     const config = new GameConfig(storage);
     config.load();
+
+    const renderer = new Renderer(gameState.playerCamera);
+    appElement.append(renderer.canvas);
 
     const menu = new MenuBridge(eventQueue);
     {
@@ -63,8 +63,8 @@ function main(): void {
     const devUI = createDevUI(gameState, manager, renderer, storage);
     appElement.append(devUI);
 
-    resizeGame(renderer, manager.world);
-    window.addEventListener('resize', () => resizeGame(renderer, manager.world));
+    resizeGame(renderer, gameState, manager.world);
+    window.addEventListener('resize', () => resizeGame(renderer, gameState, manager.world));
 
     input.listen(document.body, renderer.canvas);
     runGame(gameState, config, manager, menu, input, storage, devUI, renderer, sounds, eventQueue);
@@ -107,12 +107,22 @@ function runGame(
                 inputState.extra.toggleFullscreen ||= true;
                 menu.fullscreenToggleExpected = false;
             }
-            processInput(inputState, renderer, state, manager, menu, devUI, storage, eventQueue);
+            processInput(
+                inputState,
+                renderer,
+                state,
+                config,
+                manager,
+                menu,
+                devUI,
+                storage,
+                eventQueue,
+            );
             if (isRecording(state)) recordGameInput(state, dt, inputState.game);
 
             drawOptions.drawUI = !menu.visible;
             drawGame(renderer, config, manager, drawOptions);
-            simulateGameTick(dt, state, manager, renderer.camera, eventQueue);
+            simulateGameTick(dt, state, manager, eventQueue);
             processGameEvents(eventQueue, state, manager, sounds, menu);
             state.nextTick();
             input.nextTick();
@@ -132,7 +142,6 @@ function simulateGameTick(
     dt: Duration,
     state: GameState,
     manager: EntityManager,
-    camera: Camera,
     events: EventQueue,
 ) {
     const player = manager.player;
@@ -148,11 +157,13 @@ function simulateGameTick(
     // NOTE: Showing enemies moving even when it's game-over to kind of troll the player "they continue living while you are dead".
     if (state.playing || state.dead || state.debugUpdateTriggered) {
         manager.updateEffects(dt);
-        manager.updateAllEntities(dt, camera, events);
+        manager.updateAllEntities(dt, state.playerCamera, events);
     }
 }
 
-function resizeGame(renderer: Renderer, world: World): void {
+function resizeGame(renderer: Renderer, state: GameState, world: World): void {
     renderer.resizeCanvasByWindow(window);
-    renderer.camera.focusOnRect(world.activeRoom.boundary);
+    state.playerCamera.screenSize.set(renderer.canvas.width, renderer.canvas.height);
+    state.devCamera.screenSize.set(renderer.canvas.width, renderer.canvas.height);
+    state.playerCamera.focusOnRect(world.activeRoom.boundary);
 }

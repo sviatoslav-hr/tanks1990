@@ -1,24 +1,15 @@
-import { Rect } from '#/math';
-import { Vector2 } from '#/math/vector';
-
-// TODO: Have 2 Cameras: dev and player
+import {Rect} from '#/math';
+import {Vector2} from '#/math/vector';
 
 export class Camera {
-    // NOTE: Offset of the center of the camera from the center of the world
-    readonly worldOffset: Vector2 = Vector2.zero();
-    // NOTE: Size of the screen in pixels
-    readonly screenSize: Vector2;
+    /** Offset of the center of the camera from the center of the world */
+    readonly worldOffset = Vector2.zero();
+    /** Size of the screen in pixels */
+    readonly screenSize = Vector2.zero();
     // NOTE: This is affected by the scaling settings of the OS.
     readonly pixelRatio: number = window.devicePixelRatio;
     readonly focusPaddingInPixels = 32;
     visibleScale = 1;
-    lastAutoScale = 1;
-    manualMode = false;
-
-    constructor(screenWidth: number, screenHeight: number) {
-        assert(screenWidth > 0 && screenHeight > 0, 'Invalid camera size');
-        this.screenSize = new Vector2(screenWidth, screenHeight);
-    }
 
     get scale() {
         return this.visibleScale;
@@ -42,9 +33,6 @@ export class Camera {
     setScale(scale: number): void {
         assert(!isNaN(scale) && scale > 0 && Number.isFinite(scale));
         this.visibleScale = scale;
-        if (!this.manualMode) {
-            this.lastAutoScale = this.visibleScale;
-        }
     }
 
     focusOnRect(rect: Rect, padding = this.focusPaddingInPixels): void {
@@ -53,12 +41,6 @@ export class Camera {
         const scaleY = (this.screenSize.height - padding * 2) / (rect.height * rectScale);
         this.setScale(Math.min(scaleX, scaleY));
         this.centerOn(rect);
-    }
-
-    reset(): void {
-        this.worldOffset.set(0, 0);
-        this.visibleScale = this.lastAutoScale;
-        this.manualMode = false;
     }
 
     isRectVisible(x: number, y: number, width: number, height: number): boolean;

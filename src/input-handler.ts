@@ -16,6 +16,7 @@ import {GameState} from '#/state';
 import {GameStorage} from '#/storage';
 import {DevUI, toggleDevPanelVisibility, toggleFPSVisibility} from '#/ui/dev';
 import {notify} from '#/ui/notification';
+import {GameConfig} from '#/config';
 
 export interface InputState {
     game: GameInputState;
@@ -43,9 +44,10 @@ export interface ExtraInputState {
     // TODO: This really should control only dev camera.
     devCameraOffset?: Vector2Like;
     devCameraScaleOffset?: number;
-    devCameraScale?: number;
+    devCameraScaleMult?: number;
+    devCameraScalePrecise?: number;
     devCameraResetToPlayer?: boolean;
-    // TODO: Add a keymap to switch between player and dev cameras instead.
+    switchDevPlayerCameras?: boolean;
     toggleRecording?: boolean;
     playOrExitRecording?: boolean;
     // Useful for temporary keymaps
@@ -159,6 +161,10 @@ export function handleExtraKeymaps(input: GameInput): ExtraInputState {
             result.toggleDevPanel = true;
         }
 
+        if (input.isPressed('KeyC')) {
+            result.switchDevPlayerCameras = true;
+        }
+
         if (input.isDown('MouseMiddle') || input.isDown('MouseLeft')) {
             // NOTE: Support also mouse left to have a convenient way to move camera on touchpad
             result.devCameraOffset = input.getMouseDelta();
@@ -167,11 +173,11 @@ export function handleExtraKeymaps(input: GameInput): ExtraInputState {
         if (input.isPressed('Digit0')) {
             result.devCameraResetToPlayer = true;
         } else if (input.isPressed('Digit1')) {
-            result.devCameraScaleOffset = 1;
-            result.devCameraScale = 1;
-        } else if (input.isPressed('Digit2')) {
-            result.devCameraScaleOffset = 2;
-            result.devCameraScale = 1;
+            result.devCameraScalePrecise = 1;
+        } else if (input.isPressed('Minus')) {
+            result.devCameraScaleMult = 0.5;
+        } else if (input.isPressed('Equal')) {
+            result.devCameraScaleMult = 2;
         } else if (input.getMouseWheelDelta()) {
             result.devCameraScaleOffset = input.getMouseWheelDelta() * 0.001;
         }
@@ -185,6 +191,7 @@ export function processInput(
     input: InputState,
     renderer: Renderer,
     state: GameState,
+    config: GameConfig,
     manager: EntityManager,
     menu: MenuBridge,
     devUI: DevUI,
@@ -230,7 +237,7 @@ export function processInput(
     }
 
     if (input.extra.showBoundaries) {
-        // config.setDebugShowBoundaries(!config.debugShowBoundaries);
+        config.setDebugShowBoundaries(!config.debugShowBoundaries);
     }
 
     if (input.extra.toggleRecording) {
@@ -262,27 +269,68 @@ export function processInput(
         toggleDevPanelVisibility(devUI.devPanel, storage);
     }
 
+    if (input.extra.switchDevPlayerCameras) {
+        const {devCamera, playerCamera} = state;
+        if (renderer.camera === devCamera) {
+            renderer.camera = playerCamera;
+            notify('Switched to player camera');
+        } else {
+            renderer.camera = devCamera;
+            notify('Switched to dev camera');
+        }
+    }
+
     if (input.extra.devCameraOffset) {
-        renderer.camera.manualMode = true;
-        const offset = input.extra.devCameraOffset;
-        offset.x /= renderer.camera.scale;
-        offset.y /= renderer.camera.scale;
-        renderer.camera.worldOffset.add(offset);
+        if (renderer.camera === state.devCamera) {
+            const offset = input.extra.devCameraOffset;
+            offset.x /= renderer.camera.scale;
+            offset.y /= renderer.camera.scale;
+            renderer.camera.worldOffset.add(offset);
+        } else {
+            logger.error('Cannot update offset - dev camera is not active');
+        }
+    }
+
+    if (input.extra.devCameraScalePrecise != null) {
+        if (renderer.camera === state.devCamera) {
+            assert(input.extra.devCameraScalePrecise > 0);
+            const currentScale = renderer.camera.scale;
+            const newScale = input.extra.devCameraScalePrecise;
+            const mult = newScale / currentScale;
+            input.extra.devCameraScaleMult = mult;
+        } else {
+            logger.error('Cannot update scale - dev camera is not active');
+        }
     }
 
     if (input.extra.devCameraScaleOffset != null) {
-        renderer.camera.manualMode = true;
-        const newScale = renderer.camera.scale - input.extra.devCameraScaleOffset;
-        if (Number.isFinite(newScale) && newScale > 0) {
-            renderer.camera.setScale(newScale);
+        if (renderer.camera === state.devCamera) {
+            renderer.camera = state.devCamera;
+            const newScale = renderer.camera.scale - input.extra.devCameraScaleOffset;
+            if (Number.isFinite(newScale) && newScale > 0) {
+                renderer.camera.setScale(newScale);
+            }
+        } else {
+            logger.error('Cannot update scale - dev camera is not active');
         }
-    } else if (input.extra.devCameraScale != null) {
-        renderer.camera.manualMode = true;
-        renderer.camera.setScale(renderer.camera.scale - input.extra.devCameraScale);
+    } else if (input.extra.devCameraScaleMult != null) {
+        if (renderer.camera === state.devCamera) {
+            renderer.camera = state.devCamera;
+            const newScale = renderer.camera.scale * input.extra.devCameraScaleMult;
+            renderer.camera.setScale(newScale);
+            notify('Set dev camera scale to ' + newScale);
+        } else {
+            logger.error('Cannot update scale - dev camera is not active');
+        }
     }
 
     if (input.extra.devCameraResetToPlayer) {
-        renderer.camera.reset();
-        renderer.camera.focusOnRect(manager.world.activeRoom.boundary);
+        const {devCamera, playerCamera} = state;
+        if (renderer.camera === devCamera) {
+            devCamera.worldOffset.setFrom(playerCamera.worldOffset);
+            devCamera.focusOnRect(manager.world.activeRoom.boundary);
+        } else {
+            logger.error('Cannot reset - dev camera is not active');
+        }
     }
 }

@@ -4,6 +4,7 @@ import {
     type RecordingData,
     type RecordingStatus,
 } from '#/recording';
+import {Camera} from '#/renderer/camera';
 import type {Sound} from '#/sound';
 import type {Room} from '#/world/room';
 
@@ -36,6 +37,8 @@ export class GameState {
         startedAt: 0,
     };
     battleMusic: Sound | null = null;
+    playerCamera = new Camera();
+    devCamera = new Camera();
 
     get initial(): boolean {
         return this.status === GameStatus.INITIAL;

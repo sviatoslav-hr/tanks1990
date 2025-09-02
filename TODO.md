@@ -3,7 +3,6 @@
 ## DOING
 
 ## NEXT TODO
-- [ ] Camera: have two different instances: player and dev;
 - [ ] Extract simulation out of EntityManager!
 - [ ] Add animation/SFX to room door opening to hint player that's where he needs to go next.
 - [ ] Add speed up option for recording playback
@@ -70,7 +69,6 @@
     - [ ] Zoom towards the mouse position
     - [ ] Add smooth zooming in and out
 - [ ] Hot reload for development?
-- [ ] Sometimes after moving the camera manually, after trying to reset it, it's not zoomed correctly (slightly zoomed out so the world border is visible)
 
 ### Low priority bugs
 - [ ] Fix projectile size (it's bigger than it visually is)
