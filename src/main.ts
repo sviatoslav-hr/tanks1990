@@ -1,5 +1,6 @@
-import './globals';
 import './style.css';
+
+import '#/globals';
 
 import {logger} from '#/common/logger';
 import {GameConfig} from '#/config';
@@ -16,6 +17,7 @@ import {getURLSeed, random, setURLSeed} from '#/math/rng';
 import {Menu, MenuBridge} from '#/menu';
 import {isRecording, recordGameInput} from '#/recording';
 import {Renderer} from '#/renderer';
+import {initEntities, simulateEntities} from '#/simulation';
 import {SoundManager} from '#/sound';
 import {GameState, justCompletedGame} from '#/state';
 import {GameStorage} from '#/storage';
@@ -85,7 +87,7 @@ function runGame(
     const seed = getURLSeed();
     random.reset(seed ?? undefined);
     setURLSeed(random.seed);
-    manager.init(); // Init the world to display it behind the main menu screen.
+    initEntities(manager);
     let lastTimestamp = performance.now();
     const animationCallback = (): void => {
         const now = performance.now();
@@ -156,8 +158,7 @@ function simulateGameTick(
 
     // NOTE: Showing enemies moving even when it's game-over to kind of troll the player "they continue living while you are dead".
     if (state.playing || state.dead || state.debugUpdateTriggered) {
-        manager.updateEffects(dt);
-        manager.updateAllEntities(dt, state.playerCamera, events);
+        simulateEntities(dt, manager, state.playerCamera, events);
     }
 }
 

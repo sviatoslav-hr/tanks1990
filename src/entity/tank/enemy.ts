@@ -1,12 +1,13 @@
 import {Entity} from '#/entity/core';
 import {Tank} from '#/entity/tank/base';
-import {createTankSpriteGroup, makeTankSchema} from '#/entity/tank/generation';
+import {createTankSpriteGroup, makeTankSchema, TankPartKind} from '#/entity/tank/generation';
 import {sameSign} from '#/math';
 import {Direction} from '#/math/direction';
 import {Duration} from '#/math/duration';
 import {Vector2, Vector2Like} from '#/math/vector';
 import {findPath} from '#/pathfinding';
 import {createShieldSprite} from '#/renderer/sprite';
+import {EntityManager} from '#/entity/manager';
 
 export function isEnemyTank(tank: Tank): tank is EnemyTank {
     return tank.bot;
@@ -158,4 +159,30 @@ export class EnemyTank extends Tank implements Entity {
         }
         return null;
     }
+}
+
+export function spawnEnemy(
+    manager: EntityManager,
+    enemyKind?: TankPartKind,
+    skipDelay = false,
+): EnemyTank {
+    const deadEnemy = manager.tanks.find((t) => t.bot && t.dead && !t.shouldRespawn) as EnemyTank;
+    // NOTE: Enemy will be dead initially, but it will be re-spawned automatically with the delay
+    // to not spawn it immediately and also have the ability to not spawn everyone at once.
+    const enemy = deadEnemy ?? new EnemyTank(manager);
+    assert(enemy.dead);
+    if (!deadEnemy) {
+        // NOTE: Player should be drawn last, so enemies are added to the beginning of the array.
+        manager.tanks.unshift(enemy);
+        logger.debug('[Manager] Created new enemy tank', enemy.id);
+    } else {
+        logger.debug('[Manager] Reused dead enemy tank', enemy.id);
+    }
+    const wave = manager.world.activeRoom.wave;
+    if (skipDelay) {
+        wave.spawnEnemy(enemy);
+    } else {
+        wave.queueEnemy(enemy, enemyKind);
+    }
+    return enemy;
 }

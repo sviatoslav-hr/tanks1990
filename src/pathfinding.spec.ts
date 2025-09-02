@@ -10,6 +10,8 @@ import {Duration} from '#/math/duration';
 import {random} from '#/math/rng';
 import {Vector2Like} from '#/math/vector';
 import {findPath} from '#/pathfinding';
+import {spawnEnemy} from '#/entity/tank/enemy';
+import {initEntities, simulateTanks} from '#/simulation';
 
 function spriteMock() {
     return {
@@ -88,12 +90,13 @@ describe('Pathfinding', () => {
     ) {
         const manager = new EntityManager();
         manager.world.roomsLimit = 1;
-        manager.init();
-        manager.world.activeRoom.wave.clearExpected();
-        manager.spawnEnemy('light', true);
+        initEntities(manager);
+        const activeWave = manager.world.activeRoom.wave;
+        activeWave.clearExpected();
+        spawnEnemy(manager, 'light', true);
         const enemy = manager.tanks.find((t) => t instanceof EnemyTank) as EnemyTank;
         const eventQueue = new EventQueue();
-        manager.updateTanks(Duration.milliseconds(0), eventQueue);
+        simulateTanks(Duration.milliseconds(0), manager.tanks, activeWave, eventQueue);
         assert(enemy, 'Enemy tank not found');
         assert(!enemy.dead, 'Enemy tank should not be dead (should respawn)');
         assert(manager.tanks.length === 2, 'Expected only 2 tanks'); // Player + enemy

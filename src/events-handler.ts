@@ -1,11 +1,14 @@
+import {spawnBoom, spawnExplosionEffect} from '#/effect';
 import type {EntityManager} from '#/entity/manager';
+import {spawnProjectile} from '#/entity/projectile';
 import type {EventQueue, GameControlEvent, GameEvent} from '#/events';
 import {getURLSeed, random, setURLSeed} from '#/math/rng';
+import {MenuBridge} from '#/menu';
+import {initEntities} from '#/simulation';
 import {SoundName, type SoundManager} from '#/sound';
 import {soundEvent} from '#/sound-event';
 import type {GameState} from '#/state';
 import {notify} from '#/ui/notification';
-import {MenuBridge} from './menu';
 
 export function handleGameEvents(
     eventQueue: EventQueue,
@@ -23,12 +26,13 @@ export function handleGameEvents(
                     soundEvent(eventQueue, event.bot ? 'enemy-shooting' : 'player-shooting');
                 }
                 const {entityId, origin, direction, damage} = event;
-                manager.spawnProjectile(entityId, origin, direction, damage);
+                spawnProjectile(manager, entityId, origin, direction, damage);
                 break;
             }
 
             case 'tank-destroyed': {
-                manager.spawnExplosionEffect(event.entityId);
+                // TODO: Do I really need an event for this? (Probably, no)
+                spawnExplosionEffect(manager, event.entityId);
                 if (event.bot) {
                     const entity = manager.findTank(event.entityId);
                     if (entity) {
@@ -41,7 +45,7 @@ export function handleGameEvents(
             }
 
             case 'projectile-exploded':
-                manager.spawnBoom(event.entityId);
+                spawnBoom(manager, event.entityId);
                 break;
 
             case 'game-control':
@@ -78,7 +82,7 @@ function handleGameControlEvent(
                 setURLSeed(random.seed);
                 game.recording.playing = false;
                 game.start();
-                manager.init();
+                initEntities(manager);
                 menu.view.set(null);
             }
 

@@ -8,7 +8,7 @@ import {Pickup} from '#/entity/pickup';
 import {Rect} from '#/math';
 import {Direction, getDirectionBetween} from '#/math/direction';
 import {Vector2} from '#/math/vector';
-import {WorldNode} from './graph';
+import {WorldNode} from '#/world/graph';
 
 export const roomSizeInCells = new Vector2(12, 8);
 

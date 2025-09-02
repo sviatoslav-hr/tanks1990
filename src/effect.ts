@@ -1,5 +1,6 @@
 import {Animation, easeOut2} from '#/animation';
 import {CELL_SIZE} from '#/const';
+import {EntityId} from '#/entity/id';
 import {EntityManager} from '#/entity/manager';
 import {Rect} from '#/math';
 import {Duration} from '#/math/duration';
@@ -253,4 +254,23 @@ export function tryCacheExplosions(renderer: Renderer, manager: EntityManager): 
         const imageData = renderer.getImageData(player.x, player.y, player.width, player.height);
         manager.cachedPlayerExplosion = ParticleExplosion.fromImageData(imageData, manager.player);
     }
+}
+
+export function spawnExplosionEffect(manager: EntityManager, sourceId: EntityId): void {
+    const tank = manager.findTank(sourceId);
+    assert(tank, `Tank with id ${sourceId} not found for explosion effect`);
+    const cachedEffect = tank.bot ? manager.cachedBotExplosion : manager.cachedPlayerExplosion;
+    assert(cachedEffect, `Cached explosion effect not found, bot=${tank.bot}`);
+    const effect = cachedEffect.clone(tank);
+    manager.effects.push(effect);
+}
+
+export function spawnBoom(manager: EntityManager, projectileId: EntityId): void {
+    const projectile = manager.projectiles.find((p) => p.id === projectileId);
+    if (!projectile) {
+        logger.warn(`Projectile with id ${projectileId} not found for boom effect`);
+        return;
+    }
+    const position = new Vector2(projectile.x, projectile.y);
+    manager.booms.push(new Boom(position));
 }

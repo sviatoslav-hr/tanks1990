@@ -1,5 +1,5 @@
+import {MinPriorityQueue} from '#/math/priority-queue';
 import {describe, expect, it} from 'vitest';
-import {MinPriorityQueue} from './priority-queue';
 
 describe('MinPriorityQueue', () => {
     it('should enqueue and dequeue items correctly', () => {

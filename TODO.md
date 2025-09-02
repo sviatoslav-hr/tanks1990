@@ -3,16 +3,16 @@
 ## DOING
 
 ## NEXT TODO
-- [ ] Extract simulation out of EntityManager!
 - [ ] Change menu color to more blueish instead of gray
-- [ ] Add animation/SFX to room door opening to hint player that's where he needs to go next.
 - [ ] Add speed up option for recording playback
+- [ ] Delete EntityManager (move stuff into GameState)
+- [ ] Add animation/SFX to room door opening to hint player that's where he needs to go next.
+
+## SHOULD BE FIXED
 - [ ] **Movement improvement!** (Chose one approach)
     a. Change movement to move only by fractions of cells (e.g. 1/16 of a cell)
         This will be easier to pathfind. And also will *may* the UX by fixing the issue with the player being able to pass through blocks.
     b. Make tank model behave like it's more "rounded" so it sort of squeezes between blocks
-
-## SHOULD BE FIXED
 - [ ] Pathfinding: During later levels, the pathfinding slows down the game significantly.
       Probably, need to put a smaller limit on the number of iterations for
       pathfinding. Or adjust the limit dynamically based on the number of entities
@@ -27,9 +27,10 @@
 - [ ] Final boss - describe it first.
 
 ### Refactoring
+- [ ] Revisit events
+- [ ] Extract simulation logic out of entity classes (e.g. entity.update(..) -> simulateEntities(..))
 - [ ] Pathfinding: Double check the pathfinding implementation if it fully implements A*;
 - [ ] Outline how objects/classes should access each other (global vars/props/DI etc) (eg Renderer, Input, EntityManager, Entity etc)
-- [ ] Detach simulation out of entities and manager
 - [ ] Better way to store images and sprites (how bad Image is?)
 - [ ] Room creation code is too complex and intermingled... (see #roomgen)
 - [ ] Better coordinates system (consider defining something like `WorldPosition`)

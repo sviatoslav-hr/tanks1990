@@ -1,10 +1,11 @@
 import {EntityManager} from '#/entity/manager';
+import {spawnEnemy} from '#/entity/tank/enemy';
 import {importRecording, toggleRecordingEnabledOrStop} from '#/recording';
 import {Renderer} from '#/renderer';
 import {GameState} from '#/state';
 import {exportAsJson, GameStorage} from '#/storage';
+import {css, CustomElement, oldUI, ReactiveElement} from '#/ui/core';
 import {DevPanel, FPSMonitor} from '#/ui/dev';
-import {css, CustomElement, ReactiveElement, oldUI} from '#/ui/core';
 import {notify, notifyError} from '#/ui/notification';
 
 export function createDevUI(
@@ -55,7 +56,7 @@ export function createDevUI(
     entitiesFolder
         .addButton()
         .setName('Spawn enemy')
-        .onClick(() => manager.spawnEnemy()); // TODO: Add a way to select enemy kind
+        .onClick(() => spawnEnemy(manager)); // TODO: Add a way to select enemy kind
 
     const rendererFolder = devPanel.addFolder('Renderer');
     rendererFolder

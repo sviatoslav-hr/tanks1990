@@ -9,7 +9,7 @@ import {EventQueue} from '#/events';
 import {bellCurveInterpolate, lerp} from '#/math';
 import {Direction, getDirectionAngle} from '#/math/direction';
 import {Duration} from '#/math/duration';
-import {Vector2} from '#/math/vector';
+import {Vector2, Vector2Like} from '#/math/vector';
 import {Renderer} from '#/renderer';
 import {Camera} from '#/renderer/camera';
 import {Sprite} from '#/renderer/sprite';
@@ -152,4 +152,33 @@ export class Projectile extends Entity {
         }
         renderer.setGlobalAlpha(1);
     }
+}
+
+export function spawnProjectile(
+    manager: EntityManager,
+    ownerId: EntityId,
+    origin: Vector2Like,
+    direction: Direction,
+    damage: number,
+): void {
+    const deadProjectile = manager.projectiles.find((p) => p.dead);
+    if (deadProjectile) {
+        // NOTE: reuse dead projectiles instead of creating new ones
+        const showByPlayer = manager.player.id === ownerId;
+        deadProjectile.reviveAt(ownerId, origin.x, origin.y, direction, showByPlayer);
+        deadProjectile.damage = damage;
+        return;
+    }
+
+    const size = Projectile.SIZE;
+    const projectile = new Projectile({
+        x: origin.x,
+        y: origin.y,
+        size,
+        ownerId,
+        direction,
+        shotByPlayer: manager.player.id === ownerId,
+    });
+    projectile.damage = damage;
+    manager.projectiles.push(projectile);
 }

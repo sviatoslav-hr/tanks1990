@@ -1,10 +1,11 @@
 import type {EntityManager} from '#/entity/manager';
 import type {GameInputState} from '#/input-handler';
+import {Duration} from '#/math/duration';
 import {random} from '#/math/rng';
 import {MenuBridge} from '#/menu';
+import {initEntities} from '#/simulation';
 import type {GameState} from '#/state';
 import {notify} from '#/ui/notification';
-import {Duration} from './math/duration';
 
 export interface RecordingStatus {
     /** Indicates whether the next game sessions should be recorded. */
@@ -111,7 +112,7 @@ export function playRecentRecording(
         state.recording.playingInputIndex = 0;
         random.reset(state.recordingData.seed);
         state.start();
-        manager.init();
+        initEntities(manager);
         menu.view.set(null);
     }, 0);
 }
@@ -131,7 +132,7 @@ export function exitRecording(state: GameState, menu: MenuBridge): void {
 export function importRecording(state: GameState, data: string): void {
     const recordingInfo = JSON.parse(data) as RecordingData;
     if (recordingInfo.version !== GAME_VERSION) {
-        logger.error('Unsupported game verions in the recording');
+        logger.error('Unsupported game version "%s" in the recording', recordingInfo.version);
         return;
     }
     state.recordingData = recordingInfo;
