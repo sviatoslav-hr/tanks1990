@@ -163,6 +163,7 @@ export const Menu = UIComponent('menu', (ui, props: MenuProps) => {
             .sidebar__header {
                 text-align: center;
                 margin-bottom: 1.25rem;
+                color: var(--color-text);
             }
             .menu__content {
                 flex-grow: 1;
@@ -357,8 +358,8 @@ export const IconButton = UIComponent('mute-button', (ui, props: ButtonProps) =>
                         line-height: 1.5rem;
                         overflow: hidden;
                         border-radius: 0.25rem;
-                        background-color: var(--btn-primary-bg);
-                        color: var(--btn-primary-text);
+                        background-color: var(--btn-secondary-bg);
+                        color: var(--btn-secondary-text);
                         border: none;
                         width: 2rem;
                         height: 2rem;
@@ -374,10 +375,10 @@ export const IconButton = UIComponent('mute-button', (ui, props: ButtonProps) =>
                     }
                     button:hover {
                         transform: scale(1.1);
-                        background-color: oklch(from var(--color-bg-light) l c h / 0.75);
+                        background-color: oklch(from var(--btn-secondary-bg-hover) l c h / 0.75);
                     }
                     button:focus-visible {
-                        outline: 3px solid var(--btn-primary-border);
+                        outline: 3px solid var(--btn-secondary-border);
                     }
                 `,
             ),

@@ -19,22 +19,24 @@ ui-component {
     --color-primary-light: oklch(0.92 0.04 253);
     --color-secondary: oklch(0.82 0.09 73);
     --color-secondary-light: oklch(0.92 0.04 73);
-    --color-bg-dark: oklch(0.2 0 0);
-    --color-bg: oklch(0.3 0 0);
-    --color-bg-light: oklch(0.45 0 0);
-    --color-text: oklch(0.9 0 0);
-    --color-text-muted: oklch(0.7 0 0);
-    --color-border: oklch(0.4 0 0);
-    --color-highlight: oklch(0.6 0 0);
+    --color-bg-dark: oklch(0.2 0.02 253);
+    --color-bg: oklch(0.25 0.02 253);
+    --color-bg-light: oklch(0.45 0.05 253);
+    --color-text: var(--color-primary-light);
+    --color-text-muted: oklch(from var(--color-text) 0.6 c h);
+    --color-border: oklch(0.3 0.02 253);
+    --color-highlight: oklch(0.6 0.05 253);
 
-    --btn-primary-bg: oklch(from var(--color-primary-light) l c h / 0.15);
-    --btn-primary-bg-hover: oklch(from var(--color-primary-light) l c h / 0.25);
-    --btn-primary-text: oklch(from var(--color-primary-light) l c h / 1);
-    --btn-primary-border: oklch(from var(--color-primary-light) l c h / 1);
+    --btn-primary-bg: oklch(from var(--color-bg) 0.4 0.09 h / 1);
+    --btn-primary-bg-hover: oklch(from var(--btn-primary-bg) 0.45 c h);
+    --btn-primary-text: oklch(from var(--color-text) l c h / 1);
+    --btn-primary-border: oklch(from var(--color-primary) l c h / 1);
     --btn-primary-focus-shadow: 0 0 0 2px var(--btn-primary-bg);
 
-    --btn-secondary-bg: oklch(from var(--color-secondary) l c h / 0.5);
-    --btn-neutral-bg: oklch(from var(--color-bg-light) l c h / 0.5);
+    --btn-secondary-bg: oklch(from var(--color-bg) 0.35 c h);
+    --btn-secondary-bg-hover: oklch(from var(--color-bg) 0.45 c h);
+    --btn-secondary-text: oklch(from var(--color-text) l c h / 1);
+    --btn-secondary-border: oklch(from var(--color-primary) l c h / 1);
 
     /** TODO: Pick a better font (for menu mostly) */
     font-family: Helvetica, Arial, sans-serif;
