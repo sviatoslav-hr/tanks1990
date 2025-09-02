@@ -1,7 +1,7 @@
 import {
     activateRecording,
     stopRecording,
-    type RecordingInfo,
+    type RecordingData,
     type RecordingStatus,
 } from '#/recording';
 import type {Sound} from '#/sound';
@@ -26,8 +26,9 @@ export class GameState {
         active: false,
         playing: false,
         playingInputIndex: 0,
+        currentInput: null,
     };
-    recordingInfo: RecordingInfo = {
+    recordingData: RecordingData = {
         commitHash: COMMIT_HASH,
         version: GAME_VERSION,
         seed: 'default',
@@ -67,7 +68,7 @@ export class GameState {
     start(): void {
         // NOTE: playing is set before the game starts, so it should be checked here.
         if (!this.recording.playing && this.recording.enabled) {
-            activateRecording(this.recording, this.recordingInfo);
+            activateRecording(this.recording, this.recordingData);
         }
         this.status = GameStatus.PLAYING;
     }

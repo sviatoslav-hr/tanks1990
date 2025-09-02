@@ -4,6 +4,7 @@ import {random} from '#/math/rng';
 import {MenuBridge} from '#/menu';
 import type {GameState} from '#/state';
 import {notify} from '#/ui/notification';
+import {Duration} from './math/duration';
 
 export interface RecordingStatus {
     /** Indicates whether the next game sessions should be recorded. */
@@ -12,17 +13,27 @@ export interface RecordingStatus {
     active: boolean;
     playing: boolean;
     playingInputIndex: number;
+    currentInput: RecordedInputInfo | null;
 }
 
-export interface RecordingInfo {
+export interface RecordingData {
     version: string;
     commitHash: string;
     seed: string;
     startedAt: number;
-    inputs: GameInputState[];
+    inputs: RecordedInputInfo[];
 }
 
-export function activateRecording(recording: RecordingStatus, info: RecordingInfo): void {
+export interface RecordedInputInfo extends GameInputState {
+    dt: number;
+}
+
+export function isRecording(state: GameState): boolean {
+    const result = state.playing && state.recording.active && !state.recording.playing;
+    return result;
+}
+
+export function activateRecording(recording: RecordingStatus, info: RecordingData): void {
     assert(!recording.playing && recording.enabled);
     resetRecording(recording, info);
     recording.active = true;
@@ -30,7 +41,7 @@ export function activateRecording(recording: RecordingStatus, info: RecordingInf
     info.startedAt = Date.now();
 }
 
-function resetRecording(recording: RecordingStatus, info: RecordingInfo): void {
+function resetRecording(recording: RecordingStatus, info: RecordingData): void {
     info.inputs = [];
     recording.active = false;
     recording.playingInputIndex = 0;
@@ -57,19 +68,21 @@ export function toggleRecordingEnabledOrStop(state: GameState): void {
     }
 }
 
-export function maybeRecordInput(state: GameState, input: GameInputState): void {
-    if (state.playing && state.recording.active && !state.recording.playing) {
-        state.recordingInfo.inputs.push(input);
-    }
+export function recordGameInput(state: GameState, dt: Duration, input: GameInputState): void {
+    assert(isRecording(state));
+    state.recordingData.inputs.push({...input, dt: dt.seconds});
 }
 
-export function getNextRecordedInput(state: GameState): GameInputState | undefined {
-    assert(state.recording.playing);
-    const inputIndex = state.recording.playingInputIndex++;
-    const inputs = state.recordingInfo.inputs;
+export function getNextRecordedInput(
+    recording: RecordingStatus,
+    data: RecordingData,
+): GameInputState | undefined {
+    assert(recording.playing);
+    const inputIndex = recording.playingInputIndex++;
+    const inputs = data.inputs;
     const input = inputs[inputIndex];
+    recording.currentInput = input ?? null;
     if (inputIndex === inputs.length - 1) {
-        // state.recording.playing = false;
         notify('Recording finished');
     }
     return input;
@@ -85,7 +98,7 @@ export function playRecentRecording(
         logger.error('Recording is already playing');
         return;
     }
-    if (!state.recordingInfo.inputs.length) {
+    if (!state.recordingData.inputs.length) {
         logger.error('No recording to play');
         return;
     }
@@ -96,7 +109,7 @@ export function playRecentRecording(
     setTimeout(() => {
         state.recording.playing = true;
         state.recording.playingInputIndex = 0;
-        random.reset(state.recordingInfo.seed);
+        random.reset(state.recordingData.seed);
         state.start();
         manager.init();
         menu.view.set(null);
@@ -116,11 +129,11 @@ export function exitRecording(state: GameState, menu: MenuBridge): void {
 }
 
 export function importRecording(state: GameState, data: string): void {
-    const recordingInfo = JSON.parse(data) as RecordingInfo;
+    const recordingInfo = JSON.parse(data) as RecordingData;
     if (recordingInfo.version !== GAME_VERSION) {
         logger.error('Unsupported game verions in the recording');
         return;
     }
-    state.recordingInfo = recordingInfo;
+    state.recordingData = recordingInfo;
     notify('Recording imported');
 }

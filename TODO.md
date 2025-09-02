@@ -3,6 +3,8 @@
 ## DOING
 
 ## NEXT TODO
+- [ ] Camera: have two different instances: player and dev;
+- [ ] Extract simulation out of EntityManager!
 - [ ] Add animation/SFX to room door opening to hint player that's where he needs to go next.
 - [ ] Add speed up option for recording playback
 - [ ] **Movement improvement!** (Chose one approach)
@@ -26,7 +28,6 @@
 
 ### Refactoring
 - [ ] Pathfinding: Double check the pathfinding implementation if it fully implements A*;
-- [ ] Camera: have two different instances: player and dev;
 - [ ] Outline how objects/classes should access each other (global vars/props/DI etc) (eg Renderer, Input, EntityManager, Entity etc)
 - [ ] Detach simulation out of entities and manager
 - [ ] Better way to store images and sprites (how bad Image is?)

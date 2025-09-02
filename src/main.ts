@@ -12,8 +12,9 @@ import {handleGameEvents as processGameEvents} from '#/events-handler';
 import {GameInput} from '#/input';
 import {handleKeymaps, processInput} from '#/input-handler';
 import {Duration} from '#/math/duration';
-import {MenuBridge, Menu} from '#/menu';
-import {maybeRecordInput} from '#/recording';
+import {getURLSeed, random, setURLSeed} from '#/math/rng';
+import {Menu, MenuBridge} from '#/menu';
+import {isRecording, recordGameInput} from '#/recording';
 import {Renderer} from '#/renderer';
 import {Camera} from '#/renderer/camera';
 import {SoundManager} from '#/sound';
@@ -23,8 +24,6 @@ import {uiGlobal} from '#/ui/core';
 import {createDevUI, DevUI} from '#/ui/dev';
 import {createNotificationBar, notify} from '#/ui/notification';
 import {World} from '#/world/world';
-import {Color} from './color';
-import {getURLSeed, random, setURLSeed} from './math/rng';
 
 main();
 
@@ -101,20 +100,17 @@ function runGame(
             if (state.recording.playing) {
                 // TODO: This substitution is not perfect and may make the game feel faster/slower than original recording.
                 //       But it's fine since it's only used for testing purposes and logically game replays as expected.
-                dt.setMilliseconds(inputState.game.dt ?? 0);
-            } else {
-                inputState.game.dt = dt.milliseconds;
+                dt.setSeconds(state.recording.currentInput?.dt ?? 0);
             }
+
             if (menu.fullscreenToggleExpected) {
-                inputState.extra.toggleFullscreen ||= 1;
+                inputState.extra.toggleFullscreen ||= true;
                 menu.fullscreenToggleExpected = false;
             }
             processInput(inputState, renderer, state, manager, menu, devUI, storage, eventQueue);
-            maybeRecordInput(state, inputState.game);
+            if (isRecording(state)) recordGameInput(state, dt, inputState.game);
 
             drawOptions.drawUI = !menu.visible;
-            renderer.setFillColor(Color.BLACK);
-            renderer.fillScreen();
             drawGame(renderer, config, manager, drawOptions);
             simulateGameTick(dt, state, manager, renderer.camera, eventQueue);
             processGameEvents(eventQueue, state, manager, sounds, menu);

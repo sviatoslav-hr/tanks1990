@@ -23,40 +23,41 @@ export interface InputState {
 }
 
 export interface GameInputState {
-    dt?: number;
     playerDirection?: Direction;
-    playerShooting?: 1;
+    playerShooting?: boolean;
 }
 
 export interface ExtraInputState {
     // PERF: It will be more efficient to compress these into flags.
-    //       Although I'm not sure how well it will work in the usage code.
-    toggleGamePause?: 1;
-    toggleGamePauseIgnoreMenu?: 1;
-    toggleFullscreen?: 1;
-    toggleMute?: 1;
-    triggerSingleUpdate?: 1;
-    showBoundaries?: 1;
-    toggleDevMode?: 1;
-    toggleFPSMonitor?: 1;
-    toggleFPSMonitorPause?: 1;
-    toggleDevPanel?: 1;
-    // TODO: This really needs to controlling only dev camera.
-    cameraManualOffset?: Vector2Like;
-    cameraManualScaleOffset?: number;
-    cameraManualScale?: number;
-    cameraReset?: 1;
-    toggleRecording?: 1;
-    playOrExitRecording?: 1;
-    reserved1?: 1;
-    reserved2?: 1;
-    reserved3?: 1;
+    //       Although, I'm not sure how well it will work in the usage code.
+    toggleGamePause?: boolean;
+    toggleGamePauseIgnoreMenu?: boolean;
+    toggleFullscreen?: boolean;
+    toggleMute?: boolean;
+    triggerSingleUpdate?: boolean;
+    showBoundaries?: boolean;
+    toggleDevMode?: boolean;
+    toggleFPSMonitor?: boolean;
+    toggleFPSMonitorPause?: boolean;
+    toggleDevPanel?: boolean;
+    // TODO: This really should control only dev camera.
+    devCameraOffset?: Vector2Like;
+    devCameraScaleOffset?: number;
+    devCameraScale?: number;
+    devCameraResetToPlayer?: boolean;
+    // TODO: Add a keymap to switch between player and dev cameras instead.
+    toggleRecording?: boolean;
+    playOrExitRecording?: boolean;
+    // Useful for temporary keymaps
+    reserved1?: boolean;
+    reserved2?: boolean;
+    reserved3?: boolean;
 }
 
 export function handleKeymaps(state: GameState, input: GameInput): InputState {
     let gameInput: GameInputState | undefined;
     if (state.recording.playing) {
-        gameInput = getNextRecordedInput(state) ?? {};
+        gameInput = getNextRecordedInput(state.recording, state.recordingData) ?? {};
     } else {
         gameInput = handleGameKeymaps(input);
     }
@@ -67,7 +68,7 @@ export function handleKeymaps(state: GameState, input: GameInput): InputState {
 export function handleGameKeymaps(input: GameInput): GameInputState {
     const result: GameInputState = {};
     if (input.isDown('Space')) {
-        result.playerShooting = 1;
+        result.playerShooting = true;
     }
     // NOTE: If player is pressing two opposite direction keys, they should negate each other.
     if (input.isDown('KeyA') || input.isDown('ArrowLeft')) {
@@ -99,80 +100,80 @@ export function handleExtraKeymaps(input: GameInput): ExtraInputState {
     const shift = input.isDown('ShiftLeft'); // NOTE: Shift is used for alternative actions.
 
     if (input.isPressed('KeyF')) {
-        result.toggleFullscreen = 1;
+        result.toggleFullscreen = true;
     }
 
     if (input.isPressed('KeyM')) {
-        result.toggleMute = 1;
+        result.toggleMute = true;
     }
 
     if (input.isPressed('Escape')) {
-        result.toggleGamePause = 1;
+        result.toggleGamePause = true;
     } else if (input.isPressed('KeyP')) {
-        if (__DEV_MODE && alt) result.toggleGamePauseIgnoreMenu = 1;
-        else result.toggleGamePause = 1;
+        if (__DEV_MODE && alt) result.toggleGamePauseIgnoreMenu = true;
+        else result.toggleGamePause = true;
     }
 
     if (alt && input.isPressed('Semicolon')) {
-        result.toggleDevMode = 1;
+        result.toggleDevMode = true;
     }
 
-    // NOTE: Dev keymaps shuld only be available in dev mode.
+    // NOTE: Dev keymaps should only be available in dev mode.
     if (__DEV_MODE && alt) {
         if (input.isPressed('BracketRight')) {
-            result.triggerSingleUpdate = 1;
+            result.triggerSingleUpdate = true;
         }
 
         if (input.isPressed('KeyB')) {
-            result.showBoundaries = 1;
+            result.showBoundaries = true;
         }
 
         if (input.isPressed('KeyO')) {
-            result.toggleRecording = 1;
+            result.toggleRecording = true;
         }
 
         if (input.isPressed('KeyI')) {
-            result.playOrExitRecording = 1;
+            result.playOrExitRecording = true;
         }
 
         if (input.isPressed('KeyN')) {
-            result.reserved1 = 1;
+            result.reserved1 = true;
         }
 
         if (input.isPressed('KeyV')) {
-            result.reserved2 = 1;
+            result.reserved2 = true;
         }
 
         if (input.isPressed('KeyH')) {
-            result.reserved3 = 1;
+            result.reserved3 = true;
         }
 
         if (input.isPressed('Backquote'))
             if (shift) {
-                result.toggleFPSMonitorPause = 1;
+                result.toggleFPSMonitorPause = true;
             } else {
-                result.toggleFPSMonitor = 1;
+                result.toggleFPSMonitor = true;
             }
 
         if (input.isPressed('Backslash')) {
-            result.toggleDevPanel = 1;
+            result.toggleDevPanel = true;
         }
 
         if (input.isDown('MouseMiddle') || input.isDown('MouseLeft')) {
             // NOTE: Support also mouse left to have a convenient way to move camera on touchpad
-            result.cameraManualOffset = input.getMouseDelta();
+            result.devCameraOffset = input.getMouseDelta();
         }
 
         if (input.isPressed('Digit0')) {
-            result.cameraReset = 1;
+            result.devCameraResetToPlayer = true;
         } else if (input.isPressed('Digit1')) {
-            result.cameraManualScaleOffset = 1;
-            result.cameraManualScale = 1;
+            result.devCameraScaleOffset = 1;
+            result.devCameraScale = 1;
         } else if (input.isPressed('Digit2')) {
-            result.cameraManualScaleOffset = 2;
-            result.cameraManualScale = 1;
+            result.devCameraScaleOffset = 2;
+            result.devCameraScale = 1;
         } else if (input.getMouseWheelDelta()) {
-            result.cameraManualScaleOffset = input.getMouseWheelDelta() * 0.001;
+            result.devCameraScaleOffset = input.getMouseWheelDelta() * 0.001;
         }
     }
 
@@ -261,26 +262,26 @@ export function processInput(
         toggleDevPanelVisibility(devUI.devPanel, storage);
     }
 
-    if (input.extra.cameraManualOffset) {
+    if (input.extra.devCameraOffset) {
         renderer.camera.manualMode = true;
-        const offset = input.extra.cameraManualOffset;
+        const offset = input.extra.devCameraOffset;
         offset.x /= renderer.camera.scale;
         offset.y /= renderer.camera.scale;
         renderer.camera.worldOffset.add(offset);
     }
 
-    if (input.extra.cameraManualScaleOffset != null) {
+    if (input.extra.devCameraScaleOffset != null) {
         renderer.camera.manualMode = true;
-        const newScale = renderer.camera.scale - input.extra.cameraManualScaleOffset;
+        const newScale = renderer.camera.scale - input.extra.devCameraScaleOffset;
         if (Number.isFinite(newScale) && newScale > 0) {
             renderer.camera.setScale(newScale);
         }
-    } else if (input.extra.cameraManualScale != null) {
+    } else if (input.extra.devCameraScale != null) {
         renderer.camera.manualMode = true;
-        renderer.camera.setScale(renderer.camera.scale - input.extra.cameraManualScale);
+        renderer.camera.setScale(renderer.camera.scale - input.extra.devCameraScale);
     }
 
-    if (input.extra.cameraReset) {
+    if (input.extra.devCameraResetToPlayer) {
         renderer.camera.reset();
         renderer.camera.focusOnRect(manager.world.activeRoom.boundary);
     }

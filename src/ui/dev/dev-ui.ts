@@ -89,12 +89,12 @@ export function createDevUI(
         .addButton()
         .setName('Export Recording')
         .onClick(() => {
-            if (!state.recordingInfo.inputs.length) {
+            if (!state.recordingData.inputs.length) {
                 notifyError('No recording to export');
                 return;
             }
-            const filename = `recording-${state.recordingInfo.startedAt}.json`;
-            exportAsJson(state.recordingInfo, filename);
+            const filename = `recording-${state.recordingData.startedAt}.json`;
+            exportAsJson(state.recordingData, filename);
         });
 
     // const world = devPanel.addFolder('World');

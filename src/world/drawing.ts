@@ -13,8 +13,7 @@ export function drawWorldBlocks(renderer: Renderer, world: World): void {
     }
 }
 export function drawWorldBackground(renderer: Renderer, world: World): void {
-    renderer.setFillColor(world.bgColor);
-    renderer.fillScreen();
+    renderer.fillScreen(world.bgColor);
     if (true) {
         drawWorldGrid(renderer, world.gridColor);
         for (const room of world.rooms) {

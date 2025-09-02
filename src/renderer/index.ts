@@ -210,7 +210,8 @@ export class Renderer {
         this.ctx.globalAlpha = alpha;
     }
 
-    fillScreen(): void {
+    fillScreen(color: Color): void {
+        this.setFillColor(color);
         this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
     }
 
