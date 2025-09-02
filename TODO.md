@@ -4,6 +4,7 @@
 
 ## NEXT TODO
 - [ ] Extract simulation out of EntityManager!
+- [ ] Change menu color to more blueish instead of gray
 - [ ] Add animation/SFX to room door opening to hint player that's where he needs to go next.
 - [ ] Add speed up option for recording playback
 - [ ] **Movement improvement!** (Chose one approach)

@@ -131,6 +131,7 @@ export const Slider = UIComponent('slider', (ui, props: SliderProps) => {
             /* Thumb */
             input[type='range']::-webkit-slider-thumb {
                 -webkit-appearance: none;
+                border: none;
                 height: var(--thumb-height);
                 width: var(--thumb-width);
                 border-radius: var(--thumb-border-radius);
@@ -146,6 +147,7 @@ export const Slider = UIComponent('slider', (ui, props: SliderProps) => {
             }
 
             input[type='range']::-moz-range-thumb {
+                border: none;
                 height: var(--thumb-height);
                 width: var(--thumb-width);
                 border-radius: var(--thumb-border-radius);
