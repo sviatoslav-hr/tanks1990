@@ -27,6 +27,7 @@ export class GameState {
         active: false,
         playing: false,
         playingInputIndex: 0,
+        playingSpeedMult: 1,
         currentInput: null,
     };
     recordingData: RecordingData = {

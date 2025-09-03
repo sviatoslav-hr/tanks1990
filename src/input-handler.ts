@@ -50,6 +50,7 @@ export interface ExtraInputState {
     switchDevPlayerCameras?: boolean;
     toggleRecording?: boolean;
     playOrExitRecording?: boolean;
+    recordingPlayingSpeedMult?: number;
     // Useful for temporary keymaps
     reserved1?: boolean;
     reserved2?: boolean;
@@ -116,13 +117,13 @@ export function handleExtraKeymaps(input: GameInput): ExtraInputState {
         else result.toggleGamePause = true;
     }
 
-    if (alt && input.isPressed('Semicolon')) {
+    if (alt && input.isPressed('Slash')) {
         result.toggleDevMode = true;
     }
 
     // NOTE: Dev keymaps should only be available in dev mode.
     if (__DEV_MODE && alt) {
-        if (input.isPressed('BracketRight')) {
+        if (input.isPressed('Quote')) {
             result.triggerSingleUpdate = true;
         }
 
@@ -136,6 +137,12 @@ export function handleExtraKeymaps(input: GameInput): ExtraInputState {
 
         if (input.isPressed('KeyI')) {
             result.playOrExitRecording = true;
+        }
+
+        if (input.isPressed('BracketLeft')) {
+            result.recordingPlayingSpeedMult = 0.5;
+        } else if (input.isPressed('BracketRight')) {
+            result.recordingPlayingSpeedMult = 2;
         }
 
         if (input.isPressed('KeyN')) {
@@ -214,10 +221,12 @@ export function processInput(
 
     if (input.extra.toggleGamePause || input.extra.toggleGamePauseIgnoreMenu) {
         if (state.dead || state.initial || state.gameCompleted) {
+            logger.warn('Game is not in playing state, so we cannot pause/unpause.');
             // NOTE: Game is not in playing state, so we cannot pause/unpause.
         } else {
             const action = state.playing ? 'pause' : 'resume';
             const ignoreMenu = Boolean(input.extra.toggleGamePauseIgnoreMenu);
+            if (ignoreMenu) notify(state.playing ? 'Paused' : 'Resumed');
             events.push({type: 'game-control', action, ignoreMenu});
         }
     }
@@ -250,6 +259,11 @@ export function processInput(
         } else {
             exitRecording(state, menu);
         }
+    }
+
+    if (input.extra.recordingPlayingSpeedMult) {
+        state.recording.playingSpeedMult *= input.extra.recordingPlayingSpeedMult;
+        notify(`${state.recording.playingSpeedMult}x Recording speed`);
     }
 
     if (input.extra.toggleDevMode) {

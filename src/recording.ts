@@ -14,6 +14,7 @@ export interface RecordingStatus {
     active: boolean;
     playing: boolean;
     playingInputIndex: number;
+    playingSpeedMult: number;
     currentInput: RecordedInputInfo | null;
 }
 
@@ -27,11 +28,6 @@ export interface RecordingData {
 
 export interface RecordedInputInfo extends GameInputState {
     dt: number;
-}
-
-export function isRecording(state: GameState): boolean {
-    const result = state.playing && state.recording.active && !state.recording.playing;
-    return result;
 }
 
 export function activateRecording(recording: RecordingStatus, info: RecordingData): void {
@@ -69,9 +65,24 @@ export function toggleRecordingEnabledOrStop(state: GameState): void {
     }
 }
 
+export function isRecordingGameInputs(state: GameState): boolean {
+    const result = state.playing && state.recording.active && !state.recording.playing;
+    return result;
+}
+
 export function recordGameInput(state: GameState, dt: Duration, input: GameInputState): void {
-    assert(isRecording(state));
+    assert(isRecordingGameInputs(state));
     state.recordingData.inputs.push({...input, dt: dt.seconds});
+}
+
+export function getNextRecordedFrameDt(state: GameState): number | null {
+    assert(state.recording.playing);
+    const index = Math.min(
+        state.recording.playingInputIndex,
+        state.recordingData.inputs.length - 1,
+    );
+    const input = state.recordingData.inputs[index];
+    return input?.dt ?? null;
 }
 
 export function getNextRecordedInput(
@@ -79,7 +90,7 @@ export function getNextRecordedInput(
     data: RecordingData,
 ): GameInputState | undefined {
     assert(recording.playing);
-    const inputIndex = recording.playingInputIndex++;
+    const inputIndex = recording.playingInputIndex;
     const inputs = data.inputs;
     const input = inputs[inputIndex];
     recording.currentInput = input ?? null;
@@ -87,6 +98,13 @@ export function getNextRecordedInput(
         notify('Recording finished');
     }
     return input;
+}
+
+export function isPlayingRecordingFinished(state: GameState): boolean {
+    const index = state.recording.playingInputIndex;
+    const result =
+        state.playing && state.recording.playing && index >= state.recordingData.inputs.length;
+    return result;
 }
 
 // TODO: Menu should not be passed here, but rather it should be handled via events.

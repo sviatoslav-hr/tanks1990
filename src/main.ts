@@ -15,7 +15,12 @@ import {handleKeymaps, processInput} from '#/input-handler';
 import {Duration} from '#/math/duration';
 import {getURLSeed, random, setURLSeed} from '#/math/rng';
 import {Menu, MenuBridge} from '#/menu';
-import {isRecording, recordGameInput} from '#/recording';
+import {
+    getNextRecordedFrameDt,
+    isPlayingRecordingFinished,
+    isRecordingGameInputs,
+    recordGameInput,
+} from '#/recording';
 import {Renderer} from '#/renderer';
 import {initEntities, simulateEntities} from '#/simulation';
 import {SoundManager} from '#/sound';
@@ -120,11 +125,16 @@ function runGame(
                 storage,
                 eventQueue,
             );
-            if (isRecording(state)) recordGameInput(state, dt, inputState.game);
+            if (isRecordingGameInputs(state)) recordGameInput(state, dt, inputState.game);
+
+            // NOTE: It's better to just stop simulation after recording has finished playing.
+            if (!state.recording.playing || !isPlayingRecordingFinished(state)) {
+                simulateGameTick(dt, state, manager, eventQueue);
+            }
 
             drawOptions.drawUI = !menu.visible;
             drawGame(renderer, config, manager, drawOptions);
-            simulateGameTick(dt, state, manager, eventQueue);
+
             processGameEvents(eventQueue, state, manager, sounds, menu);
             state.nextTick();
             input.nextTick();
@@ -134,7 +144,20 @@ function runGame(
         devUI.fpsMonitor.end();
         if (config.changed) config.save();
 
-        window.requestAnimationFrame(animationCallback);
+        let nextFrameManualDt: number | null = null;
+        if (state.recording.playing) {
+            nextFrameManualDt = getNextRecordedFrameDt(state);
+        }
+
+        if (nextFrameManualDt == null) {
+            window.requestAnimationFrame(animationCallback);
+        } else {
+            state.recording.playingInputIndex++;
+            setTimeout(
+                animationCallback,
+                (nextFrameManualDt * 1000) / state.recording.playingSpeedMult,
+            );
+        }
     };
 
     window.requestAnimationFrame(animationCallback);

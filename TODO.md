@@ -3,7 +3,6 @@
 ## DOING
 
 ## NEXT TODO
-- [ ] Add speed up option for recording playback
 - [ ] Delete EntityManager (move stuff into GameState)
 - [ ] Add animation/SFX to room door opening to hint player that's where he needs to go next.
 
