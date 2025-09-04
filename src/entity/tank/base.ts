@@ -2,7 +2,6 @@ import {Animation, easeOut} from '#/animation';
 import {CELL_SIZE} from '#/const';
 import {Entity, moveEntity} from '#/entity/core';
 import {newEntityId} from '#/entity/id';
-import {EntityManager} from '#/entity/manager';
 import {
     createTankSpriteGroup,
     makeTankSchema,
@@ -18,6 +17,7 @@ import {Duration} from '#/math/duration';
 import {Vector2Like} from '#/math/vector';
 import {Sprite} from '#/renderer/sprite';
 import {soundEvent} from '#/sound-event';
+import {GameState} from '#/state';
 
 const STOPPING_TIME = Duration.milliseconds(50);
 
@@ -52,7 +52,7 @@ export abstract class Tank extends Entity {
     abstract sprite: TankSpriteGroup;
     abstract schema: TankSchema;
 
-    constructor(protected manager: EntityManager) {
+    constructor(protected state: GameState) {
         super();
         this.x = 0;
         this.y = 0;
@@ -105,7 +105,7 @@ export abstract class Tank extends Entity {
             moveEntity(this, movementOffset, this.direction);
         }
 
-        const collided = this.manager.findCollided(this);
+        const collided = this.state.findCollided(this);
         if (collided) {
             this.handleCollision(collided);
             this.x = prevX;
@@ -187,8 +187,8 @@ export abstract class Tank extends Entity {
         const prevY = this.y;
         for (let attempt = 0; attempt < attemptLimit; attempt++) {
             // TODO: Be more creative with spawn points
-            moveToRandomCorner(this, this.manager.world.activeRoom.boundary);
-            const collided = this.manager.findCollided(this);
+            moveToRandomCorner(this, this.state.world.activeRoom.boundary);
+            const collided = this.state.findCollided(this);
             if (!collided) {
                 return true;
             }

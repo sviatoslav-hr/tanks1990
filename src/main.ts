@@ -7,7 +7,6 @@ import {GameConfig} from '#/config';
 import {APP_ELEMENT_ID, DEV_MODE_KEY} from '#/const';
 import {drawGame, DrawGameOptions} from '#/drawing';
 import {preloadEffectImages} from '#/effect';
-import {EntityManager} from '#/entity/manager';
 import {EventQueue} from '#/events';
 import {handleGameEvents as processGameEvents} from '#/events-handler';
 import {GameInput} from '#/input';
@@ -50,7 +49,6 @@ function main(): void {
     const gameState = new GameState();
 
     const input = new GameInput();
-    const manager = new EntityManager();
     const eventQueue = new EventQueue();
     const config = new GameConfig(storage);
     config.load();
@@ -67,20 +65,19 @@ function main(): void {
         Menu(uiGlobal, menu.props()).appendTo(appElement);
     }
 
-    const devUI = createDevUI(gameState, manager, renderer, storage);
+    const devUI = createDevUI(gameState, renderer, storage);
     appElement.append(devUI);
 
-    resizeGame(renderer, gameState, manager.world);
-    window.addEventListener('resize', () => resizeGame(renderer, gameState, manager.world));
+    resizeGame(renderer, gameState, gameState.world);
+    window.addEventListener('resize', () => resizeGame(renderer, gameState, gameState.world));
 
     input.listen(document.body, renderer.canvas);
-    runGame(gameState, config, manager, menu, input, storage, devUI, renderer, sounds, eventQueue);
+    runGame(gameState, config, menu, input, storage, devUI, renderer, sounds, eventQueue);
 }
 
 function runGame(
     state: GameState,
     config: GameConfig,
-    manager: EntityManager,
     menu: MenuBridge,
     input: GameInput,
     storage: GameStorage,
@@ -92,7 +89,7 @@ function runGame(
     const seed = getURLSeed();
     random.reset(seed ?? undefined);
     setURLSeed(random.seed);
-    initEntities(manager);
+    initEntities(state);
     let lastTimestamp = performance.now();
     const animationCallback = (): void => {
         const now = performance.now();
@@ -114,28 +111,18 @@ function runGame(
                 inputState.extra.toggleFullscreen ||= true;
                 menu.fullscreenToggleExpected = false;
             }
-            processInput(
-                inputState,
-                renderer,
-                state,
-                config,
-                manager,
-                menu,
-                devUI,
-                storage,
-                eventQueue,
-            );
+            processInput(inputState, renderer, state, config, menu, devUI, storage, eventQueue);
             if (isRecordingGameInputs(state)) recordGameInput(state, dt, inputState.game);
 
             // NOTE: It's better to just stop simulation after recording has finished playing.
             if (!state.recording.playing || !isPlayingRecordingFinished(state)) {
-                simulateGameTick(dt, state, manager, eventQueue);
+                simulateGameTick(dt, state, eventQueue);
             }
 
             drawOptions.drawUI = !menu.visible;
-            drawGame(renderer, config, manager, drawOptions);
+            drawGame(renderer, config, state, drawOptions);
 
-            processGameEvents(eventQueue, state, manager, sounds, menu);
+            processGameEvents(eventQueue, state, sounds, menu);
             state.nextTick();
             input.nextTick();
         } catch (err) {
@@ -163,25 +150,20 @@ function runGame(
     window.requestAnimationFrame(animationCallback);
 }
 
-function simulateGameTick(
-    dt: Duration,
-    state: GameState,
-    manager: EntityManager,
-    events: EventQueue,
-) {
-    const player = manager.player;
+function simulateGameTick(dt: Duration, state: GameState, events: EventQueue) {
+    const player = state.player;
 
     if (state.playing && player.dead && player.healthAnimation.finished) {
         events.push({type: 'game-control', action: 'game-over'});
     }
 
-    if (!player.dead && justCompletedGame(state, manager.world.activeRoom)) {
+    if (!player.dead && justCompletedGame(state, state.world.activeRoom)) {
         events.push({type: 'game-control', action: 'game-completed'});
     }
 
     // NOTE: Showing enemies moving even when it's game-over to kind of troll the player "they continue living while you are dead".
     if (state.playing || state.dead || state.debugUpdateTriggered) {
-        simulateEntities(dt, manager, state.playerCamera, events);
+        simulateEntities(dt, state, state.playerCamera, events);
     }
 }
 

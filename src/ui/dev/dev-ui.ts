@@ -1,4 +1,3 @@
-import {EntityManager} from '#/entity/manager';
 import {spawnEnemy} from '#/entity/tank/enemy';
 import {importRecording, toggleRecordingEnabledOrStop} from '#/recording';
 import {Renderer} from '#/renderer';
@@ -8,12 +7,7 @@ import {css, CustomElement, oldUI, ReactiveElement} from '#/ui/core';
 import {DevPanel, FPSMonitor} from '#/ui/dev';
 import {notify, notifyError} from '#/ui/notification';
 
-export function createDevUI(
-    state: GameState,
-    manager: EntityManager,
-    renderer: Renderer,
-    cache: GameStorage,
-): DevUI {
+export function createDevUI(state: GameState, renderer: Renderer, cache: GameStorage): DevUI {
     const devUI = new DevUI();
     const isFPSVisible = cache.getBool(SHOW_FPS_KEY) ?? false;
     if (!isFPSVisible) {
@@ -40,23 +34,23 @@ export function createDevUI(
             if (isNaN(enemyId)) {
                 logger.error(`Invalid enemy ID: ${enemyId}. Expected an integer number`);
             }
-            const enemyArrayIndex = manager.tanks.findIndex((t) => t.bot && t.id === enemyId);
+            const enemyArrayIndex = state.tanks.findIndex((t) => t.bot && t.id === enemyId);
             if (enemyArrayIndex === -1) {
                 logger.error(`Enemy with index ${enemyId} not found`);
             } else {
-                manager.tanks.splice(enemyArrayIndex, 1);
+                state.tanks.splice(enemyArrayIndex, 1);
             }
         });
     entitiesFolder
         .addButton()
         .setName('Remove all enemies')
         .onClick(() => {
-            manager.tanks = manager.tanks.filter((t) => !t.bot);
+            state.tanks = state.tanks.filter((t) => !t.bot);
         });
     entitiesFolder
         .addButton()
         .setName('Spawn enemy')
-        .onClick(() => spawnEnemy(manager)); // TODO: Add a way to select enemy kind
+        .onClick(() => spawnEnemy(state)); // TODO: Add a way to select enemy kind
 
     const rendererFolder = devPanel.addFolder('Renderer');
     rendererFolder

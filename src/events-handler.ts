@@ -1,5 +1,4 @@
 import {spawnBoom, spawnExplosionEffect} from '#/effect';
-import type {EntityManager} from '#/entity/manager';
 import {spawnProjectile} from '#/entity/projectile';
 import type {EventQueue, GameControlEvent, GameEvent} from '#/events';
 import {getURLSeed, random, setURLSeed} from '#/math/rng';
@@ -12,8 +11,7 @@ import {notify} from '#/ui/notification';
 
 export function handleGameEvents(
     eventQueue: EventQueue,
-    game: GameState,
-    manager: EntityManager,
+    state: GameState,
     sounds: SoundManager,
     menu: MenuBridge,
 ): void {
@@ -21,22 +19,22 @@ export function handleGameEvents(
     while ((event = eventQueue.pop())) {
         switch (event.type) {
             case 'shot': {
-                if (game.playing) {
+                if (state.playing) {
                     // NOTE: Play sounds only during active game-play to not pollute the other states
                     soundEvent(eventQueue, event.bot ? 'enemy-shooting' : 'player-shooting');
                 }
                 const {entityId, origin, direction, damage} = event;
-                spawnProjectile(manager, entityId, origin, direction, damage);
+                spawnProjectile(state, entityId, origin, direction, damage);
                 break;
             }
 
             case 'tank-destroyed': {
                 // TODO: Do I really need an event for this? (Probably, no)
-                spawnExplosionEffect(manager, event.entityId);
+                spawnExplosionEffect(state, event.entityId);
                 if (event.bot) {
-                    const entity = manager.findTank(event.entityId);
+                    const entity = state.findTank(event.entityId);
                     if (entity) {
-                        const wave = manager.world.activeRoom.wave;
+                        const wave = state.world.activeRoom.wave;
                         wave.removeEnemyFromAlives(entity.id);
                     }
                 }
@@ -45,11 +43,11 @@ export function handleGameEvents(
             }
 
             case 'projectile-exploded':
-                spawnBoom(manager, event.entityId);
+                spawnBoom(state, event.entityId);
                 break;
 
             case 'game-control':
-                handleGameControlEvent(event, game, manager, sounds, eventQueue, menu);
+                handleGameControlEvent(event, state, sounds, eventQueue, menu);
                 break;
 
             case 'sound':
@@ -61,15 +59,14 @@ export function handleGameEvents(
 
 function handleGameControlEvent(
     event: GameControlEvent,
-    game: GameState,
-    manager: EntityManager,
+    state: GameState,
     sounds: SoundManager,
     eventQueue: EventQueue,
     menu: MenuBridge,
 ): boolean {
     switch (event.action) {
         case 'init':
-            game.init();
+            state.init();
             menu.view.set('main');
             return true;
 
@@ -77,21 +74,23 @@ function handleGameControlEvent(
         //       but later "new game" should generate a random seed.
         case 'start': {
             {
-                const seed = getURLSeed();
+                const seed = event.recordingSeed ?? getURLSeed();
                 random.reset(seed ?? undefined);
-                setURLSeed(random.seed);
-                game.recording.playing = false;
-                game.start();
-                initEntities(manager);
+                if (!event.recordingSeed) {
+                    setURLSeed(random.seed);
+                    state.recording.playing = false;
+                }
+                state.start();
+                initEntities(state);
                 menu.view.set(null);
             }
 
             soundEvent(eventQueue, 'game-started');
-            if (game.battleMusic) {
-                game.battleMusic.stop();
-                game.battleMusic.play();
+            if (state.battleMusic) {
+                state.battleMusic.stop();
+                state.battleMusic.play();
             } else {
-                game.battleMusic = sounds.playSound({
+                state.battleMusic = sounds.playSound({
                     name: SoundName.BATTLE_THEME,
                     volume: 0.5,
                     loop: true,
@@ -101,19 +100,19 @@ function handleGameControlEvent(
         }
 
         case 'pause':
-            game.pause();
+            state.pause();
             if (!event.ignoreMenu) menu.view.set('pause');
             return true;
 
         case 'resume':
-            game.resume();
+            state.resume();
             menu.view.set(null);
             return true;
 
         case 'game-over': {
-            game.battleMusic?.stop();
-            const playedRecording = game.recording.playing;
-            game.markDead();
+            state.battleMusic?.stop();
+            const playedRecording = state.recording.playing;
+            state.markDead();
             menu.view.set('dead');
             if (!playedRecording) {
                 soundEvent(eventQueue, 'game-over');
@@ -122,11 +121,11 @@ function handleGameControlEvent(
         }
 
         case 'game-completed': {
-            manager.player.completedGame = true;
-            game.markCompleted();
+            state.player.completedGame = true;
+            state.markCompleted();
             const timeoutMs = 5000;
             notify('Congratulation!', {timeoutMs});
-            notify(`Completed in ${manager.player.survivedFor.toHumanString()}`, {timeoutMs});
+            notify(`Completed in ${state.player.survivedFor.toHumanString()}`, {timeoutMs});
             setTimeout(() => {
                 menu.view.set('completed');
             }, timeoutMs);

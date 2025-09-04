@@ -3,11 +3,11 @@ import {PlayerTank} from '#/entity';
 import {Block} from '#/entity/block';
 import {Entity, isIntesecting} from '#/entity/core';
 import {EnemyWave, wavesPerRoom} from '#/entity/enemy-wave';
-import {EntityManager} from '#/entity/manager';
 import {Pickup} from '#/entity/pickup';
 import {Rect} from '#/math';
 import {Direction, getDirectionBetween} from '#/math/direction';
 import {Vector2} from '#/math/vector';
+import {GameState} from '#/state';
 import {WorldNode} from '#/world/graph';
 
 export const roomSizeInCells = new Vector2(12, 8);
@@ -55,7 +55,7 @@ export class Room {
         }
         // const prevRoomCommonBlocks = prevRooms.flatMap((p) => p.nextRoomCommonBlocks.slice());
         // this.prevRoomDoorBlocks = prevRoomCommonBlocks.filter((block) => {
-        //     prevRooms.some((p) => p.nextRoomTransitionRects.some((r) => isIntesecting(block, r)));
+        //     prevRooms.some((p) => p.nextRoomTransitionRects.some((r) => isIntersecting(block, r)));
         // });
         // TODO: For some reason, previous code doesn't work, but this does...
         // PERF: Also, this is not optimal - too much looping.
@@ -67,7 +67,7 @@ export class Room {
         assert(this.depth === 1 || this.prevRoomDoorBlocks.length >= 2);
     }
 
-    // NOTE: This is only used as a temprorary replaced for the first room to not make it nullable.
+    // NOTE: This is only used as a temporary replaced for the first room to not make it nullable.
     static temp(): Room {
         const zero: WorldNode = {x: 0, y: 0, depth: 1, connectedNodes: {}};
         return new Room(zero, new Vector2(0, 0), roomSizeInCells, [], [], [Direction.NORTH], []);
@@ -90,9 +90,9 @@ export class Room {
         return nextRoom;
     }
 
-    update(manager: EntityManager): void {
+    update(state: GameState): void {
         if (!this.started) {
-            this.maybeStartRoom(manager.player);
+            this.maybeStartRoom(state.player);
         } else if (this.completed && !this.nextRoomDoorOpen) {
             if (this.nextRooms.length) {
                 logger.debug(

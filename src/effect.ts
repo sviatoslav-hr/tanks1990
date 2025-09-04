@@ -1,12 +1,12 @@
 import {Animation, easeOut2} from '#/animation';
 import {CELL_SIZE} from '#/const';
 import {EntityId} from '#/entity/id';
-import {EntityManager} from '#/entity/manager';
 import {Rect} from '#/math';
 import {Duration} from '#/math/duration';
 import {Vector2} from '#/math/vector';
 import {Renderer} from '#/renderer';
 import {createExplosionSprite, getCachedImage, setCachedImage} from '#/renderer/sprite';
+import {GameState} from '#/state';
 import {assert} from '#/utils';
 
 const EXPLOSION_IMAGE_PATH = './assets/scorch.png';
@@ -239,38 +239,38 @@ class Particle {
     }
 }
 
-export function tryCacheExplosions(renderer: Renderer, manager: EntityManager): void {
-    if (!manager.cachedBotExplosion) {
-        const t = manager.tanks.find(
+export function tryCacheExplosions(renderer: Renderer, state: GameState): void {
+    if (!state.cachedBotExplosion) {
+        const t = state.tanks.find(
             (t) => t.bot && !t.dead && !t.hasShield && t.sprite.body.image.complete,
         );
         if (t) {
             const imageData = renderer.getImageData(t.x, t.y, t.width, t.height);
-            manager.cachedBotExplosion = ParticleExplosion.fromImageData(imageData, t);
+            state.cachedBotExplosion = ParticleExplosion.fromImageData(imageData, t);
         }
     }
-    const player = manager.player;
-    if (!manager.cachedPlayerExplosion && !player.dead && !player.hasShield) {
+    const player = state.player;
+    if (!state.cachedPlayerExplosion && !player.dead && !player.hasShield) {
         const imageData = renderer.getImageData(player.x, player.y, player.width, player.height);
-        manager.cachedPlayerExplosion = ParticleExplosion.fromImageData(imageData, manager.player);
+        state.cachedPlayerExplosion = ParticleExplosion.fromImageData(imageData, state.player);
     }
 }
 
-export function spawnExplosionEffect(manager: EntityManager, sourceId: EntityId): void {
-    const tank = manager.findTank(sourceId);
+export function spawnExplosionEffect(state: GameState, sourceId: EntityId): void {
+    const tank = state.findTank(sourceId);
     assert(tank, `Tank with id ${sourceId} not found for explosion effect`);
-    const cachedEffect = tank.bot ? manager.cachedBotExplosion : manager.cachedPlayerExplosion;
+    const cachedEffect = tank.bot ? state.cachedBotExplosion : state.cachedPlayerExplosion;
     assert(cachedEffect, `Cached explosion effect not found, bot=${tank.bot}`);
     const effect = cachedEffect.clone(tank);
-    manager.effects.push(effect);
+    state.effects.push(effect);
 }
 
-export function spawnBoom(manager: EntityManager, projectileId: EntityId): void {
-    const projectile = manager.projectiles.find((p) => p.id === projectileId);
+export function spawnBoom(state: GameState, projectileId: EntityId): void {
+    const projectile = state.projectiles.find((p) => p.id === projectileId);
     if (!projectile) {
         logger.warn(`Projectile with id ${projectileId} not found for boom effect`);
         return;
     }
     const position = new Vector2(projectile.x, projectile.y);
-    manager.booms.push(new Boom(position));
+    state.booms.push(new Boom(position));
 }

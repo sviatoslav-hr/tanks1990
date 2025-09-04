@@ -3,7 +3,6 @@ import {GameConfig} from '#/config';
 import {CELL_SIZE} from '#/const';
 import {Entity, isInside, isIntesecting, isSameEntity, moveEntity} from '#/entity/core';
 import {EntityId} from '#/entity/id';
-import {EntityManager} from '#/entity/manager';
 import {EnemyTank, PlayerTank} from '#/entity/tank';
 import {EventQueue} from '#/events';
 import {bellCurveInterpolate, lerp} from '#/math';
@@ -13,6 +12,7 @@ import {Vector2, Vector2Like} from '#/math/vector';
 import {Renderer} from '#/renderer';
 import {Camera} from '#/renderer/camera';
 import {Sprite} from '#/renderer/sprite';
+import {GameState} from '#/state';
 
 interface CreateProjectileOpts {
     x: number;
@@ -53,7 +53,7 @@ export class Projectile extends Entity {
         this.shotByPlayer = opts.shotByPlayer;
     }
 
-    update(dt: Duration, manager: EntityManager, camera: Camera, events: EventQueue): void {
+    update(dt: Duration, state: GameState, camera: Camera, events: EventQueue): void {
         if (this.dead) {
             return;
         }
@@ -65,13 +65,13 @@ export class Projectile extends Entity {
         this.sprite.update(dt);
         // TODO: use movement equation instead
         moveEntity(this, this.velocity * dt.seconds, this.direction);
-        if (!isInside(this, manager.world.activeRoom.boundary)) {
+        if (!isInside(this, state.world.activeRoom.boundary)) {
             events.push({type: 'projectile-exploded', entityId: this.id});
             this.dead = true;
             return;
         }
 
-        for (const entity of manager.iterateEntities()) {
+        for (const entity of state.iterateEntities()) {
             if (isSameEntity(entity, this) || entity.id === this.ownerId || entity.dead) {
                 continue;
             }
@@ -155,16 +155,16 @@ export class Projectile extends Entity {
 }
 
 export function spawnProjectile(
-    manager: EntityManager,
+    state: GameState,
     ownerId: EntityId,
     origin: Vector2Like,
     direction: Direction,
     damage: number,
 ): void {
-    const deadProjectile = manager.projectiles.find((p) => p.dead);
+    const deadProjectile = state.projectiles.find((p) => p.dead);
     if (deadProjectile) {
         // NOTE: reuse dead projectiles instead of creating new ones
-        const showByPlayer = manager.player.id === ownerId;
+        const showByPlayer = state.player.id === ownerId;
         deadProjectile.reviveAt(ownerId, origin.x, origin.y, direction, showByPlayer);
         deadProjectile.damage = damage;
         return;
@@ -177,8 +177,8 @@ export function spawnProjectile(
         size,
         ownerId,
         direction,
-        shotByPlayer: manager.player.id === ownerId,
+        shotByPlayer: state.player.id === ownerId,
     });
     projectile.damage = damage;
-    manager.projectiles.push(projectile);
+    state.projectiles.push(projectile);
 }

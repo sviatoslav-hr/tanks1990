@@ -1,11 +1,10 @@
-import type {EntityManager} from '#/entity/manager';
 import type {GameInputState} from '#/input-handler';
 import {Duration} from '#/math/duration';
 import {random} from '#/math/rng';
 import {MenuBridge} from '#/menu';
-import {initEntities} from '#/simulation';
 import type {GameState} from '#/state';
 import {notify} from '#/ui/notification';
+import {EventQueue} from '#/events';
 
 export interface RecordingStatus {
     /** Indicates whether the next game sessions should be recorded. */
@@ -108,11 +107,7 @@ export function isPlayingRecordingFinished(state: GameState): boolean {
 }
 
 // TODO: Menu should not be passed here, but rather it should be handled via events.
-export function playRecentRecording(
-    state: GameState,
-    manager: EntityManager,
-    menu: MenuBridge,
-): void {
+export function playRecentRecording(state: GameState, events: EventQueue): void {
     if (state.recording.playing) {
         logger.error('Recording is already playing');
         return;
@@ -128,10 +123,8 @@ export function playRecentRecording(
     setTimeout(() => {
         state.recording.playing = true;
         state.recording.playingInputIndex = 0;
-        random.reset(state.recordingData.seed);
-        state.start();
-        initEntities(manager);
-        menu.view.set(null);
+        const recordingSeed = state.recordingData.seed;
+        events.push({type: 'game-control', action: 'start', recordingSeed});
     }, 0);
 }
 

@@ -1,11 +1,11 @@
 import {Entity} from '#/entity/core';
-import {EntityManager} from '#/entity/manager';
 import {Tank} from '#/entity/tank/base';
 import {createTankSpriteGroup, makeTankSchema} from '#/entity/tank/generation';
 import {EventQueue} from '#/events';
 import {Direction} from '#/math/direction';
 import {Duration} from '#/math/duration';
 import {createShieldSprite} from '#/renderer/sprite';
+import {GameState} from '#/state';
 
 export function isPlayerTank(tank: Tank): tank is PlayerTank {
     return !tank.bot;
@@ -25,8 +25,8 @@ export class PlayerTank extends Tank implements Entity {
     //       It should be removed once `survivedFor` will be moved out of this class.
     completedGame = false;
 
-    constructor(manager: EntityManager) {
-        super(manager);
+    constructor(state: GameState) {
+        super(state);
         this.x = this.width / 2;
         this.y = this.height / 2;
     }

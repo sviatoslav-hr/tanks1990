@@ -1,6 +1,5 @@
 import {CELL_SIZE} from '#/const';
 import {Entity, findIntersectingAmong, isIntesecting} from '#/entity/core';
-import {EntityManager} from '#/entity/manager';
 import {type Tank} from '#/entity/tank';
 import {
     DAMAGE_INCREASE_MULT,
@@ -13,6 +12,7 @@ import {Rect, scaleRectCentered} from '#/math';
 import {random} from '#/math/rng';
 import {Renderer} from '#/renderer';
 import {Sprite} from '#/renderer/sprite';
+import {GameState} from '#/state';
 import {Room} from '#/world/room';
 
 export enum PickupType {
@@ -80,10 +80,10 @@ export function drawPickups(renderer: Renderer, pickups: Pickup[]): void {
     }
 }
 
-export function simulatePickups(manager: EntityManager): void {
-    const room = manager.world.activeRoom;
+export function simulatePickups(state: GameState): void {
+    const room = state.world.activeRoom;
     // NOTE: Iterate through all pickups in the room and apply them to the player.
-    for (const tank of manager.tanks) {
+    for (const tank of state.tanks) {
         if (tank.dead) continue;
         for (const pickup of room.pickups) {
             if (pickup.dead) continue;
@@ -126,7 +126,7 @@ function applyPickup(pickup: Pickup, tank: Tank): void {
     if (!skipped) pickup.dead = true;
 }
 
-export function generatePickups(room: Room, manager: EntityManager): void {
+export function generatePickups(room: Room, state: GameState): void {
     // NOTE: Offset by one cell from the edge to prevent immediate intersection other entities on spawn.
     const minX = room.boundary.x + CELL_SIZE * 2;
     const minY = room.boundary.y + CELL_SIZE * 2;
@@ -152,7 +152,7 @@ export function generatePickups(room: Room, manager: EntityManager): void {
         testRect.x = xRel * CELL_SIZE + offset;
         testRect.y = yRel * CELL_SIZE + offset;
 
-        if (isIntesecting(testRect, manager.player)) continue;
+        if (isIntesecting(testRect, state.player)) continue;
         if (findIntersectingAmong(testRect, room.blocks)) continue;
         if (findIntersectingAmong(testRect, room.pickups)) continue;
 

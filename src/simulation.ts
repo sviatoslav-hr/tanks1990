@@ -1,33 +1,33 @@
 import {Boom, ParticleExplosion} from '#/effect';
 import {Tank} from '#/entity';
 import {EnemyWave} from '#/entity/enemy-wave';
-import {EntityManager} from '#/entity/manager';
 import {simulatePickups} from '#/entity/pickup';
 import {EnemyTank, isEnemyTank, spawnEnemy} from '#/entity/tank/enemy';
 import {EventQueue} from '#/events';
 import {Duration} from '#/math/duration';
 import {Camera} from '#/renderer/camera';
+import {GameState} from '#/state';
 
-export function initEntities(manager: EntityManager): void {
-    manager.tanks = [manager.player];
-    manager.projectiles = [];
-    manager.effects = [];
-    manager.booms = [];
-    manager.world.reset();
-    manager.player.respawn();
-    manager.world.init(manager);
+export function initEntities(state: GameState): void {
+    state.tanks = [state.player];
+    state.projectiles = [];
+    state.effects = [];
+    state.booms = [];
+    state.world.reset();
+    state.player.respawn();
+    state.world.init(state);
 }
 
 export function simulateEntities(
     dt: Duration,
-    manager: EntityManager,
+    state: GameState,
     camera: Camera,
     events: EventQueue,
 ): void {
-    simulateEffects(dt, manager);
-    const world = manager.world;
-    world.update(manager);
-    const nextRoom = world.activeRoom.shouldActivateNextRoom(manager.player);
+    simulateEffects(dt, state);
+    const world = state.world;
+    world.update(state);
+    const nextRoom = world.activeRoom.shouldActivateNextRoom(state.player);
     if (nextRoom) {
         world.activeRoom = nextRoom;
         world.activeRoomInFocus = false;
@@ -42,12 +42,12 @@ export function simulateEntities(
     if (world.activeRoom.started) {
         const wave = world.activeRoom.wave;
         while (wave.hasExpectedEnemies) {
-            spawnEnemy(manager);
+            spawnEnemy(state);
         }
     }
-    simulateTanks(dt, manager.tanks, world.activeRoom.wave, events);
-    simulateProjectiles(dt, manager, camera, events);
-    simulatePickups(manager);
+    simulateTanks(dt, state.tanks, world.activeRoom.wave, events);
+    simulateProjectiles(dt, state, camera, events);
+    simulatePickups(state);
 }
 
 export function simulateTanks(
@@ -78,36 +78,36 @@ export function simulateTanks(
 
 function simulateProjectiles(
     dt: Duration,
-    manager: EntityManager,
+    state: GameState,
     camera: Camera,
     events: EventQueue,
 ): void {
-    for (const projectile of manager.projectiles) {
+    for (const projectile of state.projectiles) {
         if (!projectile.dead) {
-            projectile.update(dt, manager, camera, events);
+            projectile.update(dt, state, camera, events);
         }
     }
 }
 
-function simulateEffects(dt: Duration, manager: EntityManager): void {
+function simulateEffects(dt: Duration, state: GameState): void {
     const effectsToRemove: ParticleExplosion[] = [];
-    for (const effect of manager.effects) {
+    for (const effect of state.effects) {
         effect.update(dt);
         if (effect.animation.finished) {
             effectsToRemove.push(effect);
         }
     }
     if (effectsToRemove.length) {
-        manager.effects = manager.effects.filter((e) => !effectsToRemove.includes(e));
+        state.effects = state.effects.filter((e) => !effectsToRemove.includes(e));
     }
     const boomsToRemove: Boom[] = [];
-    for (const boom of manager.booms) {
+    for (const boom of state.booms) {
         boom.update(dt);
         if (boom.animation.finished) {
             boomsToRemove.push(boom);
         }
     }
     if (boomsToRemove.length) {
-        manager.booms = manager.booms.filter((b) => !boomsToRemove.includes(b));
+        state.booms = state.booms.filter((b) => !boomsToRemove.includes(b));
     }
 }

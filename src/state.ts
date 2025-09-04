@@ -1,3 +1,10 @@
+import {Boom, ParticleExplosion} from '#/effect';
+import {PlayerTank, Tank} from '#/entity';
+import {Entity, isIntesecting, isSameEntity} from '#/entity/core';
+import {EntityId} from '#/entity/id';
+import {Projectile} from '#/entity/projectile';
+import {isPosInsideRect, Rect} from '#/math';
+import {Vector2Like} from '#/math/vector';
 import {
     activateRecording,
     stopRecording,
@@ -7,6 +14,7 @@ import {
 import {Camera} from '#/renderer/camera';
 import type {Sound} from '#/sound';
 import type {Room} from '#/world/room';
+import {World} from '#/world/world';
 
 export enum GameStatus {
     INITIAL,
@@ -17,11 +25,21 @@ export enum GameStatus {
 
 // TODO: I'm not sure what this class is really for.
 //       It seems to try to be a minimal state holder, but at the same time it's also responsive for recording.
-//       It should be decided if this class should be minila or if it should handle everything that happens during state changes.
+//       It should be decided if this class should be minimal or if it should handle everything that happens during state changes.
 export class GameState {
     status = GameStatus.INITIAL;
     gameCompleted = false;
     debugUpdateTriggered = false;
+
+    readonly world = new World();
+    readonly player = new PlayerTank(this);
+    tanks: Tank[] = [];
+    projectiles: Projectile[] = [];
+    effects: ParticleExplosion[] = [];
+    booms: Boom[] = [];
+    cachedBotExplosion: ParticleExplosion | null = null;
+    cachedPlayerExplosion: ParticleExplosion | null = null;
+
     recording: RecordingStatus = {
         enabled: true,
         active: false,
@@ -124,8 +142,71 @@ export class GameState {
                 logger.warn('Unhandled Game status %s', this.status);
         }
     }
+
+    *iterateCollidable(): Generator<Entity> {
+        for (const t of this.tanks) {
+            if (!t.dead) yield t;
+        }
+        for (const b of this.world.activeRoom.blocks) {
+            if (!b.dead) yield b;
+        }
+    }
+
+    *iterateEntities(): Generator<Entity> {
+        for (const t of this.tanks) {
+            if (!t.dead) {
+                yield t;
+            }
+        }
+        for (const p of this.projectiles) {
+            if (!p.dead) {
+                yield p;
+            }
+        }
+        for (const b of this.world.activeRoom.blocks) {
+            if (!b.dead) {
+                yield b;
+            }
+        }
+    }
+
+    findTank(id: EntityId): Tank | undefined {
+        return this.tanks.find((t) => t.id === id);
+    }
+
+    findCollided(target: Entity): Entity | undefined {
+        for (const entity of this.iterateCollidable()) {
+            if (entity.equals(target)) continue;
+            if (isIntesecting(target, entity)) {
+                return entity;
+            }
+        }
+        return;
+    }
 }
 
 export function justCompletedGame(state: GameState, room: Room): boolean {
     return state.playing && !state.gameCompleted && room.completed && !room.nextRooms.length;
+}
+
+export function isOccupied(pos: Vector2Like, state: GameState, ignoredEntity?: Entity): boolean {
+    for (const entity of state.iterateCollidable()) {
+        if (entity === state.player) continue;
+        if (ignoredEntity && isSameEntity(entity, ignoredEntity)) continue;
+        if (isPosInsideRect(pos.x, pos.y, entity)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+export function isRectOccupied(rect: Rect, state: GameState, ignoreEntity?: Entity): boolean {
+    for (const entity of state.iterateCollidable()) {
+        if (isSameEntity(entity, state.player)) continue;
+        if (ignoreEntity && isSameEntity(entity, ignoreEntity)) continue;
+        if (isIntesecting(rect, entity)) {
+            return true;
+        }
+    }
+    return false;
 }

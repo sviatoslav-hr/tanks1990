@@ -1,9 +1,9 @@
 import {CELL_SIZE} from '#/const';
 import {Entity} from '#/entity/core';
-import {EntityManager, isRectOccupied} from '#/entity/manager';
 import {Rect, isPosInsideRect} from '#/math';
 import {MinPriorityQueue} from '#/math/priority-queue';
 import {Vector2, Vector2Like} from '#/math/vector';
+import {GameState, isRectOccupied} from '#/state';
 
 type Node = {
     pos: Vector2;
@@ -19,7 +19,7 @@ type Node = {
 export function findPath(
     source: Entity,
     target: Rect,
-    manager: EntityManager,
+    state: GameState,
     maxSteps: number,
     posOffset: number = (CELL_SIZE * 0.8) / 5,
     debug = false,
@@ -64,7 +64,7 @@ export function findPath(
 
         closedSet.add(currentKey);
 
-        for (let neighbor of getValidNeighbors(current, end, manager, source, posOffset)) {
+        for (let neighbor of getValidNeighbors(current, end, state, source, posOffset)) {
             const neighborKey = neighbor.pos.toString();
             if (closedSet.has(neighborKey)) continue;
             const neighborFromSet = openSetByKeys.get(neighborKey);
@@ -124,7 +124,7 @@ function reconstructPath(node: Node): Vector2[] {
 function getValidNeighbors(
     node: Node,
     end: Vector2,
-    manager: EntityManager,
+    state: GameState,
     source: Entity,
     posOffset: number,
 ): Node[] {
@@ -144,7 +144,7 @@ function getValidNeighbors(
             width: source.width,
             height: source.height,
         };
-        if (!isRectOccupied(rect, manager, source)) {
+        if (!isRectOccupied(rect, state, source)) {
             const h = pos.manhattanDistanceTo(end);
             neighbors.push({
                 pos,

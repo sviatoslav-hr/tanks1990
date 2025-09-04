@@ -7,7 +7,7 @@ import {Duration} from '#/math/duration';
 import {Vector2, Vector2Like} from '#/math/vector';
 import {findPath} from '#/pathfinding';
 import {createShieldSprite} from '#/renderer/sprite';
-import {EntityManager} from '#/entity/manager';
+import {GameState} from '#/state';
 
 export function isEnemyTank(tank: Tank): tank is EnemyTank {
     return tank.bot;
@@ -28,13 +28,13 @@ export class EnemyTank extends Tank implements Entity {
     respawnDelay = RESPAWN_DELAY.clone();
 
     update(dt: Duration): void {
-        const wave = this.manager.world.activeRoom.wave;
+        const wave = this.state.world.activeRoom.wave;
         if (this.dead && wave.hasRespawnPlace) {
             this.respawnDelay.sub(dt).max(0);
             return;
         }
         if (!this.dead) {
-            const player = this.manager.player;
+            const player = this.state.player;
             // TODO: if player is dead, choose a random direction
             let newDirection = player.dead ? null : this.findTargetDirection(player, dt);
             if (newDirection != null && newDirection !== this.direction) {
@@ -93,7 +93,7 @@ export class EnemyTank extends Tank implements Entity {
                 } else if (dyPrev === dy) {
                     this.x = targetPoint.x - this.width / 2;
                 }
-                const c = this.manager.findCollided(this);
+                const c = this.state.findCollided(this);
                 if (c) {
                     this.x = prevX;
                     this.y = prevY;
@@ -104,8 +104,8 @@ export class EnemyTank extends Tank implements Entity {
 
     override handleCollision(target: Entity): void {
         super.handleCollision(target);
-        if (target.id !== this.manager.player.id && !this.manager.player.dead) {
-            this.direction = this.recalculateDirectionPath(this.manager.player) ?? this.direction;
+        if (target.id !== this.state.player.id && !this.state.player.dead) {
+            this.direction = this.recalculateDirectionPath(this.state.player) ?? this.direction;
         }
     }
 
@@ -131,7 +131,7 @@ export class EnemyTank extends Tank implements Entity {
 
     private recalculateDirectionPath(target: Entity): Direction | null {
         this.targetSearchTimer.setFrom(TARGET_SEARCH_DELAY);
-        const path = findPath(this, target, this.manager, 1000, undefined, false);
+        const path = findPath(this, target, this.state, 1000, undefined, false);
         if (path) {
             this.targetPath = path;
             const nextPoint = this.targetPath[0];
@@ -162,23 +162,23 @@ export class EnemyTank extends Tank implements Entity {
 }
 
 export function spawnEnemy(
-    manager: EntityManager,
+    state: GameState,
     enemyKind?: TankPartKind,
     skipDelay = false,
 ): EnemyTank {
-    const deadEnemy = manager.tanks.find((t) => t.bot && t.dead && !t.shouldRespawn) as EnemyTank;
+    const deadEnemy = state.tanks.find((t) => t.bot && t.dead && !t.shouldRespawn) as EnemyTank;
     // NOTE: Enemy will be dead initially, but it will be re-spawned automatically with the delay
     // to not spawn it immediately and also have the ability to not spawn everyone at once.
-    const enemy = deadEnemy ?? new EnemyTank(manager);
+    const enemy = deadEnemy ?? new EnemyTank(state);
     assert(enemy.dead);
     if (!deadEnemy) {
         // NOTE: Player should be drawn last, so enemies are added to the beginning of the array.
-        manager.tanks.unshift(enemy);
+        state.tanks.unshift(enemy);
         logger.debug('[Manager] Created new enemy tank', enemy.id);
     } else {
         logger.debug('[Manager] Reused dead enemy tank', enemy.id);
     }
-    const wave = manager.world.activeRoom.wave;
+    const wave = state.world.activeRoom.wave;
     if (skipDelay) {
         wave.spawnEnemy(enemy);
     } else {

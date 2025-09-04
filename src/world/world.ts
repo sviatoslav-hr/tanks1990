@@ -1,8 +1,8 @@
 import {Color} from '#/color';
 import {CELL_SIZE} from '#/const';
 import {Block} from '#/entity/block';
-import {EntityManager} from '#/entity/manager';
 import {Vector2} from '#/math/vector';
+import {GameState} from '#/state';
 import {createRoomsFromGraph, MAX_ROOMS_COUNT} from '#/world/generation';
 import {generateWorldGraph, type WorldGraph} from '#/world/graph';
 import {Room} from '#/world/room';
@@ -21,20 +21,20 @@ export class World {
     readonly gridColor = Color.BLACK_ONYX;
     readonly boundaryThickness = 0.1 * CELL_SIZE;
 
-    init(manager: EntityManager): void {
+    init(state: GameState): void {
         this.graph = generateWorldGraph({
             depth: this.roomsLimit,
             finalNodesCount: FINAL_ROOMS_COUNT,
         });
-        this.rooms = createRoomsFromGraph(this.graph, manager);
+        this.rooms = createRoomsFromGraph(this.graph, state);
 
         const startRoom = this.rooms[0];
         assert(startRoom);
         this.activeRoom = startRoom;
     }
 
-    update(manager: EntityManager): void {
-        this.activeRoom?.update(manager);
+    update(state: GameState): void {
+        this.activeRoom?.update(state);
     }
 
     *iterateBlocks(): Generator<Block> {

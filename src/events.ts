@@ -14,6 +14,7 @@ export type GameControlAction =
 export type GameControlEvent = {
     type: 'game-control';
     action: GameControlAction;
+    recordingSeed?: string;
     ignoreMenu?: boolean;
 };
 

@@ -3,7 +3,7 @@
 ## DOING
 
 ## NEXT TODO
-- [ ] Delete EntityManager (move stuff into GameState)
+- [ ] Extract simulation logic out of entity classes (e.g. entity.update(..) -> simulateEntities(..))
 - [ ] Add animation/SFX to room door opening to hint player that's where he needs to go next.
 
 ## SHOULD BE FIXED
@@ -26,7 +26,6 @@
 
 ### Refactoring
 - [ ] Revisit events
-- [ ] Extract simulation logic out of entity classes (e.g. entity.update(..) -> simulateEntities(..))
 - [ ] Pathfinding: Double check the pathfinding implementation if it fully implements A*;
 - [ ] Outline how objects/classes should access each other (global vars/props/DI etc) (eg Renderer, Input, EntityManager, Entity etc)
 - [ ] Better way to store images and sprites (how bad Image is?)

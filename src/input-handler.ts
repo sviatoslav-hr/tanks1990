@@ -1,5 +1,4 @@
 import {DEV_MODE_KEY} from '#/const';
-import {EntityManager} from '#/entity/manager';
 import type {EventQueue} from '#/events';
 import {GameInput} from '#/input';
 import {Direction} from '#/math/direction';
@@ -199,17 +198,16 @@ export function processInput(
     renderer: Renderer,
     state: GameState,
     config: GameConfig,
-    manager: EntityManager,
     menu: MenuBridge,
     devUI: DevUI,
     storage: GameStorage,
     events: EventQueue,
 ) {
     if (state.playing) {
-        manager.player.changeDirection(input.game.playerDirection ?? null);
+        state.player.changeDirection(input.game.playerDirection ?? null);
     }
     if (input.game.playerShooting) {
-        const event = manager.player.shoot();
+        const event = state.player.shoot();
         if (event) events.push(event);
     }
 
@@ -255,7 +253,7 @@ export function processInput(
 
     if (input.extra.playOrExitRecording) {
         if (!state.recording.playing) {
-            playRecentRecording(state, manager, menu);
+            playRecentRecording(state, events);
         } else {
             exitRecording(state, menu);
         }
@@ -342,7 +340,7 @@ export function processInput(
         const {devCamera, playerCamera} = state;
         if (renderer.camera === devCamera) {
             devCamera.worldOffset.setFrom(playerCamera.worldOffset);
-            devCamera.focusOnRect(manager.world.activeRoom.boundary);
+            devCamera.focusOnRect(state.world.activeRoom.boundary);
         } else {
             logger.error('Cannot reset - dev camera is not active');
         }

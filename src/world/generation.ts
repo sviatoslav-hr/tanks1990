@@ -1,27 +1,27 @@
 import {CELL_SIZE} from '#/const';
 import {Block, generateBlocks} from '#/entity/block';
 import {wavesPerRoom} from '#/entity/enemy-wave';
-import {EntityManager} from '#/entity/manager';
 import {generatePickups} from '#/entity/pickup';
 import {Direction} from '#/math/direction';
 import {random} from '#/math/rng';
 import {Vector2} from '#/math/vector';
 import {createStaticSprite} from '#/renderer/sprite';
-import {Room, roomSizeInCells} from '#/world/room';
+import {GameState} from '#/state';
 import {
     bfsWorldGraph,
     getPrevDepthWorldNodes,
     getWorldNodeDirections,
     getWorldNodeKey,
-    type WorldNode,
     type WorldGraph,
+    type WorldNode,
     type WorldNodeKey,
 } from '#/world/graph';
+import {Room, roomSizeInCells} from '#/world/room';
 
 export const MAX_ROOMS_COUNT = wavesPerRoom.length;
 
 // TODO: Figure out generation algorithm that would avoid overlapping rooms
-export function createRoomsFromGraph(graph: WorldGraph, manager: EntityManager): Room[] {
+export function createRoomsFromGraph(graph: WorldGraph, state: GameState): Room[] {
     assert(graph.depth <= MAX_ROOMS_COUNT);
     const createdRooms: Map<WorldNodeKey, Room> = new Map();
     for (const node of bfsWorldGraph(graph.startNode)) {
@@ -33,14 +33,14 @@ export function createRoomsFromGraph(graph: WorldGraph, manager: EntityManager):
             assert(room);
             return room;
         });
-        const room = generateRoom(node, manager, prevRooms);
+        const room = generateRoom(node, state, prevRooms);
         createdRooms.set(nodeKey, room);
     }
     return Array.from(createdRooms.values());
 }
 
 // TODO: This room generation code is awful, too intermingled and hard to follow #roomgen
-function generateRoom(node: WorldNode, manager: EntityManager, prevRooms: Room[]): Room {
+function generateRoom(node: WorldNode, state: GameState, prevRooms: Room[]): Room {
     const sprite = createStaticSprite({
         key: 'bricks',
         frameWidth: 64,
@@ -134,10 +134,10 @@ function generateRoom(node: WorldNode, manager: EntityManager, prevRooms: Room[]
         nextRoomBlocks,
     );
     const blocksCount = random.int32Range(16, 24);
-    const insideBlocks = generateBlocks(manager, room.boundary, blocksCount, manager.player);
+    const insideBlocks = generateBlocks(state, room.boundary, blocksCount, state.player);
     room.blocks.push(...insideBlocks);
 
-    generatePickups(room, manager);
+    generatePickups(room, state);
 
     return room;
 }

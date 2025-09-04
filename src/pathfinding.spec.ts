@@ -1,7 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 
 import {isIntesecting} from '#/entity/core';
-import {EntityManager} from '#/entity/manager';
 import {EnemyTank} from '#/entity/tank';
 import {type TankSchema} from '#/entity/tank/generation';
 import {EventQueue} from '#/events';
@@ -12,6 +11,7 @@ import {Vector2Like} from '#/math/vector';
 import {findPath} from '#/pathfinding';
 import {spawnEnemy} from '#/entity/tank/enemy';
 import {initEntities, simulateTanks} from '#/simulation';
+import {GameState} from './state';
 
 function spriteMock() {
     return {
@@ -88,25 +88,25 @@ describe('Pathfinding', () => {
         stepsLimit = 1000,
         debug = false,
     ) {
-        const manager = new EntityManager();
-        manager.world.roomsLimit = 1;
-        initEntities(manager);
-        const activeWave = manager.world.activeRoom.wave;
+        const state = new GameState();
+        state.world.roomsLimit = 1;
+        initEntities(state);
+        const activeWave = state.world.activeRoom.wave;
         activeWave.clearExpected();
-        spawnEnemy(manager, 'light', true);
-        const enemy = manager.tanks.find((t) => t instanceof EnemyTank) as EnemyTank;
+        spawnEnemy(state, 'light', true);
+        const enemy = state.tanks.find((t) => t instanceof EnemyTank) as EnemyTank;
         const eventQueue = new EventQueue();
-        simulateTanks(Duration.milliseconds(0), manager.tanks, activeWave, eventQueue);
+        simulateTanks(Duration.milliseconds(0), state.tanks, activeWave, eventQueue);
         assert(enemy, 'Enemy tank not found');
         assert(!enemy.dead, 'Enemy tank should not be dead (should respawn)');
-        assert(manager.tanks.length === 2, 'Expected only 2 tanks'); // Player + enemy
-        const target = manager.player;
+        assert(state.tanks.length === 2, 'Expected only 2 tanks'); // Player + enemy
+        const target = state.player;
         enemy.x = enemyPos.x;
         enemy.y = enemyPos.y;
         target.x = targetPos.x;
         target.y = targetPos.y;
-        Object.assign(enemy, {id: 69}); // NOTE: Hardcode id for to be able to inspecy the tank in other parts of the code
-        const path = findPath(enemy, target, manager, stepsLimit, undefined, debug);
+        Object.assign(enemy, {id: 69}); // NOTE: Hardcode id for to be able to inspect the tank in other parts of the code
+        const path = findPath(enemy, target, state, stepsLimit, undefined, debug);
         assert(path, 'Path should be found');
         expect(path.length).toBeGreaterThan(0);
         const firstP = path[0]!;
@@ -120,7 +120,7 @@ describe('Pathfinding', () => {
         );
 
         for (const [i, p] of path.entries()) {
-            for (const e of manager.iterateCollidable()) {
+            for (const e of state.iterateCollidable()) {
                 if (e === target) continue;
                 if (e === enemy) continue;
                 expect(
