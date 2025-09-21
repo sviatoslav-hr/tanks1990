@@ -26,8 +26,12 @@ export function isEnemyTank(tank: Tank): tank is EnemyTank {
 export abstract class Tank extends Entity {
     abstract readonly bot: boolean;
     readonly id = newEntityId();
+    x = 0;
+    y = 0;
+    width = CELL_SIZE * 0.8;
+    height = CELL_SIZE * 0.8;
     dead = true;
-    hasShield = true;
+    hasShield = false;
     direction = Direction.NORTH;
 
     velocity = 0;
@@ -52,14 +56,6 @@ export abstract class Tank extends Entity {
     abstract readonly shieldSprite: Sprite<string>;
     abstract sprite: TankSpriteGroup;
     abstract schema: TankSchema;
-
-    constructor() {
-        super();
-        this.x = 0;
-        this.y = 0;
-        this.width = CELL_SIZE * 0.8;
-        this.height = CELL_SIZE * 0.8;
-    }
 
     get cx(): number {
         return this.x + this.width / 2;
@@ -106,10 +102,4 @@ export class PlayerTank extends Tank implements Entity {
     // HACK: This field is used as a flag to indicate that the game is completed.
     //       It should be removed once `survivedFor` will be moved out of this class.
     completedGame = false;
-
-    constructor() {
-        super();
-        this.x = this.width / 2;
-        this.y = this.height / 2;
-    }
 }

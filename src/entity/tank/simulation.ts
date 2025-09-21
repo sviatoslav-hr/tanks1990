@@ -102,9 +102,9 @@ export function initTank(tank: Tank): void {
     tank.speedMult = 1;
     tank.reloadMult = 1;
     tank.shootingDelay.setMilliseconds(tank.schema.reloadTime.milliseconds);
-    activateTankShield(tank);
 
     if (isEnemyTank(tank)) {
+        assert(tank.shouldRespawn); // Enemy should be initialized only during respawn
         tank.shouldRespawn = false;
         tank.targetPath = [];
         tank.respawnDelay.setMilliseconds(0);
@@ -116,6 +116,8 @@ export function initTank(tank: Tank): void {
         tank.velocity = 0;
         tank.survivedFor.milliseconds = 0;
     }
+
+    activateTankShield(tank);
 }
 
 export function changePlayerDirection(tank: PlayerTank, direction: Direction | null): void {
@@ -199,6 +201,7 @@ export function spawnEnemy(
     const wave = state.world.activeRoom.wave;
     enemy.shouldRespawn = true;
     if (skipDelay) {
+        if (enemyKind) enemy.changeKind(enemyKind);
         enemy.respawnDelay.setMilliseconds(0);
         respawnEnemy(enemy, state);
     } else {

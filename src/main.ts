@@ -20,7 +20,7 @@ import {
     recordGameInput,
 } from '#/recording';
 import {Renderer} from '#/renderer';
-import {initEntities, simulateEntities} from '#/simulation';
+import {setupBackgroundScene, simulateEntities} from '#/simulation';
 import {SoundManager} from '#/sound';
 import {GameState, justCompletedGame} from '#/state';
 import {GameStorage} from '#/storage';
@@ -85,8 +85,8 @@ function runGame(
     const seed = getURLSeed();
     random.reset(seed ?? undefined);
     setURLSeed(random.seed);
-    initEntities(state);
     let lastTimestamp = performance.now();
+    setupBackgroundScene(state);
     const animationCallback = (): void => {
         const now = performance.now();
         const dt = Duration.between(lastTimestamp, now);

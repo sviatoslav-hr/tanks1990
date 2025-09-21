@@ -1,9 +1,11 @@
 import {Boom, ParticleExplosion} from '#/effect';
 import {simulatePickups} from '#/entity/pickup';
 import {initTank, simulateAllTanks, spawnEnemy} from '#/entity/tank/simulation';
+import {Direction} from '#/math/direction';
 import {Duration} from '#/math/duration';
 import {Camera} from '#/renderer/camera';
 import {GameState} from '#/state';
+import {CELL_SIZE} from '#/const';
 
 export function initEntities(state: GameState): void {
     state.tanks = [state.player];
@@ -71,4 +73,37 @@ function simulateEffects(dt: Duration, state: GameState): void {
     if (boomsToRemove.length) {
         state.booms = state.booms.filter((b) => !boomsToRemove.includes(b));
     }
+}
+
+export function setupBackgroundScene(state: GameState): void {
+    // Setup initial background scene
+    initEntities(state);
+    const room = state.world.activeRoom;
+    const roomWidth = room.sizeInCells.x * CELL_SIZE;
+    const roomHeight = room.sizeInCells.y * CELL_SIZE;
+    const roomX = room.position.x - roomWidth / 2;
+    const roomY = room.position.y - roomHeight / 2;
+    const cellOffset = (CELL_SIZE - state.player.width) / 2;
+
+    state.player.hasShield = false;
+    const enemy00 = spawnEnemy(state, 'medium', true);
+    enemy00.hasShield = false;
+    enemy00.x = roomX + roomWidth / 2 - CELL_SIZE + cellOffset - CELL_SIZE * 2;
+    enemy00.y = roomY + cellOffset;
+    enemy00.direction = Direction.EAST;
+    const enemy01 = spawnEnemy(state, 'heavy', true);
+    enemy01.x = roomX + roomWidth - CELL_SIZE + cellOffset;
+    enemy01.y = roomY + cellOffset + CELL_SIZE * 2;
+    enemy01.direction = Direction.NORTH;
+    enemy01.hasShield = false;
+    const enemy10 = spawnEnemy(state, 'light', true);
+    enemy10.x = roomX + roomWidth / 2 - CELL_SIZE + cellOffset;
+    enemy10.y = roomY + roomHeight - CELL_SIZE + cellOffset;
+    enemy10.direction = Direction.NORTH;
+    enemy10.hasShield = false;
+    const enemy11 = spawnEnemy(state, 'medium', true);
+    enemy11.x = roomX + roomWidth - CELL_SIZE + cellOffset - CELL_SIZE;
+    enemy11.y = roomY + roomHeight - CELL_SIZE + cellOffset;
+    enemy11.direction = Direction.WEST;
+    enemy11.hasShield = false;
 }
