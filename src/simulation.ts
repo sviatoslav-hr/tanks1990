@@ -1,9 +1,6 @@
 import {Boom, ParticleExplosion} from '#/effect';
-import {Tank} from '#/entity';
-import {EnemyWave} from '#/entity/enemy-wave';
 import {simulatePickups} from '#/entity/pickup';
-import {EnemyTank, isEnemyTank, spawnEnemy} from '#/entity/tank/enemy';
-import {EventQueue} from '#/events';
+import {initTank, simulateAllTanks, spawnEnemy} from '#/entity/tank/simulation';
 import {Duration} from '#/math/duration';
 import {Camera} from '#/renderer/camera';
 import {GameState} from '#/state';
@@ -14,16 +11,11 @@ export function initEntities(state: GameState): void {
     state.effects = [];
     state.booms = [];
     state.world.reset();
-    state.player.respawn();
+    initTank(state.player);
     state.world.init(state);
 }
 
-export function simulateEntities(
-    dt: Duration,
-    state: GameState,
-    camera: Camera,
-    events: EventQueue,
-): void {
+export function simulateEntities(dt: Duration, state: GameState, camera: Camera): void {
     simulateEffects(dt, state);
     const world = state.world;
     world.update(state);
@@ -45,46 +37,15 @@ export function simulateEntities(
             spawnEnemy(state);
         }
     }
-    simulateTanks(dt, state.tanks, world.activeRoom.wave, events);
-    simulateProjectiles(dt, state, camera, events);
+    simulateAllTanks(dt, state);
+    simulateProjectiles(dt, state, camera);
     simulatePickups(state);
 }
 
-export function simulateTanks(
-    dt: Duration,
-    tanks: Tank[],
-    wave: EnemyWave,
-    events: EventQueue,
-): void {
-    for (const tank of tanks) {
-        tank.update(dt); // TODO: extra into a separate function from the method
-        if (!tank.dead && isEnemyTank(tank)) {
-            const event = tank.shoot();
-            if (event) events.push(event);
-        }
-
-        if (tank.bot && tank.shouldRespawn) {
-            assert(tank instanceof EnemyTank);
-            if (tank.respawnDelay.positive) {
-                continue;
-            } else if (wave.hasRespawnPlace) {
-                // TODO: For some reason it takes way too much attempts to respawn...
-                //       Need to have a deeper look into this.
-                wave.spawnEnemy(tank);
-            }
-        }
-    }
-}
-
-function simulateProjectiles(
-    dt: Duration,
-    state: GameState,
-    camera: Camera,
-    events: EventQueue,
-): void {
+function simulateProjectiles(dt: Duration, state: GameState, camera: Camera): void {
     for (const projectile of state.projectiles) {
         if (!projectile.dead) {
-            projectile.update(dt, state, camera, events);
+            projectile.update(dt, state, camera);
         }
     }
 }

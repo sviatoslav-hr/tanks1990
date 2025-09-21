@@ -4,7 +4,6 @@ import {random} from '#/math/rng';
 import {MenuBridge} from '#/menu';
 import type {GameState} from '#/state';
 import {notify} from '#/ui/notification';
-import {EventQueue} from '#/events';
 
 export interface RecordingStatus {
     /** Indicates whether the next game sessions should be recorded. */
@@ -85,16 +84,22 @@ export function getNextRecordedFrameDt(state: GameState): number | null {
 }
 
 export function getNextRecordedInput(
-    recording: RecordingStatus,
-    data: RecordingData,
+    state: GameState,
+    updateTriggered: boolean,
 ): GameInputState | undefined {
-    assert(recording.playing);
+    if (!state.playing && !updateTriggered) return undefined;
+    const {recording, recordingData: data} = state;
     const inputIndex = recording.playingInputIndex;
+    assert(recording.playing);
+
     const inputs = data.inputs;
     const input = inputs[inputIndex];
     recording.currentInput = input ?? null;
     if (inputIndex === inputs.length - 1) {
         notify('Recording finished');
+    }
+    if (updateTriggered && !input) {
+        logger.error('Trying to trigger update, but there is no input left in the recording');
     }
     return input;
 }
@@ -107,7 +112,7 @@ export function isPlayingRecordingFinished(state: GameState): boolean {
 }
 
 // TODO: Menu should not be passed here, but rather it should be handled via events.
-export function playRecentRecording(state: GameState, events: EventQueue): void {
+export function playRecentRecording(state: GameState): void {
     if (state.recording.playing) {
         logger.error('Recording is already playing');
         return;
@@ -124,7 +129,7 @@ export function playRecentRecording(state: GameState, events: EventQueue): void 
         state.recording.playing = true;
         state.recording.playingInputIndex = 0;
         const recordingSeed = state.recordingData.seed;
-        events.push({type: 'game-control', action: 'start', recordingSeed});
+        state.events.push({type: 'game-control', action: 'start', recordingSeed});
     }, 0);
 }
 

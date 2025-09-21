@@ -36,21 +36,15 @@ export class EnemyWave {
         return this.expectedEnemyIndex < this.expectedEnemies.length;
     }
 
-    spawnEnemy(enemy: EnemyTank): void {
-        enemy.markForRespawn();
-        enemy.respawnDelay.setMilliseconds(0);
-        const respawned = enemy.respawn();
-        if (!respawned) return; // No respawn place available.
-
-        this.aliveEnemies.push(enemy.id);
-        const index = this.enemyRespawnQueue.indexOf(enemy.id);
+    acknowledgeEnemySpawned(enemyId: EntityId): void {
+        this.aliveEnemies.push(enemyId);
+        const index = this.enemyRespawnQueue.indexOf(enemyId);
         if (index !== -1) {
             this.enemyRespawnQueue.splice(index, 1);
         }
     }
 
     queueEnemy(enemy: EnemyTank, enemyKind?: TankPartKind): void {
-        enemy.markForRespawn();
         if (!enemyKind) {
             enemyKind = this.popExpectedEnemy() ?? 'light';
         }
@@ -66,7 +60,7 @@ export class EnemyWave {
         return enemyKind;
     }
 
-    removeEnemyFromAlives(enemyId: EntityId): void {
+    acknowledgeEnemyDied(enemyId: EntityId): void {
         const index = this.aliveEnemies.indexOf(enemyId);
         if (index > -1) {
             this.aliveEnemies.splice(index, 1);

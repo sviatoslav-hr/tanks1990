@@ -69,6 +69,7 @@ export function clampByBoundary(entity: Rect, boundary: Rect): void {
     entity.y = clamp(entity.y, boundary.y, boundary.y + boundary.height - entity.height);
 }
 
+// TODO: Rename to 'offsetEntity' or similar...
 export function moveEntity(entity: Rect, offset: number, direction: Direction): void {
     switch (direction) {
         case Direction.NORTH:

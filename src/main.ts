@@ -7,7 +7,6 @@ import {GameConfig} from '#/config';
 import {APP_ELEMENT_ID, DEV_MODE_KEY} from '#/const';
 import {drawGame, DrawGameOptions} from '#/drawing';
 import {preloadEffectImages} from '#/effect';
-import {EventQueue} from '#/events';
 import {handleGameEvents as processGameEvents} from '#/events-handler';
 import {GameInput} from '#/input';
 import {handleKeymaps, processInput} from '#/input-handler';
@@ -28,7 +27,6 @@ import {GameStorage} from '#/storage';
 import {uiGlobal} from '#/ui/core';
 import {createDevUI, DevUI} from '#/ui/dev';
 import {createNotificationBar, notify} from '#/ui/notification';
-import {World} from '#/world/world';
 
 main();
 
@@ -46,17 +44,16 @@ function main(): void {
     sounds.loadAllSounds().then(() => logger.debug('[Sounds] All sounds loaded'));
     preloadEffectImages();
 
-    const gameState = new GameState();
+    const state = new GameState(sounds);
 
     const input = new GameInput();
-    const eventQueue = new EventQueue();
     const config = new GameConfig(storage);
     config.load();
 
-    const renderer = new Renderer(gameState.playerCamera);
+    const renderer = new Renderer(state.playerCamera);
     appElement.append(renderer.canvas);
 
-    const menu = new MenuBridge(eventQueue);
+    const menu = new MenuBridge(state.events);
     {
         menu.volume.set(sounds.volume);
         menu.volume.subscribe((value) => sounds.updateVolume(value));
@@ -65,14 +62,14 @@ function main(): void {
         Menu(uiGlobal, menu.props()).appendTo(appElement);
     }
 
-    const devUI = createDevUI(gameState, renderer, storage);
+    const devUI = createDevUI(state, renderer, storage);
     appElement.append(devUI);
 
-    resizeGame(renderer, gameState, gameState.world);
-    window.addEventListener('resize', () => resizeGame(renderer, gameState, gameState.world));
+    resizeGame(renderer, state);
+    window.addEventListener('resize', () => resizeGame(renderer, state));
 
     input.listen(document.body, renderer.canvas);
-    runGame(gameState, config, menu, input, storage, devUI, renderer, sounds, eventQueue);
+    runGame(state, config, menu, input, storage, devUI, renderer, sounds);
 }
 
 function runGame(
@@ -84,7 +81,6 @@ function runGame(
     devUI: DevUI,
     renderer: Renderer,
     sounds: SoundManager,
-    eventQueue: EventQueue,
 ) {
     const seed = getURLSeed();
     random.reset(seed ?? undefined);
@@ -108,21 +104,21 @@ function runGame(
             }
 
             if (menu.fullscreenToggleExpected) {
-                inputState.extra.toggleFullscreen ||= true;
+                inputState.extra.toggleFullscreen = true;
                 menu.fullscreenToggleExpected = false;
             }
-            processInput(inputState, renderer, state, config, menu, devUI, storage, eventQueue);
+            processInput(inputState, renderer, state, config, menu, devUI, storage);
             if (isRecordingGameInputs(state)) recordGameInput(state, dt, inputState.game);
 
             // NOTE: It's better to just stop simulation after recording has finished playing.
             if (!state.recording.playing || !isPlayingRecordingFinished(state)) {
-                simulateGameTick(dt, state, eventQueue);
+                simulateGameTick(dt, state);
             }
 
             drawOptions.drawUI = !menu.visible;
             drawGame(renderer, config, state, drawOptions);
 
-            processGameEvents(eventQueue, state, sounds, menu);
+            processGameEvents(state, sounds, menu);
             state.nextTick();
             input.nextTick();
         } catch (err) {
@@ -150,26 +146,26 @@ function runGame(
     window.requestAnimationFrame(animationCallback);
 }
 
-function simulateGameTick(dt: Duration, state: GameState, events: EventQueue) {
+function simulateGameTick(dt: Duration, state: GameState) {
     const player = state.player;
 
     if (state.playing && player.dead && player.healthAnimation.finished) {
-        events.push({type: 'game-control', action: 'game-over'});
+        state.events.push({type: 'game-control', action: 'game-over'});
     }
 
     if (!player.dead && justCompletedGame(state, state.world.activeRoom)) {
-        events.push({type: 'game-control', action: 'game-completed'});
+        state.events.push({type: 'game-control', action: 'game-completed'});
     }
 
     // NOTE: Showing enemies moving even when it's game-over to kind of troll the player "they continue living while you are dead".
     if (state.playing || state.dead || state.debugUpdateTriggered) {
-        simulateEntities(dt, state, state.playerCamera, events);
+        simulateEntities(dt, state, state.playerCamera);
     }
 }
 
-function resizeGame(renderer: Renderer, state: GameState, world: World): void {
-    renderer.resizeCanvasByWindow(window);
+function resizeGame(renderer: Renderer, state: GameState): void {
+    renderer.resizeCanvas(window.innerWidth, window.innerHeight);
     state.playerCamera.screenSize.set(renderer.canvas.width, renderer.canvas.height);
     state.devCamera.screenSize.set(renderer.canvas.width, renderer.canvas.height);
-    state.playerCamera.focusOnRect(world.activeRoom.boundary);
+    state.playerCamera.focusOnRect(state.world.activeRoom.boundary);
 }

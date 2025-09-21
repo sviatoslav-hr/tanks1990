@@ -4,10 +4,13 @@
 
 ## NEXT TODO
 - [ ] Extract simulation logic out of entity classes (e.g. entity.update(..) -> simulateEntities(..))
+  - [x] Tanks
+  - [ ] Projectile
 - [ ] Add animation/SFX to room door opening to hint player that's where he needs to go next.
 
 ## SHOULD BE FIXED
-- [ ] **Movement improvement!** (Chose one approach)
+- [ ] Battle music starts regardless muted or not
+- [ ] **Movement improvement!** (Choose one approach)
     a. Change movement to move only by fractions of cells (e.g. 1/16 of a cell)
         This will be easier to pathfind. And also will *may* the UX by fixing the issue with the player being able to pass through blocks.
     b. Make tank model behave like it's more "rounded" so it sort of squeezes between blocks
@@ -63,6 +66,7 @@
 - [ ] Improve controls hints [kenney.nl](https://kenney.nl/assets/input-prompts)
 
 ### Dev Mode improvements
+- [ ] Add a limit for notifications to be displayed at once or collapse spamming ones
 - [ ] Improve Camera handling
     - [ ] Logic to not draw offscreen entities is not working correctly during zooming
     - [ ] Zoom towards the mouse position

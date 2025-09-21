@@ -3,6 +3,7 @@ import {PlayerTank, Tank} from '#/entity';
 import {Entity, isIntesecting, isSameEntity} from '#/entity/core';
 import {EntityId} from '#/entity/id';
 import {Projectile} from '#/entity/projectile';
+import {EventQueue} from '#/events';
 import {isPosInsideRect, Rect} from '#/math';
 import {Vector2Like} from '#/math/vector';
 import {
@@ -12,7 +13,7 @@ import {
     type RecordingStatus,
 } from '#/recording';
 import {Camera} from '#/renderer/camera';
-import type {Sound} from '#/sound';
+import {SoundManager, type Sound} from '#/sound';
 import type {Room} from '#/world/room';
 import {World} from '#/world/world';
 
@@ -32,13 +33,23 @@ export class GameState {
     debugUpdateTriggered = false;
 
     readonly world = new World();
-    readonly player = new PlayerTank(this);
+    readonly player = new PlayerTank();
     tanks: Tank[] = [];
     projectiles: Projectile[] = [];
     effects: ParticleExplosion[] = [];
     booms: Boom[] = [];
     cachedBotExplosion: ParticleExplosion | null = null;
     cachedPlayerExplosion: ParticleExplosion | null = null;
+
+    events = new EventQueue();
+    battleMusic: Sound | null = null;
+    sounds: SoundManager;
+    playerCamera = new Camera();
+    devCamera = new Camera();
+
+    constructor(sounds: SoundManager) {
+        this.sounds = sounds;
+    }
 
     recording: RecordingStatus = {
         enabled: true,
@@ -55,9 +66,6 @@ export class GameState {
         inputs: [],
         startedAt: 0,
     };
-    battleMusic: Sound | null = null;
-    playerCamera = new Camera();
-    devCamera = new Camera();
 
     get initial(): boolean {
         return this.status === GameStatus.INITIAL;

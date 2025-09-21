@@ -19,16 +19,16 @@ export interface TankSchema {
 
 export function makeTankSchema(bot: boolean, kind: TankPartKind): TankSchema {
     // NOTE: Player should be faster because the game feel better this way.
-    const speedCoef = bot ? 1 : 1.5;
-    const shootingCoef = bot ? 1 : 1;
+    const speedMult = bot ? 1 : 1.5;
+    const shootingMult = bot ? 1 : 1;
     return {
         // NOTE: For now turret and body are the same kind for the sake of simplicity.
         turret: kind,
         body: kind,
         damage: tankKindDamage[kind],
-        reloadTime: Duration.milliseconds(tankKindReloadTimeMillis[kind] * shootingCoef),
+        reloadTime: Duration.milliseconds(tankKindReloadTimeMillis[kind] * shootingMult),
         maxHealth: tankKindMaxHealth[kind],
-        maxSpeed: tankKindSpeed[kind] * speedCoef,
+        maxSpeed: tankKindSpeed[kind] * speedMult,
         topSpeedReachTime: Duration.milliseconds(bot ? 150 : 50),
     };
 }
@@ -138,14 +138,14 @@ export class TankSpriteGroup {
             const turretYOffset = turretYOffsets[this.schema.turret] / sizeRatio;
             const turretWidth = (turret.frameWidth - turret.framePadding * 2) / sizeRatio;
             const turretHeight = (turret.frameHeight - turret.framePadding * 2) / sizeRatio;
-            const wdiff = boundary.width - turretWidth;
+            const wDiff = boundary.width - turretWidth;
             const cx = boundary.x + boundary.width / 2;
             const cy = boundary.y + boundary.height / 2;
             // NOTE: We need to rotate the turret around the center of the tank body
             //       because it's being offset from the center of the tank.
             const spriteBoundary = rotateRectAround(
                 {
-                    x: boundary.x + wdiff / 2,
+                    x: boundary.x + wDiff / 2,
                     y: boundary.y + turretYOffset,
                     width: turretWidth,
                     height: turretHeight,

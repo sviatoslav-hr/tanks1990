@@ -1,8 +1,6 @@
 import {Color} from '#/color';
 import {CELL_SIZE} from '#/const';
-import {Tank} from '#/entity/tank/base';
-import {EnemyTank, isEnemyTank} from '#/entity/tank/enemy';
-import {isPlayerTank, PlayerTank} from '#/entity/tank/player';
+import {EnemyTank, isEnemyTank, isPlayerTank, PlayerTank, Tank} from '#/entity/tank';
 import {Renderer} from '#/renderer';
 import {roomSizeInCells} from '#/world/room';
 

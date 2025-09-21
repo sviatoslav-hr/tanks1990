@@ -1,10 +1,11 @@
 import {Color} from '#/color';
 import {GameConfig} from '#/config';
 import {CELL_SIZE} from '#/const';
+import {spawnBoom} from '#/effect';
 import {Entity, isInside, isIntesecting, isSameEntity, moveEntity} from '#/entity/core';
 import {EntityId} from '#/entity/id';
 import {EnemyTank, PlayerTank} from '#/entity/tank';
-import {EventQueue} from '#/events';
+import {damageTank} from '#/entity/tank/simulation';
 import {bellCurveInterpolate, lerp} from '#/math';
 import {Direction, getDirectionAngle} from '#/math/direction';
 import {Duration} from '#/math/duration';
@@ -53,7 +54,7 @@ export class Projectile extends Entity {
         this.shotByPlayer = opts.shotByPlayer;
     }
 
-    update(dt: Duration, state: GameState, camera: Camera, events: EventQueue): void {
+    update(dt: Duration, state: GameState, camera: Camera): void {
         if (this.dead) {
             return;
         }
@@ -66,7 +67,7 @@ export class Projectile extends Entity {
         // TODO: use movement equation instead
         moveEntity(this, this.velocity * dt.seconds, this.direction);
         if (!isInside(this, state.world.activeRoom.boundary)) {
-            events.push({type: 'projectile-exploded', entityId: this.id});
+            spawnBoom(state, this.id);
             this.dead = true;
             return;
         }
@@ -77,7 +78,7 @@ export class Projectile extends Entity {
             }
             if (isIntesecting(this, entity)) {
                 this.dead = true;
-                events.push({type: 'projectile-exploded', entityId: this.id});
+                spawnBoom(state, this.id);
                 if (entity instanceof Projectile) {
                     entity.dead = true;
                 }
@@ -86,7 +87,7 @@ export class Projectile extends Entity {
                     (this.shotByPlayer && entity instanceof EnemyTank) ||
                     (!this.shotByPlayer && entity instanceof PlayerTank)
                 ) {
-                    entity.takeDamage(this.damage, events);
+                    damageTank(entity, this.damage, state);
                 }
                 break;
             }

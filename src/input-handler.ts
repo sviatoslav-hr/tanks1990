@@ -1,5 +1,6 @@
+import {GameConfig} from '#/config';
 import {DEV_MODE_KEY} from '#/const';
-import type {EventQueue} from '#/events';
+import {changePlayerDirection, tryTriggerTankShooting} from '#/entity/tank/simulation';
 import {GameInput} from '#/input';
 import {Direction} from '#/math/direction';
 import {Vector2Like} from '#/math/vector';
@@ -15,7 +16,6 @@ import {GameState} from '#/state';
 import {GameStorage} from '#/storage';
 import {DevUI, toggleDevPanelVisibility, toggleFPSVisibility} from '#/ui/dev';
 import {notify} from '#/ui/notification';
-import {GameConfig} from '#/config';
 
 export interface InputState {
     game: GameInputState;
@@ -58,12 +58,12 @@ export interface ExtraInputState {
 
 export function handleKeymaps(state: GameState, input: GameInput): InputState {
     let gameInput: GameInputState | undefined;
+    const extraInput = handleExtraKeymaps(input);
     if (state.recording.playing) {
-        gameInput = getNextRecordedInput(state.recording, state.recordingData) ?? {};
+        gameInput = getNextRecordedInput(state, extraInput.triggerSingleUpdate ?? false) ?? {};
     } else {
         gameInput = handleGameKeymaps(input);
     }
-    const extraInput = handleExtraKeymaps(input);
     return {game: gameInput, extra: extraInput};
 }
 
@@ -173,7 +173,10 @@ export function handleExtraKeymaps(input: GameInput): ExtraInputState {
 
         if (input.isDown('MouseMiddle') || input.isDown('MouseLeft')) {
             // NOTE: Support also mouse left to have a convenient way to move camera on touchpad
-            result.devCameraOffset = input.getMouseDelta();
+            const delta = input.getMouseDelta();
+            if (delta.x !== 0 && delta.y !== 0) {
+                result.devCameraOffset = delta;
+            }
         }
 
         if (input.isPressed('Digit0')) {
@@ -201,14 +204,12 @@ export function processInput(
     menu: MenuBridge,
     devUI: DevUI,
     storage: GameStorage,
-    events: EventQueue,
 ) {
     if (state.playing) {
-        state.player.changeDirection(input.game.playerDirection ?? null);
+        changePlayerDirection(state.player, input.game.playerDirection ?? null);
     }
     if (input.game.playerShooting) {
-        const event = state.player.shoot();
-        if (event) events.push(event);
+        tryTriggerTankShooting(state.player, state);
     }
 
     if (input.extra.toggleFullscreen) {
@@ -225,7 +226,7 @@ export function processInput(
             const action = state.playing ? 'pause' : 'resume';
             const ignoreMenu = Boolean(input.extra.toggleGamePauseIgnoreMenu);
             if (ignoreMenu) notify(state.playing ? 'Paused' : 'Resumed');
-            events.push({type: 'game-control', action, ignoreMenu});
+            state.events.push({type: 'game-control', action, ignoreMenu});
         }
     }
 
@@ -253,7 +254,7 @@ export function processInput(
 
     if (input.extra.playOrExitRecording) {
         if (!state.recording.playing) {
-            playRecentRecording(state, events);
+            playRecentRecording(state);
         } else {
             exitRecording(state, menu);
         }

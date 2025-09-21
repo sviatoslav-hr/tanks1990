@@ -220,13 +220,7 @@ export class Renderer {
         this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
     }
 
-    resizeCanvasByWindow(window: Window): void {
-        const width = window.innerWidth;
-        const height = window.innerHeight;
-        this.resizeCanvas(width, height);
-    }
-
-    private resizeCanvas(width: number, height: number): void {
+    resizeCanvas(width: number, height: number): void {
         this.canvas.style.width = width + 'px';
         this.canvas.style.height = height + 'px';
         this.canvas.width = width;

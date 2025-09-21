@@ -3,15 +3,16 @@ import {beforeEach, describe, expect, it, vi} from 'vitest';
 import {isIntesecting} from '#/entity/core';
 import {EnemyTank} from '#/entity/tank';
 import {type TankSchema} from '#/entity/tank/generation';
-import {EventQueue} from '#/events';
+import {simulateAllTanks, spawnEnemy} from '#/entity/tank/simulation';
 import {isPosInsideRect, Rect} from '#/math';
 import {Duration} from '#/math/duration';
 import {random} from '#/math/rng';
 import {Vector2Like} from '#/math/vector';
 import {findPath} from '#/pathfinding';
-import {spawnEnemy} from '#/entity/tank/enemy';
-import {initEntities, simulateTanks} from '#/simulation';
-import {GameState} from './state';
+import {initEntities} from '#/simulation';
+import {SoundManager} from '#/sound';
+import {GameState} from '#/state';
+import {GameStorage} from '#/storage';
 
 function spriteMock() {
     return {
@@ -20,6 +21,13 @@ function spriteMock() {
     };
 }
 
+vi.mock('#/sounds', () => {
+    return {
+        SoundManager: class {
+            play = () => ({});
+        },
+    };
+});
 vi.mock('#/renderer/sprite', () => {
     return {
         createStaticSprite: () => spriteMock(),
@@ -88,15 +96,15 @@ describe('Pathfinding', () => {
         stepsLimit = 1000,
         debug = false,
     ) {
-        const state = new GameState();
+        const storage = new GameStorage(new InMemoryStorage());
+        const state = new GameState(new SoundManager(storage));
         state.world.roomsLimit = 1;
         initEntities(state);
         const activeWave = state.world.activeRoom.wave;
         activeWave.clearExpected();
         spawnEnemy(state, 'light', true);
         const enemy = state.tanks.find((t) => t instanceof EnemyTank) as EnemyTank;
-        const eventQueue = new EventQueue();
-        simulateTanks(Duration.milliseconds(0), state.tanks, activeWave, eventQueue);
+        simulateAllTanks(Duration.milliseconds(0), state);
         assert(enemy, 'Enemy tank not found');
         assert(!enemy.dead, 'Enemy tank should not be dead (should respawn)');
         assert(state.tanks.length === 2, 'Expected only 2 tanks'); // Player + enemy
@@ -145,3 +153,31 @@ describe('Pathfinding', () => {
         return `{${rect.x};${rect.y};${rect.width};${rect.height}}`;
     }
 });
+
+class InMemoryStorage implements Storage {
+    private data: Record<string, string> = {};
+    get length(): number {
+        return Object.values(this.data).length;
+    }
+
+    clear(): void {
+        this.data = {};
+    }
+
+    key(index: number): string | null {
+        const keys = Object.keys(this.data);
+        return keys[index] ?? null;
+    }
+
+    getItem(key: string): string | null {
+        return this.data[key] ?? null;
+    }
+
+    setItem(key: string, value: string): void {
+        this.data[key] = value;
+    }
+
+    removeItem(key: string): void {
+        delete this.data[key];
+    }
+}

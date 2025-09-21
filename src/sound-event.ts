@@ -1,5 +1,4 @@
-import type {EventQueue} from '#/events';
-import {type SoundConfig, SoundName} from '#/sound';
+import {Sound, type SoundConfig, SoundManager, SoundName} from '#/sound';
 
 export type SoundEventType =
     | 'game-started'
@@ -14,7 +13,7 @@ export type SoundEventType =
 const allSoundConfigs: Record<SoundEventType, SoundConfig> = {
     ['game-started']: {name: SoundName.LEVEL_START, volume: 0.5},
     ['game-over']: {name: SoundName.GAME_OVER, volume: 1},
-    // TODO: game-completed
+    // TODO: game-completed, room-cleared
 
     ['enemy-shooting']: {name: SoundName.SHOOTING, volume: 0.15},
     ['enemy-damaged']: {name: SoundName.HIT, volume: 0.3},
@@ -25,9 +24,8 @@ const allSoundConfigs: Record<SoundEventType, SoundConfig> = {
     ['player-destroyed']: {name: SoundName.EXPLOSION, volume: 1},
 };
 
-export function soundEvent(events: EventQueue, soundType: SoundEventType): void {
-    events.push({
-        type: 'sound',
-        config: allSoundConfigs[soundType],
-    });
+export function soundEvent(sounds: SoundManager, soundType: SoundEventType): Sound {
+    const config = allSoundConfigs[soundType];
+    const sound = sounds.play(config);
+    return sound;
 }

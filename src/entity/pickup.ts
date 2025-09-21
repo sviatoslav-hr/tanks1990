@@ -8,6 +8,7 @@ import {
     SHIELD_PICKUP_DURATION,
     SPEED_INCREASE_MULT,
 } from '#/entity/tank/generation';
+import {activateTankShield, restoreTankHealth} from '#/entity/tank/simulation';
 import {Rect, scaleRectCentered} from '#/math';
 import {random} from '#/math/rng';
 import {Renderer} from '#/renderer';
@@ -101,14 +102,14 @@ function applyPickup(pickup: Pickup, tank: Tank): void {
     switch (pickup.type) {
         case PickupType.REPAIR:
             if (tank.needsHealing) {
-                tank.restoreHealthAmount(RESTORE_HP_AMOUNT);
+                restoreTankHealth(tank, RESTORE_HP_AMOUNT);
             } else {
                 skipped = true;
             }
             break;
         case PickupType.SHIELD:
             // NOTE: If tank already has shield, prolong it instead of overwriting.
-            tank.activateShield(SHIELD_PICKUP_DURATION);
+            activateTankShield(tank, SHIELD_PICKUP_DURATION);
             break;
         case PickupType.SPEED_BOOST:
             tank.speedMult += SPEED_INCREASE_MULT;

@@ -101,7 +101,7 @@ export class SoundManager {
         }
     }
 
-    playSound(config: SoundConfig): Sound {
+    play(config: SoundConfig): Sound {
         const {name: type, volume: volumeScale = 1, loop = false} = config;
         const shouldPlay = this.audioContext.state === 'running' || loop;
 

@@ -1,5 +1,5 @@
-import {spawnEnemy} from '#/entity/tank/enemy';
-import {importRecording, toggleRecordingEnabledOrStop} from '#/recording';
+import {spawnEnemy} from '#/entity/tank/simulation';
+import {importRecording, playRecentRecording, toggleRecordingEnabledOrStop} from '#/recording';
 import {Renderer} from '#/renderer';
 import {GameState} from '#/state';
 import {exportAsJson, GameStorage} from '#/storage';
@@ -71,6 +71,10 @@ export function createDevUI(state: GameState, renderer: Renderer, cache: GameSto
         .addButton()
         .setName('Toggle Recording')
         .onClick(() => toggleRecordingEnabledOrStop(state));
+    toolsFolder
+        .addButton()
+        .setName('Play Recording')
+        .onClick(() => playRecentRecording(state));
     toolsFolder
         .addFilePicker()
         .setPlaceholder('Import Recording')
