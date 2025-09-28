@@ -142,15 +142,19 @@ export function simulateAllProjectiles(dt: Duration, state: GameState): void {
     }
 }
 
-export function drawAllProjectiles(renderer: Renderer, state: GameState): void {
-    for (const projectile of state.projectiles) {
+export function drawAllProjectiles(renderer: Renderer, projectiles: Projectile[]): void {
+    for (const projectile of projectiles) {
         if (projectile.dead) continue;
         drawProjectileTrail(renderer, projectile);
         projectile.sprite.draw(renderer, projectile, getDirectionAngle(projectile.direction));
-        if (state.config.debugShowBoundaries) {
-            renderer.setStrokeColor(Color.PINK);
-            renderer.strokeBoundary(projectile, 1);
-        }
+    }
+}
+
+export function drawAllProjectilesDebugUI(renderer: Renderer, projectiles: Projectile[]): void {
+    for (const projectile of projectiles) {
+        if (projectile.dead) continue;
+        renderer.setStrokeColor(Color.PINK);
+        renderer.strokeBoundary(projectile, 1);
     }
 }
 

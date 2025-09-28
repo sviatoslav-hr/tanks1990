@@ -44,8 +44,6 @@ function main(): void {
     sounds.loadAllSounds().then(() => logger.debug('[Sounds] All sounds loaded'));
     preloadEffectImages();
 
-    state.config.load(state.storage);
-
     const renderer = new Renderer(state.playerCamera);
     appElement.append(renderer.canvas);
 
@@ -53,7 +51,7 @@ function main(): void {
     {
         menu.volume.set(sounds.volume);
         menu.volume.subscribe((value) => sounds.updateVolume(value));
-        menu.muted.set(sounds.storedMuted);
+        menu.muted.set(sounds.initiallyMuted);
         menu.muted.subscribe((muted) => (muted ? sounds.suspend() : sounds.resume()));
         Menu(uiGlobal, menu.props()).appendTo(appElement);
     }
@@ -119,7 +117,6 @@ function runGame(
             logger.error('Error in animationCallback\n%O', err);
         }
         devUI.fpsMonitor.end();
-        state.config.saveIfChanged(state.storage);
 
         let nextFrameManualDt: number | null = null;
         if (state.recording.playing) {

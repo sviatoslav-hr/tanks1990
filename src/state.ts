@@ -16,7 +16,6 @@ import {Camera} from '#/renderer/camera';
 import {SoundManager, type Sound} from '#/sound';
 import type {Room} from '#/world/room';
 import {World} from '#/world/world';
-import {GameConfig} from './config';
 import {GameStorage} from './storage';
 
 export enum GameStatus {
@@ -33,6 +32,7 @@ export class GameState {
     status = GameStatus.INITIAL;
     gameCompleted = false;
     debugUpdateTriggered = false;
+    debugShowBoundaries = false;
 
     readonly world = new World();
     readonly player = new PlayerTank();
@@ -47,14 +47,12 @@ export class GameState {
     battleMusic: Sound | null = null;
     storage: GameStorage;
     sounds: SoundManager;
-    config: GameConfig;
     playerCamera = new Camera();
     devCamera = new Camera();
 
     constructor(storage: GameStorage) {
         this.storage = storage;
         this.sounds = new SoundManager(storage);
-        this.config = new GameConfig();
     }
 
     recording: RecordingStatus = {

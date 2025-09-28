@@ -33,7 +33,7 @@ export interface ExtraInputState {
     toggleFullscreen?: boolean;
     toggleMute?: boolean;
     triggerSingleUpdate?: boolean;
-    showBoundaries?: boolean;
+    toggleDebugBoundaries?: boolean;
     toggleDevMode?: boolean;
     toggleFPSMonitor?: boolean;
     toggleFPSMonitorPause?: boolean;
@@ -125,7 +125,7 @@ export function handleExtraKeymaps(input: GameInput): ExtraInputState {
         }
 
         if (input.isPressed('KeyB')) {
-            result.showBoundaries = true;
+            result.toggleDebugBoundaries = true;
         }
 
         if (input.isPressed('KeyO')) {
@@ -240,8 +240,8 @@ export function processInput(
         state.debugUpdateTriggered = true;
     }
 
-    if (input.extra.showBoundaries) {
-        state.config.setDebugShowBoundaries(!state.config.debugShowBoundaries);
+    if (input.extra.toggleDebugBoundaries) {
+        state.debugShowBoundaries = !state.debugShowBoundaries;
     }
 
     if (input.extra.toggleRecording) {

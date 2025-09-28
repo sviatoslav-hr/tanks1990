@@ -24,7 +24,7 @@ export interface SoundConfig {
 export class SoundManager {
     #volume = 1 * VOLUME_SCALE;
     #mutePromise: Promise<void> | null = null;
-    readonly storedMuted: boolean; // NOTE: This is only used during initialization because context.state updates asynchronously.
+    readonly initiallyMuted: boolean; // NOTE: This is only used during initialization because context.state updates asynchronously.
 
     // TODO: This should be created only after user made any action on the page.
     private readonly soundsCache = new Map<SoundName, Sound[]>();
@@ -33,8 +33,8 @@ export class SoundManager {
         private readonly storage: GameStorage,
         private readonly audioContext = new AudioContext(),
     ) {
-        this.storedMuted = storage.getBool(GAME_MUTED_KEY) ?? false;
-        if (this.storedMuted) this.suspend();
+        this.initiallyMuted = storage.getBool(GAME_MUTED_KEY) ?? false;
+        if (this.initiallyMuted) this.suspend();
     }
 
     get volume(): number {

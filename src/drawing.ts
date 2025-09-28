@@ -1,6 +1,6 @@
 import {tryCacheExplosions} from '#/effect';
 import {drawPickups} from '#/entity/pickup';
-import {drawAllProjectiles} from '#/entity/projectile';
+import {drawAllProjectiles, drawAllProjectilesDebugUI} from '#/entity/projectile';
 import {
     drawAllTankModels,
     drawAllTanksDevUI,
@@ -21,7 +21,6 @@ export function drawGame(renderer: Renderer, state: GameState, options: DrawGame
     for (const effect of state.effects) {
         effect.draw(renderer);
     }
-    drawWorldBlocks(renderer, world);
     drawPickups(renderer, world.activeRoom.pickups);
 
     for (const boom of state.booms) {
@@ -29,12 +28,16 @@ export function drawGame(renderer: Renderer, state: GameState, options: DrawGame
     }
 
     drawAllTankModels(renderer, state.tanks);
+    drawWorldBlocks(renderer, world);
     tryCacheExplosions(renderer, state);
-    drawAllProjectiles(renderer, state);
+    drawAllProjectiles(renderer, state.projectiles);
+
     if (options.drawUI) {
-        const config = state.config;
-        if (config.debugShowBoundaries) drawWorldDebugUI(renderer, world);
-        if (config.debugShowBoundaries) drawAllTanksDevUI(renderer, state.tanks);
+        if (state.debugShowBoundaries) {
+            drawWorldDebugUI(renderer, world);
+            drawAllProjectilesDebugUI(renderer, state.projectiles);
+            drawAllTanksDevUI(renderer, state.tanks);
+        }
         drawEnemyTanksUI(renderer, state.tanks);
         drawPlayerTankUI(renderer, state.player);
     }

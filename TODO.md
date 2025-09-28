@@ -4,7 +4,7 @@
 
 ## NEXT TODO
 - [ ] Move tank enemy AI stuff into separate file from simulation
-- [ ] Delete Config and move showBoundaries into 
+- [ ] Mute is not working across sessions (does not reproduce locally)
 - [ ] Add animation/SFX to room door opening to hint player that's where he needs to go next
 - [ ] Pathfinding: Double check/reimplement the pathfinding to fully implements A* algorithm
 
