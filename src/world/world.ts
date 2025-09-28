@@ -2,7 +2,7 @@ import {Block} from '#/entity/block';
 import {GameState} from '#/state';
 import {createRoomsFromGraph, MAX_ROOMS_COUNT} from '#/world/generation';
 import {generateWorldGraph, type WorldGraph} from '#/world/graph';
-import {Room} from '#/world/room';
+import {Room, tempRoom} from '#/world/room';
 
 const FINAL_ROOMS_COUNT = 3;
 
@@ -17,7 +17,7 @@ export interface World {
 export function newWorld(): World {
     return {
         roomsLimit: MAX_ROOMS_COUNT,
-        activeRoom: Room.temp(),
+        activeRoom: tempRoom(),
         activeRoomInFocus: false,
         rooms: [],
         graph: null,
@@ -38,7 +38,7 @@ export function initWorld(state: GameState): void {
 }
 
 export function resetWorld(world: World): void {
-    world.activeRoom = Room.temp();
+    world.activeRoom = tempRoom();
     world.activeRoomInFocus = false;
     world.rooms = [];
 }

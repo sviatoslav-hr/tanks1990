@@ -28,9 +28,9 @@
 
 ### Refactoring
 - [ ] Turn OOP code into procedural
-  - [ ] Room
-  - [ ] State
-  - [ ] Sounds
+  - Wave
+  - State
+  - Sounds
 - [ ] Revisit events
 - [ ] Outline how objects/classes should access each other (global vars/props/DI etc) (eg Renderer, Input, EntityManager, Entity etc)
 - [ ] Better way to store images and sprites (how bad Image is?)

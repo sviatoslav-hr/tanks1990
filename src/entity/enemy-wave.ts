@@ -16,12 +16,8 @@ export class EnemyWave {
         this.expectedEnemyIndex = 0;
     }
 
-    get enemiesCount(): number {
-        return this.aliveEnemies.length + this.enemyRespawnQueue.length;
-    }
-
     get cleared(): boolean {
-        return this.enemiesCount === 0;
+        return this.aliveEnemies.length + this.enemyRespawnQueue.length === 0;
     }
 
     get nextEnemyKind(): TankPartKind | undefined {

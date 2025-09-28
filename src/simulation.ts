@@ -8,7 +8,8 @@ import {Direction} from '#/math/direction';
 import {Duration} from '#/math/duration';
 import {Camera} from '#/renderer/camera';
 import {GameState} from '#/state';
-import {initWorld, resetWorld} from './world/world';
+import {getNextRoomWhenReached, updateActiveRoomStates} from '#/world/room';
+import {initWorld, resetWorld} from '#/world/world';
 
 export function initEntities(state: GameState): void {
     state.tanks = [state.player];
@@ -23,8 +24,8 @@ export function initEntities(state: GameState): void {
 export function simulateEntities(dt: Duration, state: GameState, camera: Camera): void {
     simulateEffects(dt, state);
     const world = state.world;
-    world.activeRoom?.update(state);
-    const nextRoom = world.activeRoom.shouldActivateNextRoom(state.player);
+    updateActiveRoomStates(state);
+    const nextRoom = getNextRoomWhenReached(world.activeRoom, state.player);
     if (nextRoom) {
         world.activeRoom = nextRoom;
         world.activeRoomInFocus = false;

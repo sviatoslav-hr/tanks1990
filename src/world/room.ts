@@ -13,173 +13,204 @@ import {WorldNode} from '#/world/graph';
 export const roomSizeInCells = new Vector2(12, 8);
 
 // TODO: Room code needs to be refactored, it's too complex, intermingled and messy #roomgen
-export class Room {
-    started = false;
+export interface Room {
+    started: boolean;
+    readonly depth: number;
+    readonly wave: EnemyWave;
+    readonly position: Vector2;
+    readonly sizeInCells: Vector2;
+
+    readonly node: WorldNode;
     readonly boundary: Rect;
+    readonly blocks: Block[];
+    pickups: Pickup[]; // = []
+
+    nextRoomDoorOpen: boolean;
+    nextRooms: Room[];
+    readonly nextRoomDirs: Direction[];
+    readonly nextRoomCommonBlocks: Block[];
     readonly nextRoomTransitionRects: Rect[];
-    nextRooms: Room[] = [];
-    nextRoomDoorOpen = false;
-    prevRoomDoorBlocks: Block[];
-    depth: number;
-    wave: EnemyWave;
-    pickups: Pickup[] = [];
 
-    constructor(
-        public node: WorldNode,
-        public position: Vector2,
-        public sizeInCells: Vector2,
-        public blocks: Block[],
-        public prevRooms: Room[],
-        public nextRoomDirs: Direction[],
-        public readonly nextRoomCommonBlocks: Block[],
-    ) {
-        this.boundary = {
-            x: this.position.x - 0.5 * CELL_SIZE * this.sizeInCells.width,
-            y: this.position.y - 0.5 * CELL_SIZE * this.sizeInCells.height,
-            width: CELL_SIZE * this.sizeInCells.width,
-            height: CELL_SIZE * this.sizeInCells.height,
-        };
-        for (const p of prevRooms) {
-            p.nextRooms.push(this);
-        }
-        this.nextRoomTransitionRects = this.nextRoomDirs.map((nextDir) =>
-            this.makeNextRoomTransitionRect(position, sizeInCells, nextDir),
-        );
-        this.depth = node.depth;
-        {
-            const wave = wavesPerRoom[this.depth - 1];
-            assert(wave);
-            // TODO: Clone the wave, just in case. But currently, there shouldn't be any problems with it.
-            wave.reset();
-            this.wave = wave;
-        }
-        // const prevRoomCommonBlocks = prevRooms.flatMap((p) => p.nextRoomCommonBlocks.slice());
-        // this.prevRoomDoorBlocks = prevRoomCommonBlocks.filter((block) => {
-        //     prevRooms.some((p) => p.nextRoomTransitionRects.some((r) => isIntersecting(block, r)));
-        // });
-        // TODO: For some reason, previous code doesn't work, but this does...
-        // PERF: Also, this is not optimal - too much looping.
-        this.prevRoomDoorBlocks = prevRooms.flatMap((p) =>
-            p.nextRoomCommonBlocks.filter((b) =>
-                p.nextRoomTransitionRects.some((r) => isIntesecting(b, r)),
-            ),
-        );
-        assert(this.depth === 1 || this.prevRoomDoorBlocks.length >= 2);
+    readonly prevRooms: Room[];
+    readonly prevRoomDoorBlocks: Block[];
+}
+
+export function isRoomCompleted(room: Room): boolean {
+    return room.started && room.wave.cleared;
+}
+
+export function newRoom(
+    node: WorldNode,
+    position: Vector2,
+    sizeInCells: Vector2,
+    blocks: Block[],
+    prevRooms: Room[],
+    nextRoomDirs: Direction[],
+    nextRoomCommonBlocks: Block[],
+): Room {
+    const boundary: Rect = {
+        x: position.x - 0.5 * CELL_SIZE * sizeInCells.width,
+        y: position.y - 0.5 * CELL_SIZE * sizeInCells.height,
+        width: CELL_SIZE * sizeInCells.width,
+        height: CELL_SIZE * sizeInCells.height,
+    };
+    const nextRoomTransitionRects = nextRoomDirs.map((nextDir) =>
+        makeNextRoomTransitionRect(position, sizeInCells, nextDir),
+    );
+    const depth = node.depth;
+    const wave = wavesPerRoom[depth - 1];
+    assert(wave);
+    // TODO: Clone the wave, just in case. But currently, there shouldn't be any problems with it.
+    wave.reset();
+    // const prevRoomCommonBlocks = prevRooms.flatMap((p) => p.nextRoomCommonBlocks.slice());
+    // this.prevRoomDoorBlocks = prevRoomCommonBlocks.filter((block) => {
+    //     prevRooms.some((p) => p.nextRoomTransitionRects.some((r) => isIntersecting(block, r)));
+    // });
+    // TODO: For some reason, previous code doesn't work, but this does...
+    // PERF: Also, this is not optimal - too much looping.
+    const prevRoomDoorBlocks = prevRooms.flatMap((p) =>
+        p.nextRoomCommonBlocks.filter((b) =>
+            p.nextRoomTransitionRects.some((r) => isIntesecting(b, r)),
+        ),
+    );
+    assert(depth === 1 || prevRoomDoorBlocks.length >= 2);
+
+    const room: Room = {
+        started: false,
+        depth,
+        wave,
+        position,
+        sizeInCells,
+
+        node,
+        boundary,
+        blocks,
+        pickups: [],
+
+        nextRoomDoorOpen: false,
+        nextRooms: [],
+        nextRoomDirs,
+        nextRoomCommonBlocks,
+        nextRoomTransitionRects,
+
+        prevRooms,
+        prevRoomDoorBlocks,
+    };
+    for (const p of prevRooms) {
+        p.nextRooms.push(room);
     }
 
-    // NOTE: This is only used as a temporary replaced for the first room to not make it nullable.
-    static temp(): Room {
-        const zero: WorldNode = {x: 0, y: 0, depth: 1, connectedNodes: {}};
-        return new Room(zero, new Vector2(0, 0), roomSizeInCells, [], [], [Direction.NORTH], []);
-    }
+    return room;
+}
 
-    get completed(): boolean {
-        return this.started && this.wave.cleared;
-    }
+// HACK: This is only used as a temporary replaced for the first room to not make it nullable.
+export function tempRoom(): Room {
+    const zero: WorldNode = {x: 0, y: 0, depth: 1, connectedNodes: {}};
+    return newRoom(zero, new Vector2(0, 0), roomSizeInCells, [], [], [Direction.NORTH], []);
+}
 
-    shouldActivateNextRoom(player: Entity): Room | null {
-        if (!this.nextRooms.length || !this.nextRoomDoorOpen) return null;
-        const rectIndex = this.nextRoomTransitionRects.findIndex((r) => isIntesecting(player, r));
-        if (rectIndex === -1) return null;
-        const nextDirection = this.nextRoomDirs[rectIndex];
-        assert(nextDirection);
-        const nextRoom = this.nextRooms.find(
-            (r) => getDirectionBetween(this.node, r.node) === nextDirection,
-        );
-        assert(nextRoom);
-        return nextRoom;
-    }
-
-    update(state: GameState): void {
-        if (!this.started) {
-            this.maybeStartRoom(state.player);
-        } else if (this.completed && !this.nextRoomDoorOpen) {
-            if (this.nextRooms.length) {
-                logger.debug(
-                    '[Room] Room %i cleared. Opening door to room %i',
-                    this.depth,
-                    this.depth + 1,
-                );
-                this.openNextRoomDoors();
-            } else {
-                logger.debug('[Room] Last room %i cleared.', this.depth);
-                // HACK: Last room doesn't have doors, we just mark to not flood with logs.
-                this.nextRoomDoorOpen = true;
-            }
+export function updateActiveRoomStates(state: GameState): void {
+    const room = state.world.activeRoom;
+    if (!room.started) {
+        maybeStartRoom(room, state.player);
+    } else if (isRoomCompleted(room) && !room.nextRoomDoorOpen) {
+        if (room.nextRooms.length) {
+            logger.debug(
+                '[Room] Room %i cleared. Opening door to room %i',
+                room.depth,
+                room.depth + 1,
+            );
+            openNextRoomDoors(room);
+        } else {
+            logger.debug('[Room] Last room %i cleared.', room.depth);
+            // HACK: Last room doesn't have doors, we just mark to not flood with logs.
+            room.nextRoomDoorOpen = true;
         }
     }
+}
 
-    private maybeStartRoom(player: PlayerTank): void {
-        assert(!this.started);
-        if (!isIntesecting(player, this.boundary)) {
-            return;
-        }
+export function getNextRoomWhenReached(room: Room, player: Entity): Room | null {
+    if (!room.nextRooms.length || !room.nextRoomDoorOpen) return null;
+    const rectIndex = room.nextRoomTransitionRects.findIndex((r) => isIntesecting(player, r));
+    if (rectIndex === -1) return null;
+    const nextDirection = room.nextRoomDirs[rectIndex];
+    assert(nextDirection);
+    const nextRoom = room.nextRooms.find(
+        (r) => getDirectionBetween(room.node, r.node) === nextDirection,
+    );
+    assert(nextRoom);
+    return nextRoom;
+}
 
-        const isPlayerInsideDoors = this.prevRoomDoorBlocks.some((b) => isIntesecting(b, player));
-        if (!isPlayerInsideDoors) {
-            for (const b of this.prevRoomDoorBlocks) {
-                b.dead = false;
-            }
-            this.started = true;
-        }
+function maybeStartRoom(room: Room, player: PlayerTank): void {
+    assert(!room.started);
+    if (!isIntesecting(player, room.boundary)) {
+        return;
     }
 
-    private openNextRoomDoors(): void {
-        for (const searchRect of this.nextRoomTransitionRects) {
-            // TODO: Instead of just removing the blocks, animate door opening.
-            const block1 = this.blocks.find((b) => !b.dead && isIntesecting(b, searchRect));
-            assert(block1 != null);
-            block1.dead = true;
-            const block2 = this.blocks.find((b) => !b.dead && isIntesecting(b, searchRect));
-            assert(block2 != null);
-            block2.dead = true;
+    const isPlayerInsideDoors = room.prevRoomDoorBlocks.some((b) => isIntesecting(b, player));
+    if (!isPlayerInsideDoors) {
+        for (const b of room.prevRoomDoorBlocks) {
+            b.dead = false;
         }
-        this.nextRoomDoorOpen = true;
+        room.started = true;
     }
+}
+function openNextRoomDoors(room: Room): void {
+    for (const searchRect of room.nextRoomTransitionRects) {
+        // TODO: Instead of just removing the blocks, animate door opening.
+        const block1 = room.blocks.find((b) => !b.dead && isIntesecting(b, searchRect));
+        assert(block1 != null);
+        block1.dead = true;
+        const block2 = room.blocks.find((b) => !b.dead && isIntesecting(b, searchRect));
+        assert(block2 != null);
+        block2.dead = true;
+    }
+    room.nextRoomDoorOpen = true;
+}
 
-    private makeNextRoomTransitionRect(
-        position: Vector2,
-        sizeInCells: Vector2,
-        nextDoorDir: Direction,
-    ): Rect {
-        let x = position.x;
-        let y = position.y;
-        const xOffset = (sizeInCells.width * CELL_SIZE) / 2;
-        const yOffset = (sizeInCells.height * CELL_SIZE) / 2;
-        const rectASize = CELL_SIZE; // NOTE: Longer side is positioned across the wall.
-        const rectBSize = CELL_SIZE / 2;
-        const rectOffset = rectBSize / 2;
-        // NOTE: Rect should be positioned in the middle of the wall.
-        switch (nextDoorDir) {
-            case Direction.NORTH:
-                return {
-                    x: x - CELL_SIZE / 2,
-                    // NOTE: Since position is the top-left corner, we need to subtract the size in north and west directions.
-                    y: y - yOffset - rectBSize - rectOffset,
-                    width: rectASize,
-                    height: rectBSize,
-                };
-            case Direction.WEST:
-                return {
-                    x: x - xOffset - rectBSize - rectOffset,
-                    y: y - CELL_SIZE / 2,
-                    width: rectBSize,
-                    height: rectASize,
-                };
-            case Direction.SOUTH:
-                return {
-                    x: x - CELL_SIZE / 2,
-                    y: y + yOffset + rectOffset,
-                    width: rectASize,
-                    height: rectBSize,
-                };
-            case Direction.EAST:
-                return {
-                    x: x + xOffset + rectOffset,
-                    y: y - CELL_SIZE / 2,
-                    width: rectBSize,
-                    height: rectASize,
-                };
-        }
+function makeNextRoomTransitionRect(
+    position: Vector2,
+    sizeInCells: Vector2,
+    nextDoorDir: Direction,
+): Rect {
+    let x = position.x;
+    let y = position.y;
+    const xOffset = (sizeInCells.width * CELL_SIZE) / 2;
+    const yOffset = (sizeInCells.height * CELL_SIZE) / 2;
+    const rectASize = CELL_SIZE; // NOTE: Longer side is positioned across the wall.
+    const rectBSize = CELL_SIZE / 2;
+    const rectOffset = rectBSize / 2;
+    // NOTE: Rect should be positioned in the middle of the wall.
+    switch (nextDoorDir) {
+        case Direction.NORTH:
+            return {
+                x: x - CELL_SIZE / 2,
+                // NOTE: Since position is the top-left corner, we need to subtract the size in north and west directions.
+                y: y - yOffset - rectBSize - rectOffset,
+                width: rectASize,
+                height: rectBSize,
+            };
+        case Direction.WEST:
+            return {
+                x: x - xOffset - rectBSize - rectOffset,
+                y: y - CELL_SIZE / 2,
+                width: rectBSize,
+                height: rectASize,
+            };
+        case Direction.SOUTH:
+            return {
+                x: x - CELL_SIZE / 2,
+                y: y + yOffset + rectOffset,
+                width: rectASize,
+                height: rectBSize,
+            };
+        case Direction.EAST:
+            return {
+                x: x + xOffset + rectOffset,
+                y: y - CELL_SIZE / 2,
+                width: rectBSize,
+                height: rectASize,
+            };
     }
 }

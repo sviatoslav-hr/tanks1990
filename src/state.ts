@@ -14,7 +14,7 @@ import {
 } from '#/recording';
 import {Camera} from '#/renderer/camera';
 import {SoundManager, type Sound} from '#/sound';
-import type {Room} from '#/world/room';
+import {isRoomCompleted, type Room} from '#/world/room';
 import {newWorld} from '#/world/world';
 import {GameStorage} from './storage';
 
@@ -210,7 +210,7 @@ export function checkGameCompletion(state: GameState): void {
 }
 
 function justCompletedGame(state: GameState, room: Room): boolean {
-    return state.playing && !state.gameCompleted && room.completed && !room.nextRooms.length;
+    return state.playing && !state.gameCompleted && isRoomCompleted(room) && !room.nextRooms.length;
 }
 
 export function isOccupied(pos: Vector2Like, state: GameState, ignoredEntity?: Entity): boolean {

@@ -16,7 +16,7 @@ import {
     type WorldNode,
     type WorldNodeKey,
 } from '#/world/graph';
-import {Room, roomSizeInCells} from '#/world/room';
+import {newRoom, Room, roomSizeInCells} from '#/world/room';
 
 export const MAX_ROOMS_COUNT = wavesPerRoom.length;
 
@@ -124,7 +124,7 @@ function generateRoom(node: WorldNode, state: GameState, prevRooms: Room[]): Roo
         assert(nextRoomBlocks.length > 0);
     }
 
-    const room = new Room(
+    const room = newRoom(
         node,
         roomPosition,
         roomSizeInCells,
