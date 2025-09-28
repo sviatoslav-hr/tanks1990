@@ -15,7 +15,7 @@ import {
 import {Camera} from '#/renderer/camera';
 import {SoundManager, type Sound} from '#/sound';
 import type {Room} from '#/world/room';
-import {World} from '#/world/world';
+import {newWorld} from '#/world/world';
 import {GameStorage} from './storage';
 
 export enum GameStatus {
@@ -34,7 +34,7 @@ export class GameState {
     debugUpdateTriggered = false;
     debugShowBoundaries = false;
 
-    readonly world = new World();
+    readonly world = newWorld();
     readonly player = new PlayerTank();
     tanks: Tank[] = [];
     projectiles: Projectile[] = [];

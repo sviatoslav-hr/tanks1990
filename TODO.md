@@ -28,7 +28,6 @@
 
 ### Refactoring
 - [ ] Turn OOP code into procedural
-  - [ ] World
   - [ ] Room
   - [ ] State
   - [ ] Sounds

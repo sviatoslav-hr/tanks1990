@@ -1,21 +1,23 @@
 import {Color} from '#/color';
 import {CELL_SIZE} from '#/const';
 import {fmod} from '#/math';
-import {Renderer} from '#/renderer';
-import {Room} from '#/world/room';
-import {World} from '#/world/world';
+import {type Renderer} from '#/renderer';
+import {type Room} from '#/world/room';
+import {iterateAllBlocks, type World} from '#/world/world';
 
 const ROOM_BOUNDARY_COLOR = Color.RED;
+const WORLD_BG_COLOR = Color.BLACK_IERIE;
+const WORLD_GRID_COLOR = Color.BLACK_ONYX;
 
 export function drawWorldBlocks(renderer: Renderer, world: World): void {
-    for (const b of world.iterateBlocks()) {
+    for (const b of iterateAllBlocks(world)) {
         b.draw(renderer);
     }
 }
 export function drawWorldBackground(renderer: Renderer, world: World): void {
-    renderer.fillScreen(world.bgColor);
+    renderer.fillScreen(WORLD_BG_COLOR);
     if (true) {
-        drawWorldGrid(renderer, world.gridColor);
+        drawWorldGrid(renderer, WORLD_GRID_COLOR);
         for (const room of world.rooms) {
             if (renderer.camera.isRectVisible(room.boundary)) {
                 drawRoomNumber(renderer, room);

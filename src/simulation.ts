@@ -8,15 +8,16 @@ import {Direction} from '#/math/direction';
 import {Duration} from '#/math/duration';
 import {Camera} from '#/renderer/camera';
 import {GameState} from '#/state';
+import {initWorld, resetWorld} from './world/world';
 
 export function initEntities(state: GameState): void {
     state.tanks = [state.player];
     state.projectiles = [];
     state.effects = [];
     state.booms = [];
-    state.world.reset();
+    resetWorld(state.world);
     initTank(state.player);
-    state.world.init(state);
+    initWorld(state);
 }
 
 export function simulateEntities(dt: Duration, state: GameState, camera: Camera): void {
