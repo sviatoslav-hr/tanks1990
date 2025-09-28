@@ -7,6 +7,7 @@
   - [x] Tanks
   - [ ] Projectile
 - [ ] Add animation/SFX to room door opening to hint player that's where he needs to go next.
+- [ ] Pathfinding: Double check the pathfinding implementation if it fully implements A*;
 
 ## SHOULD BE FIXED
 - [ ] Battle music starts regardless muted or not
@@ -24,12 +25,10 @@
 ## BACKLOG
 
 ### Features
-- [ ] Add bouncing animation to pickups so they look more alive
 - [ ] Final boss - describe it first.
 
 ### Refactoring
 - [ ] Revisit events
-- [ ] Pathfinding: Double check the pathfinding implementation if it fully implements A*;
 - [ ] Outline how objects/classes should access each other (global vars/props/DI etc) (eg Renderer, Input, EntityManager, Entity etc)
 - [ ] Better way to store images and sprites (how bad Image is?)
 - [ ] Room creation code is too complex and intermingled... (see #roomgen)
@@ -55,6 +54,8 @@
 - [ ] Add friction to projectile movement
 
 ### Visual improvements
+- [ ] Add a visual/sound effect when shield is going to disappear
+- [ ] Add bouncing animation to pickups so they look more alive
 - [ ] Make a proper sprite for the tank explosion effect
 - [ ] Add some fire effect inside of the explosion (doesn't look like explosion otherwise)
 - [ ] Fire effect to gun (when projectile is fired/spawned)
