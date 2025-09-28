@@ -1,9 +1,10 @@
 import {CELL_SIZE} from '#/const';
+import {isRectOccupied} from '#/entity/lookup';
 import {Entity} from '#/entity/core';
 import {Rect, isPosInsideRect} from '#/math';
 import {MinPriorityQueue} from '#/math/priority-queue';
 import {Vector2, Vector2Like} from '#/math/vector';
-import {GameState, isRectOccupied} from '#/state';
+import {type GameState} from '#/state';
 
 type Node = {
     pos: Vector2;

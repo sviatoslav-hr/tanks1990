@@ -1,4 +1,5 @@
 import {spawnExplosionEffect} from '#/effect';
+import {findCollided} from '#/entity/lookup';
 import {moveEntity} from '#/entity/core';
 import {spawnProjectile} from '#/entity/projectile';
 import {isEnemyTank, isPlayerTank, PlayerTank, Tank} from '#/entity/tank';
@@ -51,7 +52,7 @@ export function simulateAllTanks(dt: Duration, state: GameState): void {
 
         simulateTankMovement(dt, tank);
 
-        const collided = state.findCollided(tank);
+        const collided = findCollided(state, tank);
         if (collided) {
             tank.collided = true;
             if (isEnemyTank(tank) && collided.id !== state.player.id && !state.player.dead) {
@@ -133,7 +134,7 @@ export function damageTank(tank: Tank, damage: number, state: GameState): boolea
     tank.healthAnimation.reset();
     tank.dead = tank.health <= 0;
     if (tank.dead) {
-        spawnExplosionEffect(state, tank.id);
+        spawnExplosionEffect(state, tank, isEnemyTank(tank));
         if (tank.bot) {
             const wave = state.world.activeRoom.wave;
             wave.acknowledgeEnemyDied(tank.id);

@@ -1,5 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 
+import {iterateCollidable} from '#/entity/lookup';
 import {isIntesecting} from '#/entity/core';
 import {EnemyTank} from '#/entity/tank';
 import {spawnEnemy} from '#/entity/tank/enemy';
@@ -128,7 +129,7 @@ describe('Pathfinding', () => {
         );
 
         for (const [i, p] of path.entries()) {
-            for (const e of state.iterateCollidable()) {
+            for (const e of iterateCollidable(state)) {
                 if (e === target) continue;
                 if (e === enemy) continue;
                 expect(

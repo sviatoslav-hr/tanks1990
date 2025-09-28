@@ -1,6 +1,7 @@
 import {Color} from '#/color';
 import {CELL_SIZE} from '#/const';
 import {spawnBoom} from '#/effect';
+import {iterateEntities} from '#/entity/lookup';
 import {Entity, isInside, isIntesecting, isSameEntity, moveEntity} from '#/entity/core';
 import {EntityId} from '#/entity/id';
 import {EnemyTank, PlayerTank} from '#/entity/tank';
@@ -115,7 +116,7 @@ export function simulateAllProjectiles(dt: Duration, state: GameState): void {
             continue outer;
         }
 
-        inner: for (const entity of state.iterateEntities()) {
+        inner: for (const entity of iterateEntities(state)) {
             if (
                 isSameEntity(entity, projectile) ||
                 entity.id === projectile.ownerId ||

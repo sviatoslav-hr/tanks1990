@@ -1,13 +1,14 @@
+import {findCollided} from '#/entity/lookup';
+import {Entity} from '#/entity/core';
 import {EnemyTank, isEnemyTank} from '#/entity/tank';
 import {TankPartKind} from '#/entity/tank/generation';
 import {initTank} from '#/entity/tank/simulation';
 import {moveToRandomCorner, sameSign} from '#/math';
-import {Duration} from '#/math/duration';
-import {GameState} from '#/state';
-import {Entity} from '#/entity/core';
 import {Direction} from '#/math/direction';
+import {Duration} from '#/math/duration';
 import {Vector2Like} from '#/math/vector';
 import {findPath} from '#/pathfinding';
+import {GameState} from '#/state';
 
 const ENEMY_RESPAWN_DELAY = Duration.milliseconds(1000);
 const ENEMY_RESPAWN_ATTEMPTS_LIMIT = 4;
@@ -55,7 +56,7 @@ export function respawnEnemy(tank: EnemyTank, state: GameState): boolean {
         const room = state.world.activeRoom;
         // TODO: Be more creative with spawn points
         moveToRandomCorner(tank, room.boundary);
-        const collided = state.findCollided(tank);
+        const collided = findCollided(state, tank);
         if (!collided) {
             initTank(tank);
             state.world.activeRoom.wave.acknowledgeEnemySpawned(tank.id);
@@ -156,7 +157,7 @@ export function handleMaybeMissedEnemyTargetPoint(tank: EnemyTank, state: GameSt
             } else if (dyPrev === dy) {
                 tank.x = targetPoint.x - tank.width / 2;
             }
-            const c = state.findCollided(tank);
+            const c = findCollided(state, tank);
             if (c) {
                 tank.x = prevX;
                 tank.y = prevY;

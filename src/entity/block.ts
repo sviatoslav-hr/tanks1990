@@ -1,12 +1,13 @@
 import {Color} from '#/color';
 import {CELL_SIZE} from '#/const';
+import {isRectOccupied} from '#/entity/lookup';
 import {Entity, isIntesecting} from '#/entity/core';
 import {Rect} from '#/math';
 import {Duration} from '#/math/duration';
 import {random} from '#/math/rng';
 import {Renderer} from '#/renderer';
 import {Sprite, createStaticSprite} from '#/renderer/sprite';
-import {GameState, isRectOccupied} from '#/state';
+import {GameState} from '#/state';
 
 export function generateBlocks(
     state: GameState,

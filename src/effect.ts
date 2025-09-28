@@ -256,12 +256,10 @@ export function tryCacheExplosions(renderer: Renderer, state: GameState): void {
     }
 }
 
-export function spawnExplosionEffect(state: GameState, sourceId: EntityId): void {
-    const tank = state.findTank(sourceId);
-    assert(tank, `Tank with id ${sourceId} not found for explosion effect`);
-    const cachedEffect = tank.bot ? state.cachedBotExplosion : state.cachedPlayerExplosion;
-    assert(cachedEffect, `Cached explosion effect not found, bot=${tank.bot}`);
-    const effect = cachedEffect.clone(tank);
+export function spawnExplosionEffect(state: GameState, boundary: Rect, isEnemy: boolean): void {
+    const cachedEffect = isEnemy ? state.cachedBotExplosion : state.cachedPlayerExplosion;
+    assert(cachedEffect, `Cached explosion effect not found, enemy=${isEnemy}`);
+    const effect = cachedEffect.clone(boundary);
     state.effects.push(effect);
 }
 
