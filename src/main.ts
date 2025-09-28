@@ -13,14 +13,13 @@ import {Duration} from '#/math/duration';
 import {getURLSeed, random, setURLSeed} from '#/math/rng';
 import {Menu, MenuBridge} from '#/menu';
 import {
-    getNextRecordedFrameDt,
-    isPlayingRecordingFinished,
-    isRecordingGameInputs,
-    recordGameInput,
+    isRecordingPlaybackActive,
+    maybeRecordGameInput,
+    scheduleNextRecordedFrame,
 } from '#/recording';
 import {Renderer} from '#/renderer';
 import {setupBackgroundScene, simulateEntities} from '#/simulation';
-import {GameState, justCompletedGame} from '#/state';
+import {checkGameCompletion, GameState} from '#/state';
 import {GameStorage} from '#/storage';
 import {uiGlobal} from '#/ui/core';
 import {createDevUI, DevUI} from '#/ui/dev';
@@ -100,11 +99,17 @@ function runGame(
                 menu.fullscreenToggleExpected = false;
             }
             processInput(inputState, renderer, state, menu, devUI);
-            if (isRecordingGameInputs(state)) recordGameInput(state, dt, inputState.game);
+            maybeRecordGameInput(state, dt, inputState.game);
 
-            // NOTE: It's better to just stop simulation after recording has finished playing.
-            if (!state.recording.playing || !isPlayingRecordingFinished(state)) {
-                simulateGameTick(dt, state);
+            // NOTE: Stopping simulation after recording has finished playing.
+            if (
+                state.recording.playing
+                    ? state.playing && isRecordingPlaybackActive(state)
+                    : state.playing || state.dead || state.debugUpdateTriggered
+            ) {
+                // NOTE: Showing enemies moving even when it's game-over to kind of troll the player "they continue living while you are dead".
+                simulateEntities(dt, state, state.playerCamera);
+                checkGameCompletion(state); // pushes events
             }
 
             drawOptions.drawUI = !menu.visible;
@@ -118,40 +123,17 @@ function runGame(
         }
         devUI.fpsMonitor.end();
 
-        let nextFrameManualDt: number | null = null;
-        if (state.recording.playing) {
-            nextFrameManualDt = getNextRecordedFrameDt(state);
+        let nextFrameScheduled = false;
+        if (state.playing && isRecordingPlaybackActive(state)) {
+            nextFrameScheduled = scheduleNextRecordedFrame(state, animationCallback);
         }
 
-        if (nextFrameManualDt == null) {
+        if (!nextFrameScheduled) {
             window.requestAnimationFrame(animationCallback);
-        } else {
-            state.recording.playingInputIndex++;
-            setTimeout(
-                animationCallback,
-                (nextFrameManualDt * 1000) / state.recording.playingSpeedMult,
-            );
         }
     };
 
     window.requestAnimationFrame(animationCallback);
-}
-
-function simulateGameTick(dt: Duration, state: GameState) {
-    const player = state.player;
-
-    if (state.playing && player.dead && player.healthAnimation.finished) {
-        state.events.push({type: 'game-control', action: 'game-over'});
-    }
-
-    if (!player.dead && justCompletedGame(state, state.world.activeRoom)) {
-        state.events.push({type: 'game-control', action: 'game-completed'});
-    }
-
-    // NOTE: Showing enemies moving even when it's game-over to kind of troll the player "they continue living while you are dead".
-    if (state.playing || state.dead || state.debugUpdateTriggered) {
-        simulateEntities(dt, state, state.playerCamera);
-    }
 }
 
 function resizeGame(renderer: Renderer, state: GameState): void {

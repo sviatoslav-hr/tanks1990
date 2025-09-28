@@ -33,10 +33,6 @@ export class World {
         this.activeRoom = startRoom;
     }
 
-    update(state: GameState): void {
-        this.activeRoom?.update(state);
-    }
-
     *iterateBlocks(): Generator<Block> {
         for (const room of this.rooms) {
             for (const block of room.blocks) {

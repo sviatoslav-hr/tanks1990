@@ -85,6 +85,7 @@ export class EnemyTank extends Tank implements Entity {
     shouldRespawn = false;
     moving = true;
     targetPath: Vector2Like[] = [];
+    dvPrev: Vector2Like = {x: 0, y: 0};
     targetSearchTimer = Duration.zero();
     respawnDelay = Duration.zero();
 }

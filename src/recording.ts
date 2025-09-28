@@ -4,6 +4,7 @@ import {random} from '#/math/rng';
 import {MenuBridge} from '#/menu';
 import type {GameState} from '#/state';
 import {notify} from '#/ui/notification';
+import {Result} from '#/common';
 
 export interface RecordingStatus {
     /** Indicates whether the next game sessions should be recorded. */
@@ -63,13 +64,13 @@ export function toggleRecordingEnabledOrStop(state: GameState): void {
     }
 }
 
-export function isRecordingGameInputs(state: GameState): boolean {
+function isRecordingGameInputs(state: GameState): boolean {
     const result = state.playing && state.recording.active && !state.recording.playing;
     return result;
 }
 
-export function recordGameInput(state: GameState, dt: Duration, input: GameInputState): void {
-    assert(isRecordingGameInputs(state));
+export function maybeRecordGameInput(state: GameState, dt: Duration, input: GameInputState): void {
+    if (!isRecordingGameInputs(state)) return;
     state.recordingData.inputs.push({...input, dt: dt.seconds});
 }
 
@@ -102,6 +103,13 @@ export function getNextRecordedInput(
         logger.error('Trying to trigger update, but there is no input left in the recording');
     }
     return input;
+}
+
+export function isRecordingPlaybackActive(state: GameState): boolean {
+    return (
+        state.recording.playing &&
+        state.recording.playingInputIndex < state.recordingData.inputs.length
+    );
 }
 
 export function isPlayingRecordingFinished(state: GameState): boolean {
@@ -145,12 +153,37 @@ export function exitRecording(state: GameState, menu: MenuBridge): void {
     notify('Recording playback stopped');
 }
 
+export function scheduleNextRecordedFrame(state: GameState, callback: () => void): boolean {
+    assert(state.recording.playing);
+    assert(state.playing);
+    const nextFrameRecordedDt = getNextRecordedFrameDt(state);
+    if (nextFrameRecordedDt == null) return false;
+    state.recording.playingInputIndex++;
+    const nextFrameDelay = (nextFrameRecordedDt * 1000) / state.recording.playingSpeedMult;
+    setTimeout(callback, nextFrameDelay);
+    return true;
+}
+
 export function importRecording(state: GameState, data: string): void {
-    const recordingInfo = JSON.parse(data) as RecordingData;
-    if (recordingInfo.version !== GAME_VERSION) {
-        logger.error('Unsupported game version "%s" in the recording', recordingInfo.version);
+    try {
+        const recordingInfo = JSON.parse(data) as RecordingData;
+        // NOTE: Assume recording is valid if version matches.
+        if (recordingInfo.version !== GAME_VERSION) {
+            logger.error('Unsupported game version "%s" in the recording', recordingInfo.version);
+            return;
+        }
+        state.recordingData = recordingInfo;
+        notify('Recording imported');
+    } catch (error) {
+        logger.error('Got invalid JSON for recording');
+    }
+}
+
+export async function tryFetchRecording(state: GameState): Promise<void> {
+    const response = await Result.async(fetch('./lvl-10-win.pzl.json')).mapPromise((r) => r.text());
+    if (response.isErr()) {
+        logger.error('Failed to fetch recording: %O', response);
         return;
     }
-    state.recordingData = recordingInfo;
-    notify('Recording imported');
+    importRecording(state, response.value);
 }

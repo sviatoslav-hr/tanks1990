@@ -2,7 +2,8 @@ import {CELL_SIZE} from '#/const';
 import {Boom, ParticleExplosion} from '#/effect';
 import {simulatePickups} from '#/entity/pickup';
 import {simulateAllProjectiles} from '#/entity/projectile';
-import {initTank, simulateAllTanks, spawnEnemy} from '#/entity/tank/simulation';
+import {spawnEnemy} from '#/entity/tank/enemy';
+import {initTank, simulateAllTanks} from '#/entity/tank/simulation';
 import {Direction} from '#/math/direction';
 import {Duration} from '#/math/duration';
 import {Camera} from '#/renderer/camera';
@@ -21,7 +22,7 @@ export function initEntities(state: GameState): void {
 export function simulateEntities(dt: Duration, state: GameState, camera: Camera): void {
     simulateEffects(dt, state);
     const world = state.world;
-    world.update(state);
+    world.activeRoom?.update(state);
     const nextRoom = world.activeRoom.shouldActivateNextRoom(state.player);
     if (nextRoom) {
         world.activeRoom = nextRoom;

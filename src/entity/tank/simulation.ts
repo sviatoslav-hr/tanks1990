@@ -1,20 +1,21 @@
 import {spawnExplosionEffect} from '#/effect';
-import {Entity, moveEntity} from '#/entity/core';
+import {moveEntity} from '#/entity/core';
 import {spawnProjectile} from '#/entity/projectile';
-import {EnemyTank, isEnemyTank, isPlayerTank, PlayerTank, Tank} from '#/entity/tank';
-import {SHIELD_SPAWN_DURATION, TankPartKind} from '#/entity/tank/generation';
-import {moveToRandomCorner, sameSign} from '#/math';
+import {isEnemyTank, isPlayerTank, PlayerTank, Tank} from '#/entity/tank';
+import {
+    chooseEnemyDirection,
+    handleMaybeMissedEnemyTargetPoint,
+    recalculateEnemyPath,
+    respawnEnemy,
+} from '#/entity/tank/enemy';
+import {SHIELD_SPAWN_DURATION} from '#/entity/tank/generation';
 import {Direction} from '#/math/direction';
 import {Duration} from '#/math/duration';
 import {Vector2Like} from '#/math/vector';
-import {findPath} from '#/pathfinding';
 import {soundEvent} from '#/sound-event';
 import {GameState} from '#/state';
 
 const STOPPING_TIME = Duration.milliseconds(50);
-const ENEMY_RESPAWN_DELAY = Duration.milliseconds(1000);
-const ENEMY_TARGET_SEARCH_DELAY = Duration.milliseconds(5000);
-const ENEMY_RESPAWN_ATTEMPTS_LIMIT = 4;
 
 export function simulateAllTanks(dt: Duration, state: GameState): void {
     const currentWave = state.world.activeRoom.wave;
@@ -34,22 +35,8 @@ export function simulateAllTanks(dt: Duration, state: GameState): void {
             continue;
         }
 
-        let dvPrev: Vector2Like | undefined;
         if (isEnemyTank(tank)) {
-            const player = state.player;
-            const newDirection = player.dead
-                ? null
-                : findEnemyTargetDirection(tank, player, dt, state);
-            if (newDirection != null && newDirection !== tank.direction) {
-                tank.velocity = 0;
-                tank.direction = newDirection;
-            }
-            const targetPoint = tank.targetPath[0] ?? null;
-            if (targetPoint) {
-                const dxPrev = tank.cx - targetPoint.x;
-                const dyPrev = tank.cy - targetPoint.y;
-                dvPrev = {x: dxPrev, y: dyPrev};
-            }
+            chooseEnemyDirection(tank, state, dt);
         }
 
         tank.shootingDelay.sub(dt).max(0);
@@ -82,10 +69,7 @@ export function simulateAllTanks(dt: Duration, state: GameState): void {
         simulateTankShield(tank, dt);
 
         if (isEnemyTank(tank)) {
-            const targetPoint = tank.targetPath[0] ?? null;
-            if (!tank.collided && targetPoint && dvPrev) {
-                handleMaybeMissedTargetPoint(tank, targetPoint, state, dvPrev);
-            }
+            handleMaybeMissedEnemyTargetPoint(tank, state);
             tryTriggerTankShooting(tank, state);
         } else if (isPlayerTank(tank) && !tank.completedGame) {
             tank.survivedFor.add(dt);
@@ -179,61 +163,6 @@ export function activateTankShield(tank: Tank, duration: Duration = SHIELD_SPAWN
     }
 }
 
-export function spawnEnemy(
-    state: GameState,
-    enemyKind?: TankPartKind,
-    skipDelay = false,
-): EnemyTank {
-    const deadEnemy = state.tanks.find(
-        (t) => isEnemyTank(t) && t.dead && !t.shouldRespawn,
-    ) as EnemyTank;
-    // NOTE: Enemy will be dead initially, but it will be re-spawned automatically with the delay
-    // to not spawn it immediately and also have the ability to not spawn everyone at once.
-    const enemy = deadEnemy ?? new EnemyTank();
-    assert(enemy.dead);
-    if (!deadEnemy) {
-        // NOTE: Player should be drawn last, so enemies are added to the beginning of the array.
-        state.tanks.unshift(enemy);
-        logger.debug('[Manager] Created new enemy tank', enemy.id);
-    } else {
-        logger.debug('[Manager] Reused dead enemy tank', enemy.id);
-    }
-    const wave = state.world.activeRoom.wave;
-    enemy.shouldRespawn = true;
-    if (skipDelay) {
-        if (enemyKind) enemy.changeKind(enemyKind);
-        enemy.respawnDelay.setMilliseconds(0);
-        respawnEnemy(enemy, state);
-    } else {
-        enemy.respawnDelay.setFrom(ENEMY_RESPAWN_DELAY);
-        wave.queueEnemy(enemy, enemyKind);
-    }
-    return enemy;
-}
-
-function respawnEnemy(tank: EnemyTank, state: GameState): boolean {
-    assert(tank.dead);
-    assert(tank.shouldRespawn);
-    assert(!tank.respawnDelay.positive);
-    const prevX = tank.x;
-    const prevY = tank.y;
-    for (let attempt = 0; attempt < ENEMY_RESPAWN_ATTEMPTS_LIMIT; attempt++) {
-        const room = state.world.activeRoom;
-        // TODO: Be more creative with spawn points
-        moveToRandomCorner(tank, room.boundary);
-        const collided = state.findCollided(tank);
-        if (!collided) {
-            initTank(tank);
-            state.world.activeRoom.wave.acknowledgeEnemySpawned(tank.id);
-            return true;
-        }
-    }
-    tank.x = prevX;
-    tank.y = prevY;
-    logger.warn('Failed to respawn enemy tank %d', tank.id);
-    return false;
-}
-
 function simulateTankShield(tank: Tank, dt: Duration): void {
     tank.shieldSprite.update(dt);
 
@@ -294,96 +223,4 @@ function getTankShootingOrigin(tank: Tank): Vector2Like {
         case Direction.WEST:
             return {x: tank.x, y: tank.y + tank.height / 2};
     }
-}
-
-function handleMaybeMissedTargetPoint(
-    tank: EnemyTank,
-    targetPoint: Vector2Like,
-    state: GameState,
-    dvPrev: Vector2Like,
-) {
-    const {x: dxPrev, y: dyPrev} = dvPrev;
-    const dx = tank.cx - targetPoint.x;
-    const dy = tank.cy - targetPoint.y;
-    // NOTE: If entity overstepped the target point, stop it and move back to target.
-    //       But only if case of a turn, because in a straight line tank starts bugging.
-    if ((dxPrev === dx && !sameSign(dyPrev, dy)) || (dyPrev === dy && !sameSign(dxPrev, dx))) {
-        tank.targetPath.shift();
-        if (isEnemyAtPoint(tank, targetPoint)) {
-        }
-        const nextPoint = tank.targetPath[0];
-        if (nextPoint) {
-            const nextDir = getTankDirectionToPoint(tank, nextPoint);
-            if (!nextDir) return;
-            const targetDir = tank.direction;
-            if (targetDir === nextDir) {
-                return;
-            }
-            tank.velocity = 0;
-            const prevX = tank.x;
-            const prevY = tank.y;
-            if (dxPrev === dx) {
-                tank.y = targetPoint.y - tank.height / 2;
-            } else if (dyPrev === dy) {
-                tank.x = targetPoint.x - tank.width / 2;
-            }
-            const c = state.findCollided(tank);
-            if (c) {
-                tank.x = prevX;
-                tank.y = prevY;
-            }
-        }
-    }
-}
-
-function findEnemyTargetDirection(
-    tank: EnemyTank,
-    target: Entity,
-    dt: Duration,
-    state: GameState,
-): Direction | null {
-    tank.targetSearchTimer.sub(dt).max(0);
-    if (tank.targetPath.length && tank.targetSearchTimer.positive) {
-        const targetPoint = tank.targetPath[0];
-        if (!targetPoint) return null;
-        if (isEnemyAtPoint(tank, targetPoint)) {
-            tank.targetPath.shift();
-            const nextPoint = tank.targetPath[0];
-            return nextPoint ? getTankDirectionToPoint(tank, nextPoint) : null;
-        }
-        return getTankDirectionToPoint(tank, targetPoint);
-    }
-
-    return recalculateEnemyPath(tank, target, state);
-}
-
-function recalculateEnemyPath(tank: EnemyTank, target: Entity, state: GameState): Direction | null {
-    tank.targetSearchTimer.setFrom(ENEMY_TARGET_SEARCH_DELAY);
-    const path = findPath(tank, target, state, 1000, undefined, false);
-    if (path) {
-        tank.targetPath = path;
-        const nextPoint = tank.targetPath[0];
-        assert(nextPoint);
-        return getTankDirectionToPoint(tank, nextPoint);
-    }
-    return null;
-}
-
-function isEnemyAtPoint(tank: EnemyTank, next: Vector2Like): boolean {
-    // NOTE: If entity is close enough to the target point, consider it reached
-    const eps = 1;
-    const diff = Math.max(Math.abs(tank.cx - next.x), Math.abs(tank.cy - next.y));
-    return diff < eps;
-}
-
-function getTankDirectionToPoint(tank: EnemyTank, next: Vector2Like): Direction | null {
-    const dx = next.x - Math.floor(tank.cx);
-    if (dx !== 0) {
-        return dx > 0 ? Direction.EAST : Direction.WEST;
-    }
-    const dy = next.y - Math.floor(tank.cy);
-    if (dy !== 0) {
-        return dy > 0 ? Direction.SOUTH : Direction.NORTH;
-    }
-    return null;
 }

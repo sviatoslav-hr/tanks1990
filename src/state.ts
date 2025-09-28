@@ -197,7 +197,19 @@ export class GameState {
     }
 }
 
-export function justCompletedGame(state: GameState, room: Room): boolean {
+export function checkGameCompletion(state: GameState): void {
+    const player = state.player;
+
+    if (state.playing && player.dead && player.healthAnimation.finished) {
+        state.events.push({type: 'game-control', action: 'game-over'});
+    }
+
+    if (!player.dead && justCompletedGame(state, state.world.activeRoom)) {
+        state.events.push({type: 'game-control', action: 'game-completed'});
+    }
+}
+
+function justCompletedGame(state: GameState, room: Room): boolean {
     return state.playing && !state.gameCompleted && room.completed && !room.nextRooms.length;
 }
 

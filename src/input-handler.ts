@@ -9,6 +9,7 @@ import {
     getNextRecordedInput,
     playRecentRecording,
     toggleRecordingEnabledOrStop,
+    tryFetchRecording,
 } from '#/recording';
 import {Renderer} from '#/renderer';
 import {GameState} from '#/state';
@@ -46,6 +47,7 @@ export interface ExtraInputState {
     devCameraResetToPlayer?: boolean;
     switchDevPlayerCameras?: boolean;
     toggleRecording?: boolean;
+    fetchRecording?: boolean;
     playOrExitRecording?: boolean;
     recordingPlayingSpeedMult?: number;
     // Useful for temporary keymaps
@@ -126,6 +128,10 @@ export function handleExtraKeymaps(input: GameInput): ExtraInputState {
 
         if (input.isPressed('KeyB')) {
             result.toggleDebugBoundaries = true;
+        }
+
+        if (input.isPressed('KeyU')) {
+            result.fetchRecording = true;
         }
 
         if (input.isPressed('KeyO')) {
@@ -242,6 +248,10 @@ export function processInput(
 
     if (input.extra.toggleDebugBoundaries) {
         state.debugShowBoundaries = !state.debugShowBoundaries;
+    }
+
+    if (input.extra.fetchRecording) {
+        tryFetchRecording(state);
     }
 
     if (input.extra.toggleRecording) {

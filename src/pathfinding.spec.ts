@@ -2,8 +2,9 @@ import {beforeEach, describe, expect, it, vi} from 'vitest';
 
 import {isIntesecting} from '#/entity/core';
 import {EnemyTank} from '#/entity/tank';
+import {spawnEnemy} from '#/entity/tank/enemy';
 import {type TankSchema} from '#/entity/tank/generation';
-import {simulateAllTanks, spawnEnemy} from '#/entity/tank/simulation';
+import {simulateAllTanks} from '#/entity/tank/simulation';
 import {isPosInsideRect, Rect} from '#/math';
 import {Duration} from '#/math/duration';
 import {random} from '#/math/rng';

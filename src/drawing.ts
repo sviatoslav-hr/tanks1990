@@ -10,6 +10,7 @@ import {
 import type {Renderer} from '#/renderer';
 import {GameState} from '#/state';
 import {drawWorldBackground, drawWorldBlocks, drawWorldDebugUI} from '#/world/drawing';
+import {isRecordingPlaybackActive} from './recording';
 
 export interface DrawGameOptions {
     drawUI: boolean;
@@ -40,5 +41,18 @@ export function drawGame(renderer: Renderer, state: GameState, options: DrawGame
         }
         drawEnemyTanksUI(renderer, state.tanks);
         drawPlayerTankUI(renderer, state.player);
+    }
+
+    if (isRecordingPlaybackActive(state)) {
+        renderer.useCameraCoords(true);
+        renderer.setStrokeColor('#ff0000');
+        renderer.strokeBoundary2(
+            0,
+            0,
+            renderer.camera.screenSize.x,
+            renderer.camera.screenSize.y,
+            5,
+        );
+        renderer.useCameraCoords(false);
     }
 }

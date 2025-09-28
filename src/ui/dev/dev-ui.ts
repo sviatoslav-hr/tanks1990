@@ -1,4 +1,4 @@
-import {spawnEnemy} from '#/entity/tank/simulation';
+import {spawnEnemy} from '#/entity/tank/enemy';
 import {importRecording, playRecentRecording, toggleRecordingEnabledOrStop} from '#/recording';
 import {Renderer} from '#/renderer';
 import {GameState} from '#/state';
@@ -92,7 +92,8 @@ export function createDevUI(state: GameState, renderer: Renderer, cache: GameSto
                 notifyError('No recording to export');
                 return;
             }
-            const filename = `recording-${state.recordingData.startedAt}.json`;
+            const lvl = state.world.activeRoom.depth;
+            const filename = `lvl-${lvl}-${state.recordingData.startedAt}.pzl.json`;
             exportAsJson(state.recordingData, filename);
         });
 

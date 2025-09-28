@@ -69,7 +69,7 @@ export function handleGameEvents(state: GameState, menu: MenuBridge): void {
             case 'game-completed': {
                 state.player.completedGame = true;
                 state.markCompleted();
-                const timeoutMs = 5000;
+                const timeoutMs = 2500;
                 notify('Congratulation!', {timeoutMs});
                 notify(`Completed in ${state.player.survivedFor.toHumanString()}`, {timeoutMs});
                 setTimeout(() => {
