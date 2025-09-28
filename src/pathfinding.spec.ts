@@ -10,7 +10,6 @@ import {random} from '#/math/rng';
 import {Vector2Like} from '#/math/vector';
 import {findPath} from '#/pathfinding';
 import {initEntities} from '#/simulation';
-import {SoundManager} from '#/sound';
 import {GameState} from '#/state';
 import {GameStorage} from '#/storage';
 
@@ -97,7 +96,7 @@ describe('Pathfinding', () => {
         debug = false,
     ) {
         const storage = new GameStorage(new InMemoryStorage());
-        const state = new GameState(new SoundManager(storage));
+        const state = new GameState(storage);
         state.world.roomsLimit = 1;
         initEntities(state);
         const activeWave = state.world.activeRoom.wave;

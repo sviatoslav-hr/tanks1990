@@ -1,4 +1,3 @@
-import {GameConfig} from '#/config';
 import {DEV_MODE_KEY} from '#/const';
 import {changePlayerDirection, tryTriggerTankShooting} from '#/entity/tank/simulation';
 import {GameInput} from '#/input';
@@ -13,7 +12,6 @@ import {
 } from '#/recording';
 import {Renderer} from '#/renderer';
 import {GameState} from '#/state';
-import {GameStorage} from '#/storage';
 import {DevUI, toggleDevPanelVisibility, toggleFPSVisibility} from '#/ui/dev';
 import {notify} from '#/ui/notification';
 
@@ -200,10 +198,8 @@ export function processInput(
     input: InputState,
     renderer: Renderer,
     state: GameState,
-    config: GameConfig,
     menu: MenuBridge,
     devUI: DevUI,
-    storage: GameStorage,
 ) {
     if (state.playing) {
         changePlayerDirection(state.player, input.game.playerDirection ?? null);
@@ -245,7 +241,7 @@ export function processInput(
     }
 
     if (input.extra.showBoundaries) {
-        config.setDebugShowBoundaries(!config.debugShowBoundaries);
+        state.config.setDebugShowBoundaries(!state.config.debugShowBoundaries);
     }
 
     if (input.extra.toggleRecording) {
@@ -267,19 +263,19 @@ export function processInput(
 
     if (input.extra.toggleDevMode) {
         window.__DEV_MODE = !window.__DEV_MODE;
-        storage.set(DEV_MODE_KEY, window.__DEV_MODE);
+        state.storage.set(DEV_MODE_KEY, window.__DEV_MODE);
         notify(`Dev mode ${window.__DEV_MODE ? 'enabled' : 'disabled'}`);
     }
 
     if (input.extra.toggleFPSMonitor) {
-        toggleFPSVisibility(devUI.fpsMonitor, storage);
+        toggleFPSVisibility(devUI.fpsMonitor, state.storage);
     }
     if (input.extra.toggleFPSMonitorPause) {
         devUI.fpsMonitor.paused = !devUI.fpsMonitor.paused;
     }
 
     if (input.extra.toggleDevPanel) {
-        toggleDevPanelVisibility(devUI.devPanel, storage);
+        toggleDevPanelVisibility(devUI.devPanel, state.storage);
     }
 
     if (input.extra.switchDevPlayerCameras) {

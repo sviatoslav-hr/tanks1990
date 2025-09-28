@@ -3,11 +3,10 @@
 ## DOING
 
 ## NEXT TODO
-- [ ] Extract simulation logic out of entity classes (e.g. entity.update(..) -> simulateEntities(..))
-  - [x] Tanks
-  - [ ] Projectile
-- [ ] Add animation/SFX to room door opening to hint player that's where he needs to go next.
-- [ ] Pathfinding: Double check the pathfinding implementation if it fully implements A*;
+- [ ] Move tank enemy AI stuff into separate file from simulation
+- [ ] Delete Config and move showBoundaries into 
+- [ ] Add animation/SFX to room door opening to hint player that's where he needs to go next
+- [ ] Pathfinding: Double check/reimplement the pathfinding to fully implements A* algorithm
 
 ## SHOULD BE FIXED
 - [ ] Battle music starts regardless muted or not

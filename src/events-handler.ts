@@ -2,12 +2,12 @@ import type {GameEvent} from '#/events';
 import {getURLSeed, random, setURLSeed} from '#/math/rng';
 import {MenuBridge} from '#/menu';
 import {initEntities} from '#/simulation';
-import {SoundName, type SoundManager} from '#/sound';
+import {SoundName} from '#/sound';
 import {soundEvent} from '#/sound-event';
 import type {GameState} from '#/state';
 import {notify} from '#/ui/notification';
 
-export function handleGameEvents(state: GameState, sounds: SoundManager, menu: MenuBridge): void {
+export function handleGameEvents(state: GameState, menu: MenuBridge): void {
     let event: GameEvent | undefined;
     while ((event = state.events.pop())) {
         switch (event.action) {
@@ -36,7 +36,7 @@ export function handleGameEvents(state: GameState, sounds: SoundManager, menu: M
                     state.battleMusic.stop();
                     state.battleMusic.play();
                 } else {
-                    state.battleMusic = sounds.play({
+                    state.battleMusic = state.sounds.play({
                         name: SoundName.BATTLE_THEME,
                         volume: 0.5,
                         loop: true,

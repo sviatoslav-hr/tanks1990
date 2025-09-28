@@ -1,11 +1,12 @@
+import {CELL_SIZE} from '#/const';
 import {Boom, ParticleExplosion} from '#/effect';
 import {simulatePickups} from '#/entity/pickup';
+import {simulateAllProjectiles} from '#/entity/projectile';
 import {initTank, simulateAllTanks, spawnEnemy} from '#/entity/tank/simulation';
 import {Direction} from '#/math/direction';
 import {Duration} from '#/math/duration';
 import {Camera} from '#/renderer/camera';
 import {GameState} from '#/state';
-import {CELL_SIZE} from '#/const';
 
 export function initEntities(state: GameState): void {
     state.tanks = [state.player];
@@ -40,16 +41,8 @@ export function simulateEntities(dt: Duration, state: GameState, camera: Camera)
         }
     }
     simulateAllTanks(dt, state);
-    simulateProjectiles(dt, state, camera);
+    simulateAllProjectiles(dt, state);
     simulatePickups(state);
-}
-
-function simulateProjectiles(dt: Duration, state: GameState, camera: Camera): void {
-    for (const projectile of state.projectiles) {
-        if (!projectile.dead) {
-            projectile.update(dt, state, camera);
-        }
-    }
 }
 
 function simulateEffects(dt: Duration, state: GameState): void {

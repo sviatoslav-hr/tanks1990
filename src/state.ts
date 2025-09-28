@@ -16,6 +16,8 @@ import {Camera} from '#/renderer/camera';
 import {SoundManager, type Sound} from '#/sound';
 import type {Room} from '#/world/room';
 import {World} from '#/world/world';
+import {GameConfig} from './config';
+import {GameStorage} from './storage';
 
 export enum GameStatus {
     INITIAL,
@@ -43,12 +45,16 @@ export class GameState {
 
     events = new EventQueue();
     battleMusic: Sound | null = null;
+    storage: GameStorage;
     sounds: SoundManager;
+    config: GameConfig;
     playerCamera = new Camera();
     devCamera = new Camera();
 
-    constructor(sounds: SoundManager) {
-        this.sounds = sounds;
+    constructor(storage: GameStorage) {
+        this.storage = storage;
+        this.sounds = new SoundManager(storage);
+        this.config = new GameConfig();
     }
 
     recording: RecordingStatus = {

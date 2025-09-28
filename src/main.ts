@@ -3,7 +3,6 @@ import './style.css';
 import '#/globals';
 
 import {logger} from '#/common/logger';
-import {GameConfig} from '#/config';
 import {APP_ELEMENT_ID, DEV_MODE_KEY} from '#/const';
 import {drawGame, DrawGameOptions} from '#/drawing';
 import {preloadEffectImages} from '#/effect';
@@ -21,7 +20,6 @@ import {
 } from '#/recording';
 import {Renderer} from '#/renderer';
 import {setupBackgroundScene, simulateEntities} from '#/simulation';
-import {SoundManager} from '#/sound';
 import {GameState, justCompletedGame} from '#/state';
 import {GameStorage} from '#/storage';
 import {uiGlobal} from '#/ui/core';
@@ -40,15 +38,13 @@ function main(): void {
     __DEV_MODE = storage.getBool(DEV_MODE_KEY) ?? false;
     if (__DEV_MODE) notify('Dev mode is on', {timeoutMs: 500});
 
-    const sounds = new SoundManager(storage);
+    const state = new GameState(storage);
+    const sounds = state.sounds;
+
     sounds.loadAllSounds().then(() => logger.debug('[Sounds] All sounds loaded'));
     preloadEffectImages();
 
-    const state = new GameState(sounds);
-
-    const input = new GameInput();
-    const config = new GameConfig(storage);
-    config.load();
+    state.config.load(state.storage);
 
     const renderer = new Renderer(state.playerCamera);
     appElement.append(renderer.canvas);
@@ -68,19 +64,17 @@ function main(): void {
     resizeGame(renderer, state);
     window.addEventListener('resize', () => resizeGame(renderer, state));
 
+    const input = new GameInput();
     input.listen(document.body, renderer.canvas);
-    runGame(state, config, menu, input, storage, devUI, renderer, sounds);
+    runGame(state, menu, input, devUI, renderer);
 }
 
 function runGame(
     state: GameState,
-    config: GameConfig,
     menu: MenuBridge,
     input: GameInput,
-    storage: GameStorage,
     devUI: DevUI,
     renderer: Renderer,
-    sounds: SoundManager,
 ) {
     const seed = getURLSeed();
     random.reset(seed ?? undefined);
@@ -107,7 +101,7 @@ function runGame(
                 inputState.extra.toggleFullscreen = true;
                 menu.fullscreenToggleExpected = false;
             }
-            processInput(inputState, renderer, state, config, menu, devUI, storage);
+            processInput(inputState, renderer, state, menu, devUI);
             if (isRecordingGameInputs(state)) recordGameInput(state, dt, inputState.game);
 
             // NOTE: It's better to just stop simulation after recording has finished playing.
@@ -116,16 +110,16 @@ function runGame(
             }
 
             drawOptions.drawUI = !menu.visible;
-            drawGame(renderer, config, state, drawOptions);
+            drawGame(renderer, state, drawOptions);
 
-            processGameEvents(state, sounds, menu);
+            processGameEvents(state, menu);
             state.nextTick();
             input.nextTick();
         } catch (err) {
             logger.error('Error in animationCallback\n%O', err);
         }
         devUI.fpsMonitor.end();
-        if (config.changed) config.save();
+        state.config.saveIfChanged(state.storage);
 
         let nextFrameManualDt: number | null = null;
         if (state.recording.playing) {

@@ -1,5 +1,4 @@
 import {Color} from '#/color';
-import {GameConfig} from '#/config';
 import {CELL_SIZE} from '#/const';
 import {spawnBoom} from '#/effect';
 import {Entity, isInside, isIntesecting, isSameEntity, moveEntity} from '#/entity/core';
@@ -11,7 +10,6 @@ import {Direction, getDirectionAngle} from '#/math/direction';
 import {Duration} from '#/math/duration';
 import {Vector2, Vector2Like} from '#/math/vector';
 import {Renderer} from '#/renderer';
-import {Camera} from '#/renderer/camera';
 import {Sprite} from '#/renderer/sprite';
 import {GameState} from '#/state';
 
@@ -25,22 +23,23 @@ interface CreateProjectileOpts {
 }
 
 export class Projectile extends Entity {
-    public static SIZE = CELL_SIZE / 5;
-    public originalPosition: Vector2;
-    public ownerId: EntityId;
-    private direction: Direction;
-    private shotByPlayer: boolean;
-    public damage = 0;
+    static readonly SIZE = CELL_SIZE / 5;
+    static readonly TRAIL_DISTANCE = CELL_SIZE * 2;
 
-    private readonly velocity = (1800 * 1000) / (60 * 60);
-    private readonly sprite = new Sprite({
+    originalPosition: Vector2;
+    ownerId: EntityId;
+    direction: Direction;
+    shotByPlayer: boolean;
+    damage = 0;
+
+    readonly velocity = (1800 * 1000) / (60 * 60);
+    readonly sprite = new Sprite({
         key: 'bullet',
         frameWidth: 16,
         frameHeight: 16,
         frameDuration: Duration.milliseconds(100),
         states: [{name: 'moving', frames: 2}],
     });
-    static readonly TRAIL_DISTANCE = CELL_SIZE * 2;
 
     constructor(opts: CreateProjectileOpts) {
         super();
@@ -52,106 +51,6 @@ export class Projectile extends Entity {
         this.ownerId = opts.ownerId;
         this.direction = opts.direction;
         this.shotByPlayer = opts.shotByPlayer;
-    }
-
-    update(dt: Duration, state: GameState, camera: Camera): void {
-        if (this.dead) {
-            return;
-        }
-        if (!camera.isRectVisible(this)) {
-            this.dead = true;
-            return;
-        }
-
-        this.sprite.update(dt);
-        // TODO: use movement equation instead
-        moveEntity(this, this.velocity * dt.seconds, this.direction);
-        if (!isInside(this, state.world.activeRoom.boundary)) {
-            spawnBoom(state, this.id);
-            this.dead = true;
-            return;
-        }
-
-        for (const entity of state.iterateEntities()) {
-            if (isSameEntity(entity, this) || entity.id === this.ownerId || entity.dead) {
-                continue;
-            }
-            if (isIntesecting(this, entity)) {
-                this.dead = true;
-                spawnBoom(state, this.id);
-                if (entity instanceof Projectile) {
-                    entity.dead = true;
-                }
-                // NOTE: Player can only kill enemies and vice versa
-                if (
-                    (this.shotByPlayer && entity instanceof EnemyTank) ||
-                    (!this.shotByPlayer && entity instanceof PlayerTank)
-                ) {
-                    damageTank(entity, this.damage, state);
-                }
-                break;
-            }
-        }
-    }
-
-    draw(renderer: Renderer, config: GameConfig): void {
-        if (this.dead) {
-            return;
-        }
-        this.drawTrail(renderer);
-        this.sprite.draw(renderer, this, getDirectionAngle(this.direction));
-        if (config.debugShowBoundaries) {
-            renderer.setStrokeColor(Color.PINK);
-            renderer.strokeBoundary(this, 1);
-        }
-    }
-
-    reviveAt(
-        ownerId: EntityId,
-        x: number,
-        y: number,
-        direction: Direction,
-        shotByPlayer: boolean,
-    ): void {
-        this.ownerId = ownerId;
-        this.x = x - this.width / 2;
-        this.y = y - this.height / 2;
-        this.originalPosition.set(this.x, this.y);
-        this.dead = false;
-        this.direction = direction;
-        this.shotByPlayer = shotByPlayer;
-        this.sprite.reset();
-    }
-
-    private drawTrail(renderer: Renderer): void {
-        const projectileDistance = this.originalPosition.distanceTo(this);
-        const maxIterations = 15;
-        const trailSizeFraction =
-            Math.min(projectileDistance, Projectile.TRAIL_DISTANCE) / projectileDistance;
-        const distanceRestFraction = 1 - trailSizeFraction;
-        const start = new Vector2(this.x + this.width / 2, this.y + this.height / 2);
-        const origin = new Vector2(
-            this.originalPosition.x + this.width / 2,
-            this.originalPosition.y + this.height / 2,
-        );
-        const diff = start.clone().sub(origin);
-        const maxThickness = this.width / 1.5;
-        const minThickness = this.width / 2;
-
-        for (let index = maxIterations; index > 0; index--) {
-            const indexProgress = index / maxIterations;
-            const dt = lerp(distanceRestFraction, 1, indexProgress);
-            const endX = origin.x + diff.x * dt;
-            const endY = origin.y + diff.y * dt;
-            renderer.setStrokeColor(Color.GRAY_GRANITE);
-            const alpha = lerp(0.0, 0.3, indexProgress);
-            renderer.setGlobalAlpha(alpha);
-            const trailThickness = bellCurveInterpolate(minThickness, maxThickness, indexProgress);
-            renderer.strokeLine(start.x, start.y, endX, endY, trailThickness);
-            start.x = endX;
-            start.y = endY;
-        }
-        renderer.setGlobalAlpha(1);
     }
 }
 
@@ -166,7 +65,7 @@ export function spawnProjectile(
     if (deadProjectile) {
         // NOTE: reuse dead projectiles instead of creating new ones
         const showByPlayer = state.player.id === ownerId;
-        deadProjectile.reviveAt(ownerId, origin.x, origin.y, direction, showByPlayer);
+        reviveProjectileAt(deadProjectile, ownerId, origin.x, origin.y, direction, showByPlayer);
         deadProjectile.damage = damage;
         return;
     }
@@ -182,4 +81,109 @@ export function spawnProjectile(
     });
     projectile.damage = damage;
     state.projectiles.push(projectile);
+}
+
+function reviveProjectileAt(
+    projectile: Projectile,
+    ownerId: EntityId,
+    x: number,
+    y: number,
+    direction: Direction,
+    shotByPlayer: boolean,
+): void {
+    assert(projectile.dead, 'Projectile must be dead to be revived');
+    projectile.ownerId = ownerId;
+    projectile.x = x - projectile.width / 2;
+    projectile.y = y - projectile.height / 2;
+    projectile.originalPosition.set(projectile.x, projectile.y);
+    projectile.dead = false;
+    projectile.direction = direction;
+    projectile.shotByPlayer = shotByPlayer;
+    projectile.sprite.reset();
+}
+
+export function simulateAllProjectiles(dt: Duration, state: GameState): void {
+    outer: for (const projectile of state.projectiles) {
+        if (projectile.dead) continue outer;
+
+        projectile.sprite.update(dt);
+        // TODO: use movement equation instead
+        moveEntity(projectile, projectile.velocity * dt.seconds, projectile.direction);
+        if (!isInside(projectile, state.world.activeRoom.boundary)) {
+            spawnBoom(state, projectile.id);
+            projectile.dead = true;
+            continue outer;
+        }
+
+        inner: for (const entity of state.iterateEntities()) {
+            if (
+                isSameEntity(entity, projectile) ||
+                entity.id === projectile.ownerId ||
+                entity.dead
+            ) {
+                continue inner;
+            }
+            if (isIntesecting(projectile, entity)) {
+                projectile.dead = true;
+                spawnBoom(state, projectile.id);
+                if (entity instanceof Projectile) {
+                    entity.dead = true;
+                }
+                // NOTE: Player can only kill enemies and vice versa
+                if (
+                    (projectile.shotByPlayer && entity instanceof EnemyTank) ||
+                    (!projectile.shotByPlayer && entity instanceof PlayerTank)
+                ) {
+                    damageTank(entity, projectile.damage, state);
+                }
+                break inner;
+            }
+        }
+    }
+}
+
+export function drawAllProjectiles(renderer: Renderer, state: GameState): void {
+    for (const projectile of state.projectiles) {
+        if (projectile.dead) continue;
+        drawProjectileTrail(renderer, projectile);
+        projectile.sprite.draw(renderer, projectile, getDirectionAngle(projectile.direction));
+        if (state.config.debugShowBoundaries) {
+            renderer.setStrokeColor(Color.PINK);
+            renderer.strokeBoundary(projectile, 1);
+        }
+    }
+}
+
+function drawProjectileTrail(renderer: Renderer, projectile: Projectile): void {
+    const projectileDistance = projectile.originalPosition.distanceTo(projectile);
+    const maxIterations = 15;
+    const trailSizeFraction =
+        Math.min(projectileDistance, Projectile.TRAIL_DISTANCE) / projectileDistance;
+    const distanceRestFraction = 1 - trailSizeFraction;
+    const start = new Vector2(
+        projectile.x + projectile.width / 2,
+        projectile.y + projectile.height / 2,
+    );
+    const origin = new Vector2(
+        projectile.originalPosition.x + projectile.width / 2,
+        projectile.originalPosition.y + projectile.height / 2,
+    );
+    const diff = start.clone().sub(origin);
+    const maxThickness = projectile.width / 1.5;
+    const minThickness = projectile.width / 2;
+
+    for (let index = maxIterations; index > 0; index--) {
+        const indexProgress = index / maxIterations;
+        const dt = lerp(distanceRestFraction, 1, indexProgress);
+        const endX = origin.x + diff.x * dt;
+        const endY = origin.y + diff.y * dt;
+        renderer.setStrokeColor(Color.GRAY_GRANITE);
+        const alpha = lerp(0.0, 0.3, indexProgress);
+        renderer.setGlobalAlpha(alpha);
+        const trailThickness = bellCurveInterpolate(minThickness, maxThickness, indexProgress);
+        renderer.strokeLine(start.x, start.y, endX, endY, trailThickness);
+        start.x = endX;
+        start.y = endY;
+    }
+    renderer.setGlobalAlpha(1);
 }
