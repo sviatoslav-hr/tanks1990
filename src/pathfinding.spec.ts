@@ -1,7 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 
-import {iterateCollidable} from '#/entity/lookup';
 import {isIntesecting} from '#/entity/core';
+import {iterateCollidable} from '#/entity/lookup';
 import {EnemyTank} from '#/entity/tank';
 import {spawnEnemy} from '#/entity/tank/enemy';
 import {type TankSchema} from '#/entity/tank/generation';
@@ -12,7 +12,7 @@ import {random} from '#/math/rng';
 import {Vector2Like} from '#/math/vector';
 import {findPath} from '#/pathfinding';
 import {initEntities} from '#/simulation';
-import {GameState} from '#/state';
+import {newGameState} from '#/state';
 import {GameStorage} from '#/storage';
 
 function spriteMock() {
@@ -98,7 +98,7 @@ describe('Pathfinding', () => {
         debug = false,
     ) {
         const storage = new GameStorage(new InMemoryStorage());
-        const state = new GameState(storage);
+        const state = newGameState(storage);
         state.world.roomsLimit = 1;
         initEntities(state);
         const activeWave = state.world.activeRoom.wave;

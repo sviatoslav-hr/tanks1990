@@ -1,21 +1,22 @@
 import type {GameEvent} from '#/events';
 import {getURLSeed, random, setURLSeed} from '#/math/rng';
 import {MenuBridge} from '#/menu';
-import {initEntities} from '#/simulation';
 import {SoundName} from '#/sound';
 import {soundEvent} from '#/sound-event';
-import type {GameState} from '#/state';
+import {
+    completeGame,
+    markGameDead,
+    pauseGame,
+    resumeGame,
+    startGame,
+    type GameState,
+} from '#/state';
 import {notify} from '#/ui/notification';
 
 export function handleGameEvents(state: GameState, menu: MenuBridge): void {
     let event: GameEvent | undefined;
     while ((event = state.events.pop())) {
         switch (event.action) {
-            case 'init':
-                state.init();
-                menu.view.set('main');
-                continue;
-
             // TODO: For now there is no difference between "new game" and "restart"
             //       but later "new game" should generate a random seed.
             case 'start': {
@@ -26,8 +27,7 @@ export function handleGameEvents(state: GameState, menu: MenuBridge): void {
                         setURLSeed(random.seed);
                         state.recording.playing = false;
                     }
-                    state.start();
-                    initEntities(state);
+                    startGame(state);
                     menu.view.set(null);
                 }
 
@@ -46,19 +46,19 @@ export function handleGameEvents(state: GameState, menu: MenuBridge): void {
             }
 
             case 'pause':
-                state.pause();
+                pauseGame(state);
                 if (!event.ignoreMenu) menu.view.set('pause');
                 continue;
 
             case 'resume':
-                state.resume();
+                resumeGame(state);
                 menu.view.set(null);
                 continue;
 
             case 'game-over': {
                 state.battleMusic?.stop();
                 const playedRecording = state.recording.playing;
-                state.markDead();
+                markGameDead(state);
                 menu.view.set('dead');
                 if (!playedRecording) {
                     soundEvent(state.sounds, 'game-over');
@@ -67,8 +67,7 @@ export function handleGameEvents(state: GameState, menu: MenuBridge): void {
             }
 
             case 'game-completed': {
-                state.player.completedGame = true;
-                state.markCompleted();
+                completeGame(state);
                 const timeoutMs = 1000;
                 notify('Congratulation!', {timeoutMs});
                 notify(`Completed in ${state.player.survivedFor.toHumanString()}`, {timeoutMs});

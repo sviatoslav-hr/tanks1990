@@ -1,10 +1,4 @@
-export type GameControlAction =
-    | 'init'
-    | 'start'
-    | 'pause'
-    | 'resume'
-    | 'game-over'
-    | 'game-completed';
+export type GameControlAction = 'start' | 'pause' | 'resume' | 'game-over' | 'game-completed';
 
 export type GameControlEvent = {
     type: 'game-control';

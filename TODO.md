@@ -29,7 +29,6 @@
 ### Refactoring
 - [ ] Turn OOP code into procedural
   - Wave
-  - State
   - Sounds
 - [ ] Revisit events
 - [ ] Outline how objects/classes should access each other (global vars/props/DI etc) (eg Renderer, Input, EntityManager, Entity etc)
@@ -90,6 +89,7 @@
 - [ ] Make enemies shoot only when they see the player
 - [ ] Tracks animation speed should be dependent by the speed of the tank.
       This is needed so it feels like track actually reflect the movement.
+- [ ] For some reason after playing recording, main background looks different than when game just loaded
 
 ### Not sure about
 - [ ] Try out Entity Component System (ECS)

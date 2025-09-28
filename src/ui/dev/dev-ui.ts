@@ -24,7 +24,7 @@ export function createDevUI(state: GameState, renderer: Renderer, cache: GameSto
         .addButton()
         .setName('Trigger Update')
         .onClick(() => {
-            state.debugUpdateTriggered = true;
+            state.debugUpdateTickTriggered = true;
         });
     entitiesFolder
         .addButton()

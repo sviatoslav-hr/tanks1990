@@ -14,7 +14,7 @@ import {Direction} from '#/math/direction';
 import {Duration} from '#/math/duration';
 import {Vector2Like} from '#/math/vector';
 import {soundEvent} from '#/sound-event';
-import {GameState} from '#/state';
+import {GameState, isPlaying} from '#/state';
 
 const STOPPING_TIME = Duration.milliseconds(50);
 
@@ -204,7 +204,7 @@ function simulateTankMovement(dt: Duration, tank: Tank) {
 
 export function tryTriggerTankShooting(tank: Tank, state: GameState): void {
     if (tank.shootingDelay.positive) return;
-    if (state.playing) {
+    if (isPlaying(state)) {
         // NOTE: Play sounds only during active game-play to not pollute the other states
         soundEvent(state.sounds, tank.bot ? 'enemy-shooting' : 'player-shooting');
     }

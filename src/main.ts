@@ -18,8 +18,16 @@ import {
     scheduleNextRecordedFrame,
 } from '#/recording';
 import {Renderer} from '#/renderer';
-import {setupBackgroundScene, simulateEntities} from '#/simulation';
-import {checkGameCompletion, GameState} from '#/state';
+import {simulateEntities} from '#/simulation';
+import {
+    checkGameCompletion,
+    GameState,
+    initGame,
+    isDead,
+    isPlaying,
+    newGameState,
+    resetGameAfterTick,
+} from '#/state';
 import {GameStorage} from '#/storage';
 import {uiGlobal} from '#/ui/core';
 import {createDevUI, DevUI} from '#/ui/dev';
@@ -37,7 +45,7 @@ function main(): void {
     __DEV_MODE = storage.getBool(DEV_MODE_KEY) ?? false;
     if (__DEV_MODE) notify('Dev mode is on', {timeoutMs: 500});
 
-    const state = new GameState(storage);
+    const state = newGameState(storage);
     const sounds = state.sounds;
 
     sounds.loadAllSounds().then(() => logger.debug('[Sounds] All sounds loaded'));
@@ -77,7 +85,7 @@ function runGame(
     random.reset(seed ?? undefined);
     setURLSeed(random.seed);
     let lastTimestamp = performance.now();
-    setupBackgroundScene(state);
+    initGame(state);
     const animationCallback = (): void => {
         const now = performance.now();
         const dt = Duration.between(lastTimestamp, now);
@@ -104,8 +112,8 @@ function runGame(
             // NOTE: Stopping simulation after recording has finished playing.
             if (
                 state.recording.playing
-                    ? state.playing && isRecordingPlaybackActive(state)
-                    : state.playing || state.dead || state.debugUpdateTriggered
+                    ? isPlaying(state) && isRecordingPlaybackActive(state)
+                    : isPlaying(state) || isDead(state) || state.debugUpdateTickTriggered
             ) {
                 // NOTE: Showing enemies moving even when it's game-over to kind of troll the player "they continue living while you are dead".
                 simulateEntities(dt, state, state.playerCamera);
@@ -116,7 +124,7 @@ function runGame(
             drawGame(renderer, state, drawOptions);
 
             processGameEvents(state, menu);
-            state.nextTick();
+            resetGameAfterTick(state);
             input.nextTick();
         } catch (err) {
             logger.error('Error in animationCallback\n%O', err);
@@ -124,7 +132,7 @@ function runGame(
         devUI.fpsMonitor.end();
 
         let nextFrameScheduled = false;
-        if (state.playing && isRecordingPlaybackActive(state)) {
+        if (isPlaying(state) && isRecordingPlaybackActive(state)) {
             nextFrameScheduled = scheduleNextRecordedFrame(state, animationCallback);
         }
 

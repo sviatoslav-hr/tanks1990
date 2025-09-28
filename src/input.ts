@@ -121,6 +121,7 @@ export class GameInput {
             const code = ev.code as KeyCode;
             this.setPressed(code);
         });
+        // FIXME: If between ticks happen both keydown and keyup events, the keypress will be missed
         element.addEventListener('keyup', (ev) => {
             const code = ev.code as KeyCode;
             this.setReleased(code);

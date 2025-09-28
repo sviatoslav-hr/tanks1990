@@ -1,10 +1,10 @@
+import {Result} from '#/common';
 import type {GameInputState} from '#/input-handler';
 import {Duration} from '#/math/duration';
 import {random} from '#/math/rng';
 import {MenuBridge} from '#/menu';
-import type {GameState} from '#/state';
+import {initGame, isPaused, isPlaying, type GameState} from '#/state';
 import {notify} from '#/ui/notification';
-import {Result} from '#/common';
 
 export interface RecordingStatus {
     /** Indicates whether the next game sessions should be recorded. */
@@ -57,7 +57,7 @@ export function toggleRecordingEnabled(recording: RecordingStatus): void {
 
 export function toggleRecordingEnabledOrStop(state: GameState): void {
     const recording = state.recording;
-    if ((state.paused || state.playing) && recording.active) {
+    if ((isPaused(state) || isPlaying(state)) && recording.active) {
         stopRecording(recording);
     } else {
         toggleRecordingEnabled(recording);
@@ -65,7 +65,7 @@ export function toggleRecordingEnabledOrStop(state: GameState): void {
 }
 
 function isRecordingGameInputs(state: GameState): boolean {
-    const result = state.playing && state.recording.active && !state.recording.playing;
+    const result = isPlaying(state) && state.recording.active && !state.recording.playing;
     return result;
 }
 
@@ -88,7 +88,7 @@ export function getNextRecordedInput(
     state: GameState,
     updateTriggered: boolean,
 ): GameInputState | undefined {
-    if (!state.playing && !updateTriggered) return undefined;
+    if (!isPlaying(state) && !updateTriggered) return undefined;
     const {recording, recordingData: data} = state;
     const inputIndex = recording.playingInputIndex;
     assert(recording.playing);
@@ -115,7 +115,7 @@ export function isRecordingPlaybackActive(state: GameState): boolean {
 export function isPlayingRecordingFinished(state: GameState): boolean {
     const index = state.recording.playingInputIndex;
     const result =
-        state.playing && state.recording.playing && index >= state.recordingData.inputs.length;
+        isPlaying(state) && state.recording.playing && index >= state.recordingData.inputs.length;
     return result;
 }
 
@@ -148,14 +148,14 @@ export function exitRecording(state: GameState, menu: MenuBridge): void {
     }
     state.recording.playing = false;
     state.recording.active = false;
-    state.init();
+    initGame(state);
     menu.view.set('main');
     notify('Recording playback stopped');
 }
 
 export function scheduleNextRecordedFrame(state: GameState, callback: () => void): boolean {
     assert(state.recording.playing);
-    assert(state.playing);
+    assert(isPlaying(state));
     const nextFrameRecordedDt = getNextRecordedFrameDt(state);
     if (nextFrameRecordedDt == null) return false;
     state.recording.playingInputIndex++;

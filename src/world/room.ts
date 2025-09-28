@@ -106,7 +106,8 @@ export function newRoom(
 // HACK: This is only used as a temporary replaced for the first room to not make it nullable.
 export function tempRoom(): Room {
     const zero: WorldNode = {x: 0, y: 0, depth: 1, connectedNodes: {}};
-    return newRoom(zero, new Vector2(0, 0), roomSizeInCells, [], [], [Direction.NORTH], []);
+    const room = newRoom(zero, new Vector2(0, 0), roomSizeInCells, [], [], [Direction.NORTH], []);
+    return room;
 }
 
 export function updateActiveRoomStates(state: GameState): void {

@@ -12,7 +12,7 @@ import {
     tryFetchRecording,
 } from '#/recording';
 import {Renderer} from '#/renderer';
-import {GameState} from '#/state';
+import {GameState, isPaused, isPlaying} from '#/state';
 import {DevUI, toggleDevPanelVisibility, toggleFPSVisibility} from '#/ui/dev';
 import {notify} from '#/ui/notification';
 
@@ -207,7 +207,7 @@ export function processInput(
     menu: MenuBridge,
     devUI: DevUI,
 ) {
-    if (state.playing) {
+    if (isPlaying(state)) {
         changePlayerDirection(state.player, input.game.playerDirection ?? null);
     }
     if (input.game.playerShooting) {
@@ -221,14 +221,14 @@ export function processInput(
     }
 
     if (input.extra.toggleGamePause || input.extra.toggleGamePauseIgnoreMenu) {
-        if (state.dead || state.initial || state.gameCompleted) {
-            logger.warn('Game is not in playing state, so we cannot pause/unpause.');
-            // NOTE: Game is not in playing state, so we cannot pause/unpause.
-        } else {
-            const action = state.playing ? 'pause' : 'resume';
+        const isPlayingOrPaused = isPlaying(state) || isPaused(state);
+        if (isPlayingOrPaused) {
+            const action = isPlaying(state) ? 'pause' : 'resume';
             const ignoreMenu = Boolean(input.extra.toggleGamePauseIgnoreMenu);
-            if (ignoreMenu) notify(state.playing ? 'Paused' : 'Resumed');
+            if (ignoreMenu) notify(isPlaying(state) ? 'Paused' : 'Resumed');
             state.events.push({type: 'game-control', action, ignoreMenu});
+        } else {
+            logger.warn('Game is not in playing state, so we cannot pause/unpause.');
         }
     }
 
@@ -243,7 +243,7 @@ export function processInput(
         if (menu.visible) {
             menu.view.set(null);
         }
-        state.debugUpdateTriggered = true;
+        state.debugUpdateTickTriggered = true;
     }
 
     if (input.extra.toggleDebugBoundaries) {

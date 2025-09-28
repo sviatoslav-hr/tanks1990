@@ -71,8 +71,9 @@ function simulateEffects(dt: Duration, state: GameState): void {
     }
 }
 
-export function setupBackgroundScene(state: GameState): void {
+export function setupMainBackgroundScene(state: GameState): void {
     // Setup initial background scene
+    state.world.roomsLimit = 1;
     initEntities(state);
     const room = state.world.activeRoom;
     const roomWidth = room.sizeInCells.x * CELL_SIZE;
