@@ -20,7 +20,7 @@ describe('MinPriorityQueue', () => {
 
     it('should handle enqueueAll correctly', () => {
         const queue = new MinPriorityQueue<number>((a, b) => a - b);
-        queue.enqueueAll([5, 3, 8, 1]);
+        queue.enqueueAll(5, 3, 8, 1);
 
         expect(queue.dequeue()).toBe(1);
         expect(queue.dequeue()).toBe(3);
@@ -33,5 +33,34 @@ describe('MinPriorityQueue', () => {
 
         expect(queue.dequeue()).toBe(null);
         expect(queue.isEmpty()).toBe(true);
+    });
+
+    it('should dequeue items in correct order', () => {
+        const queue = new MinPriorityQueue<number>((a, b) => a - b);
+        queue.enqueue(7);
+        expect(queue.dequeue()).toBe(7);
+
+        queue.enqueueAll(7, 9, 9, 9, 11);
+        expect(queue.peek()).toBe(7);
+        expect(queue.dequeue()).toBe(7); // 9 9 9
+
+        queue.enqueueAll(9, 9);
+        expect(queue.dequeue()).toBe(9); // 9 9 9 9
+
+        queue.enqueue(11);
+        expect(queue.dequeue()).toBe(9); // 9 9 9 11
+
+        queue.enqueue(11);
+        expect(queue.dequeue()).toBe(9); // 9 9 11 11
+
+        queue.enqueue(11);
+        expect(queue.dequeue()).toBe(9); // 9 11 11 11
+
+        queue.enqueueAll(11, 11);
+        expect(queue.dequeue()).toBe(9); // 11 11 11 11
+
+        queue.enqueue(11);
+        expect(queue.dequeue()).toBe(11); // 11 11 11 11
+        expect(queue.isEmpty()).toBe(false);
     });
 });

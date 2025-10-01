@@ -75,7 +75,7 @@ export function scaleRectCentered(rect: Rect, scale: number): Rect {
     };
 }
 
-export function isPosInsideRect(x: number, y: number, rect: Rect): boolean {
+export function isPosInsideRect(x: number, y: number, rect: Rect, offset = 0): boolean {
     // TODO: Why flooring it?
     // x = Math.floor(x);
     // y = Math.floor(y);
@@ -85,7 +85,12 @@ export function isPosInsideRect(x: number, y: number, rect: Rect): boolean {
     //     Math.floor(rect.y) <= y &&
     //     y <= Math.floor(yn(rect))
     // );
-    return rect.x <= x && x <= xn(rect) && rect.y <= y && y <= yn(rect);
+    return (
+        rect.x - offset <= x &&
+        x <= xn(rect) + offset &&
+        rect.y - offset <= y &&
+        y <= yn(rect) + offset
+    );
 }
 
 export function oppositeDirection(dir: Direction): Direction {
@@ -123,8 +128,7 @@ export function numround(value: number, margin: number = 0): number {
     return Math.round(value * n) / n;
 }
 
-export function moveToRandomCorner(entity: Rect, boundary: Rect): void {
-    const offset = 1;
+export function moveToRandomCorner(entity: Rect, boundary: Rect, offset = 1): void {
     switch (random.selectFrom(0, 1, 2, 3)) {
         case 0: {
             entity.x = boundary.x + offset;
@@ -149,8 +153,10 @@ export function moveToRandomCorner(entity: Rect, boundary: Rect): void {
     }
 }
 
-export function distanceV2(v1: Vector2Like, v2: Vector2Like): number {
-    return Math.sqrt((v1.x - v2.x) ** 2 + (v1.y - v2.y) ** 2);
-}
-
 export const GRAVITY = 9.81; // in m/s^2
+
+export function getRectCenter(rect: Rect): Vector2Like {
+    const x = rect.x + rect.width / 2;
+    const y = rect.y + rect.height / 2;
+    return {x, y};
+}

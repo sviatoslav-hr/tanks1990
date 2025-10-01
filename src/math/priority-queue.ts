@@ -1,14 +1,24 @@
+// https://www.geeksforgeeks.org/javascript/implementation-priority-queue-javascript/
 export class MinPriorityQueue<T> {
     private heap: T[] = [];
 
     constructor(private compare: (a: T, b: T) => number) {}
 
-    enqueue(item: T): void {
-        this.heap.push(item);
-        this.bubbleUp(this.heap.length - 1);
+    peek(): T | null {
+        return this.heap[0] ?? null;
     }
 
-    enqueueAll(items: T[]): void {
+    enqueue(item: T): void {
+        this.heap.push(item);
+        let index = this.heap.length - 1;
+        while (this.hasParent(index) && this.compare(this.getParent(index), item) > 0) {
+            const parentIndex = this.getParentIndex(index);
+            this.swapHeapElements(parentIndex, index);
+            index = parentIndex;
+        }
+    }
+
+    enqueueAll(...items: T[]): void {
         for (const item of items) {
             this.enqueue(item);
         }
@@ -16,13 +26,23 @@ export class MinPriorityQueue<T> {
 
     dequeue(): T | null {
         if (this.heap.length === 0) return null;
-        const min = this.heap[0]!;
-        const last = this.heap.pop()!;
-        if (this.heap.length > 0) {
-            this.heap[0] = last;
-            this.bubbleDown(0);
+        const item = this.heap[0];
+        this.heap[0] = this.heap[this.heap.length - 1]!;
+        this.heap.pop();
+        let index = 0;
+        while (this.hasLeftChild(index)) {
+            let smallerChildIndex = this.getLeftChildIndex(index);
+            if (
+                this.hasRightChild(index) &&
+                this.compare(this.getRightChild(index), this.getLeftChild(index)) < 0
+            ) {
+                smallerChildIndex = this.getRightChildIndex(index);
+            }
+            if (this.compare(this.heap[index]!, this.heap[smallerChildIndex]!) <= 0) break;
+            this.swapHeapElements(index, smallerChildIndex);
+            index = smallerChildIndex;
         }
-        return min;
+        return item ?? null;
     }
 
     isEmpty(): boolean {
@@ -33,43 +53,68 @@ export class MinPriorityQueue<T> {
         return this.heap.some(predicate);
     }
 
+    find(predicate: (value: T) => unknown): T | null {
+        for (const item of this.heap) {
+            if (predicate(item)) return item;
+        }
+        return null;
+    }
+
     get length(): number {
         return this.heap.length;
     }
 
-    private bubbleUp(index: number): void {
-        assert(index < this.heap.length);
-        const item = this.heap[index]!;
-        while (index > 0) {
-            const parentIndex = Math.floor((index - 1) / 2);
-            const parent = this.heap[parentIndex]!;
-            if (this.compare(item, parent) >= 0) break;
-            this.heap[index] = parent;
-            index = parentIndex;
-        }
-        this.heap[index] = item;
+    [Symbol.iterator](): IterableIterator<T> {
+        const heap = this.heap.slice();
+        heap.sort(this.compare);
+        return heap.values();
     }
 
-    private bubbleDown(index: number): void {
-        const length = this.heap.length;
-        assert(index < length);
-        const item = this.heap[index]!;
-        while (true) {
-            const left = 2 * index + 1;
-            const right = 2 * index + 2;
-            let smallest = index;
+    private getParentIndex(childIndex: number): number {
+        return Math.floor((childIndex - 1) / 2);
+    }
 
-            if (left < length && this.compare(this.heap[left]!, this.heap[smallest]!) < 0) {
-                smallest = left;
-            }
-            if (right < length && this.compare(this.heap[right]!, this.heap[smallest]!) < 0) {
-                smallest = right;
-            }
-            if (smallest === index) break;
+    private getParent(index: number): T {
+        const parent = this.heap[this.getParentIndex(index)];
+        if (!parent) throw new Error('Parent not found');
+        return parent;
+    }
 
-            this.heap[index] = this.heap[smallest]!;
-            index = smallest;
-        }
-        this.heap[index] = item;
+    private hasParent(childIndex: number): boolean {
+        return this.getParentIndex(childIndex) >= 0;
+    }
+
+    private getLeftChildIndex(parentIndex: number): number {
+        return 2 * parentIndex + 1;
+    }
+
+    private getLeftChild(index: number): T {
+        const leftChild = this.heap[this.getLeftChildIndex(index)];
+        if (!leftChild) throw new Error('Left child not found');
+        return leftChild;
+    }
+
+    private hasLeftChild(index: number): boolean {
+        return this.getLeftChildIndex(index) < this.heap.length;
+    }
+
+    private getRightChildIndex(parentIndex: number): number {
+        return 2 * parentIndex + 2;
+    }
+
+    private getRightChild(index: number): T {
+        const rightChild = this.heap[this.getRightChildIndex(index)];
+        if (!rightChild) throw new Error('Right child not found');
+        return rightChild;
+    }
+
+    private hasRightChild(index: number): boolean {
+        return this.getRightChildIndex(index) < this.heap.length;
+    }
+
+    private swapHeapElements(index1: number, index2: number): void {
+        const temp = this.heap[index1]!;
+        this.heap[index1] = this.heap[index2]!;
+        this.heap[index2] = temp;
     }
 }

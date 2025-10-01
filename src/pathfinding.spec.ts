@@ -1,184 +1,110 @@
-import {beforeEach, describe, expect, it, vi} from 'vitest';
+import {describe, expect, it, vi} from 'vitest';
 
-import {isIntesecting} from '#/entity/core';
-import {iterateCollidable} from '#/entity/lookup';
-import {EnemyTank} from '#/entity/tank';
-import {spawnEnemy} from '#/entity/tank/enemy';
-import {type TankSchema} from '#/entity/tank/generation';
-import {simulateAllTanks} from '#/entity/tank/simulation';
-import {isPosInsideRect, Rect} from '#/math';
-import {Duration} from '#/math/duration';
-import {random} from '#/math/rng';
-import {Vector2Like} from '#/math/vector';
-import {findPath} from '#/pathfinding';
-import {initEntities} from '#/simulation';
-import {newGameState} from '#/state';
-import {GameStorage} from '#/storage';
+import {AStarInput, findAStarPath} from '#/pathfinding';
+import {v2Equals, v2ManhattanDistance, type Vector2Like as V2} from '#/math/vector';
 
-function spriteMock() {
-    return {
-        draw: () => {},
-        update: () => {},
+const _ = 0;
+const w = 1;
+const S = 2;
+const F = 3;
+
+describe('findAStarPath', () => {
+    it('should find simple path', () => {
+        const map: number[][] = [
+            [_, S, w, F, _, _],
+            [_, w, w, w, w, _],
+            [_, _, _, _, _, _],
+        ];
+        const input = getAStarInput(map, {x: 1, y: 1});
+        const path = findAStarPath(input);
+        assert(path, 'Path must be found');
+        expect(path[0]).toEqual(input.start);
+        expect(path[path.length - 1]).toEqual(input.goal);
+    });
+
+    it('should find complex path', () => {
+        const map: number[][] = [
+            [_, _, _, _, _, _, _, w, _, _, _, _, _, _, _, _],
+            [_, _, w, w, w, _, _, w, _, _, _, _, _, S, _, _],
+            [_, _, w, _, _, _, _, w, _, _, w, _, _, _, w, _],
+            [_, _, w, _, _, w, w, w, _, _, w, w, w, w, w, _],
+            [_, _, w, _, _, _, _, w, _, _, _, _, _, _, w, _],
+            [_, _, w, w, w, _, _, w, w, _, _, _, _, _, w, w],
+            [_, w, _, w, _, _, _, _, _, _, _, _, _, _, _, _],
+            [_, w, w, w, _, _, w, w, w, w, w, w, w, w, w, _],
+            [_, _, F, _, w, w, _, w, _, _, _, _, _, _, w, _],
+            [_, w, w, _, _, _, _, w, _, _, _, w, _, _, _, _],
+            [_, _, _, _, _, _, _, _, _, _, _, w, _, _, _, _],
+        ];
+        const input = getAStarInput(map, {x: 1, y: 1});
+        const path = findAStarPath(input);
+        assert(path, 'Path must be found');
+        expect(path[0]).toEqual(input.start);
+        expect(path[path.length - 1]).toEqual(input.goal);
+    });
+
+    it('should find path with float numbers', () => {
+        const map: number[][] = [
+            [_, _, w, F, _, _],
+            [_, S, w, w, w, _],
+            [_, _, w, _, _, _],
+            [_, _, _, _, _, w],
+        ];
+        const input = getAStarInput(map, {x: 1.2, y: 1.2});
+        input.heuristic = (a, b) => Math.round(v2ManhattanDistance(a, b));
+        const path = findAStarPath(input);
+        assert(path, 'Path must be found');
+        expect(path[0]).toEqual(input.start);
+        expect(path[path.length - 1]).toEqual(input.goal);
+    });
+});
+
+interface Cell {
+    pos: V2;
+    type: number;
+}
+function getAStarInput(map: number[][], cellSize: V2): AStarInput {
+    const center: V2 = {x: 0, y: 0};
+    const mapSize: V2 = {x: map[0]!.length * cellSize.x, y: map.length * cellSize.y};
+    const topLeft: V2 = {x: center.x - mapSize.x / 2, y: center.y - mapSize.y / 2};
+
+    const cells: Cell[] = [];
+
+    for (const [y, row] of map.entries()) {
+        for (const [x, cell] of row.entries()) {
+            const pos: V2 = {
+                x: Math.round((topLeft.x + cellSize.x * x) * 100) / 100,
+                y: Math.round((topLeft.y + cellSize.y * y) * 100) / 100,
+            };
+            cells.push({pos, type: cell});
+        }
+    }
+
+    const start = cells.find((cell) => cell.type === S)!;
+    const goal = cells.find((cell) => cell.type === F)!;
+    const input: AStarInput = {
+        start: start.pos,
+        goal: goal.pos,
+        heuristic: v2ManhattanDistance,
+        isGoalReached: v2Equals,
+        getNeighbors: (pos) => collectNeighbors(pos, cells, cellSize),
     };
+    return input;
 }
 
-vi.mock('#/sounds', () => {
-    return {
-        SoundManager: class {
-            play = () => ({});
-        },
-    };
-});
-vi.mock('#/renderer/sprite', () => {
-    return {
-        createStaticSprite: () => spriteMock(),
-        createTileSprite: () => spriteMock(),
-        createShieldSprite: () => spriteMock(),
-        Sprite: class {
-            selectFrame = () => void 0;
-        },
-    };
-});
-vi.mock('#/entity/tank/generation', async (importOriginal) => {
-    const original = await importOriginal<object>();
-    return {
-        ...original,
-        createTankSpriteGroup: (schema: TankSchema) => ({
-            schema,
-            ...spriteMock(),
-        }),
-    };
-});
-
-describe('Pathfinding', () => {
-    logger.level = logger.LogLevel.WARN;
-    const seed = 'default'; // NOTE: Using a fixed seed for reproducibility.
-    const loops = 1;
-    beforeEach(() => {
-        random.reset(seed);
-    });
-
-    it('should find a path in scenario A (getting out of the corner)', {timeout: 10000}, () => {
-        // FIXME: These coordinates don't work anymore after changes to world generation...
-        return;
-        for (let i = 0; i < loops; i++) {
-            random.reset(seed);
-            testPathfinding({x: -243.3373333303148, y: 109.75}, {x: -21.25, y: -21.25}, 1000);
-        }
-    });
-
-    it('should find a path in scenario B (longer path)', {timeout: 10000}, () => {
-        // FIXME: These coordinates don't work anymore after changes to world generation...
-        return;
-        for (let i = 0; i < loops; i++) {
-            random.reset(seed);
-            testPathfinding(
-                {x: -252.98095555594392, y: 100.35220832853697},
-                {x: -21.25, y: -21.25},
-            );
-        }
-    });
-
-    it('should find a path in scenario C (passing between two blocks)', {timeout: 10000}, () => {
-        // FIXME: These coordinates don't work anymore after changes to world generation...
-        return;
-        for (let i = 0; i < loops; i++) {
-            random.reset(seed);
-            testPathfinding(
-                {x: 157.52348332742952, y: -0.2285972235012722},
-                {x: -21.25, y: -21.25},
-            );
-        }
-    });
-
-    function testPathfinding(
-        enemyPos: Vector2Like,
-        targetPos: Vector2Like,
-        stepsLimit = 1000,
-        debug = false,
-    ) {
-        const storage = new GameStorage(new InMemoryStorage());
-        const state = newGameState(storage);
-        state.world.roomsLimit = 1;
-        initEntities(state);
-        const activeWave = state.world.activeRoom.wave;
-        activeWave.clearExpected();
-        spawnEnemy(state, 'light', true);
-        const enemy = state.tanks.find((t) => t instanceof EnemyTank) as EnemyTank;
-        simulateAllTanks(Duration.milliseconds(0), state);
-        assert(enemy, 'Enemy tank not found');
-        assert(!enemy.dead, 'Enemy tank should not be dead (should respawn)');
-        assert(state.tanks.length === 2, 'Expected only 2 tanks'); // Player + enemy
-        const target = state.player;
-        enemy.x = enemyPos.x;
-        enemy.y = enemyPos.y;
-        target.x = targetPos.x;
-        target.y = targetPos.y;
-        Object.assign(enemy, {id: 69}); // NOTE: Hardcode id for to be able to inspect the tank in other parts of the code
-        const path = findPath(enemy, target, state, stepsLimit, undefined, debug);
-        assert(path, 'Path should be found');
-        expect(path.length).toBeGreaterThan(0);
-        const firstP = path[0]!;
-        expect(
-            isPosInsideRect(firstP.x, firstP.y, enemy),
-            'Path did not start inside the enemy tank',
-        ).toEqual(true);
-        const lastP = path[path.length - 1]!;
-        expect(isPosInsideRect(lastP.x, lastP.y, target), 'Path did not reach the target').toEqual(
-            true,
-        );
-
-        for (const [i, p] of path.entries()) {
-            for (const e of iterateCollidable(state)) {
-                if (e === target) continue;
-                if (e === enemy) continue;
-                expect(
-                    isPosInsideRect(p.x, p.y, e),
-                    `Path point[${i}] {${p.x};${p.y}} intersected by ${e.constructor.name} at ${rectStringify(e)}`,
-                ).toBe(false);
-                const rect = {
-                    x: p.x - enemy.width / 2,
-                    y: p.y - enemy.height / 2,
-                    width: enemy.width,
-                    height: enemy.height,
-                };
-                expect(
-                    isIntesecting(rect, e),
-                    `Path rect[${i}] ${rectStringify(rect)} intersected by ${e.constructor.name} at ${rectStringify(e)}`,
-                ).toBe(false);
-            }
+function collectNeighbors(pos: V2, cells: Cell[], cellSize: V2): V2[] {
+    const neighbors: V2[] = [];
+    for (const c of cells) {
+        if (c.type == w) continue;
+        if (v2Equals(c.pos, pos)) continue;
+        // Skip if not on the same row or column
+        if (c.pos.x != pos.x && c.pos.y != pos.y) continue;
+        const dx = Math.round(Math.abs(c.pos.x - pos.x) * 100) / 100;
+        const dy = Math.round(Math.abs(c.pos.y - pos.y) * 100) / 100;
+        if (dx == cellSize.x || dy == cellSize.y) {
+            neighbors.push(c.pos);
         }
     }
 
-    function rectStringify(rect: Rect): string {
-        return `{${rect.x};${rect.y};${rect.width};${rect.height}}`;
-    }
-});
-
-class InMemoryStorage implements Storage {
-    private data: Record<string, string> = {};
-    get length(): number {
-        return Object.values(this.data).length;
-    }
-
-    clear(): void {
-        this.data = {};
-    }
-
-    key(index: number): string | null {
-        const keys = Object.keys(this.data);
-        return keys[index] ?? null;
-    }
-
-    getItem(key: string): string | null {
-        return this.data[key] ?? null;
-    }
-
-    setItem(key: string, value: string): void {
-        this.data[key] = value;
-    }
-
-    removeItem(key: string): void {
-        delete this.data[key];
-    }
+    return neighbors;
 }

@@ -159,7 +159,9 @@ export class Vector2 implements Vector2Like {
     }
 
     distanceTo(v: Vector2Like): number {
-        return Math.hypot(this.x - v.x, this.y - v.y);
+        const dx = this.x - v.x;
+        const dy = this.y - v.y;
+        return Math.sqrt(dx * dx + dy * dy);
     }
 
     distanceToSquared(v: Vector2Like): number {
@@ -206,9 +208,20 @@ export interface Vector2Like {
     y: number;
 }
 
+export function v2Add(a: Vector2Like, b: Vector2Like): Vector2Like {
+    const x = a.x + b.x;
+    const y = a.y + b.y;
+    return {x, y};
+}
 export function v2AddMut(a: Vector2Like, b: Vector2Like): Vector2Like {
     a.x += b.x;
     a.y += b.y;
+    return a;
+}
+
+export function v2RoundMut(a: Vector2Like): Vector2Like {
+    a.x = Math.round(a.x);
+    a.y = Math.round(a.y);
     return a;
 }
 
@@ -216,6 +229,22 @@ export function v2Equals(a: Vector2Like, b: Vector2Like): boolean {
     return a.x === b.x && a.y === b.y;
 }
 
+export function v2EqualsApprox(a: Vector2Like, b: Vector2Like, allowedOffset = 0): boolean {
+    const dx = Math.abs(a.x - b.x);
+    const dy = Math.abs(a.y - b.y);
+    return dx <= allowedOffset && dy <= allowedOffset;
+}
+
 export function v2ManhattanDistance(a: Vector2Like, b: Vector2Like): number {
     return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+}
+
+export function v2Distance(a: Vector2Like, b: Vector2Like): number {
+    const dx = a.x - b.x;
+    const dy = a.y - b.y;
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
+export function v2Str(pos: Vector2Like): string {
+    return `v2(${pos.x},${pos.y})`;
 }

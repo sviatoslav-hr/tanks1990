@@ -1,14 +1,22 @@
-import {findCollided} from '#/entity/lookup';
+import {findCollided, isPosOccupied, isRectOccupied} from '#/entity/lookup';
 import {Entity} from '#/entity/core';
 import {EnemyTank, isEnemyTank} from '#/entity/tank';
 import {TankPartKind} from '#/entity/tank/generation';
 import {initTank} from '#/entity/tank/simulation';
-import {moveToRandomCorner, sameSign} from '#/math';
+import {getRectCenter, isPosInsideRect, moveToRandomCorner, Rect, sameSign} from '#/math';
 import {Direction} from '#/math/direction';
 import {Duration} from '#/math/duration';
-import {Vector2Like} from '#/math/vector';
-import {findPath} from '#/pathfinding';
+import {
+    v2Add,
+    v2AddMut,
+    v2EqualsApprox,
+    v2ManhattanDistance,
+    v2RoundMut,
+    Vector2Like,
+} from '#/math/vector';
 import {GameState} from '#/state';
+import {findAStarPath} from '#/pathfinding';
+import {CELL_SIZE} from '#/const';
 
 const ENEMY_RESPAWN_DELAY = Duration.milliseconds(1000);
 const ENEMY_RESPAWN_ATTEMPTS_LIMIT = 4;
@@ -55,7 +63,7 @@ export function respawnEnemy(tank: EnemyTank, state: GameState): boolean {
     for (let attempt = 0; attempt < ENEMY_RESPAWN_ATTEMPTS_LIMIT; attempt++) {
         const room = state.world.activeRoom;
         // TODO: Be more creative with spawn points
-        moveToRandomCorner(tank, room.boundary);
+        moveToRandomCorner(tank, room.boundary, (CELL_SIZE - tank.width) / 2);
         const collided = findCollided(state, tank);
         if (!collided) {
             initTank(tank);
@@ -110,7 +118,33 @@ export function recalculateEnemyPath(
     state: GameState,
 ): Direction | null {
     tank.targetSearchTimer.setFrom(ENEMY_TARGET_SEARCH_DELAY);
-    const path = findPath(tank, target, state, 1000, undefined, false);
+    const targetCenter = v2RoundMut(getRectCenter(target));
+    const tankCenter = v2RoundMut(getRectCenter(tank));
+    const dirOffset = Math.round((CELL_SIZE * 0.8) / 5);
+    const directions: Vector2Like[] = [
+        {x: 0, y: -dirOffset},
+        {x: dirOffset, y: 0},
+        {x: 0, y: dirOffset},
+        {x: -dirOffset, y: 0},
+    ];
+    const posOffset = Math.round(tank.width / 2) + 1;
+    const ignoreEntities = [tank.id, state.player.id];
+    const path = findAStarPath({
+        start: tankCenter,
+        goal: targetCenter,
+        heuristic: v2ManhattanDistance,
+        isGoalReached: (pos, goal) => v2EqualsApprox(pos, goal, posOffset),
+        getNeighbors: (pos) => {
+            const neighbors: Vector2Like[] = [];
+            for (const dir of directions) {
+                const neighborPos = v2RoundMut(v2Add(pos, dir));
+                if (!isPosOccupied(neighborPos, state, posOffset, ignoreEntities)) {
+                    neighbors.push(neighborPos);
+                }
+            }
+            return neighbors;
+        },
+    });
     if (path) {
         tank.targetPath = path;
         const nextPoint = tank.targetPath[0];
