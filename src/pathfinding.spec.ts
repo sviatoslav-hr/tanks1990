@@ -1,7 +1,7 @@
-import {describe, expect, it, vi} from 'vitest';
+import {describe, expect, it} from 'vitest';
 
-import {AStarInput, findAStarPath} from '#/pathfinding';
 import {v2Equals, v2ManhattanDistance, type Vector2Like as V2} from '#/math/vector';
+import {AStarInput, findAStarPath} from '#/pathfinding';
 
 const _ = 0;
 const w = 1;

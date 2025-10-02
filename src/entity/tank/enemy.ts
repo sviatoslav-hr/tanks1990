@@ -1,26 +1,21 @@
-import {findCollided, isPosOccupied, isRectOccupied} from '#/entity/lookup';
+import {CELL_SIZE} from '#/const';
 import {Entity} from '#/entity/core';
+import {findCollided, isPosOccupied} from '#/entity/lookup';
 import {EnemyTank, isEnemyTank} from '#/entity/tank';
 import {TankPartKind} from '#/entity/tank/generation';
 import {initTank} from '#/entity/tank/simulation';
-import {getRectCenter, isPosInsideRect, moveToRandomCorner, Rect, sameSign} from '#/math';
+import {getRectCenter, oppositeDirection} from '#/math';
 import {Direction} from '#/math/direction';
 import {Duration} from '#/math/duration';
-import {
-    v2Add,
-    v2AddMut,
-    v2EqualsApprox,
-    v2ManhattanDistance,
-    v2RoundMut,
-    Vector2Like,
-} from '#/math/vector';
-import {GameState} from '#/state';
+import {random} from '#/math/rng';
+import {v2Add, v2EqualsApprox, v2ManhattanDistance, v2RoundMut, Vector2Like} from '#/math/vector';
 import {findAStarPath} from '#/pathfinding';
-import {CELL_SIZE} from '#/const';
+import {GameState} from '#/state';
 
 const ENEMY_RESPAWN_DELAY = Duration.milliseconds(1000);
-const ENEMY_RESPAWN_ATTEMPTS_LIMIT = 4;
-const ENEMY_TARGET_SEARCH_DELAY = Duration.milliseconds(5000);
+const ENEMY_PATHFIND_DELAY_MIN = Duration.milliseconds(2000);
+const ENEMY_PATHFIND_DELAY_MAX = Duration.milliseconds(5000);
+const ENEMY_PATHFIND_RESTART_DELAY = Duration.milliseconds(500);
 
 export function spawnEnemy(
     state: GameState,
@@ -37,9 +32,6 @@ export function spawnEnemy(
     if (!deadEnemy) {
         // NOTE: Player should be drawn last, so enemies are added to the beginning of the array.
         state.tanks.unshift(enemy);
-        logger.debug('[Manager] Created new enemy tank', enemy.id);
-    } else {
-        logger.debug('[Manager] Reused dead enemy tank', enemy.id);
     }
     const wave = state.world.activeRoom.wave;
     enemy.shouldRespawn = true;
@@ -58,68 +50,99 @@ export function respawnEnemy(tank: EnemyTank, state: GameState): boolean {
     assert(tank.dead);
     assert(tank.shouldRespawn);
     assert(!tank.respawnDelay.positive);
-    const prevX = tank.x;
-    const prevY = tank.y;
-    for (let attempt = 0; attempt < ENEMY_RESPAWN_ATTEMPTS_LIMIT; attempt++) {
-        const room = state.world.activeRoom;
-        // TODO: Be more creative with spawn points
-        moveToRandomCorner(tank, room.boundary, (CELL_SIZE - tank.width) / 2);
-        const collided = findCollided(state, tank);
-        if (!collided) {
+
+    const room = state.world.activeRoom;
+    const boundary = room.boundary;
+    const roomSpawns: Vector2Like[] = [
+        {
+            x: boundary.x + boundary.width - CELL_SIZE / 2,
+            y: boundary.y + boundary.height - CELL_SIZE / 2,
+        },
+        {x: boundary.x + CELL_SIZE / 2, y: boundary.y + boundary.height - CELL_SIZE / 2},
+        {x: boundary.x + CELL_SIZE / 2, y: boundary.y + CELL_SIZE / 2},
+        {x: boundary.x + boundary.width - CELL_SIZE / 2, y: boundary.y + CELL_SIZE / 2},
+    ];
+    random.shuffle(roomSpawns);
+
+    let spawnPoint: Vector2Like | undefined;
+    while ((spawnPoint = roomSpawns.pop())) {
+        const occupied = isPosOccupied(spawnPoint, state, tank.width / 2);
+        if (!occupied) {
+            tank.x = spawnPoint.x - tank.width / 2;
+            tank.y = spawnPoint.y - tank.height / 2;
             initTank(tank);
             state.world.activeRoom.wave.acknowledgeEnemySpawned(tank.id);
             return true;
         }
     }
-    tank.x = prevX;
-    tank.y = prevY;
-    logger.warn('Failed to respawn enemy tank %d', tank.id);
+
+    tank.respawnDelay.add(ENEMY_RESPAWN_DELAY);
+    // prettier-ignore
+    logger.debug('Delaying respawn for enemy tank %d because all spawn points are occupied', tank.id);
     return false;
 }
 
 export function chooseEnemyDirection(tank: EnemyTank, state: GameState, dt: Duration): void {
     const player = state.player;
-    const newDirection = player.dead ? null : findEnemyTargetDirection(tank, player, dt, state);
+    if (player.dead) return;
+
+    tank.pathfindDelay.sub(dt).max(0);
+    tank.pathfindRestartDelay.sub(dt).max(0);
+
+    const newDirection = findEnemyTargetDirection(tank, player, state);
     if (newDirection != null && newDirection !== tank.direction) {
         tank.velocity = 0;
         tank.direction = newDirection;
     }
-    const targetPoint = tank.targetPath[0] ?? null;
-    if (targetPoint) {
-        tank.dvPrev.x = tank.cx - targetPoint.x;
-        tank.dvPrev.y = tank.cy - targetPoint.y;
-    }
 }
 
 function findEnemyTargetDirection(
-    tank: EnemyTank,
+    enemy: EnemyTank,
     target: Entity,
-    dt: Duration,
     state: GameState,
 ): Direction | null {
-    tank.targetSearchTimer.sub(dt).max(0);
-    if (tank.targetPath.length && tank.targetSearchTimer.positive) {
-        const targetPoint = tank.targetPath[0];
-        if (!targetPoint) return null;
-        if (isEnemyAtPoint(tank, targetPoint)) {
-            tank.targetPath.shift();
-            const nextPoint = tank.targetPath[0];
-            return nextPoint ? getTankDirectionToPoint(tank, nextPoint) : null;
-        }
-        return getTankDirectionToPoint(tank, targetPoint);
+    if (!enemy.pathfindDelay.milliseconds) {
+        const delayMilliseconds = random.int32Range(
+            ENEMY_PATHFIND_DELAY_MIN.milliseconds,
+            ENEMY_PATHFIND_DELAY_MAX.milliseconds,
+        );
+        enemy.pathfindDelay.setMilliseconds(delayMilliseconds);
+        const path = calculateEnemyPath(enemy, target, state);
+        const nextPoint = path?.[0];
+        if (nextPoint) return getTankDirectionToPoint(enemy, nextPoint);
+        return null;
     }
 
-    return recalculateEnemyPath(tank, target, state);
+    const targetPoint = enemy.targetPath[0];
+    if (targetPoint) {
+        // PERF: This creates a new vector object every simulation frame
+        //       and it's only used for simple check... Sad.
+        const enemyCenter = getRectCenter(enemy);
+        const eps = 1;
+        if (v2EqualsApprox(enemyCenter, targetPoint, eps)) {
+            enemy.targetPath.shift();
+            const nextPoint = enemy.targetPath[0];
+            return nextPoint ? getTankDirectionToPoint(enemy, nextPoint) : null;
+        }
+        return getTankDirectionToPoint(enemy, targetPoint);
+    }
+
+    // NOTE: Try to restart pathfinding in case path was reached before the timer has expired.
+    //       Have to use restart to prevent spamming search when path is impossible to find.
+    tryRestartEnemyPathfinding(enemy);
+    if (!enemy.pathfindDelay.milliseconds) {
+        return findEnemyTargetDirection(enemy, target, state);
+    }
+    return null;
 }
 
-export function recalculateEnemyPath(
-    tank: EnemyTank,
+function calculateEnemyPath(
+    enemy: EnemyTank,
     target: Entity,
     state: GameState,
-): Direction | null {
-    tank.targetSearchTimer.setFrom(ENEMY_TARGET_SEARCH_DELAY);
+): Vector2Like[] | null {
     const targetCenter = v2RoundMut(getRectCenter(target));
-    const tankCenter = v2RoundMut(getRectCenter(tank));
+    const tankCenter = v2RoundMut(getRectCenter(enemy));
     const dirOffset = Math.round((CELL_SIZE * 0.8) / 5);
     const directions: Vector2Like[] = [
         {x: 0, y: -dirOffset},
@@ -127,8 +150,9 @@ export function recalculateEnemyPath(
         {x: 0, y: dirOffset},
         {x: -dirOffset, y: 0},
     ];
-    const posOffset = Math.round(tank.width / 2) + 1;
-    const ignoreEntities = [tank.id, state.player.id];
+    const posOffset = Math.round(enemy.width / 2) + 1;
+    const ignoreEntities = [enemy.id, state.player.id];
+
     const path = findAStarPath({
         start: tankCenter,
         goal: targetCenter,
@@ -145,69 +169,68 @@ export function recalculateEnemyPath(
             return neighbors;
         },
     });
-    if (path) {
-        tank.targetPath = path;
-        const nextPoint = tank.targetPath[0];
-        assert(nextPoint);
-        return getTankDirectionToPoint(tank, nextPoint);
-    }
-    return null;
+
+    path?.shift(); // Remove the start point since enemy is already there.
+    if (path) enemy.targetPath = path;
+    return path;
 }
 
-function isEnemyAtPoint(tank: EnemyTank, next: Vector2Like): boolean {
-    // NOTE: If entity is close enough to the target point, consider it reached
-    const eps = 1;
-    const diff = Math.max(Math.abs(tank.cx - next.x), Math.abs(tank.cy - next.y));
-    return diff < eps;
-}
-
-export function handleMaybeMissedEnemyTargetPoint(tank: EnemyTank, state: GameState) {
-    const targetPoint = tank.targetPath[0] ?? null;
+export function hanldeOversteppedEnemyPathPoint(tank: EnemyTank, state: GameState) {
+    const targetPoint = tank.targetPath[0];
     if (tank.collided || !targetPoint) return;
 
-    // TODO: What is this code? Was I drunk or something? p - cp should always be the same
-    const {x: dxPrev, y: dyPrev} = tank.dvPrev;
-    const dx = tank.cx - targetPoint.x;
-    const dy = tank.cy - targetPoint.y;
-    // NOTE: If entity overstepped the target point, stop it and move back to target.
-    //       But only if case of a turn, because in a straight line tank starts bugging.
-    if ((dxPrev === dx && !sameSign(dyPrev, dy)) || (dyPrev === dy && !sameSign(dxPrev, dx))) {
+    const directionAfterMovement = getTankDirectionToPoint(tank, targetPoint);
+    if (!directionAfterMovement) {
+        // NOTE: If enemy is already at the target point, remove it from the path
+        //       so that enemy can move to the next point.
         tank.targetPath.shift();
-        if (isEnemyAtPoint(tank, targetPoint)) {
-        }
+        return;
+    }
+    // NOTE: If direction after movement is opposite to the current direction, that means
+    //       the enemy has moved past the target point.
+    if (directionAfterMovement === oppositeDirection(tank.direction)) {
+        tank.targetPath.shift(); // Remove passed point
         const nextPoint = tank.targetPath[0];
         if (nextPoint) {
-            const nextDir = getTankDirectionToPoint(tank, nextPoint);
-            if (!nextDir) return;
-            const targetDir = tank.direction;
-            if (targetDir === nextDir) {
-                return;
-            }
-            tank.velocity = 0;
+            const nextDirection = getTankDirectionToPoint(tank, nextPoint);
+            if (!nextDirection || nextDirection === tank.direction) return;
+
+            // NOTE: If even next direction is still different from the current, than means
+            //       the path is takes a turn, so we need to align the tank with the path axis.
             const prevX = tank.x;
             const prevY = tank.y;
-            if (dxPrev === dx) {
+            if (nextDirection === Direction.EAST || nextDirection === Direction.WEST) {
                 tank.y = targetPoint.y - tank.height / 2;
-            } else if (dyPrev === dy) {
+            } else if (nextDirection === Direction.NORTH || nextDirection === Direction.SOUTH) {
                 tank.x = targetPoint.x - tank.width / 2;
             }
-            const c = findCollided(state, tank);
-            if (c) {
+            const collided = findCollided(state, tank);
+            if (collided) {
                 tank.x = prevX;
                 tank.y = prevY;
+            } else {
+                tank.direction = nextDirection;
+                tank.velocity = 0;
             }
         }
     }
 }
 
 function getTankDirectionToPoint(tank: EnemyTank, next: Vector2Like): Direction | null {
-    const dx = next.x - Math.floor(tank.cx);
+    const dx = next.x - Math.round(tank.cx);
     if (dx !== 0) {
         return dx > 0 ? Direction.EAST : Direction.WEST;
     }
-    const dy = next.y - Math.floor(tank.cy);
+    const dy = next.y - Math.round(tank.cy);
     if (dy !== 0) {
         return dy > 0 ? Direction.SOUTH : Direction.NORTH;
     }
+    // NOTE: null means tank is already at the target point
     return null;
+}
+
+export function tryRestartEnemyPathfinding(tank: EnemyTank): void {
+    if (tank.pathfindRestartDelay.positive) return;
+    tank.pathfindDelay.setMilliseconds(0);
+    tank.pathfindRestartDelay.setFrom(ENEMY_PATHFIND_RESTART_DELAY);
 }

@@ -1,5 +1,9 @@
 export class Duration {
-    constructor(public milliseconds: number) {}
+    public milliseconds: number;
+
+    constructor(milliseconds: number) {
+        this.milliseconds = milliseconds;
+    }
 
     static between(start: number, end: number): Duration {
         assert(start <= end, 'Start time must be less than or equal to end time');

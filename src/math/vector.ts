@@ -219,6 +219,12 @@ export function v2AddMut(a: Vector2Like, b: Vector2Like): Vector2Like {
     return a;
 }
 
+export function v2AddScalarMut(v: Vector2Like, value: number): Vector2Like {
+    v.x += value;
+    v.y += value;
+    return v;
+}
+
 export function v2RoundMut(a: Vector2Like): Vector2Like {
     a.x = Math.round(a.x);
     a.y = Math.round(a.y);

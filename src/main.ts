@@ -109,12 +109,7 @@ function runGame(
             processInput(inputState, renderer, state, menu, devUI);
             maybeRecordGameInput(state, dt, inputState.game);
 
-            // NOTE: Stopping simulation after recording has finished playing.
-            if (
-                state.recording.playing
-                    ? isPlaying(state) && isRecordingPlaybackActive(state)
-                    : isPlaying(state) || isDead(state) || state.debugUpdateTickTriggered
-            ) {
+            if (isPlaying(state) || isDead(state) || state.debugUpdateTickTriggered) {
                 // NOTE: Showing enemies moving even when it's game-over to kind of troll the player "they continue living while you are dead".
                 simulateEntities(dt, state, state.playerCamera);
                 checkGameCompletion(state); // pushes events
@@ -129,7 +124,7 @@ function runGame(
         } catch (err) {
             logger.error('Error in animationCallback\n%O', err);
         }
-        devUI.fpsMonitor.end();
+        devUI.fpsMonitor.end(); // TODO: This does not get into account playing speed mult.
 
         let nextFrameScheduled = false;
         if (isPlaying(state) && isRecordingPlaybackActive(state)) {

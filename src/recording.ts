@@ -31,16 +31,11 @@ export interface RecordedInputInfo extends GameInputState {
 
 export function activateRecording(recording: RecordingStatus, info: RecordingData): void {
     assert(!recording.playing && recording.enabled);
-    resetRecording(recording, info);
+    recording.playingInputIndex = 0;
     recording.active = true;
+    info.inputs = [];
     info.seed = random.seed;
     info.startedAt = Date.now();
-}
-
-function resetRecording(recording: RecordingStatus, info: RecordingData): void {
-    info.inputs = [];
-    recording.active = false;
-    recording.playingInputIndex = 0;
 }
 
 export function stopRecording(recording: RecordingStatus, skipNotification = false): void {

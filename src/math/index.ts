@@ -1,5 +1,4 @@
 import {Direction} from '#/math/direction';
-import {random} from '#/math/rng';
 import {Vector2Like} from '#/math/vector';
 
 export type Rect = {
@@ -126,31 +125,6 @@ export function toDegrees(deg: number): number {
 export function numround(value: number, margin: number = 0): number {
     const n = 10 ** margin;
     return Math.round(value * n) / n;
-}
-
-export function moveToRandomCorner(entity: Rect, boundary: Rect, offset = 1): void {
-    switch (random.selectFrom(0, 1, 2, 3)) {
-        case 0: {
-            entity.x = boundary.x + offset;
-            entity.y = boundary.y + offset;
-            break;
-        }
-        case 1: {
-            entity.x = xn(boundary) - entity.width - offset;
-            entity.y = boundary.y + offset;
-            break;
-        }
-        case 2: {
-            entity.x = xn(boundary) - entity.width - offset;
-            entity.y = yn(boundary) - entity.height - offset;
-            break;
-        }
-        case 3: {
-            entity.x = boundary.x + offset;
-            entity.y = yn(boundary) - entity.height - offset;
-            break;
-        }
-    }
 }
 
 export const GRAVITY = 9.81; // in m/s^2

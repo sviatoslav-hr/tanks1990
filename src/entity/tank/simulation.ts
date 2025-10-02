@@ -1,12 +1,12 @@
 import {spawnExplosionEffect} from '#/effect';
-import {findCollided} from '#/entity/lookup';
 import {moveEntity} from '#/entity/core';
+import {findCollided} from '#/entity/lookup';
 import {spawnProjectile} from '#/entity/projectile';
 import {isEnemyTank, isPlayerTank, PlayerTank, Tank} from '#/entity/tank';
 import {
     chooseEnemyDirection,
-    handleMaybeMissedEnemyTargetPoint,
-    recalculateEnemyPath,
+    tryRestartEnemyPathfinding,
+    hanldeOversteppedEnemyPathPoint,
     respawnEnemy,
 } from '#/entity/tank/enemy';
 import {SHIELD_SPAWN_DURATION} from '#/entity/tank/generation';
@@ -56,21 +56,23 @@ export function simulateAllTanks(dt: Duration, state: GameState): void {
         if (collided) {
             tank.collided = true;
             if (isEnemyTank(tank) && collided.id !== state.player.id && !state.player.dead) {
-                // PERF: If enemies continue to collide, this will blow up the performance
-                tank.direction = recalculateEnemyPath(tank, state.player, state) ?? tank.direction;
+                tryRestartEnemyPathfinding(tank);
             }
             tank.x = prevX;
             tank.y = prevY;
             tank.velocity = 0;
             if (collided instanceof Tank) {
-                // collided.handleCollision(tank); TODO: is this needed? (prob yes)
                 collided.collided = true;
+                if (isEnemyTank(collided)) {
+                    tryRestartEnemyPathfinding(collided);
+                }
             }
         }
+
         simulateTankShield(tank, dt);
 
         if (isEnemyTank(tank)) {
-            handleMaybeMissedEnemyTargetPoint(tank, state);
+            hanldeOversteppedEnemyPathPoint(tank, state);
             tryTriggerTankShooting(tank, state);
         } else if (isPlayerTank(tank) && !tank.completedGame) {
             tank.survivedFor.add(dt);
@@ -93,7 +95,7 @@ export function initTank(tank: Tank): void {
         tank.shouldRespawn = false;
         tank.targetPath = [];
         tank.respawnDelay.setMilliseconds(0);
-        tank.targetSearchTimer.setMilliseconds(0);
+        tank.pathfindDelay.setMilliseconds(0);
     } else if (isPlayerTank(tank)) {
         tank.x = -tank.width / 2;
         tank.y = -tank.height / 2;

@@ -1,5 +1,11 @@
 import {DEV_MODE_KEY} from '#/const';
-import {changePlayerDirection, tryTriggerTankShooting} from '#/entity/tank/simulation';
+import {RESTORE_HP_AMOUNT, SHIELD_PICKUP_DURATION} from '#/entity/tank/generation';
+import {
+    activateTankShield,
+    changePlayerDirection,
+    restoreTankHealth,
+    tryTriggerTankShooting,
+} from '#/entity/tank/simulation';
 import {GameInput} from '#/input';
 import {Direction} from '#/math/direction';
 import {Vector2Like} from '#/math/vector';
@@ -26,9 +32,8 @@ export interface GameInputState {
     playerShooting?: boolean;
 }
 
+// TODO: There is no point in having input state for extra input since it's not being recorded.
 export interface ExtraInputState {
-    // PERF: It will be more efficient to compress these into flags.
-    //       Although, I'm not sure how well it will work in the usage code.
     toggleGamePause?: boolean;
     toggleGamePauseIgnoreMenu?: boolean;
     toggleFullscreen?: boolean;
@@ -45,15 +50,13 @@ export interface ExtraInputState {
     devCameraScaleMult?: number;
     devCameraScalePrecise?: number;
     devCameraResetToPlayer?: boolean;
+    devForceHeal?: boolean;
+    devForceShield?: boolean;
     switchDevPlayerCameras?: boolean;
     toggleRecording?: boolean;
     fetchRecording?: boolean;
     playOrExitRecording?: boolean;
     recordingPlayingSpeedMult?: number;
-    // Useful for temporary keymaps
-    reserved1?: boolean;
-    reserved2?: boolean;
-    reserved3?: boolean;
 }
 
 export function handleKeymaps(state: GameState, input: GameInput): InputState {
@@ -126,6 +129,14 @@ export function handleExtraKeymaps(input: GameInput): ExtraInputState {
             result.triggerSingleUpdate = true;
         }
 
+        if (input.isPressed('KeyG')) {
+            result.devForceShield = true;
+        }
+
+        if (input.isPressed('KeyH')) {
+            result.devForceHeal = true;
+        }
+
         if (input.isPressed('KeyB')) {
             result.toggleDebugBoundaries = true;
         }
@@ -146,18 +157,6 @@ export function handleExtraKeymaps(input: GameInput): ExtraInputState {
             result.recordingPlayingSpeedMult = 0.5;
         } else if (input.isPressed('BracketRight')) {
             result.recordingPlayingSpeedMult = 2;
-        }
-
-        if (input.isPressed('KeyN')) {
-            result.reserved1 = true;
-        }
-
-        if (input.isPressed('KeyV')) {
-            result.reserved2 = true;
-        }
-
-        if (input.isPressed('KeyH')) {
-            result.reserved3 = true;
         }
 
         if (input.isPressed('Backquote'))
@@ -351,5 +350,14 @@ export function processInput(
         } else {
             logger.error('Cannot reset - dev camera is not active');
         }
+    }
+
+    if (input.extra.devForceHeal) {
+        notify('Player HP restored');
+        restoreTankHealth(state.player, RESTORE_HP_AMOUNT);
+    }
+    if (input.extra.devForceShield) {
+        notify('Player shield activated');
+        activateTankShield(state.player, SHIELD_PICKUP_DURATION);
     }
 }

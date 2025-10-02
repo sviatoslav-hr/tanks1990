@@ -4,9 +4,6 @@
 
 ## NEXT TODO
 - [ ] Add animation/SFX to room door opening to hint player that's where he needs to go next
-- [ ] Better enemy spawn selection
-      If player is in one of the corner, then it's **impossible** to spawn all 4 enemies!
-- [ ] Recording speed mult doesn't really speed up the recording
 
 ## SHOULD BE FIXED
 - [ ] Mute is not working across sessions (does not reproduce locally)
