@@ -6,18 +6,10 @@
 - [ ] Add animation/SFX to room door opening to hint player that's where he needs to go next
 
 ## SHOULD BE FIXED
-- [ ] Mute is not working across sessions (does not reproduce locally)
-- [ ] Battle music starts regardless muted or not
 - [ ] **Movement improvement!** (Choose one approach)
     a. Change movement to move only by fractions of cells (e.g. 1/16 of a cell)
         This will be easier to pathfind. And also will *may* the UX by fixing the issue with the player being able to pass through blocks.
     b. Make tank model behave like it's more "rounded" so it sort of squeezes between blocks
-- [ ] Pathfinding: During later levels, the pathfinding slows down the game significantly.
-      Probably, need to put a smaller limit on the number of iterations for
-      pathfinding. Or adjust the limit dynamically based on the number of entities
-      in the room.
-- [ ] Pathfinding: Sometimes enemies build a path including a bunch of unnecessary turns (zigzag pattern)
-- [ ] Pathfinding: When enemy is right next to a target, but the turret is not aligned with the target, it's not smart enough to adjust it's position.
 
 ## BACKLOG
 

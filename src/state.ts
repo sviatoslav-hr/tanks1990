@@ -141,6 +141,7 @@ export function completeGame(state: GameState): void {
     if (state.recording.playing) {
         state.recording.playing = false;
     }
+    state.battleMusic?.stop();
     state.gameCompleted = true;
 }
 

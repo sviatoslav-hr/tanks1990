@@ -23,6 +23,7 @@ export interface SoundConfig {
 
 export class SoundManager {
     #volume = 1 * VOLUME_SCALE;
+    #muted = false;
     #mutePromise: Promise<void> | null = null;
     readonly initiallyMuted: boolean; // NOTE: This is only used during initialization because context.state updates asynchronously.
 
@@ -41,14 +42,6 @@ export class SoundManager {
         return Math.min(this.#volume / VOLUME_SCALE, 1);
     }
 
-    get muted(): boolean {
-        return this.audioContext.state === 'suspended';
-    }
-
-    get running(): boolean {
-        return this.audioContext.state === 'running';
-    }
-
     updateVolume(volume: number) {
         this.#volume = volume * VOLUME_SCALE;
         this.storage.set(GAME_VOLUME_KEY, volume.toString());
@@ -61,20 +54,22 @@ export class SoundManager {
     }
 
     suspend(): void {
-        if (this.muted) return;
+        if (this.#muted) return;
         if (this.#mutePromise) return;
 
-        this.storage.set(GAME_MUTED_KEY, true);
+        this.#muted = true;
+        this.storage.set(GAME_MUTED_KEY, this.#muted);
         this.#mutePromise = this.audioContext.suspend().then(() => {
             this.#mutePromise = null;
         });
     }
 
     resume(): void {
-        if (this.running) return;
+        if (!this.#muted) return;
         if (this.#mutePromise) return;
 
-        this.storage.set(GAME_MUTED_KEY, false);
+        this.#muted = false;
+        this.storage.set(GAME_MUTED_KEY, this.#muted);
         this.#mutePromise = this.audioContext.resume().then(() => {
             this.#mutePromise = null;
         });
