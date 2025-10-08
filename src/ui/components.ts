@@ -53,7 +53,7 @@ export const Slider = UIComponent('slider', (ui, props: SliderProps) => {
                 name: name,
                 value: value.get(),
                 min: min,
-                title: computed(() => value.get().toString(), [value]),
+                title: computed(() => value.get().toString()),
                 max: max,
                 step: step,
                 style: {

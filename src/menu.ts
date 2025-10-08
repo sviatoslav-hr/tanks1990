@@ -1,4 +1,4 @@
-import {computed, type Signal, signal} from '#/signals';
+import {computed, effect, type Signal, signal} from '#/signals';
 import {Button, ButtonProps, Slider} from '#/ui/components';
 import {CSSStyleConfig, extendUIChildren, UIComponent, type UIContext} from '#/ui/core';
 import {GameControlAction, type EventQueue} from '#/events';
@@ -68,7 +68,7 @@ export const Menu = UIComponent('menu', (ui, props: MenuProps) => {
             default:
                 return null;
         }
-    }, [view]);
+    });
     const startButtonText = computed(() => {
         switch (view.get()) {
             case 'main':
@@ -81,7 +81,7 @@ export const Menu = UIComponent('menu', (ui, props: MenuProps) => {
             case null:
                 return null;
         }
-    }, [view]);
+    });
 
     return [
         ui
@@ -93,7 +93,7 @@ export const Menu = UIComponent('menu', (ui, props: MenuProps) => {
                         styles.display = 'none';
                     }
                     return styles;
-                }, [view]),
+                }),
             })
             .children(
                 ui.div({class: 'menu__sidebar'}).children(
@@ -106,7 +106,7 @@ export const Menu = UIComponent('menu', (ui, props: MenuProps) => {
                             },
                             children: 'Resume',
                         });
-                    }, [view]),
+                    }),
                     MenuButton(ui, {
                         onClick: () => {
                             onGameControl('start');
@@ -262,7 +262,9 @@ const MenuSettingsBar = UIComponent('menu-settings', (ui: UIContext, props: Menu
     const css = ui.css;
     const {volume: volumeInput, muted, onFullscreenToggle} = props;
     const volume = signal(Math.round(volumeInput.get() * VOLUME_MAX));
-    volume.subscribe((value) => volumeInput.set(value / VOLUME_MAX));
+    effect(() => {
+        volumeInput.set(volume.get() / VOLUME_MAX);
+    });
 
     return [
         ui.div({class: 'settings'}).children(
@@ -275,7 +277,7 @@ const MenuSettingsBar = UIComponent('menu-settings', (ui: UIContext, props: Menu
                 style: {width: '10rem'},
             }),
             IconButton(ui, {
-                children: computed(() => (muted.get() ? '🔇' : '🔊'), [muted]),
+                children: computed(() => (muted.get() ? '🔇' : '🔊')),
                 onClick: () => muted.update((m) => !m),
             }),
             IconButton(ui, {

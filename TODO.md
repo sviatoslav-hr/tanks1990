@@ -1,6 +1,11 @@
 # TODO
 
 ## DOING
+- [ ] Revisit signals and UI library
+  - [x] Introduce effect and automatic subscriptions
+  - [ ] make signal a function: Signal.get() => Signal()
+  - [ ] Rewrite UI library, use comments as anchors
+  - [ ] `effect`s should be called outside of the handling function and `signal`s should not be passed in
 
 ## NEXT TODO
 - [ ] Add animation/SFX to room door opening to hint player that's where he needs to go next
@@ -21,7 +26,6 @@
   - Wave
   - Sounds
 - [ ] Revisit events
-- [ ] Revisit signals - Introduce effect and automatic subscriptions
 - [ ] Outline how objects/classes should access each other (global vars/props/DI etc) (eg Renderer, Input, EntityManager, Entity etc)
 - [ ] Better way to store images and sprites (how bad Image is?)
 - [ ] Room creation code is too complex and intermingled... (see #roomgen)

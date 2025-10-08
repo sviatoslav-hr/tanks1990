@@ -18,6 +18,7 @@ import {
     scheduleNextRecordedFrame,
 } from '#/recording';
 import {Renderer} from '#/renderer';
+import {effect} from '#/signals';
 import {simulateEntities} from '#/simulation';
 import {
     checkGameCompletion,
@@ -57,9 +58,14 @@ function main(): void {
     const menu = new MenuBridge(state.events);
     {
         menu.volume.set(sounds.volume);
-        menu.volume.subscribe((value) => sounds.updateVolume(value));
+        effect(() => {
+            sounds.updateVolume(menu.volume.get());
+        });
         menu.muted.set(sounds.initiallyMuted);
-        menu.muted.subscribe((muted) => (muted ? sounds.suspend() : sounds.resume()));
+        effect(() => {
+            if (menu.muted.get()) sounds.suspend();
+            else sounds.resume();
+        });
         Menu(uiGlobal, menu.props()).appendTo(appElement);
     }
 

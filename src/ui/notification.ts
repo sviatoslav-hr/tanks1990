@@ -1,4 +1,4 @@
-import {computed, ReadableSignal, signal} from '#/signals';
+import {computed, effect, ReadableSignal, signal} from '#/signals';
 import {UIComponent, UIContext} from '#/ui/core';
 
 interface NotifyOptions {
@@ -78,7 +78,7 @@ const NotificationBar = UIComponent('notification-bar', (ui, props: Notification
                 return ns.map((notification) => {
                     return NotificationItem(ui, {notification});
                 });
-            }, [notifications]),
+            }),
         ),
         css`
             .notification-bar {
@@ -134,21 +134,20 @@ const NotificationItem = UIComponent('notification-item', (ui, props: Notificati
         } else if (fading.get()) {
             setTimeout(() => hidden.set(true), timeoutMs + FADE_OUT_DURATION_MS - aliveMs);
         }
-        hidden.subscribe(() => (notification.hidden = true));
+        effect(() => {
+            notification.hidden = hidden.get();
+        });
     }
 
     return [
         ui
             .div({
-                class: computed(
-                    () => [
-                        'notification-item',
-                        'notification-item--' + kind,
-                        fading.get() ? 'notification-item--fading' : '',
-                        hidden.get() ? 'notification-item--hidden' : '',
-                    ],
-                    [fading, hidden],
-                ),
+                class: computed(() => [
+                    'notification-item',
+                    'notification-item--' + kind,
+                    fading.get() ? 'notification-item--fading' : '',
+                    hidden.get() ? 'notification-item--hidden' : '',
+                ]),
             })
             .children(ui.div({class: 'notification-text'}).children(message)),
         css`
