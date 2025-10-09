@@ -1,11 +1,11 @@
 export interface ReadableSignal<T> {
-    get: () => T;
+    (): T;
+    [SIGNAL_BRAND]: true;
 }
 
 export interface Signal<T> extends ReadableSignal<T> {
     set: (value: T) => void;
     update: (updater: SignalUpdater<T>) => void;
-    [SIGNAL_BRAND]: true;
 }
 
 type SignalUpdater<T> = (value: T) => T;
@@ -62,12 +62,11 @@ export function signal<T>(initialValue?: T): Signal<typeof initialValue> {
         set(newValue);
     }
 
-    const s: Signal<TReturn> = {
-        get,
+    const s: Signal<TReturn> = Object.assign(get, {
         set,
         update,
         [SIGNAL_BRAND]: true as const,
-    };
+    });
     return s;
 }
 
@@ -83,7 +82,7 @@ export function computed<T>(callback: ComputedSignalFn<T>): ReadableSignal<T> {
 }
 
 export function isReadableSignal<T>(value: unknown): value is ReadableSignal<T> {
-    if (!value || typeof value !== 'object') return false;
+    if (!value || typeof value !== 'function') return false;
     return Object.hasOwn(value, SIGNAL_BRAND);
 }
 

@@ -3,7 +3,7 @@
 ## DOING
 - [ ] Revisit signals and UI library
   - [x] Introduce effect and automatic subscriptions
-  - [ ] make signal a function: Signal.get() => Signal()
+  - [x] make signal a function: Signal.get() => Signal()
   - [ ] Rewrite UI library, use comments as anchors
   - [ ] `effect`s should be called outside of the handling function and `signal`s should not be passed in
 

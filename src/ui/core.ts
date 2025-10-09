@@ -79,7 +79,7 @@ function buildTemplateString(
         if (typeof arg === 'string') {
             argString = arg;
         } else if (arg != null) {
-            argString = arg.get();
+            argString = arg();
         }
         result += segment + argString;
     }
@@ -242,7 +242,7 @@ function applyOptionsToElement(
     if (options?.class) {
         effect(() => {
             if (isReadableSignal(options.class)) {
-                applyClassName(element, options.class.get());
+                applyClassName(element, options.class());
             } else if (options.class) {
                 applyClassName(element, options.class);
             }
@@ -251,7 +251,7 @@ function applyOptionsToElement(
     if (options?.title) {
         effect(() => {
             if (isReadableSignal(options.title)) {
-                element.title = options.title.get();
+                element.title = options.title();
             } else if (options.title) {
                 element.title = options.title;
             }
@@ -308,7 +308,7 @@ function applyStyleToElement(element: HTMLElement, style: CSSStyleInput) {
     if (isReadableSignal(style)) {
         let prevStyleConfig: CSSStyleConfig | null = null;
         effect(() => {
-            const newStyleConfig = style.get();
+            const newStyleConfig = style();
             if (prevStyleConfig) {
                 for (const key of Object.keys(prevStyleConfig) as (keyof CSSStyleConfig)[]) {
                     if (newStyleConfig[key] == null) {
@@ -373,7 +373,7 @@ export class UIContext {
     input(options?: HTMLInputElementOptions): UINode {
         const node = this.element('input', options);
         assert(isReadableSignal(node.element));
-        const element = node.element.get() as HTMLInputElement;
+        const element = node.element() as HTMLInputElement;
         if (options?.type) {
             element.type = options.type;
         }
@@ -405,7 +405,7 @@ export class UIContext {
     label(options?: HTMLLabelElementOptions): UINode {
         const node = this.element('label', options);
         assert(isReadableSignal(node.element));
-        const element = node.element.get() as HTMLLabelElement;
+        const element = node.element() as HTMLLabelElement;
         if (options?.for) {
             element.htmlFor = options.for;
         }
@@ -428,7 +428,7 @@ export class UIContext {
         const node = new UINode(null, null);
         effect(() => {
             if (isReadableSignal(stylesElement)) {
-                const element = stylesElement.get();
+                const element = stylesElement();
                 node.setElement(element);
             } else {
                 node.setElement(stylesElement);
@@ -506,7 +506,7 @@ export class UIComponentInstance {
 
     remove(): void {
         assert(isReadableSignal(this.rootNode.element));
-        this.rootNode.element.get()?.remove();
+        this.rootNode.element()?.remove();
     }
 }
 
@@ -537,7 +537,7 @@ class UIChildrenCollection {
     }
 
     remove(): void {
-        for (const c of this.children.get()) {
+        for (const c of this.children()) {
             if (c.parentNode) c.remove();
         }
     }
@@ -571,7 +571,7 @@ class UINode {
         if (this.element instanceof UIChildrenCollection) {
             throw new Error('UINode.setNode() does not support UIChildrenContainer.');
         }
-        const currentElement = this.element.get();
+        const currentElement = this.element();
         if (currentElement === source) return;
 
         if (source == null) {
@@ -595,7 +595,7 @@ class UINode {
         if (this.element instanceof UIChildrenCollection) {
             throw new Error('UINode.children() does not support UIChildrenContainer.');
         }
-        const currentElement = this.element.get();
+        const currentElement = this.element();
         if (currentElement instanceof Text) {
             throw new Error('UINode.children() cannot be called on a Text node.');
         }
@@ -604,7 +604,7 @@ class UINode {
         for (const [childIndex, child] of normalizedChildren.entries()) {
             this.#children.push(child);
             if (isReadableSignal(child.element)) {
-                const childElement = child.element.get();
+                const childElement = child.element();
                 if (childElement?.parentNode) {
                     // prettier-ignore
                     throw new Error('UINode.children() cannot add a child that already has a parent.');
@@ -628,7 +628,7 @@ class UINode {
                 // prettier-ignore
                 throw new Error('UINode.appendTo() does not support UIChildrenCollection as parent.');
             }
-            const p = parent.element.get();
+            const p = parent.element();
             if (p instanceof Text) {
                 throw new Error('UINode.appendTo() cannot append to a Text node.');
             }
@@ -643,7 +643,7 @@ class UINode {
         if (element instanceof UIChildrenCollection) {
             let prevNodes: (Element | Text)[] = [];
             effect(() => {
-                let newNodes = element.children.get();
+                let newNodes = element.children();
                 if (prevNodes.length) {
                     const lastPrevNode = prevNodes[prevNodes.length - 1]!;
                     lastPrevNode.after(...newNodes);
@@ -658,12 +658,12 @@ class UINode {
         } else {
             let prevNodeValue: UINodeElement | UIChildrenCollection | null = null;
             effect(() => {
-                let nodeValue = element.get();
+                let nodeValue = element();
                 prevNodeValue?.remove();
                 prevNodeValue = nodeValue;
                 if (!nodeValue) return;
                 if (nodeValue instanceof UIChildrenCollection) {
-                    parentElement.append(...nodeValue.children.get());
+                    parentElement.append(...nodeValue.children());
                 } else {
                     parentElement.append(nodeValue);
                 }
@@ -673,7 +673,7 @@ class UINode {
 
     private appendChild(child: Element | Text): void {
         if (isReadableSignal(this.element)) {
-            const currentElement = this.element.get();
+            const currentElement = this.element();
             if (!currentElement || currentElement instanceof Text) return;
 
             if (child instanceof UIChildrenCollection) {
@@ -699,8 +699,8 @@ class UINode {
         let prevChildNode: UINodeElement | null = null;
         effect(() => {
             assert(isReadableSignal(child.element)); // Child element must be a signal
-            const newChildNode = child.element.get();
-            const currentNode = nodeSignal.get();
+            const newChildNode = child.element();
+            const currentNode = nodeSignal();
             if (!currentNode) return; // If the current node is null, we cannot update the child.
             if (currentNode instanceof Text) {
                 throw new Error('Children should never be added to a Text node');
@@ -715,14 +715,14 @@ class UINode {
                         const otherChild = this.#children.at(i);
                         assert(otherChild && otherChild !== child);
                         assert(!(otherChild.element instanceof UIChildrenCollection));
-                        if (otherChild.element.get()) {
+                        if (otherChild.element()) {
                             prevNonEmptyChild = otherChild;
                         }
                     }
 
                     if (prevNonEmptyChild) {
                         assert(!(prevNonEmptyChild.element instanceof UIChildrenCollection));
-                        prevNonEmptyChild.element.get()?.after(newChildNode);
+                        prevNonEmptyChild.element()?.after(newChildNode);
                     } else {
                         // If there is no previous non-empty child, we append the new child to the current node.
                         this.appendChild(newChildNode);
@@ -741,7 +741,7 @@ class UINode {
             if (this.element instanceof UIChildrenCollection) {
                 throw new Error('UINode.applyOptions() does not support UIChildrenContainer.');
             }
-            const element = this.element.get();
+            const element = this.element();
             if (element instanceof HTMLElement) {
                 applyOptionsToElement(element, options);
             } else {
@@ -768,13 +768,13 @@ export function normalizeUIChildren(children?: UIChildrenInput | UIChildrenInput
     for (const child of arrayChildren) {
         if (isReadableSignal(child)) {
             const childSignal = child;
-            const children = childSignal.get();
+            const children = childSignal();
             if (Array.isArray(children)) {
                 const collection = new UIChildrenCollection();
                 const node = new UINode(collection, null);
                 result.push(node);
                 effect(() => {
-                    const newValue = childSignal.get();
+                    const newValue = childSignal();
                     assert(Array.isArray(newValue));
                     const sources: (Element | Text)[] = [];
                     for (const c of newValue) {
@@ -790,7 +790,7 @@ export function normalizeUIChildren(children?: UIChildrenInput | UIChildrenInput
             const node = new UINode(null);
             result.push(node);
             effect(() => {
-                const newValue = childSignal.get();
+                const newValue = childSignal();
                 assert(!Array.isArray(newValue));
                 const newNodeSource = makeNodeSourceFromInput(newValue);
                 node.setElement(newNodeSource);
@@ -816,7 +816,7 @@ function makeNodeSourceFromInput(input: UIChildInputValue): UINodeSource | null 
             // prettier-ignore
             throw new Error('UIChildrenCollection cannot be directly used as a child of another UINode.');
         }
-        const source = input.element.get();
+        const source = input.element();
         if (source instanceof Text) return source.textContent ?? '';
         return source;
     }
@@ -825,7 +825,7 @@ function makeNodeSourceFromInput(input: UIChildInputValue): UINodeSource | null 
             // prettier-ignore
             throw new Error('UIChildrenCollection cannot be directly used as a rootNode of a UIComponentInstance.');
         }
-        const source = input.rootNode.element.get();
+        const source = input.rootNode.element();
         if (source instanceof Text) return source.textContent ?? '';
         return source;
     }
@@ -861,7 +861,7 @@ export abstract class ReactiveElement extends HTMLElement {
         setTimeout(() => {
             this.content = this.makeContentSignal();
             effect(() => {
-                const newContent = this.content?.get();
+                const newContent = this.content?.();
                 if (!newContent) return;
                 // TODO: Need something better here... just replacing causes flickering.
                 this.shadow.replaceChildren(...newContent);
@@ -903,15 +903,15 @@ function buildContent(
 ): HTMLElement[] {
     let renderElements: HTMLElement[] | undefined;
     if (isReadableSignal(renderContent)) {
-        const tempt = renderContent.get();
+        const tempt = renderContent();
         renderElements = Array.isArray(tempt) ? tempt : [tempt];
     } else {
         renderElements = Array.isArray(renderContent) ? renderContent : [renderContent];
     }
 
     if (stylesContent) {
-        const styles = isReadableSignal(stylesContent) ? stylesContent.get() : stylesContent;
-        return [styles, ...renderElements, ...appendedContent.get()];
+        const styles = isReadableSignal(stylesContent) ? stylesContent() : stylesContent;
+        return [styles, ...renderElements, ...appendedContent()];
     }
-    return [...renderElements, ...appendedContent.get()];
+    return [...renderElements, ...appendedContent()];
 }

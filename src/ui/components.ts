@@ -51,15 +51,15 @@ export const Slider = UIComponent('slider', (ui, props: SliderProps) => {
                 id: inputId,
                 type: 'range',
                 name: name,
-                value: value.get(),
+                value: value(),
                 min: min,
-                title: computed(() => value.get().toString()),
+                title: computed(() => value().toString()),
                 max: max,
                 step: step,
                 style: {
                     '--slider-min': `${min}`,
                     '--slider-max': `${max}`,
-                    '--slider-value': `${value.get()}`,
+                    '--slider-value': `${value()}`,
                 } as CSSStyleInput,
                 onInput: (ev) => {
                     if (!ev.target) return;

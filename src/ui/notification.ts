@@ -74,8 +74,7 @@ const NotificationBar = UIComponent('notification-bar', (ui, props: Notification
     return [
         ui.div({class: 'notification-bar'}).children(
             computed(() => {
-                const ns = notifications.get();
-                return ns.map((notification) => {
+                return notifications().map((notification) => {
                     return NotificationItem(ui, {notification});
                 });
             }),
@@ -125,17 +124,17 @@ const NotificationItem = UIComponent('notification-item', (ui, props: Notificati
         } else if (aliveMs >= timeoutMs + FADE_OUT_DURATION_MS) {
             hidden.set(true);
         }
-        if (!hidden.get() && !fading.get()) {
+        if (!hidden() && !fading()) {
             setTimeout(() => {
                 fading.set(true);
                 const aliveMs = Date.now() - notification.createdAt;
                 setTimeout(() => hidden.set(true), timeoutMs + FADE_OUT_DURATION_MS - aliveMs);
             }, timeoutMs - aliveMs);
-        } else if (fading.get()) {
+        } else if (fading()) {
             setTimeout(() => hidden.set(true), timeoutMs + FADE_OUT_DURATION_MS - aliveMs);
         }
         effect(() => {
-            notification.hidden = hidden.get();
+            notification.hidden = hidden();
         });
     }
 
@@ -145,8 +144,8 @@ const NotificationItem = UIComponent('notification-item', (ui, props: Notificati
                 class: computed(() => [
                     'notification-item',
                     'notification-item--' + kind,
-                    fading.get() ? 'notification-item--fading' : '',
-                    hidden.get() ? 'notification-item--hidden' : '',
+                    fading() ? 'notification-item--fading' : '',
+                    hidden() ? 'notification-item--hidden' : '',
                 ]),
             })
             .children(ui.div({class: 'notification-text'}).children(message)),

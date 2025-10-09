@@ -59,11 +59,11 @@ function main(): void {
     {
         menu.volume.set(sounds.volume);
         effect(() => {
-            sounds.updateVolume(menu.volume.get());
+            sounds.updateVolume(menu.volume());
         });
         menu.muted.set(sounds.initiallyMuted);
         effect(() => {
-            if (menu.muted.get()) sounds.suspend();
+            if (menu.muted()) sounds.suspend();
             else sounds.resume();
         });
         Menu(uiGlobal, menu.props()).appendTo(appElement);

@@ -4,20 +4,20 @@ import {computed, effect, signal} from '#/signals';
 describe('signals', () => {
     it('should store and update value', () => {
         const a = signal(1);
-        expect(a.get()).toBe(1);
+        expect(a()).toBe(1);
         a.set(2);
-        expect(a.get()).toBe(2);
+        expect(a()).toBe(2);
         a.update((v) => v + 1);
-        expect(a.get()).toBe(3);
+        expect(a()).toBe(3);
         a.set(7);
-        expect(a.get()).toBe(7);
+        expect(a()).toBe(7);
     });
 
     it('should call effect when changed', () => {
         const a = signal(1);
         let callCount = 0;
         effect(() => {
-            a.get();
+            a();
             callCount += 1;
         });
 
@@ -31,31 +31,31 @@ describe('signals', () => {
     it('should update computed when changed', () => {
         const a = signal(1);
         const b = signal(2);
-        const sum = computed(() => a.get() + Math.abs(b.get()));
-        const doubled = computed(() => sum.get() * 2);
+        const sum = computed(() => a() + Math.abs(b()));
+        const doubled = computed(() => sum() * 2);
         let callsCounts = {sum: 0, double: 0};
         effect(() => {
-            sum.get();
+            sum();
             callsCounts.sum += 1;
         });
         effect(() => {
-            doubled.get();
+            doubled();
             callsCounts.double += 1;
         });
 
-        expect(sum.get()).toBe(3);
-        expect(doubled.get()).toBe(6);
+        expect(sum()).toBe(3);
+        expect(doubled()).toBe(6);
         expect(callsCounts).toEqual({sum: 1, double: 1});
         a.set(3);
-        expect(sum.get()).toBe(5);
-        expect(doubled.get()).toBe(10);
+        expect(sum()).toBe(5);
+        expect(doubled()).toBe(10);
         expect(callsCounts).toEqual({sum: 2, double: 2});
         b.set(4);
-        expect(sum.get()).toBe(7);
+        expect(sum()).toBe(7);
         expect(callsCounts).toEqual({sum: 3, double: 3});
-        expect(doubled.get()).toBe(14);
+        expect(doubled()).toBe(14);
         b.set(-4);
-        expect(sum.get()).toBe(7);
+        expect(sum()).toBe(7);
         // effect shouldn't be called because the computed value didn't change
         expect(callsCounts).toEqual({sum: 3, double: 3});
     });
@@ -69,17 +69,17 @@ describe('signals', () => {
         const callsCounts = {a: 0, b: 0, c: 0, d: 0};
 
         effect(() => {
-            a.get();
+            a();
             callsCounts.a += 1;
             effect(() => {
-                b.get();
+                b();
                 callsCounts.b += 1;
                 effect(() => {
-                    c.get();
+                    c();
                     callsCounts.c += 1;
                 });
                 effect(() => {
-                    d.get();
+                    d();
                     callsCounts.d += 1;
                 });
             });

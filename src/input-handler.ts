@@ -235,7 +235,7 @@ export function processInput(
         // HACK: It's kind of janky to bind this to menu, ideally it should be unrelated, but still updated in the menu.
         //       But this way is simpler, so it's fine for now.
         menu.muted.update((v) => !v);
-        notify(`Sound ${menu.muted.get() ? 'muted' : 'unmuted'}`);
+        notify(`Sound ${menu.muted() ? 'muted' : 'unmuted'}`);
     }
 
     if (input.extra.triggerSingleUpdate) {
