@@ -1,7 +1,6 @@
-import {computed, effect, type Signal, signal} from '#/signals';
-import {Button, ButtonProps, Slider} from '#/ui/components';
-import {CSSStyleConfig, extendUIChildren, UIComponent, type UIContext} from '#/ui/core';
 import {GameControlAction, type EventQueue} from '#/events';
+import {computed, effect, signal, type Signal} from '#/signals';
+import {WChildrenInput, wComponent, WCssStyleInput, WElementBasicAttributes} from '#/ui/w';
 
 export type MenuView = 'main' | 'pause' | 'dead' | 'completed';
 
@@ -11,9 +10,9 @@ const VOLUME_DEFAULT = 25;
 const VOLUME_CHANGE_STEP = 1;
 
 export class MenuBridge {
-    view = signal<MenuView | null>('main');
-    volume = signal(VOLUME_DEFAULT);
-    muted = signal(false);
+    readonly view = signal<MenuView | null>('main');
+    readonly volume = signal(VOLUME_DEFAULT);
+    readonly muted = signal(false);
     fullscreenToggleExpected = false;
 
     private events: EventQueue;
@@ -51,204 +50,97 @@ interface MenuProps {
     onFullscreenToggle: () => void;
 }
 
-export const Menu = UIComponent('menu', (ui, props: MenuProps) => {
+export const Menu = wComponent((w, props: MenuProps) => {
     const {volume, muted, view, onGameControl, onFullscreenToggle} = props;
-    const css = ui.css;
 
-    const menuTitle = computed(() => {
-        switch (view()) {
-            case 'main':
-                return 'PanzerLock';
-            case 'pause':
-                return 'Paused';
-            case 'dead':
-                return 'Game Over';
-            case 'completed':
-                return 'Game Completed';
-            default:
-                return null;
-        }
-    });
-    const startButtonText = computed(() => {
-        switch (view()) {
-            case 'main':
-                return 'Start';
-            case 'pause':
-            case 'dead':
-                return 'Restart';
-            case 'completed':
-                return 'Play Again';
-            case null:
-                return null;
-        }
-    });
-
-    return [
-        ui
-            .div({
-                class: 'menu',
-                style: computed(() => {
-                    const styles: CSSStyleConfig = {};
-                    if (view() == null) {
-                        styles.display = 'none';
+    return w.div(
+        {
+            class: 'menu',
+            style: computed(() => {
+                const styles: WCssStyleInput = {};
+                if (view() == null) {
+                    styles.display = 'none';
+                }
+                return styles;
+            }),
+        },
+        w.div(
+            {class: 'menu__sidebar'},
+            w.h1({class: 'sidebar__header'}, () => {
+                switch (view()) {
+                    case 'main':
+                        return 'PanzerLock';
+                    case 'pause':
+                        return 'Paused';
+                    case 'dead':
+                        return 'Game Over';
+                    case 'completed':
+                        return 'Game Completed';
+                    default:
+                        return null;
+                }
+            }),
+            computed(() => {
+                if (view() !== 'pause') return null;
+                return MenuButton(
+                    {
+                        onclick: () => onGameControl('resume'),
+                    },
+                    'Resume',
+                );
+            }),
+            MenuButton(
+                {
+                    onclick: () => onGameControl('start'),
+                },
+                () => {
+                    switch (view()) {
+                        case 'main':
+                            return 'Start';
+                        case 'pause':
+                        case 'dead':
+                            return 'Restart';
+                        case 'completed':
+                            return 'Play Again';
+                        case null:
+                            return null;
                     }
-                    return styles;
-                }),
-            })
-            .children(
-                ui.div({class: 'menu__sidebar'}).children(
-                    ui.h1({class: 'sidebar__header'}).children(menuTitle),
-                    computed(() => {
-                        if (view() !== 'pause') return null;
-                        return MenuButton(ui, {
-                            onClick: () => {
-                                onGameControl('resume');
-                            },
-                            children: 'Resume',
-                        });
-                    }),
-                    MenuButton(ui, {
-                        onClick: () => {
-                            onGameControl('start');
-                        },
-                        children: startButtonText,
-                    }),
-                    ui.div({class: 'menu__version'}).children(`v${GAME_VERSION}-${COMMIT_HASH}`),
-                ),
-                ui
-                    .div({class: 'menu__content'})
-                    .children(
-                        MenuSettingsBar(ui, {volume, muted, onFullscreenToggle}),
-                        MenuControlsView(ui),
-                    ),
+                },
             ),
-        css`
-            /* HACK: for some reason this is not inherited from the root */
-            * {
-                box-sizing: border-box;
-                padding: 0;
-                margin: 0;
-            }
-            .menu {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100vw;
-                height: 100vh;
-                background-color: oklch(from var(--color-bg-dark) l c h / 0.75);
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                color: var(--color-text);
-                font-size: 24px;
-            }
-            .menu__sidebar {
-                position: relative;
-                background-color: oklch(from var(--color-bg) l c h / 0.95);
-                width: 33%;
-                max-width: 27rem;
-                height: 100%;
-                padding: 1rem;
-                display: flex;
-                gap: 1rem;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                border-right: 1px solid var(--color-border);
-            }
-            .menu__sidebar > * {
-                width: 100%;
-                max-width: 20rem;
-            }
-            .sidebar__header {
-                text-align: center;
-                margin-bottom: 1.25rem;
-                color: var(--color-text);
-            }
-            .menu__content {
-                flex-grow: 1;
-                height: 100%;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                position: relative;
-            }
-            .menu__version {
-                position: absolute;
-                bottom: 0;
-                left: 0;
-                width: 100%;
-                text-align: center;
-                font-size: 16px;
-                color: var(--color-text-muted, #ff00ffbf);
-                max-width: 100%;
-            }
-        `,
-    ];
+            w.div({class: 'menu__version'}, `v${GAME_VERSION}-${COMMIT_HASH}`),
+        ),
+        w.div(
+            {class: 'menu__content'},
+            MenuSettingsBar({volume, muted, onFullscreenToggle}),
+            MenuControlsView(),
+        ),
+    );
 });
 
-const MenuControlsView = UIComponent('menu-controls', (ui) => {
-    const css = ui.css;
+const MenuControlsView = wComponent((w) => {
     return [
-        ui
-            .div({class: 'menu-controls'})
-            .children(
-                ui.h2().children('Controls'),
-                ui
-                    .ul({class: 'controls-list'})
-                    .children(
-                        ui
-                            .li()
-                            .children(
-                                ui.code().children('W'),
-                                ' ',
-                                ui.code().children('S'),
-                                ' ',
-                                ui.code().children('A'),
-                                ' ',
-                                ui.code().children('D'),
-                                ' - Move',
-                            ),
-                        ui.li().children(ui.code().children('Space'), ' - Shoot'),
-                        ui.li().children(ui.code().children('P'), ' - Pause/Resume'),
-                        ui.li().children(ui.code().children('F'), ' - Toggle Fullscreen'),
-                        ui.li().children(ui.code().children('M'), ' - Toggle Music and Sounds'),
-                    ),
+        w.div(
+            {class: 'menu-controls'},
+            w.h2({}, 'Controls'),
+            w.ul(
+                {class: 'controls-list'},
+                w.li(
+                    {},
+                    w.code({}, 'W'),
+                    ' ',
+                    w.code({}, 'S'),
+                    ' ',
+                    w.code({}, 'A'),
+                    ' ',
+                    w.code({}, 'D'),
+                    ' - Move',
+                ),
+                w.li({}, w.code({}, 'Space'), ' - Shoot'),
+                w.li({}, w.code({}, 'P'), ' - Pause/Resume'),
+                w.li({}, w.code({}, 'F'), ' - Toggle Fullscreen'),
+                w.li({}, w.code({}, 'M'), ' - Toggle Music and Sounds'),
             ),
-        css`
-            .menu-controls {
-                background-color: oklch(from var(--color-bg) l c h / 0.95);
-                border: 1px solid var(--color-border);
-                border-radius: 0.3em;
-                padding: 1rem;
-                width: fit-content;
-            }
-            h2 {
-                font-size: 2rem;
-                font-weight: bold;
-                margin: 0 0 1rem;
-                text-align: center;
-            }
-            ul {
-                margin: 0;
-                padding: 0;
-                list-style: none;
-            }
-            li {
-                font-size: 1.5rem;
-                padding: 1rem 0;
-                text-shadow: 0 0 0.3em var(--black-raisin);
-            }
-            code {
-                font-size: inherit;
-                padding: 0.2em 0.4em;
-                border-radius: 0.3em;
-                background-color: oklch(from var(--color-bg-light) l c h / 0.5);
-                border: 1px solid var(--color-border);
-                border-top: 1px solid var(--color-highlight);
-            }
-        `,
+        ),
     ];
 });
 
@@ -258,8 +150,7 @@ interface MenuSettingsProps {
     onFullscreenToggle: () => void;
 }
 
-const MenuSettingsBar = UIComponent('menu-settings', (ui: UIContext, props: MenuSettingsProps) => {
-    const css = ui.css;
+const MenuSettingsBar = wComponent((w, props: MenuSettingsProps) => {
     const {volume: volumeInput, muted, onFullscreenToggle} = props;
     const volume = signal(Math.round(volumeInput() * VOLUME_MAX));
     effect(() => {
@@ -267,8 +158,9 @@ const MenuSettingsBar = UIComponent('menu-settings', (ui: UIContext, props: Menu
     });
 
     return [
-        ui.div({class: 'settings'}).children(
-            Slider(ui, {
+        w.div(
+            {class: 'menu-settings'},
+            Slider({
                 name: 'volume',
                 min: VOLUME_MIN,
                 max: VOLUME_MAX,
@@ -276,114 +168,87 @@ const MenuSettingsBar = UIComponent('menu-settings', (ui: UIContext, props: Menu
                 value: volume,
                 style: {width: '10rem'},
             }),
-            IconButton(ui, {
-                children: computed(() => (muted() ? '🔇' : '🔊')),
-                onClick: () => muted.update((m) => !m),
-            }),
-            IconButton(ui, {
-                style: {fontSize: '2rem'},
-                children: '⛶',
-                onClick: () => onFullscreenToggle(),
-            }),
+            IconButton(
+                {
+                    onclick: () => muted.update((m) => !m),
+                },
+                () => (muted() ? '🔇' : '🔊'),
+            ),
+            IconButton(
+                {
+                    style: {fontSize: '2rem'},
+                    onclick: () => onFullscreenToggle(),
+                },
+                '⛶',
+            ),
         ),
-        css`
-            .settings {
-                position: absolute;
-                right: 2rem;
-                top: 2rem;
-                display: flex;
-                gap: 1rem;
-                align-items: center;
-            }
-            .settings > * {
-                line-height: 0;
-            }
-        `,
     ];
 });
 
-const MenuButton = UIComponent('menu-button', (ui, props: ButtonProps) => {
-    const css = ui.css;
-    return [
-        Button(ui, {
-            ...props,
-            children: extendUIChildren(
-                props.children,
-                css`
-                    button {
-                        background-color: var(--btn-primary-bg);
-                        /*border: none;*/
-                        border: 3px solid var(--btn-primary-border);
-                        color: var(--btn-primary-text);
-                        padding: 0.5rem 2rem;
-                        font-weight: 500;
-                        font-size: 2rem;
-                        width: 100%;
-                        text-align: center;
-                        transition-property: outline, background-color;
-                        transition-timing-function: ease-in-out;
-                        transition-duration: 0.2s;
-                        border-radius: 0.25rem;
-                        cursor: pointer;
-                        outline: 0 solid transparent;
-                        outline-offset: 3px;
-                    }
-                    button:hover,
-                    button:active {
-                        background-color: var(--btn-primary-bg-hover);
-                    }
-                    button:focus-visible {
-                        outline: 3px solid var(--btn-primary-border);
-                    }
-                `,
-            ),
-        }),
-        css`
-            * {
-                width: 100%;
-            }
-        `,
-    ];
+const MenuButton = wComponent((w, props: WElementBasicAttributes, children: WChildrenInput) => {
+    return w.button({class: 'menu-btn', ...props}, ...children);
 });
 
-export const IconButton = UIComponent('mute-button', (ui, props: ButtonProps) => {
-    const css = ui.css;
+const IconButton = wComponent((w, props: WElementBasicAttributes, children: WChildrenInput) => {
+    return w.button({class: 'icon-btn', ...props}, ...children);
+});
+
+interface SliderProps extends WElementBasicAttributes {
+    name: string;
+    label?: string;
+    min?: number;
+    max?: number;
+    step?: number;
+    value?: Signal<number>;
+    hideValue?: boolean;
+    children?: WChildrenInput;
+}
+
+const Slider = wComponent((w, props: SliderProps) => {
+    const {
+        name,
+        label,
+        min = 0,
+        max = 50,
+        step = 1,
+        value = signal(0),
+        hideValue = false,
+        style,
+        children = [],
+    } = props;
+    const inputId = 'slider-volume';
+
     return [
-        Button(ui, {
-            ...props,
-            children: extendUIChildren(
-                props.children,
-                css`
-                    button {
-                        display: inline-block;
-                        font-size: 1.25rem;
-                        line-height: 1.5rem;
-                        overflow: hidden;
-                        border-radius: 0.25rem;
-                        background-color: var(--btn-secondary-bg);
-                        color: var(--btn-secondary-text);
-                        border: none;
-                        width: 2rem;
-                        height: 2rem;
-                        padding: 0;
-                        margin: 0;
-                        text-align: center;
-                        transition-property: background-color, transform, outline;
-                        transition-timing-function: ease-in-out;
-                        transition-duration: 0.2s;
-                        cursor: pointer;
-                        outline: 0 solid transparent;
-                        outline-offset: 3px;
-                    }
-                    button:hover {
-                        transform: scale(1.1);
-                        background-color: oklch(from var(--btn-secondary-bg-hover) l c h / 0.75);
-                    }
-                    button:focus-visible {
-                        outline: 3px solid var(--btn-secondary-border);
-                    }
-                `,
-            ),
-        }),
+        w.div(
+            {class: 'menu-slider', style},
+            w.label({for: inputId}, label),
+            w.input({
+                id: inputId,
+                type: 'range',
+                name: name,
+                value: value(),
+                min: min,
+                title: computed(() => value().toString()),
+                max: max,
+                step: step,
+                style: {
+                    '--slider-min': `${min}`,
+                    '--slider-max': `${max}`,
+                    '--slider-value': `${value()}`,
+                } as WCssStyleInput,
+                oninput: (ev) => {
+                    if (!ev.target) return;
+                    const input = ev.target as HTMLInputElement;
+                    input.style.setProperty('--slider-min', `${min}`);
+                    input.style.setProperty('--slider-max', `${max}`);
+                    const inputValue = input.valueAsNumber;
+                    input.style.setProperty('--slider-value', `${inputValue}`);
+                    value.set(inputValue);
+                },
+            }),
+
+            hideValue ? w.span({}, value) : null,
+            ...children,
+        ),
     ];
 });

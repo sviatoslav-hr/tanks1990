@@ -273,7 +273,7 @@ export function processInput(
     if (input.extra.toggleDevMode) {
         window.__DEV_MODE = !window.__DEV_MODE;
         state.storage.set(DEV_MODE_KEY, window.__DEV_MODE);
-        notify(`Dev mode ${window.__DEV_MODE ? 'enabled' : 'disabled'}`);
+        notify(`Dev mode ${window.__DEV_MODE ? 'enabled' : 'disabled'} (x${++devModeCounter})`);
     }
 
     if (input.extra.toggleFPSMonitor) {
@@ -361,3 +361,5 @@ export function processInput(
         activateTankShield(state.player, SHIELD_PICKUP_DURATION);
     }
 }
+
+let devModeCounter = 0;
