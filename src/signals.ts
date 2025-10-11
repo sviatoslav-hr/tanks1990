@@ -37,10 +37,15 @@ export function signal<T = undefined>(initialValue?: T): Signal<T | undefined>;
 export function signal<T>(initialValue?: T): Signal<typeof initialValue> {
     type TReturn = typeof initialValue;
     const effects: Set<SignalEffect> = new Set();
+    const effectDuringInit = currentEffect; // In case signal is created inside an effect
     let currentValue = initialValue;
 
     function get(): TReturn {
-        if (currentEffect) effects.add(currentEffect);
+        // NOTE: Init effect should NOT be added to effects list, because get,set called will trigger
+        //       an infinite recursion.
+        if (currentEffect && currentEffect !== effectDuringInit) {
+            effects.add(currentEffect);
+        }
         return currentValue;
     }
 

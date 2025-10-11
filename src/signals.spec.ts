@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {computed, effect, signal} from '#/signals';
+import {computed, effect, Signal, signal} from '#/signals';
 
 describe('signals', () => {
     it('should store and update value', () => {
@@ -107,5 +107,28 @@ describe('signals', () => {
 
         d.set(3);
         expect(callsCounts).toEqual({a: 2, b: 4, c: 6, d: 6});
+    });
+
+    it('should create signal inside an effect', () => {
+        const a = signal(1);
+        let b: Signal<number> | undefined;
+        const callCounts = {a: 0, b: 0};
+        effect(() => {
+            a();
+            b = signal(1);
+            b();
+            b.set(2);
+            effect(() => {
+                b?.();
+                callCounts.b += 1;
+            });
+            callCounts.a += 1;
+        });
+
+        expect(callCounts).toEqual({a: 1, b: 1});
+        b?.set(3);
+        expect(callCounts).toEqual({a: 1, b: 2});
+        a.set(2);
+        expect(callCounts).toEqual({a: 2, b: 3});
     });
 });
