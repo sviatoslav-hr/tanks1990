@@ -14,3 +14,4 @@ window.panic = throwError;
 window.logger = logger;
 window.BROWSER = BROWSER;
 window.COMMIT_HASH = window.COMMIT_HASH || 'unknown';
+window.GAME_VERSION = window.GAME_VERSION || '0.0.0';
