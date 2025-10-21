@@ -1,14 +1,60 @@
 import {beforeEach, describe, expect, it} from 'vitest';
 
 import {computed, signal, Signal} from '#/signals';
-import {createWContext, CssStyleConfig, wComponent, WContext, WElementNode} from '#/ui/w';
+import {
+    createWContext,
+    CssStyleConfig,
+    wComponent,
+    WContext,
+    WElementNode,
+    WPrimitiveNode,
+} from '#/ui/w';
+
+interface WContextMock {
+    ctx: WContext;
+    allElements: WElementNode[];
+}
+
+interface NodeMock {
+    value: WElementNode;
+    children: (NodeMock | WPrimitiveNode)[];
+}
+
+// TODO: Need a nice abstraction for a context, can will make testing and mocking easier
+//       Especially interested in having a way to mock user input (click, etc)
+function createMockWContext(): WContextMock {
+    const elements: WElementNode[] = [];
+    const nodeMap = new WeakMap<WElementNode, NodeMock>();
+
+    const ctx = createWContext({
+        createElement: (element) => {
+            elements.push(element);
+            nodeMap.set(element, {value: element, children: []});
+        },
+        appendToElement: (parent, child) => {
+            const parentNode = nodeMap.get(parent);
+            assert(parentNode, 'parent node should exist');
+            switch (child.type) {
+                case 'primitive': {
+                    if (child.value != null) {
+                        parentNode.children.push(child);
+                    }
+                    break;
+                }
+                case 'element': {
+                    const childNode = nodeMap.get(child);
+                    assert(childNode, 'child node should exist');
+                }
+            }
+        },
+    });
+    return {ctx, allElements: elements};
+}
 
 describe('w-ui', () => {
     let mock!: WContextMock;
 
     beforeEach(() => {
-        // TODO: Need a nice abstraction for a context, can will make testing and mocking easier
-        //       Especially interested in having a way to mock user input (click, etc)
         mock = createMockWContext();
     });
 
@@ -36,12 +82,31 @@ describe('w-ui', () => {
 
         it('should create a counter component', () => {
             Counter(mock.ctx, {initial: 5});
+
+            const buttons = mock.allElements.filter((el) => el.tag === 'button');
+            expect(buttons.length).toBe(2);
+            const divs = mock.allElements.filter((el) => el.tag === 'div');
+            expect(divs.length).toBe(2);
+
+            for (const element of mock.allElements) {
+                if (element.tag === 'button') {
+                    expect(element.options.onClick).toBeDefined();
+                }
+                if (element.options.id === '420') {
+                    expect(element.children.length).toBe(1);
+                    const child = element.children[0];
+                    assert(child?.type === 'primitive');
+                    expect(child.value).toBe('Value is 5');
+                }
+            }
+        });
+
+        it('should response to a click event', () => {
+            Counter(mock.ctx, {initial: 5});
         });
     });
 
     describe('Menu', () => {
-        const context = createWContext();
-
         type MenuView = 'main' | 'pause' | 'dead' | 'completed';
         type GameControlAction = 'start' | 'pause' | 'resume' | 'game-over' | 'game-completed';
 
@@ -139,7 +204,7 @@ describe('w-ui', () => {
         });
 
         it('should create a menu component', () => {
-            const menu = Menu(context, {
+            const menu = Menu(mock.ctx, {
                 view: signal<MenuView | null>(null),
                 volume: signal(50),
                 muted: signal(false),
@@ -155,19 +220,3 @@ describe('w-ui', () => {
         });
     });
 });
-
-interface WContextMock {
-    ctx: WContext;
-    allElements: WElementNode[];
-}
-
-function createMockWContext(): WContextMock {
-    const elements: WElementNode[] = [];
-    const ctx = createWContext({
-        createElement: (tag, options, children) => {
-            const element = {type: 'element' as const, tag: tag, options: options ?? {}, children};
-            return element;
-        },
-    });
-    return {ctx, allElements: elements};
-}
