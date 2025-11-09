@@ -20,6 +20,7 @@ import {
 import {Renderer} from '#/renderer';
 import {effect} from '#/signals';
 import {simulateEntities} from '#/simulation';
+import {loadAllSounds, resumeAllSounds, setAllSoundsVolume, suspendAllSounds} from '#/sound';
 import {
     checkGameCompletion,
     GameState,
@@ -50,7 +51,7 @@ function main(): void {
     const state = newGameState(storage);
     const sounds = state.sounds;
 
-    sounds.loadAllSounds().then(() => logger.debug('[Sounds] All sounds loaded'));
+    loadAllSounds(sounds).then(() => logger.debug('[Sounds] All sounds loaded'));
     preloadEffectImages();
 
     const renderer = new Renderer(state.playerCamera);
@@ -60,12 +61,12 @@ function main(): void {
     {
         menu.volume.set(sounds.volume);
         effect(() => {
-            sounds.updateVolume(menu.volume());
+            setAllSoundsVolume(sounds, menu.volume());
         });
         menu.muted.set(sounds.initiallyMuted);
         effect(() => {
-            if (menu.muted()) sounds.suspend();
-            else sounds.resume();
+            if (menu.muted()) suspendAllSounds(sounds);
+            else resumeAllSounds(sounds);
         });
         mountWComponent(w, Menu(menu.props()), appElement);
     }

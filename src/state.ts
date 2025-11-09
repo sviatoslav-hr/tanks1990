@@ -10,7 +10,7 @@ import {
 } from '#/recording';
 import {Camera} from '#/renderer/camera';
 import {initEntities, setupMainBackgroundScene} from '#/simulation';
-import {SoundManager, type Sound} from '#/sound';
+import {newSoundContext, SoundContext, stopSound, type Sound} from '#/sound';
 import {GameStorage} from '#/storage';
 import {isRoomCompleted, type Room} from '#/world/room';
 import {newWorld, World} from '#/world/world';
@@ -44,7 +44,7 @@ export interface GameState {
     events: EventQueue;
     battleMusic: Sound | null;
     storage: GameStorage;
-    sounds: SoundManager;
+    sounds: SoundContext;
     playerCamera: Camera;
     devCamera: Camera;
 
@@ -71,7 +71,7 @@ export function newGameState(storage: GameStorage): GameState {
         events: new EventQueue(),
         battleMusic: null,
         storage: storage,
-        sounds: new SoundManager(storage),
+        sounds: newSoundContext(storage),
         playerCamera: new Camera(),
         devCamera: new Camera(),
 
@@ -141,7 +141,7 @@ export function completeGame(state: GameState): void {
     if (state.recording.playing) {
         state.recording.playing = false;
     }
-    state.battleMusic?.stop();
+    if (state.battleMusic) stopSound(state.battleMusic);
     state.gameCompleted = true;
 }
 

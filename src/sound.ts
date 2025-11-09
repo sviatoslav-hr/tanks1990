@@ -1,6 +1,7 @@
 import {Result} from '#/common';
 import {GameStorage} from '#/storage';
 
+// TODO: Sound system should be genetic and now know about these specific sounds.
 export enum SoundName {
     EXPLOSION = 'explosion_8bit',
     SHOOTING = 'cannon_fire',
@@ -10,124 +11,131 @@ export enum SoundName {
     BATTLE_THEME = 'too_strong',
 }
 
+// TODO: These should be part of the sound context/config.
 const SOUNDS_PATH = './sounds';
 const GAME_VOLUME_KEY = 'game_volume';
 const GAME_MUTED_KEY = 'game_muted';
 const VOLUME_SCALE = 0.3; // Scale volume down because too loud by default.
 
-export interface SoundConfig {
+export interface SoundInput {
     name: SoundName;
     volume: number;
     loop?: boolean;
 }
 
-export class SoundManager {
-    #volume = 1 * VOLUME_SCALE;
-    #muted = false;
-    #mutePromise: Promise<void> | null = null;
+export interface SoundContext {
+    volume: number;
+    muted: boolean;
+    mutePromise: Promise<void> | null;
+    readonly storage: GameStorage;
+    readonly audio: AudioContext;
     readonly initiallyMuted: boolean; // NOTE: This is only used during initialization because context.state updates asynchronously.
+    readonly soundsCache: Map<SoundName, Sound[]>;
+}
 
-    // TODO: This should be created only after user made any action on the page.
-    private readonly soundsCache = new Map<SoundName, Sound[]>();
-
-    constructor(
-        private readonly storage: GameStorage,
-        private readonly audioContext = new AudioContext(),
-    ) {
-        this.initiallyMuted = storage.getBool(GAME_MUTED_KEY) ?? false;
-        if (this.initiallyMuted) this.suspend();
+export function newSoundContext(storage: GameStorage): SoundContext {
+    const context: SoundContext = {
+        volume: 1,
+        muted: storage.getBool(GAME_MUTED_KEY) ?? false,
+        mutePromise: null,
+        storage,
+        // TODO: This should be created only after user made any action on the page.
+        audio: new AudioContext(),
+        initiallyMuted: storage.getBool(GAME_MUTED_KEY) ?? false,
+        soundsCache: new Map<SoundName, Sound[]>(),
+    };
+    if (context.initiallyMuted) {
+        suspendAllSounds(context);
     }
+    return context;
+}
 
-    get volume(): number {
-        return Math.min(this.#volume / VOLUME_SCALE, 1);
+export function suspendAllSounds(context: SoundContext): void {
+    if (context.muted) return;
+    if (context.mutePromise) return;
+
+    context.muted = true;
+    context.storage.set(GAME_MUTED_KEY, context.muted);
+    context.mutePromise = context.audio.suspend().then(() => {
+        context.mutePromise = null;
+    });
+}
+
+export async function loadAllSounds(context: SoundContext): Promise<void> {
+    let volume = context.storage.getNumber(GAME_VOLUME_KEY);
+    if (volume != null) {
+        volume = Math.max(Math.min(1, volume), 0);
+        context.volume = volume;
     }
-
-    updateVolume(volume: number) {
-        this.#volume = volume * VOLUME_SCALE;
-        this.storage.set(GAME_VOLUME_KEY, volume.toString());
-
-        for (const [_, sounds] of this.soundsCache) {
-            for (const sound of sounds) {
-                sound.volume = this.#volume;
-            }
+    const promises: Promise<Result<void>>[] = [];
+    for (const type of Object.values(SoundName)) {
+        const soundSrc = getSoundSrcByName(type);
+        const sound = newSound(soundSrc, context.audio);
+        sound.volume = context.volume * VOLUME_SCALE;
+        context.soundsCache.set(type, [sound]);
+        promises.push(loadSound(sound));
+    }
+    const results = await Promise.all(promises);
+    for (const result of results) {
+        if (result.isErr()) {
+            logger.error(result.contextErr('Failed to batch load sound').err);
         }
     }
+}
 
-    suspend(): void {
-        if (this.#muted) return;
-        if (this.#mutePromise) return;
-
-        this.#muted = true;
-        this.storage.set(GAME_MUTED_KEY, this.#muted);
-        this.#mutePromise = this.audioContext.suspend().then(() => {
-            this.#mutePromise = null;
-        });
-    }
-
-    resume(): void {
-        if (!this.#muted) return;
-        if (this.#mutePromise) return;
-
-        this.#muted = false;
-        this.storage.set(GAME_MUTED_KEY, this.#muted);
-        this.#mutePromise = this.audioContext.resume().then(() => {
-            this.#mutePromise = null;
-        });
-    }
-
-    async loadAllSounds(): Promise<void> {
-        let volume = this.storage.getNumber(GAME_VOLUME_KEY);
-        if (volume != null) {
-            volume = Math.max(Math.min(1, volume), 0);
-            this.#volume = volume * VOLUME_SCALE;
-        }
-        const promises: Promise<Result<void>>[] = [];
-        for (const type of Object.values(SoundName)) {
-            const sound = Sound.fromType(type, this.audioContext);
-            sound.volume = this.#volume;
-            this.soundsCache.set(type, [sound]);
-            promises.push(sound.load());
-        }
-        const results = await Promise.all(promises);
-        for (const result of results) {
-            if (result.isErr()) {
-                logger.error(result.contextErr('Failed to batch load sound').err);
-            }
+export function setAllSoundsVolume(context: SoundContext, volume: number): void {
+    context.volume = volume;
+    context.storage.set(GAME_VOLUME_KEY, volume.toString());
+    for (const [_, sounds] of context.soundsCache) {
+        for (const sound of sounds) {
+            setSoundVolume(sound, context.volume * VOLUME_SCALE);
         }
     }
+}
 
-    play(config: SoundConfig): Sound {
-        const {name: type, volume: volumeScale = 1, loop = false} = config;
-        const shouldPlay = this.audioContext.state === 'running' || loop;
+export function resumeAllSounds(context: SoundContext): void {
+    if (!context.muted) return;
+    if (context.mutePromise) return;
 
-        const cachedSounds = this.soundsCache.get(type);
-        const availableSound = cachedSounds?.find((sound) => !sound.isPlaying);
-        if (availableSound) {
-            if (shouldPlay) availableSound.play(volumeScale ?? 1, loop);
-            return availableSound;
-        }
+    context.muted = false;
+    context.storage.set(GAME_MUTED_KEY, context.muted);
+    context.mutePromise = context.audio.resume().then(() => {
+        context.mutePromise = null;
+    });
+}
 
-        // NOTE: All sounds of this type are currently playing, so we need to clone one of them.
-        const firstSound = cachedSounds?.[0];
-        if (firstSound) {
-            const clonedSound = firstSound.clone();
-            cachedSounds.push(clonedSound);
-            if (shouldPlay) clonedSound.play(volumeScale ?? 1, loop);
-            return clonedSound;
-        }
+export function playSoundFrom(context: SoundContext, input: SoundInput): Sound {
+    const {name: type, volume: volumeScale = 1, loop = false} = input;
+    const shouldPlay = context.audio.state === 'running' || loop;
 
-        // NOTE: Can only happen if failed to preload the sound.
-        const sound = Sound.fromType(type, this.audioContext);
-        this.soundsCache.set(type, [sound]);
-        sound.load().then((res) => {
-            if (res.isOk()) {
-                if (shouldPlay) sound.play(volumeScale ?? 1, loop);
-            } else {
-                logger.error(res.contextErr(`Failed to play sound: ${type}`).err);
-            }
-        });
-        return sound;
+    const cachedSounds = context.soundsCache.get(type);
+    const availableSound = cachedSounds?.find((sound) => !isSoundPlaying(sound));
+    if (availableSound) {
+        if (shouldPlay) playSound(availableSound, volumeScale ?? 1, loop);
+        return availableSound;
     }
+
+    // NOTE: All sounds of this type are currently playing, so we need to clone one of them.
+    const firstSound = cachedSounds?.[0];
+    if (firstSound) {
+        const clonedSound = cloneSound(firstSound);
+        cachedSounds.push(clonedSound);
+        if (shouldPlay) playSound(clonedSound, volumeScale ?? 1, loop);
+        return clonedSound;
+    }
+
+    // NOTE: Can only happen if failed to preload the sound.
+    const soundSrc = getSoundSrcByName(type);
+    const sound = newSound(soundSrc, context.audio);
+    context.soundsCache.set(type, [sound]);
+    loadSound(sound).then((res) => {
+        if (res.isOk()) {
+            if (shouldPlay) playSound(sound, volumeScale ?? 1, loop);
+        } else {
+            logger.error(res.contextErr(`Failed to play sound: ${type}`).err);
+        }
+    });
+    return sound;
 }
 
 enum SoundState {
@@ -138,151 +146,164 @@ enum SoundState {
     ERROR,
 }
 
-export class Sound {
-    private state = SoundState.INIT;
-    private audioBuffer: AudioBuffer | null = null;
-    private gainNode: GainNode | null = null;
-    private source: AudioBufferSourceNode | null = null;
-    private shouldPlayOnceLoaded = false;
-    #volume = 1;
-    #volumeScale = 1;
-    #startTime = 0;
-    #pauseTime = 0;
-    #loop = false;
+function getSoundSrcByName(type: SoundName): string {
+    const src = type.includes('.') ? `${SOUNDS_PATH}/${type}` : `${SOUNDS_PATH}/${type}.wav`;
+    return src;
+}
 
-    private constructor(
-        private src: string,
-        private audioContext: AudioContext,
-    ) {}
+export interface Sound {
+    readonly src: string;
+    state: SoundState;
+    context: AudioContext;
+    audioBuffer: AudioBuffer | null;
+    gainNode: GainNode | null;
+    source: AudioBufferSourceNode | null;
+    shouldPlayOnceLoaded: boolean;
+    volume: number;
+    volumeScale: number;
+    startTime: number;
+    pauseTime: number;
+    loop: boolean;
+}
 
-    static fromType(type: SoundName, audioContext: AudioContext): Sound {
-        const src = type.includes('.') ? `${SOUNDS_PATH}/${type}` : `${SOUNDS_PATH}/${type}.wav`;
-        return new Sound(src, audioContext);
-    }
+function newSound(src: string, context: AudioContext): Sound {
+    return {
+        state: SoundState.INIT,
+        context,
+        audioBuffer: null,
+        gainNode: null,
+        source: null,
+        shouldPlayOnceLoaded: false,
+        volume: 1,
+        volumeScale: 1,
+        startTime: 0,
+        pauseTime: 0,
+        loop: false,
+        src,
+    };
+}
 
-    set volume(volume: number) {
-        if (this.#volume !== volume) {
-            this.#volume = volume;
-            if (this.gainNode) {
-                this.gainNode.gain.value = volume * this.#volumeScale;
-            }
+function setSoundVolume(sound: Sound, volume: number): void {
+    if (sound.volume !== volume) {
+        sound.volume = volume;
+        if (sound.gainNode) {
+            sound.gainNode.gain.value = volume * sound.volumeScale;
         }
     }
+}
 
-    get isPlaying(): boolean {
-        return this.state === SoundState.PLAYING;
+function isSoundPlaying(sound: Sound): boolean {
+    return sound.state === SoundState.PLAYING;
+}
+
+function isSoundLoaded(sound: Sound): boolean {
+    return sound.state >= SoundState.LOADED;
+}
+
+export function playSound(sound: Sound, volumeScale = sound.volumeScale, loop = sound.loop): void {
+    if (!isSoundLoaded(sound) && loop) {
+        // NOTE: Do this only for looped sounds, because not looped sounds may be timing-specific.
+        sound.shouldPlayOnceLoaded = true;
+        sound.volumeScale = volumeScale;
+        sound.loop = loop;
+        return;
     }
+    startSoundAudioSource(sound, volumeScale, 0, loop);
+    sound.startTime = sound.context.currentTime;
+    sound.pauseTime = 0;
+}
 
-    get loaded(): boolean {
-        return this.state >= SoundState.LOADED;
+export function pauseSound(sound: Sound): void {
+    assert(isSoundPlaying(sound), 'Can only pause playing sound');
+    sound.source?.stop();
+    sound.source = null; // NOTE: We can't pause the source, so we need to delete it.
+    sound.state = SoundState.LOADED;
+    sound.pauseTime = sound.context.currentTime - sound.startTime;
+}
+
+export function resumeSound(sound: Sound): void {
+    startSoundAudioSource(sound, sound.volumeScale, sound.pauseTime, sound.loop);
+}
+
+export function stopSound(sound: Sound): void {
+    sound.source?.stop();
+    sound.source = null;
+    sound.state = SoundState.LOADED;
+    sound.pauseTime = 0;
+}
+
+function startSoundAudioSource(
+    sound: Sound,
+    volumeScale: number,
+    startTime: number,
+    loop: boolean,
+): void {
+    const gainNode = getSoundGainNode(sound, volumeScale);
+    const audioSource = getSoundAudioSourceNode(sound, gainNode);
+    audioSource.loop = sound.loop = loop;
+    audioSource.start(0, startTime);
+    sound.state = SoundState.PLAYING;
+}
+
+function getSoundAudioSourceNode(sound: Sound, gainNode: GainNode): AudioBufferSourceNode {
+    const source = sound.context.createBufferSource();
+    source.buffer = sound.audioBuffer;
+    source.connect(gainNode);
+    sound.source = source;
+    return source;
+}
+
+function getSoundGainNode(sound: Sound, volumeScale: number): GainNode {
+    if (volumeScale < 0) {
+        logger.warn(
+            `Sound: volume scale out of range: ${volumeScale}. Expected value bigger than 0.`,
+        );
     }
-
-    get paused(): boolean {
-        return this.state === SoundState.LOADED && this.#pauseTime > 0;
+    volumeScale = Math.max(0, volumeScale);
+    if (sound.volumeScale !== volumeScale || !sound.gainNode) {
+        sound.gainNode = sound.context.createGain();
+        sound.gainNode.connect(sound.context.destination);
     }
+    sound.volumeScale = volumeScale;
+    sound.gainNode.gain.value = sound.volume * sound.volumeScale;
+    return sound.gainNode;
+}
 
-    play(volumeScale = this.#volumeScale, loop = this.#loop): void {
-        if (!this.loaded && loop) {
-            // NOTE: Do this only for looped sounds, because not looped sounds may be timing-specific.
-            this.shouldPlayOnceLoaded = true;
-            this.#volumeScale = volumeScale;
-            this.#loop = loop;
-            return;
-        }
-        this.startAudioSource(volumeScale, 0, loop);
-        this.#startTime = this.audioContext.currentTime;
-        this.#pauseTime = 0;
+function cloneSound(original: Sound): Sound {
+    const sound = newSound(original.src, original.context);
+    sound.state = original.state;
+    sound.volume = original.volume;
+    sound.volumeScale = original.volumeScale;
+    sound.audioBuffer = original.audioBuffer;
+    sound.gainNode = original.gainNode;
+    return sound;
+}
+
+async function loadSound(sound: Sound): Promise<Result<void, Error>> {
+    if (isSoundLoaded(sound)) {
+        logger.warn(`Sound: already loaded: "${sound.src}"`);
+        return Result.ok();
     }
-
-    resume(): void {
-        this.startAudioSource(this.#volumeScale, this.#pauseTime, this.#loop);
-    }
-
-    private startAudioSource(volumeScale: number, startTime: number, loop: boolean): void {
-        const gainNode = this.getGainNode(volumeScale);
-        const audioSource = this.getAudioSourceNode(gainNode);
-        audioSource.loop = this.#loop = loop;
-        audioSource.start(0, startTime);
-        this.state = SoundState.PLAYING;
-    }
-
-    pause(): void {
-        this.source?.stop();
-        this.source = null; // NOTE: We can't pause the source, so we need to delete it.
-        this.state = SoundState.LOADED;
-        this.#pauseTime = this.audioContext.currentTime - this.#startTime;
-    }
-
-    stop(): void {
-        this.source?.stop();
-        this.source = null;
-        this.state = SoundState.LOADED;
-        this.#pauseTime = 0;
-    }
-
-    clone(): Sound {
-        const sound = new Sound(this.src, this.audioContext);
-        sound.state = this.state;
-        sound.#volume = this.#volume;
-        sound.#volumeScale = this.#volumeScale;
-        sound.audioBuffer = this.audioBuffer;
-        sound.gainNode = this.gainNode;
-        return sound;
-    }
-
-    // TODO: extract this out of Sound class.
-    // Sound class should only be responsible for playing sounds with already valid data.
-    // This way there is no need for state management in Sound class.
-    async load(): Promise<Result<void, Error>> {
-        if (this.loaded) {
-            logger.warn(`Sound: already loaded: "${this.src}"`);
-            return Result.ok();
-        }
-        if (this.state === SoundState.LOADING) {
-            logger.warn(`Sound: already loading: "${this.src}"`);
-            return Result.ok();
-        }
-
-        this.state = SoundState.LOADING;
-        const bufferResult = await Result.async(fetch(this.src))
-            .contextErr(`Failed to fetch audio file "${this.src}"`)
-            .mapPromise((res) => res.arrayBuffer())
-            .contextErr(`Failed to read audio file "${this.src}" response as array buffer`)
-            .mapPromise((buffer) => this.audioContext.decodeAudioData(buffer))
-            .contextErr(`Failed to decode audio data for "${this.src}"`);
-
-        if (bufferResult.isErr()) {
-            this.state = SoundState.ERROR;
-            return bufferResult.castValue();
-        }
-
-        this.audioBuffer = bufferResult.value;
-        this.state = SoundState.LOADED;
-        if (this.shouldPlayOnceLoaded) this.play();
+    if (sound.state === SoundState.LOADING) {
+        logger.warn(`Sound: already loading: "${sound.src}"`);
         return Result.ok();
     }
 
-    private getAudioSourceNode(gainNode: GainNode): AudioBufferSourceNode {
-        const source = this.audioContext.createBufferSource();
-        source.buffer = this.audioBuffer;
-        source.connect(gainNode);
-        this.source = source;
-        return source;
+    sound.state = SoundState.LOADING;
+    const bufferResult = await Result.async(fetch(sound.src))
+        .contextErr(`Failed to fetch audio file "${sound.src}"`)
+        .mapPromise((res) => res.arrayBuffer())
+        .contextErr(`Failed to read audio file "${sound.src}" response as array buffer`)
+        .mapPromise((buffer) => sound.context.decodeAudioData(buffer))
+        .contextErr(`Failed to decode audio data for "${sound.src}"`);
+
+    if (bufferResult.isErr()) {
+        sound.state = SoundState.ERROR;
+        return bufferResult.castValue();
     }
 
-    private getGainNode(volumeScale: number): GainNode {
-        if (volumeScale < 0) {
-            logger.warn(
-                `Sound: volume scale out of range: ${volumeScale}. Expected value bigger than 0.`,
-            );
-        }
-        volumeScale = Math.max(0, volumeScale);
-        if (this.#volumeScale !== volumeScale || !this.gainNode) {
-            this.gainNode = this.audioContext.createGain();
-            this.gainNode.connect(this.audioContext.destination);
-        }
-        this.#volumeScale = volumeScale;
-        this.gainNode.gain.value = this.#volume * this.#volumeScale;
-        return this.gainNode;
-    }
+    sound.audioBuffer = bufferResult.value;
+    sound.state = SoundState.LOADED;
+    if (sound.shouldPlayOnceLoaded) playSound(sound);
+    return Result.ok();
 }

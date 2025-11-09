@@ -1,8 +1,6 @@
 # TODO
 
 ## DOING
-- [ ] Turn OOP code into procedural
-  - Sounds
 
 ## NEXT TODO
 - [ ] Add animation/SFX to room door opening to hint player that's where he needs to go next
@@ -20,6 +18,8 @@
 - [ ] Final boss - describe it first.
 
 ### Refactoring
+- [ ] Turn OOP code into procedural
+  - [ ] Renderer
 - [ ] Revisit events
 - [ ] Outline how objects/classes should access each other (global vars/props/DI etc) (eg Renderer, Input, EntityManager, Entity etc)
 - [ ] Better way to store images and sprites (how bad Image is?)

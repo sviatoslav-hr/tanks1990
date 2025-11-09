@@ -1,7 +1,7 @@
 import type {GameEvent} from '#/events';
 import {getURLSeed, random, setURLSeed} from '#/math/rng';
 import {MenuBridge} from '#/menu';
-import {SoundName} from '#/sound';
+import {playSound, playSoundFrom, SoundName, stopSound} from '#/sound';
 import {soundEvent} from '#/sound-event';
 import {
     completeGame,
@@ -33,10 +33,10 @@ export function handleGameEvents(state: GameState, menu: MenuBridge): void {
 
                 soundEvent(state.sounds, 'game-started');
                 if (state.battleMusic) {
-                    state.battleMusic.stop();
-                    state.battleMusic.play();
+                    stopSound(state.battleMusic);
+                    playSound(state.battleMusic);
                 } else {
-                    state.battleMusic = state.sounds.play({
+                    state.battleMusic = playSoundFrom(state.sounds, {
                         name: SoundName.BATTLE_THEME,
                         volume: 0.5,
                         loop: true,
@@ -56,7 +56,7 @@ export function handleGameEvents(state: GameState, menu: MenuBridge): void {
                 continue;
 
             case 'game-over': {
-                state.battleMusic?.stop();
+                if (state.battleMusic) stopSound(state.battleMusic);
                 const playedRecording = state.recording.playing;
                 markGameDead(state);
                 menu.view.set('dead');

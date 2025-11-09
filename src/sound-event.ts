@@ -1,4 +1,4 @@
-import {Sound, type SoundConfig, SoundManager, SoundName} from '#/sound';
+import {playSoundFrom, Sound, type SoundInput, SoundContext, SoundName} from '#/sound';
 
 export type SoundEventType =
     | 'game-started'
@@ -10,7 +10,7 @@ export type SoundEventType =
     | 'player-damaged'
     | 'player-destroyed';
 
-const allSoundConfigs: Record<SoundEventType, SoundConfig> = {
+const allSoundsInputs: Record<SoundEventType, SoundInput> = {
     ['game-started']: {name: SoundName.LEVEL_START, volume: 0.5},
     ['game-over']: {name: SoundName.GAME_OVER, volume: 1},
     // TODO: game-completed, room-cleared
@@ -24,8 +24,8 @@ const allSoundConfigs: Record<SoundEventType, SoundConfig> = {
     ['player-destroyed']: {name: SoundName.EXPLOSION, volume: 1},
 };
 
-export function soundEvent(sounds: SoundManager, soundType: SoundEventType): Sound {
-    const config = allSoundConfigs[soundType];
-    const sound = sounds.play(config);
+export function soundEvent(ctx: SoundContext, soundType: SoundEventType): Sound {
+    const input = allSoundsInputs[soundType];
+    const sound = playSoundFrom(ctx, input);
     return sound;
 }
