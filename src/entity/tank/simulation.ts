@@ -1,13 +1,14 @@
 import {spawnExplosionEffect} from '#/effect';
 import {moveEntity} from '#/entity/core';
+import {acknowledgeEnemyDied, waveHasRespawnPlace} from '#/entity/enemy-wave';
 import {findCollided} from '#/entity/lookup';
 import {spawnProjectile} from '#/entity/projectile';
 import {isEnemyTank, isPlayerTank, PlayerTank, Tank} from '#/entity/tank';
 import {
     chooseEnemyDirection,
-    tryRestartEnemyPathfinding,
     hanldeOversteppedEnemyPathPoint,
     respawnEnemy,
+    tryRestartEnemyPathfinding,
 } from '#/entity/tank/enemy';
 import {SHIELD_SPAWN_DURATION} from '#/entity/tank/generation';
 import {Direction} from '#/math/direction';
@@ -27,7 +28,7 @@ export function simulateAllTanks(dt: Duration, state: GameState): void {
         }
 
         if (tank.dead) {
-            if (isEnemyTank(tank) && tank.shouldRespawn && currentWave.hasRespawnPlace) {
+            if (isEnemyTank(tank) && tank.shouldRespawn && waveHasRespawnPlace(currentWave)) {
                 tank.respawnDelay.sub(dt).max(0);
                 if (!tank.respawnDelay.positive) {
                     respawnEnemy(tank, state);
@@ -139,7 +140,7 @@ export function damageTank(tank: Tank, damage: number, state: GameState): boolea
         spawnExplosionEffect(state, tank, isEnemyTank(tank));
         if (tank.bot) {
             const wave = state.world.activeRoom.wave;
-            wave.acknowledgeEnemyDied(tank.id);
+            acknowledgeEnemyDied(wave, tank.id);
         }
         soundEvent(state.sounds, tank.bot ? 'enemy-destroyed' : 'player-destroyed');
     } else if (tank.health < tank.prevHealth) {

@@ -1,16 +1,14 @@
 # TODO
 
 ## DOING
-- [ ] Revisit signals and UI library
-  - [x] Introduce effect and automatic subscriptions
-  - [x] make signal a function: Signal.get() => Signal()
-  - [ ] Rewrite UI library, use comments as anchors
-  - [ ] `effect`s should be called outside of the handling function and `signal`s should not be passed in
+- [ ] Turn OOP code into procedural
+  - Sounds
 
 ## NEXT TODO
 - [ ] Add animation/SFX to room door opening to hint player that's where he needs to go next
 
 ## SHOULD BE FIXED
+- [ ] Player controls are active after game completion (should be disabled)
 - [ ] **Movement improvement!** (Choose one approach)
     a. Change movement to move only by fractions of cells (e.g. 1/16 of a cell)
         This will be easier to pathfind. And also will *may* the UX by fixing the issue with the player being able to pass through blocks.
@@ -22,9 +20,6 @@
 - [ ] Final boss - describe it first.
 
 ### Refactoring
-- [ ] Turn OOP code into procedural
-  - Wave
-  - Sounds
 - [ ] Revisit events
 - [ ] Outline how objects/classes should access each other (global vars/props/DI etc) (eg Renderer, Input, EntityManager, Entity etc)
 - [ ] Better way to store images and sprites (how bad Image is?)

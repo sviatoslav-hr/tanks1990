@@ -11,6 +11,7 @@ import {random} from '#/math/rng';
 import {v2Add, v2EqualsApprox, v2ManhattanDistance, v2RoundMut, Vector2Like} from '#/math/vector';
 import {findAStarPath} from '#/pathfinding';
 import {GameState} from '#/state';
+import {acknowledgeEnemySpawned, queueEnemy} from '#/entity/enemy-wave';
 
 const ENEMY_RESPAWN_DELAY = Duration.milliseconds(1000);
 const ENEMY_PATHFIND_DELAY_MIN = Duration.milliseconds(2000);
@@ -41,7 +42,7 @@ export function spawnEnemy(
         respawnEnemy(enemy, state);
     } else {
         enemy.respawnDelay.setFrom(ENEMY_RESPAWN_DELAY);
-        wave.queueEnemy(enemy, enemyKind);
+        queueEnemy(wave, enemy, enemyKind);
     }
     return enemy;
 }
@@ -71,7 +72,7 @@ export function respawnEnemy(tank: EnemyTank, state: GameState): boolean {
             tank.x = spawnPoint.x - tank.width / 2;
             tank.y = spawnPoint.y - tank.height / 2;
             initTank(tank);
-            state.world.activeRoom.wave.acknowledgeEnemySpawned(tank.id);
+            acknowledgeEnemySpawned(state.world.activeRoom.wave, tank.id);
             return true;
         }
     }

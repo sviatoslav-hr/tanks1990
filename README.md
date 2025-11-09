@@ -7,7 +7,7 @@ Panzerlock - game inspired by original Battle City.
 
 ### Install node modules
 
-Make sure to have pnpm installed.
+Make sure to have __pnpm__ installed.
 
 ```bash
 pnpm install

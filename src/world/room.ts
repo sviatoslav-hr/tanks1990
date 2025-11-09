@@ -2,7 +2,7 @@ import {CELL_SIZE} from '#/const';
 import {PlayerTank} from '#/entity';
 import {Block} from '#/entity/block';
 import {Entity, isIntesecting} from '#/entity/core';
-import {EnemyWave, wavesPerRoom} from '#/entity/enemy-wave';
+import {EnemyWave, isWaveCleared, resetWave, wavesPerRoom} from '#/entity/enemy-wave';
 import {Pickup} from '#/entity/pickup';
 import {Rect} from '#/math';
 import {Direction, getDirectionBetween} from '#/math/direction';
@@ -36,7 +36,7 @@ export interface Room {
 }
 
 export function isRoomCompleted(room: Room): boolean {
-    return room.started && room.wave.cleared;
+    return room.started && isWaveCleared(room.wave);
 }
 
 export function newRoom(
@@ -61,7 +61,7 @@ export function newRoom(
     const wave = wavesPerRoom[depth - 1];
     assert(wave);
     // TODO: Clone the wave, just in case. But currently, there shouldn't be any problems with it.
-    wave.reset();
+    resetWave(wave);
     // const prevRoomCommonBlocks = prevRooms.flatMap((p) => p.nextRoomCommonBlocks.slice());
     // this.prevRoomDoorBlocks = prevRoomCommonBlocks.filter((block) => {
     //     prevRooms.some((p) => p.nextRoomTransitionRects.some((r) => isIntersecting(block, r)));

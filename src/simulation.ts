@@ -1,5 +1,6 @@
 import {CELL_SIZE} from '#/const';
 import {Boom, ParticleExplosion} from '#/effect';
+import {waveHasExpectedEnemies} from '#/entity/enemy-wave';
 import {simulatePickups} from '#/entity/pickup';
 import {simulateAllProjectiles} from '#/entity/projectile';
 import {spawnEnemy} from '#/entity/tank/enemy';
@@ -39,7 +40,7 @@ export function simulateEntities(dt: Duration, state: GameState, camera: Camera)
 
     if (world.activeRoom.started) {
         const wave = world.activeRoom.wave;
-        while (wave.hasExpectedEnemies) {
+        while (waveHasExpectedEnemies(wave)) {
             spawnEnemy(state);
         }
     }

@@ -2,78 +2,74 @@ import {EntityId} from '#/entity/id';
 import {EnemyTank} from '#/entity/tank';
 import {TankPartKind} from '#/entity/tank/generation';
 
-export class EnemyWave {
-    private aliveEnemies: EntityId[] = [];
-    private enemyRespawnQueue: EntityId[] = [];
-    private expectedEnemyIndex = 0;
+function newEnemyWave(
+    // NOTE: Waves are being reused per each restart, so we want to keep the original order of enemies.
+    expectedEnemies: readonly TankPartKind[],
+    enemyLimitAtOnce: number,
+): EnemyWave {
+    assert(enemyLimitAtOnce > 0);
+    return {
+        aliveEnemies: [],
+        enemyRespawnQueue: [],
+        expectedEnemyIndex: 0,
+        expectedEnemies,
+        enemyLimitAtOnce,
+    };
+}
 
-    constructor(
-        // NOTE: Waves are being reused per each restart, so we want to keep the original order of enemies.
-        private readonly expectedEnemies: readonly TankPartKind[],
-        private readonly enemyLimitAtOnce: number,
-    ) {
-        assert(enemyLimitAtOnce > 0);
-        this.expectedEnemyIndex = 0;
+export interface EnemyWave {
+    aliveEnemies: EntityId[];
+    enemyRespawnQueue: EntityId[];
+    expectedEnemyIndex: number;
+    readonly expectedEnemies: readonly TankPartKind[];
+    readonly enemyLimitAtOnce: number;
+}
+
+export function isWaveCleared(wave: EnemyWave): boolean {
+    return wave.aliveEnemies.length + wave.enemyRespawnQueue.length === 0;
+}
+
+export function waveHasRespawnPlace(wave: EnemyWave): boolean {
+    return wave.aliveEnemies.length < wave.enemyLimitAtOnce;
+}
+
+export function waveHasExpectedEnemies(wave: EnemyWave): boolean {
+    return wave.expectedEnemyIndex < wave.expectedEnemies.length;
+}
+
+export function acknowledgeEnemySpawned(wave: EnemyWave, enemyId: EntityId): void {
+    wave.aliveEnemies.push(enemyId);
+    const index = wave.enemyRespawnQueue.indexOf(enemyId);
+    if (index !== -1) {
+        wave.enemyRespawnQueue.splice(index, 1);
     }
+}
 
-    get cleared(): boolean {
-        return this.aliveEnemies.length + this.enemyRespawnQueue.length === 0;
+export function acknowledgeEnemyDied(wave: EnemyWave, enemyId: EntityId): void {
+    const index = wave.aliveEnemies.indexOf(enemyId);
+    if (index > -1) {
+        wave.aliveEnemies.splice(index, 1);
+    } else {
+        logger.warn('Enemy tank with id %i not found even though it was destroyed', enemyId);
     }
+}
 
-    get nextEnemyKind(): TankPartKind | undefined {
-        return this.expectedEnemies[this.expectedEnemyIndex];
-    }
-
-    get hasRespawnPlace(): boolean {
-        return this.aliveEnemies.length < this.enemyLimitAtOnce;
-    }
-
-    get hasExpectedEnemies(): boolean {
-        return this.expectedEnemyIndex < this.expectedEnemies.length;
-    }
-
-    acknowledgeEnemySpawned(enemyId: EntityId): void {
-        this.aliveEnemies.push(enemyId);
-        const index = this.enemyRespawnQueue.indexOf(enemyId);
-        if (index !== -1) {
-            this.enemyRespawnQueue.splice(index, 1);
+export function queueEnemy(wave: EnemyWave, enemy: EnemyTank, enemyKind?: TankPartKind): void {
+    if (!enemyKind) {
+        const expectedKind = wave.expectedEnemies[wave.expectedEnemyIndex];
+        if (wave.expectedEnemyIndex < wave.expectedEnemies.length) {
+            wave.expectedEnemyIndex++;
         }
+        enemyKind = expectedKind ?? 'light';
     }
+    enemy.changeKind(enemyKind);
+    wave.enemyRespawnQueue.push(enemy.id);
+}
 
-    queueEnemy(enemy: EnemyTank, enemyKind?: TankPartKind): void {
-        if (!enemyKind) {
-            enemyKind = this.popExpectedEnemy() ?? 'light';
-        }
-        enemy.changeKind(enemyKind);
-        this.enemyRespawnQueue.push(enemy.id);
-    }
-
-    private popExpectedEnemy(): TankPartKind | undefined {
-        const enemyKind = this.expectedEnemies[this.expectedEnemyIndex];
-        if (this.expectedEnemyIndex < this.expectedEnemies.length) {
-            this.expectedEnemyIndex++;
-        }
-        return enemyKind;
-    }
-
-    acknowledgeEnemyDied(enemyId: EntityId): void {
-        const index = this.aliveEnemies.indexOf(enemyId);
-        if (index > -1) {
-            this.aliveEnemies.splice(index, 1);
-        } else {
-            logger.warn('Enemy tank with id %i not found even though it was destroyed', enemyId);
-        }
-    }
-
-    clearExpected(): void {
-        this.expectedEnemyIndex = 0;
-    }
-
-    reset(): void {
-        this.aliveEnemies = [];
-        this.enemyRespawnQueue = [];
-        this.expectedEnemyIndex = 0;
-    }
+export function resetWave(wave: EnemyWave): void {
+    wave.aliveEnemies = [];
+    wave.enemyRespawnQueue = [];
+    wave.expectedEnemyIndex = 0;
 }
 
 interface EnemyWaveConfig {
@@ -108,7 +104,7 @@ function makeWaves(...configs: EnemyWaveConfig[]): EnemyWave[] {
             config.limitAtOnce = prevWaveConfig.limitAtOnce;
         }
 
-        const wave = new EnemyWave(config.enemies.slice(), config.limitAtOnce);
+        const wave = newEnemyWave(config.enemies.slice(), config.limitAtOnce);
         return wave;
     });
     return waves;
