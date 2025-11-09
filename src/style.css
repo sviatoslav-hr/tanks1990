@@ -324,3 +324,58 @@ input[type='range']:focus-visible::-moz-range-thumb {
     outline: var(--thumb-focus-outline);
     outline-offset: var(--thumb-focus-outline-offset);
 }
+
+/* --- Notifications -- */
+.notification-bar {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    width: fit-content;
+    height: auto;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    z-index: 1000;
+    transform: translateX(-50%);
+    user-select: none;
+    pointer-events: none;
+}
+.notification-bar:empty {
+    display: none;
+}
+.notification-bar > * {
+    transition: all 500ms ease-in-out;
+}
+.notification-item {
+    color: white;
+}
+.notification-item--info {
+    color: white;
+}
+.notification-item--warning {
+    color: orange;
+}
+.notification-item--error {
+    color: red;
+}
+.notification-item--fading {
+    opacity: 0;
+    transform: translateY(-100%);
+    animation-name: fadeOutUp;
+    animation-timing-function: ease-in-out;
+    animation-duration: var(--notification-fade-out-duration, 5000ms);
+}
+
+@keyframes fadeOutUp {
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-100%);
+    }
+}

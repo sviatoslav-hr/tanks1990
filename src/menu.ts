@@ -1,6 +1,6 @@
 import {GameControlAction, type EventQueue} from '#/events';
 import {computed, effect, signal, type Signal} from '#/signals';
-import {WChildrenInput, wComponent, WCssStyleConfig, WElementBasicAttributes} from '#/ui/w';
+import {WChildrenInput, wComponent, WCssStyleInput, WElementBasicAttributes} from '#/ui/w';
 
 export type MenuView = 'main' | 'pause' | 'dead' | 'completed';
 
@@ -57,7 +57,7 @@ export const Menu = wComponent((w, props: MenuProps) => {
         {
             class: 'menu',
             style: computed(() => {
-                const styles: WCssStyleConfig = {};
+                const styles: WCssStyleInput = {};
                 if (view() == null) {
                     styles.display = 'none';
                 }
@@ -235,7 +235,7 @@ const Slider = wComponent((w, props: SliderProps) => {
                     '--slider-min': `${min}`,
                     '--slider-max': `${max}`,
                     '--slider-value': `${value()}`,
-                } as WCssStyleConfig,
+                } as WCssStyleInput,
                 oninput: (ev) => {
                     if (!ev.target) return;
                     const input = ev.target as HTMLInputElement;

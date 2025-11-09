@@ -1,5 +1,16 @@
-import {computed, effect, ReadableSignal, signal} from '#/signals';
-import {UIComponent, UIContext} from '#/ui/core';
+import {computed, ReadableSignal, signal} from '#/signals';
+import {mountWComponent, wComponent, WContext} from '#/ui/w';
+
+const notifications = signal<Notification[]>([]);
+const FADE_OUT_DURATION_MS = 500;
+
+export function createNotificationBar(w: WContext, parent: HTMLElement): void {
+    const bar = NotificationBar({
+        notifications,
+        fadeOutDurationMs: FADE_OUT_DURATION_MS,
+    });
+    mountWComponent(w, bar, parent);
+}
 
 interface NotifyOptions {
     timeoutMs?: number;
@@ -9,13 +20,13 @@ interface NotifyOptions {
 export function notify(message: string, options?: NotifyOptions): void {
     message = normalizeMessage(message);
     const timeoutMs = options?.timeoutMs ?? 2000;
-    appendNotification({message, kind: 'info', timeoutMs});
+    appendNotification({message, kind: 'info', visibleTimeMs: timeoutMs});
 }
 
 export function notifyWarning(message: string, options?: NotifyOptions): void {
     message = normalizeMessage(message);
     const timeoutMs = options?.timeoutMs ?? 3000;
-    appendNotification({message, kind: 'warning', timeoutMs});
+    appendNotification({message, kind: 'warning', visibleTimeMs: timeoutMs});
 }
 
 // TODO: When there is too many spamming errors, we should stop showing them individually
@@ -23,7 +34,7 @@ export function notifyWarning(message: string, options?: NotifyOptions): void {
 export function notifyError(message: string, options?: NotifyOptions): void {
     message = normalizeMessage(message);
     const timeoutMs = options?.timeoutMs ?? 5000;
-    appendNotification({message, kind: 'error', timeoutMs});
+    appendNotification({message, kind: 'error', visibleTimeMs: timeoutMs});
 }
 
 function normalizeMessage(message: string): string {
@@ -42,134 +53,79 @@ type NotificationKind = 'info' | 'warning' | 'error';
 interface NotificationOptions {
     message: string;
     kind: NotificationKind;
-    timeoutMs?: number;
+    visibleTimeMs?: number;
 }
 
 interface Notification extends NotificationOptions {
-    hidden: boolean;
+    fading: boolean;
     createdAt: number;
 }
 
-const notifications = signal<Notification[]>([]);
-const FADE_OUT_DURATION_MS = 500;
-
 function appendNotification(options: NotificationOptions): void {
-    const notification = {...options, hidden: false, createdAt: Date.now()};
-    notifications.update((current) => [...current, notification].filter((n) => !n.hidden));
+    let notification: Notification = {
+        ...options,
+        fading: false,
+        createdAt: Date.now(),
+    };
+    notifications.update((ns) => [...ns, notification]);
+    if (notification.visibleTimeMs) {
+        setTimeout(() => fadeNotification(notification), notification.visibleTimeMs);
+    }
 }
 
-export function createNotificationBar(ui: UIContext, parent: Element) {
-    const bar = NotificationBar(ui, {
-        notifications,
-    });
-    bar.appendTo(parent);
+function fadeNotification(notification: Notification): void {
+    const newNotification = {...notification, fading: true};
+    notifications.update((ns) => ns.map((n) => (n === notification ? newNotification : n)));
+    notification = newNotification;
+    setTimeout(() => removeNotification(notification), FADE_OUT_DURATION_MS);
 }
+
+function removeNotification(notification: Notification): void {
+    notifications.update((ns) => ns.filter((n) => n !== notification));
+}
+
 interface NotificationBarProps {
     notifications: ReadableSignal<Notification[]>;
+    fadeOutDurationMs: number;
 }
 
-const NotificationBar = UIComponent('notification-bar', (ui, props: NotificationBarProps) => {
-    const {notifications} = props;
-    const css = ui.css;
+const NotificationBar = wComponent<NotificationBarProps>((w, props) => {
+    const {notifications, fadeOutDurationMs} = props;
     return [
-        ui.div({class: 'notification-bar'}).children(
-            computed(() => {
-                return notifications().map((notification) => {
-                    return NotificationItem(ui, {notification});
-                });
-            }),
+        w.div(
+            {
+                class: 'notification-bar',
+                style: {['--notification-fade-out-duration']: fadeOutDurationMs + 'ms'},
+                title: () => notifications().length + ' notifications',
+            },
+            w.div({class: 'notification-bar__spacer'}),
+            w.each(
+                () => notifications(),
+                (n, i) => NotificationItem({notification: n, index: i}),
+            ),
         ),
-        css`
-            .notification-bar {
-                position: fixed;
-                top: 0;
-                left: 50%;
-                width: fit-content;
-                height: auto;
-                color: white;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                font-size: 1.5rem;
-                z-index: 1000;
-                transform: translateX(-50%);
-                user-select: none;
-                pointer-events: none;
-            }
-            .notification-bar:empty {
-                display: none;
-            }
-            .notification-bar > * {
-                transition: all ${FADE_OUT_DURATION_MS.toString()}ms ease-in-out;
-            }
-        `,
     ];
 });
 
 interface NotificationItemProps {
     notification: Notification;
+    index?: number;
 }
 
-const NotificationItem = UIComponent('notification-item', (ui, props: NotificationItemProps) => {
-    const css = ui.css;
-    const {notification} = props;
-    const {message, kind, timeoutMs} = notification;
-    const aliveMs = Date.now() - notification.createdAt;
-    const fading = signal(false);
-    const hidden = signal(notification.hidden);
-    if (timeoutMs && !notification.hidden) {
-        if (aliveMs > timeoutMs && aliveMs < timeoutMs + FADE_OUT_DURATION_MS) {
-            fading.set(true);
-        } else if (aliveMs >= timeoutMs + FADE_OUT_DURATION_MS) {
-            hidden.set(true);
-        }
-        if (!hidden() && !fading()) {
-            setTimeout(() => {
-                fading.set(true);
-                const aliveMs = Date.now() - notification.createdAt;
-                setTimeout(() => hidden.set(true), timeoutMs + FADE_OUT_DURATION_MS - aliveMs);
-            }, timeoutMs - aliveMs);
-        } else if (fading()) {
-            setTimeout(() => hidden.set(true), timeoutMs + FADE_OUT_DURATION_MS - aliveMs);
-        }
-        effect(() => {
-            notification.hidden = hidden();
-        });
-    }
-
-    return [
-        ui
-            .div({
-                class: computed(() => [
-                    'notification-item',
-                    'notification-item--' + kind,
-                    fading() ? 'notification-item--fading' : '',
-                    hidden() ? 'notification-item--hidden' : '',
-                ]),
-            })
-            .children(ui.div({class: 'notification-text'}).children(message)),
-        css`
-            .notification-item {
-                color: white;
-                transition: all ${FADE_OUT_DURATION_MS.toString()}ms ease-in-out;
-            }
-            .notification-item--info {
-                color: white;
-            }
-            .notification-item--warning {
-                color: orange;
-            }
-            .notification-item--error {
-                color: red;
-            }
-            .notification-item--fading {
-                opacity: 0;
-                transform: translateY(-100%);
-            }
-            .notification-item--hidden {
-                display: none;
-            }
-        `,
-    ];
+const NotificationItem = wComponent((w, props: NotificationItemProps) => {
+    const {notification, index} = props;
+    const {message, kind} = notification;
+    return w.div(
+        {
+            title: index != null ? `#${index + 1}` : undefined,
+            class: computed(() => [
+                'notification-item',
+                'notification-item--' + kind,
+                {
+                    'notification-item--fading': notification.fading,
+                },
+            ]),
+        },
+        w.div({class: 'notification-text'}, message),
+    );
 });

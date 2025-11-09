@@ -30,7 +30,6 @@ import {
     resetGameAfterTick,
 } from '#/state';
 import {GameStorage} from '#/storage';
-import {uiGlobal} from '#/ui/core';
 import {createDevUI, DevUI} from '#/ui/dev';
 import {createNotificationBar, notify} from '#/ui/notification';
 import {createWContext, mountWComponent} from '#/ui/w';
@@ -41,7 +40,8 @@ function main(): void {
     const appElement = document.getElementById(APP_ELEMENT_ID);
     assert(appElement, 'No app element found');
 
-    createNotificationBar(uiGlobal, appElement);
+    const w = createWContext();
+    createNotificationBar(w, document.body);
 
     const storage = new GameStorage(localStorage);
     __DEV_MODE = storage.getBool(DEV_MODE_KEY) ?? false;
@@ -67,7 +67,7 @@ function main(): void {
             if (menu.muted()) sounds.suspend();
             else sounds.resume();
         });
-        mountWComponent(createWContext(), Menu(menu.props()), appElement);
+        mountWComponent(w, Menu(menu.props()), appElement);
     }
 
     const devUI = createDevUI(state, renderer, storage);

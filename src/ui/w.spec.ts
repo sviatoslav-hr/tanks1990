@@ -2,12 +2,13 @@ import {beforeEach, describe, expect, it, vi} from 'vitest';
 
 import {computed, effect, ReadableSignal, Signal, signal} from '#/signals';
 import {
+    collectWCollectionItemsUpdate,
     createWContext,
     mountWComponent,
     WChildrenInput,
     wComponent,
     WContext,
-    WCssStyleConfig,
+    WCssStyleInput,
     WDomChildNode,
     WDomElement,
     WDomNode,
@@ -31,7 +32,7 @@ function createMockWContext(): WContextMock {
     return {ctx};
 }
 
-describe('w-ui', () => {
+describe('wlib', () => {
     let mock!: WContextMock;
     const document = Object.assign(new MockElement('document'), {
         body: new MockElement('body'),
@@ -41,6 +42,23 @@ describe('w-ui', () => {
     beforeEach(() => {
         mock = createMockWContext();
         document.body.clearChildren();
+    });
+
+    it('should collect w-collection updates', () => {
+        const items = signal<number[]>([1]);
+        let prevItems: number[] = [];
+        let newItems: number[] = [];
+        let updates: ReturnType<typeof collectWCollectionItemsUpdate> | undefined;
+        effect(() => {
+            prevItems.length = 0;
+            prevItems.push(...newItems);
+            newItems = items();
+            updates = collectWCollectionItemsUpdate(prevItems, newItems);
+        });
+        expect(updates).toEqual({addedItems: [{index: 0, item: 1}], removedItems: []});
+
+        items.set([]);
+        expect(updates).toEqual({removedItems: [{index: 0, item: 1}], addedItems: []});
     });
 
     describe('Counter', () => {
@@ -131,14 +149,31 @@ describe('w-ui', () => {
 
     describe('NotificationBar', () => {
         it('should create a notification bar component', async () => {
-            const filterHiddenNotifications = vi.fn(() => {
-                notifications.update((current) => current.filter((n) => !n.hidden));
-            });
-
             function appendNotification(options: NotificationOptions): void {
-                const notification = {...options, hidden: false, createdAt: Date.now()};
-                notifications.update((current) => [...current, notification]);
+                let notification: Notification = {
+                    ...options,
+                    fading: false,
+                    createdAt: Date.now(),
+                };
+                notifications.update((ns) => [...ns, notification]);
+                if (notification.visibleTimeMs) {
+                    setTimeout(() => fadeNotification(notification), notification.visibleTimeMs);
+                }
             }
+
+            const FADE_OUT_DURATION_MS = 5;
+            function fadeNotification(notification: Notification): void {
+                const newNotification = {...notification, fading: true};
+                notifications.update((ns) =>
+                    ns.map((n) => (n === notification ? newNotification : n)),
+                );
+                notification = newNotification;
+                setTimeout(() => removeNotification(notification), FADE_OUT_DURATION_MS);
+            }
+
+            const removeNotification = vi.fn((notification: Notification): void => {
+                notifications.update((ns) => ns.filter((n) => n !== notification));
+            });
             function getBarItems(): MockElement[] {
                 return findAllElements(document, (el) =>
                     el.className.includes('notification-item'),
@@ -146,11 +181,7 @@ describe('w-ui', () => {
             }
 
             const notifications = signal<Notification[]>([]);
-            const bar = NotificationBar({
-                notifications,
-                onFinished: filterHiddenNotifications,
-                fadeOutDurationMs: 5,
-            });
+            const bar = NotificationBar({notifications});
             mountWComponent(mock.ctx, bar, document.body);
 
             const barElement = findElement(document, (el) => el?.className === 'notification-bar');
@@ -158,7 +189,7 @@ describe('w-ui', () => {
             let barItems = getBarItems();
             expect(barItems.length).toBe(0);
 
-            appendNotification({message: 'Info message', kind: 'info', timeoutMs: 10});
+            appendNotification({message: 'Info message', kind: 'info', visibleTimeMs: 10});
 
             barItems = getBarItems();
             expect(barItems.length).toBe(1);
@@ -172,8 +203,23 @@ describe('w-ui', () => {
             {
                 const removeSpy = vi.spyOn(item!, 'remove');
                 await new Promise((r) => setTimeout(r, 30));
-                expect(filterHiddenNotifications).toHaveBeenCalledTimes(1);
+                expect(removeNotification).toHaveBeenCalledTimes(1);
                 expect(removeSpy).toHaveBeenCalledTimes(1);
+                barItems = getBarItems();
+                expect(notifications().length).toBe(0);
+                expect(barItems.length).toBe(0);
+            }
+
+            {
+                removeNotification.mockReset();
+                appendNotification({message: 'Info message 1', kind: 'info', visibleTimeMs: 9});
+                appendNotification({message: 'Info message 2', kind: 'info', visibleTimeMs: 11});
+                barItems = getBarItems();
+                expect(barItems.length).toBe(2);
+                expect(barItems[0]?.getAttribute('title')).toBe('#1');
+                expect(barItems[1]?.getAttribute('title')).toBe('#2');
+                await new Promise((r) => setTimeout(r, 30));
+                expect(removeNotification).toHaveBeenCalledTimes(2);
                 barItems = getBarItems();
                 expect(notifications().length).toBe(0);
                 expect(barItems.length).toBe(0);
@@ -233,22 +279,23 @@ class MockCommentNode extends MockNode {
 }
 
 class MockElement extends MockNode implements WDomElement {
-    id: string = '';
     tagName: string;
+    id: string = '';
     className: string = '';
-    style: WDomStyles = new MockStyles();
+    style: WDomStyles = MockStyles.create();
+
     listeners: Record<string, EventListener[]> = {};
+    children: WDomNode[] = [];
 
     constructor(tagName: string) {
         super();
         this.tagName = tagName;
     }
 
-    children: WDomNode[] = [];
-
     getAttribute(name: string): string | null {
         return this[name as keyof this] as string;
     }
+
     setAttribute(name: string, value: string): void {
         // TODO: Disallow setting certain attributes that would break the mock.
         this[name as keyof this] = value as any;
@@ -322,12 +369,20 @@ class MockElement extends MockNode implements WDomElement {
     }
 }
 
-class MockStyles implements WDomStyles {
-    map: Record<string, string> = {};
+const styleSymbol = Symbol('style');
+
+class MockStyles {
+    static create(): WDomStyles {
+        // HACK: Don't want to declare all of the WDomStyles fields, so just cast an empty object.
+        return new MockStyles() as unknown as WDomStyles;
+    }
+
+    [styleSymbol]: Record<string, string> = {};
 
     // TODO: Handle fields set via property access (e.g., style.backgroundColor = 'red')
     setProperty(property: string, value: string | null): void {
-        this.map[property] = value ?? '';
+        // TODO: setProperty should handle CSS property name conversion (e.g., background-color -> backgroundColor)
+        this[styleSymbol][property] = value ?? '';
     }
 }
 
@@ -414,7 +469,7 @@ const Menu = wComponent((w, props: MenuProps) => {
         {
             class: 'menu',
             style: computed(() => {
-                const styles: WCssStyleConfig = {};
+                const styles: WCssStyleInput = {};
                 if (view() == null) {
                     styles.display = 'none';
                 }
@@ -589,7 +644,7 @@ const Slider = wComponent((w, props: SliderProps) => {
                     '--slider-min': `${min}`,
                     '--slider-max': `${max}`,
                     '--slider-value': `${value()}`,
-                } as WCssStyleConfig,
+                } as WCssStyleInput,
                 oninput: (ev) => {
                     if (!ev.target) return;
                     const input = ev.target as HTMLInputElement;
@@ -612,70 +667,47 @@ type NotificationKind = 'info' | 'warning' | 'error';
 interface Notification {
     message: string;
     kind: NotificationKind;
-    timeoutMs?: number;
-    hidden: boolean;
+    visibleTimeMs?: number;
+    fading: boolean;
     createdAt: number;
 }
-type NotificationOptions = Pick<Notification, 'message' | 'kind' | 'timeoutMs'>;
+type NotificationOptions = Pick<Notification, 'message' | 'kind' | 'visibleTimeMs'>;
 
 interface NotificationBarProps {
     notifications: ReadableSignal<Notification[]>;
-    onFinished: () => void;
-    fadeOutDurationMs?: number;
 }
 
 const NotificationBar = wComponent<NotificationBarProps>((w, props) => {
-    const {notifications, onFinished, fadeOutDurationMs} = props;
+    const {notifications} = props;
     return [
         w.div(
-            {class: 'notification-bar'},
+            {class: 'notification-bar', title: () => notifications().length + ' notifications'},
             w.each(
                 () => notifications(),
-                (notification) => NotificationItem({notification, onFinished, fadeOutDurationMs}),
+                (n, i) => NotificationItem({notification: n, index: i}),
             ),
         ),
     ];
 });
 
-const FADE_OUT_DURATION_MS = 500;
-
-const NotificationItem = wComponent<{
+interface NotificationItemProps {
     notification: Notification;
-    onFinished: () => void;
-    fadeOutDurationMs?: number;
-}>((w, props) => {
-    const {notification, onFinished, fadeOutDurationMs = FADE_OUT_DURATION_MS} = props;
-    const {message, kind, timeoutMs} = notification;
-    const aliveMs = Date.now() - notification.createdAt;
-    const fading = signal(false);
-    const hidden = signal(notification.hidden);
-    const fadeOutMs = timeoutMs ? timeoutMs + fadeOutDurationMs : 0;
-    if (timeoutMs && !notification.hidden) {
-        effect(() => {
-            if (!hidden() && !fading()) {
-                setTimeout(
-                    () => {
-                        fading.set(true);
-                        const aliveMs = Date.now() - notification.createdAt;
-                        setTimeout(() => hidden.set(true), Math.max(fadeOutMs - aliveMs, 0));
-                    },
-                    Math.max(timeoutMs - aliveMs, 0),
-                );
-            }
-            notification.hidden = hidden();
-            if (notification.hidden) onFinished();
-        });
-    }
+    index?: number;
+}
 
+const NotificationItem = wComponent((w, props: NotificationItemProps) => {
+    const {notification, index} = props;
+    const {message, kind} = notification;
     return w.div(
         {
-            class: () => [
+            title: index != null ? `#${index + 1}` : undefined,
+            class: computed(() => [
                 'notification-item',
                 'notification-item--' + kind,
                 {
-                    'notification-item--fading': fading(),
+                    'notification-item--fading': notification.fading,
                 },
-            ],
+            ]),
         },
         w.div({class: 'notification-text'}, message),
     );

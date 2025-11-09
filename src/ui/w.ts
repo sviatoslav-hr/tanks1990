@@ -1,7 +1,5 @@
 import {effect} from '#/signals';
 
-const DOCUMENT = window.document;
-
 // Q: Should components have scoped css or screw it?
 
 type WProducerFn<T> = () => T;
@@ -151,21 +149,22 @@ function isWTextLike(value: unknown): value is WTextLike {
     const type = typeof value;
     return type === 'string' || type === 'number' || type === 'boolean';
 }
-
-export type WCssStyleConfig = Partial<
-    Omit<
-        CSSStyleDeclaration,
-        | 'parentRule'
-        | 'length'
-        | 'getPropertyPriority'
-        | 'getPropertyValue'
-        | 'item'
-        | 'removeProperty'
-        | 'setProperty'
-        | number
-        | symbol
-    >
+export type WCssStyles = Omit<
+    CSSStyleDeclaration,
+    | 'parentRule'
+    | 'length'
+    | 'getPropertyPriority'
+    | 'getPropertyValue'
+    | 'item'
+    | 'removeProperty'
+    | 'setProperty'
+    | number
+    | symbol
 >;
+
+export interface WCssStyleInput extends Partial<WCssStyles> {
+    [key: `--${string}`]: string | null | undefined;
+}
 
 type WClassValueDict = {[className: string]: boolean};
 type WClassValue = string | WClassValueDict | (string | WClassValueDict)[];
@@ -173,7 +172,7 @@ type WClassValue = string | WClassValueDict | (string | WClassValueDict)[];
 export interface WElementBasicAttributes {
     id?: WProducerFnOr<string>;
     class?: WProducerFnOr<WClassValue>;
-    style?: WProducerFnOr<WCssStyleConfig>;
+    style?: WProducerFnOr<WCssStyleInput>;
     title?: WProducerFnOr<string>;
     onclick?: (event: GlobalEventHandlersEventMap['click']) => void;
 }
@@ -370,12 +369,13 @@ function mountWCollectionBefore(
 
 function mountWCollectionItems(w: WContext, collection: WCollectionNode): void {
     const prevItems: unknown[] = [];
+    let newItems: unknown[] = [];
     effect(() => {
-        const newItems = toProducerFn(collection.getItems)();
-        // TODO/PERF: Instead of removing and adding, maybe just update in place where possible.
-        const {addedItems, removedItems} = collectWCollectionItemsUpdate(prevItems, newItems);
         prevItems.length = 0;
         prevItems.push(...newItems);
+        newItems = toProducerFn(collection.getItems)();
+        // TODO/PERF: Instead of removing and adding, maybe just update in place where possible.
+        const {addedItems, removedItems} = collectWCollectionItemsUpdate(prevItems, newItems);
         for (const removed of removedItems) {
             const child = collection.children[removed.index];
             assert(child);
@@ -399,7 +399,7 @@ interface WCollectionItem<TItem> {
     index: number;
 }
 
-function collectWCollectionItemsUpdate<TItem>(
+export function collectWCollectionItemsUpdate<TItem>(
     prevItems: TItem[],
     newItems: TItem[],
 ): {
@@ -448,7 +448,7 @@ export interface WDomChildNode extends WDomNode {
     remove(): void;
 }
 
-export interface WDomStyles extends WCssStyleConfig {
+export interface WDomStyles extends WCssStyles {
     /** {@link CSSStyleDeclaration#setProperty} */
     setProperty(property: string, value: string | null): void;
 }
@@ -483,17 +483,17 @@ export interface WDomElement extends WDomChildNode {
 }
 
 function createWElementDom(tagName: string): WDomElement {
-    const domElement = DOCUMENT.createElement(tagName);
+    const domElement = document.createElement(tagName);
     return domElement;
 }
 
 function createWTextDom(text: string): WDomChildNode {
-    const node = new Text(text);
+    const node = document.createTextNode(text);
     return node;
 }
 
 function createWAnchorDom(description: string): WDomChildNode {
-    const anchor = DOCUMENT.createComment(description);
+    const anchor = document.createComment(description);
     return anchor;
 }
 
@@ -525,37 +525,30 @@ function mountWNodeBeforeParentAtIndex(
     w: WContext,
     parent: WCollectionNode | WComponentNode,
     index: number,
-    targetNode: WAnyNode,
+    target: WAnyNode,
 ): void {
+    assert(parent.anchor != null, 'Parent anchor must be available for mounting');
     let anchor: WAnyNode | null = null;
     if (index < parent.children.length - 1) {
-        anchor = findNextAnchorNode(parent.children, index + 1, targetNode);
+        anchor = findNextAnchorNode(parent.children, index + 1, target);
     }
-    if (anchor == null) {
-        anchor = parent;
-    }
-    switch (targetNode.type) {
+    const anchorNode = anchor ? getClosestWDomNode(anchor) : parent.anchor;
+    assert(anchorNode.parentElement != null, 'Anchor node must have a parent element');
+    switch (target.type) {
         case 'text': {
-            const anchorNode = getClosestWDomNode(anchor);
-            assert(anchorNode.parentElement != null, 'Anchor node must have a parent element');
-            anchorNode.before(targetNode.node);
+            anchorNode.before(target.node);
             break;
         }
         case 'element': {
-            const anchorNode = getClosestWDomNode(anchor);
-            assert(
-                anchorNode.parentElement != null,
-                'Anchor node must have a parent element, node=' + anchor.type,
-            );
-            anchorNode.before(targetNode.element);
+            anchorNode.before(target.element);
             break;
         }
         case 'component': {
-            mountWComponentBefore(w, targetNode, getClosestWDomNode(anchor));
+            mountWComponentBefore(w, target, anchorNode);
             break;
         }
         case 'collection': {
-            mountWCollectionBefore(w, targetNode, getClosestWDomNode(anchor));
+            mountWCollectionBefore(w, target, anchorNode);
             break;
         }
     }
@@ -738,8 +731,8 @@ function applyAttributeChangeToWElement(
             assert(typeof newValue === 'object');
             applyWStyleValueToDom(
                 node,
-                newValue as WCssStyleConfig,
-                prevValue as WCssStyleConfig | null,
+                newValue as WCssStyleInput,
+                prevValue as WCssStyleInput | null,
             );
             return;
         }
@@ -752,8 +745,9 @@ function applyAttributeChangeToWElement(
         node.setAttribute(optionsKey, String(newValue));
         return;
     }
-    if (optionsKey.startsWith('on') && optionsKey.length > 2) {
-        const eventName = optionsKey.substring(2).toLowerCase();
+    // NOTE: All expected event names start with lowercase, so skip if it's uppercase.
+    if (optionsKey.startsWith('on') && optionsKey.length > 2 && isLowerCase(optionsKey[2]!)) {
+        const eventName = optionsKey.substring(2);
         if (newValue !== prevValue && prevValue != null) {
             assert(typeof prevValue === 'function');
             node.removeEventListener(eventName, prevValue as EventListener);
@@ -797,19 +791,19 @@ function applyWClassValueToDom(element: WDomElement, newClass: WClassValue): voi
 
 function applyWStyleValueToDom(
     element: WDomElement,
-    newStyle: WCssStyleConfig,
-    prevStyle: WCssStyleConfig | null,
+    newStyle: WCssStyleInput,
+    prevStyle: WCssStyleInput | null,
 ): void {
     if (prevStyle) {
-        for (const key of Object.keys(prevStyle) as (keyof WCssStyleConfig)[]) {
+        for (const key of Object.keys(prevStyle) as (keyof WCssStyleInput)[]) {
             if (newStyle[key] == null) {
                 newStyle[key] = '';
             }
         }
     }
     for (const pair of Object.entries(newStyle)) {
-        const key = pair[0] as keyof WCssStyleConfig;
-        const value = pair[1] as CSSStyleDeclaration[typeof key];
+        const key = pair[0] as keyof WCssStyles;
+        const value = pair[1] as WCssStyles[typeof key];
         if (key?.startsWith('--')) {
             element.style.setProperty(key, value); // css variables
         } else {
@@ -821,4 +815,9 @@ function applyWStyleValueToDom(
 
 function toArray<T>(value: T | T[]): T[] {
     return Array.isArray(value) ? value : [value];
+}
+
+function isLowerCase(char: string): boolean {
+    const code = char.charCodeAt(0);
+    return code >= 97 && code <= 122;
 }
