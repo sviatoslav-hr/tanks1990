@@ -233,10 +233,8 @@ class MockCommentNode extends MockNode {
 }
 
 class MockElement extends MockNode implements WDomElement {
-    tagName: string;
-
     id: string = '';
-    title: string = '';
+    tagName: string;
     className: string = '';
     style: WDomStyles = new MockStyles();
     listeners: Record<string, EventListener[]> = {};
@@ -247,6 +245,14 @@ class MockElement extends MockNode implements WDomElement {
     }
 
     children: WDomNode[] = [];
+
+    getAttribute(name: string): string | null {
+        return this[name as keyof this] as string;
+    }
+    setAttribute(name: string, value: string): void {
+        // TODO: Disallow setting certain attributes that would break the mock.
+        this[name as keyof this] = value as any;
+    }
 
     append(...nodes: (WDomNode | string)[]): void {
         for (const node of nodes) {
@@ -319,6 +325,7 @@ class MockElement extends MockNode implements WDomElement {
 class MockStyles implements WDomStyles {
     map: Record<string, string> = {};
 
+    // TODO: Handle fields set via property access (e.g., style.backgroundColor = 'red')
     setProperty(property: string, value: string | null): void {
         this.map[property] = value ?? '';
     }
@@ -351,6 +358,7 @@ function findElement(root: MockElement, matches: (e: MockElement) => boolean): M
     return null;
 }
 
+printTree; // silence unused warning
 function printTree(root: MockElement, indent = 0): void {
     const indentChar = '| ';
     const indentStr = indentChar.repeat(indent);

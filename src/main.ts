@@ -33,6 +33,7 @@ import {GameStorage} from '#/storage';
 import {uiGlobal} from '#/ui/core';
 import {createDevUI, DevUI} from '#/ui/dev';
 import {createNotificationBar, notify} from '#/ui/notification';
+import {createWContext, mountWComponent} from '#/ui/w';
 
 main();
 
@@ -66,7 +67,7 @@ function main(): void {
             if (menu.muted()) sounds.suspend();
             else sounds.resume();
         });
-        Menu(uiGlobal, menu.props()).appendTo(appElement);
+        mountWComponent(createWContext(), Menu(menu.props()), appElement);
     }
 
     const devUI = createDevUI(state, renderer, storage);

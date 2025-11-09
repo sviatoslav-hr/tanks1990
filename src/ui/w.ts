@@ -448,7 +448,7 @@ export interface WDomChildNode extends WDomNode {
     remove(): void;
 }
 
-export interface WDomStyles {
+export interface WDomStyles extends WCssStyleConfig {
     /** {@link CSSStyleDeclaration#setProperty} */
     setProperty(property: string, value: string | null): void;
 }
@@ -459,9 +459,6 @@ export interface WDomElement extends WDomChildNode {
 
     /** {@link Element#id} */
     id: string;
-
-    /** {@link HTMLElement#title} */
-    title: string;
 
     /** {@link Element#className} */
     className: string;
@@ -477,6 +474,12 @@ export interface WDomElement extends WDomChildNode {
 
     /** {@link GlobalEventHandlers#removeEventListener} */
     removeEventListener(event: string, listener: EventListener): void;
+
+    /** {@link Element#getAttribute} */
+    getAttribute(qualifiedName: string): string | null;
+
+    /** {@link Element#setAttribute} */
+    setAttribute(qualifiedName: string, value: string): void;
 }
 
 function createWElementDom(tagName: string): WDomElement {
@@ -490,7 +493,7 @@ function createWTextDom(text: string): WDomChildNode {
 }
 
 function createWAnchorDom(description: string): WDomChildNode {
-    const anchor = DOCUMENT.createComment(`w/${description}`);
+    const anchor = DOCUMENT.createComment(description);
     return anchor;
 }
 
@@ -722,16 +725,6 @@ function applyAttributeChangeToWElement(
     prevValue: unknown | null,
 ): void {
     switch (optionsKey) {
-        case 'id': {
-            assert(typeof newValue === 'string');
-            node.id = newValue;
-            break;
-        }
-        case 'title': {
-            assert(typeof newValue === 'string');
-            node.title = newValue;
-            break;
-        }
         case 'class': {
             assert(
                 Array.isArray(newValue) ||
@@ -739,7 +732,7 @@ function applyAttributeChangeToWElement(
                     typeof newValue === 'string',
             );
             applyWClassValueToDom(node, newValue as WClassValue);
-            break;
+            return;
         }
         case 'style': {
             assert(typeof newValue === 'object');
@@ -748,18 +741,30 @@ function applyAttributeChangeToWElement(
                 newValue as WCssStyleConfig,
                 prevValue as WCssStyleConfig | null,
             );
-            break;
-        }
-        case 'onclick': {
-            if (newValue !== prevValue && prevValue != null) {
-                node.removeEventListener('click', prevValue as EventListener);
-            }
-            if (newValue) {
-                assert(typeof newValue === 'function');
-                node.addEventListener('click', newValue as EventListener);
-            }
+            return;
         }
     }
+    if (
+        typeof newValue === 'string' ||
+        typeof newValue === 'number' ||
+        typeof newValue === 'boolean'
+    ) {
+        node.setAttribute(optionsKey, String(newValue));
+        return;
+    }
+    if (optionsKey.startsWith('on') && optionsKey.length > 2) {
+        const eventName = optionsKey.substring(2).toLowerCase();
+        if (newValue !== prevValue && prevValue != null) {
+            assert(typeof prevValue === 'function');
+            node.removeEventListener(eventName, prevValue as EventListener);
+        }
+        if (newValue) {
+            assert(typeof newValue === 'function');
+            node.addEventListener(eventName, newValue as EventListener);
+        }
+        return;
+    }
+    logger.error('Unsupported WElement attribute key/value: %s=%o', optionsKey, newValue);
 }
 
 function applyWClassValueToDom(element: WDomElement, newClass: WClassValue): void {
@@ -805,7 +810,12 @@ function applyWStyleValueToDom(
     for (const pair of Object.entries(newStyle)) {
         const key = pair[0] as keyof WCssStyleConfig;
         const value = pair[1] as CSSStyleDeclaration[typeof key];
-        element.style.setProperty(key, value); // css variables
+        if (key?.startsWith('--')) {
+            element.style.setProperty(key, value); // css variables
+        } else {
+            // NOTE: Non-variables should be set this way because 'setProperty' uses kebab-case.
+            element.style[key] = value;
+        }
     }
 }
 

@@ -1,7 +1,7 @@
 import childProcess from 'child_process';
 import path from 'path';
 import {defineConfig} from 'vite';
-import pkg from '../package.json' assert {type: 'json'};
+import pkg from '../package.json' with {type: 'json'};
 
 const commitHash = childProcess.execSync('git rev-parse --short HEAD').toString().trim();
 
