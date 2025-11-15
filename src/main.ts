@@ -24,8 +24,8 @@ import {loadAllSounds, resumeAllSounds, setAllSoundsVolume, suspendAllSounds} fr
 import {
     checkGameCompletion,
     GameState,
+    GameStatus,
     initGame,
-    isDead,
     isPlaying,
     newGameState,
     resetGameAfterTick,
@@ -94,6 +94,7 @@ function runGame(
     setURLSeed(random.seed);
     let lastTimestamp = performance.now();
     initGame(state);
+    const simulationStates = GameStatus.PLAYING | GameStatus.FINISHED;
     const animationCallback = (): void => {
         const now = performance.now();
         const dt = Duration.between(lastTimestamp, now);
@@ -117,7 +118,10 @@ function runGame(
             processInput(inputState, renderer, state, menu, devUI);
             maybeRecordGameInput(state, dt, inputState.game);
 
-            if (isPlaying(state) || isDead(state) || state.debugUpdateTickTriggered) {
+            if (
+                simulationStates & state.status ||
+                (state.status === GameStatus.PAUSED && state.debugUpdateTickTriggered)
+            ) {
                 // NOTE: Showing enemies moving even when it's game-over to kind of troll the player "they continue living while you are dead".
                 simulateEntities(dt, state, state.playerCamera);
                 checkGameCompletion(state); // pushes events

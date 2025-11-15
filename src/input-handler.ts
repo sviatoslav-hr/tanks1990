@@ -208,9 +208,9 @@ export function processInput(
 ) {
     if (isPlaying(state)) {
         changePlayerDirection(state.player, input.game.playerDirection ?? null);
-    }
-    if (input.game.playerShooting) {
-        tryTriggerTankShooting(state.player, state);
+        if (input.game.playerShooting) {
+            tryTriggerTankShooting(state.player, state);
+        }
     }
 
     if (input.extra.toggleFullscreen) {

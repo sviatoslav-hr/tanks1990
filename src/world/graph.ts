@@ -36,7 +36,15 @@ export function generateWorldGraph(options: WorldGraphOptions): WorldGraph {
     const {depth, finalNodesCount} = options;
 
     const startNode: WorldNode = {x: 0, y: 0, depth: 1, connectedNodes: {}};
+    const graph: WorldGraph = {
+        startNode,
+        finalNodes: [],
+        depth: depth,
+        isFullyVisible: true,
+        debugPaths: [],
+    };
     const finalNodes = createWorldFinalNodes(startNode, depth, finalNodesCount);
+    if (finalNodes.length === 0) return graph;
     const ctx = new WorldGraphContext(depth, startNode, finalNodes);
     ctx.positionRooms.set(getPositionKey(startNode), startNode);
     for (const finalNode of finalNodes) {
@@ -49,28 +57,48 @@ export function generateWorldGraph(options: WorldGraphOptions): WorldGraph {
         const prevNodes = getPrevDepthWorldNodes(finalNode);
         assert(prevNodes.length > 0, `Final node ${getWorldNodeKey(finalNode)} has no valid paths`);
     }
-    const graph: WorldGraph = {
-        startNode,
-        finalNodes,
-        depth: depth,
-        isFullyVisible: true,
-        debugPaths: [],
-    };
     graph.debugPaths = collectAllPaths(graph);
     return graph;
 }
 
 function createWorldFinalNodes(startNode: WorldNode, depth: number, count: number): WorldNode[] {
-    assert(depth >= 4);
-    let finalRoomDistance = Math.max(1, Math.floor(depth / 3));
-    // NOTE: If depth is even, distance to final must be even too, for path to be valid.
-    //       And vice versa for odd depths.
-    if (depth % 2 === 0 && finalRoomDistance % 2 === 0) {
-        finalRoomDistance++;
-    } else if (depth % 2 === 1 && finalRoomDistance % 2 === 1) {
-        finalRoomDistance++;
+    assert(depth >= 1, 'Depth must be at least 1');
+    let points: [number, number][];
+    switch (depth) {
+        case 1:
+            return [];
+        case 2:
+            points = [
+                [0, -1],
+                [1, 0],
+                [0, 1],
+                [-1, 0],
+            ];
+            points = random.shuffle(points).slice(0, count);
+            break;
+
+        case 3:
+            points = [
+                [1, -1],
+                [1, 1],
+                [-1, 1],
+                [-1, -1],
+            ];
+            points = random.shuffle(points).slice(0, count);
+            break;
+
+        default: {
+            let finalRoomDistance = Math.max(1, Math.floor(depth / 3));
+            // NOTE: If depth is even, distance to final must be even too, for path to be valid.
+            //       And vice versa for odd depths.
+            if (depth % 2 === 0 && finalRoomDistance % 2 === 0) {
+                finalRoomDistance++;
+            } else if (depth % 2 === 1 && finalRoomDistance % 2 === 1) {
+                finalRoomDistance++;
+            }
+            points = getNCirclePoints(startNode.x, startNode.y, count, finalRoomDistance);
+        }
     }
-    const points = getNCirclePoints(startNode.x, startNode.y, count, finalRoomDistance);
     const finalNodes: WorldNode[] = points.map((point) => ({
         x: point[0],
         y: point[1],
@@ -79,6 +107,7 @@ function createWorldFinalNodes(startNode: WorldNode, depth: number, count: numbe
     }));
     return finalNodes;
 }
+
 function getNCirclePoints(
     cx: number,
     cy: number,
@@ -112,7 +141,7 @@ function findWorldRoomPaths(ctx: WorldGraphContext, sourceRoom: WorldNode): bool
     const finalNodes = ctx.finalNodes;
     const sourceDirections = random.shuffle(ALL_DIRECTIONS.slice());
     // const sourceDirections = ALL_DIRECTIONS;
-    for (const directionFromSource of sourceDirections) {
+    outer: for (const directionFromSource of sourceDirections) {
         const nextRoom: WorldNode = {
             x: sourceRoom.x,
             y: sourceRoom.y,
@@ -130,6 +159,13 @@ function findWorldRoomPaths(ctx: WorldGraphContext, sourceRoom: WorldNode): bool
         let reachableFinalCount = finalNodes.length;
         for (const final of finalNodes) {
             if (v2Equals(nextRoom, final)) {
+                // NOTE: This code path can only execute when depth=2 (during testing)
+                if (nextRoom.depth === final.depth) {
+                    sourceRoom.connectedNodes[directionFromSource] = final;
+                    final.connectedNodes[directionToSource] = sourceRoom;
+                    hasAnyPathToFinal = true;
+                    continue outer;
+                }
                 reachableFinalCount = 0;
                 break;
             }
@@ -139,7 +175,6 @@ function findWorldRoomPaths(ctx: WorldGraphContext, sourceRoom: WorldNode): bool
             //       So, if that's true for every final room, the path is invalid.
             const manhattan = v2ManhattanDistance(nextRoom, final);
             const dDepth = final.depth - nextRoom.depth;
-            assert(dDepth > 0);
             if (manhattan > dDepth) {
                 reachableFinalCount--;
             }

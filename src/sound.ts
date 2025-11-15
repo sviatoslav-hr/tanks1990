@@ -34,14 +34,15 @@ export interface SoundContext {
 }
 
 export function newSoundContext(storage: GameStorage): SoundContext {
+    const initiallyMuted = storage.getBool(GAME_MUTED_KEY) ?? false;
     const context: SoundContext = {
         volume: 1,
-        muted: storage.getBool(GAME_MUTED_KEY) ?? false,
+        muted: false,
         mutePromise: null,
         storage,
         // TODO: This should be created only after user made any action on the page.
         audio: new AudioContext(),
-        initiallyMuted: storage.getBool(GAME_MUTED_KEY) ?? false,
+        initiallyMuted: initiallyMuted,
         soundsCache: new Map<SoundName, Sound[]>(),
     };
     if (context.initiallyMuted) {

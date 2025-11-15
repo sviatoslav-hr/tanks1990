@@ -3,10 +3,10 @@
 ## DOING
 
 ## NEXT TODO
+- [ ] Add Music for completion of the game
 - [ ] Add animation/SFX to room door opening to hint player that's where he needs to go next
 
 ## SHOULD BE FIXED
-- [ ] Player controls are active after game completion (should be disabled)
 - [ ] **Movement improvement!** (Choose one approach)
     a. Change movement to move only by fractions of cells (e.g. 1/16 of a cell)
         This will be easier to pathfind. And also will *may* the UX by fixing the issue with the player being able to pass through blocks.

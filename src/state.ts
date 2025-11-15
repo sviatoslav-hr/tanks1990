@@ -1,6 +1,7 @@
 import {Boom, ParticleExplosion} from '#/effect';
 import {PlayerTank, Tank} from '#/entity';
 import {Projectile} from '#/entity/projectile';
+import {changePlayerDirection} from '#/entity/tank/simulation';
 import {EventQueue} from '#/events';
 import {
     activateRecording,
@@ -12,15 +13,15 @@ import {Camera} from '#/renderer/camera';
 import {initEntities, setupMainBackgroundScene} from '#/simulation';
 import {newSoundContext, SoundContext, stopSound, type Sound} from '#/sound';
 import {GameStorage} from '#/storage';
+import {MAX_ROOMS_COUNT} from '#/world/generation';
 import {isRoomCompleted, type Room} from '#/world/room';
 import {newWorld, World} from '#/world/world';
-import {MAX_ROOMS_COUNT} from './world/generation';
 
 export enum GameStatus {
-    INITIAL,
-    PLAYING,
-    PAUSED,
-    DEAD,
+    INITIAL = 0x1,
+    PLAYING = 0x2,
+    PAUSED = 0x4,
+    FINISHED = 0x8,
 }
 
 // TODO: I'm not sure what this class is really for.
@@ -134,7 +135,9 @@ export function resumeGame(state: GameState): void {
 }
 
 export function completeGame(state: GameState): void {
+    state.status = GameStatus.FINISHED;
     state.player.completedGame = true;
+    changePlayerDirection(state.player, null);
     if (state.recording.active) {
         stopRecording(state.recording, true);
     }
@@ -152,7 +155,7 @@ export function markGameDead(state: GameState): void {
     if (state.recording.playing) {
         state.recording.playing = false;
     }
-    state.status = GameStatus.DEAD;
+    state.status = GameStatus.FINISHED;
 }
 
 export function isPlaying(state: GameState): boolean {
@@ -161,10 +164,6 @@ export function isPlaying(state: GameState): boolean {
 
 export function isPaused(state: GameState): boolean {
     return state.status === GameStatus.PAUSED;
-}
-
-export function isDead(state: GameState): boolean {
-    return state.status === GameStatus.DEAD;
 }
 
 export function resetGameAfterTick(state: GameState): void {

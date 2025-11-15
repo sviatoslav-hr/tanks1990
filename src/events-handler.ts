@@ -72,7 +72,7 @@ export function handleGameEvents(state: GameState, menu: MenuBridge): void {
                 notify('Congratulation!', {timeoutMs});
                 notify(`Completed in ${state.player.survivedFor.toHumanString()}`, {timeoutMs});
                 setTimeout(() => {
-                    // TODO: Why this is inside a setTimeout?
+                    // NOTE: Delay showing the menu to not break the immersion immediately.
                     menu.view.set('completed');
                 }, timeoutMs);
                 continue;
