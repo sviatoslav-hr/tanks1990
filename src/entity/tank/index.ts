@@ -45,7 +45,7 @@ export abstract class Tank extends Entity {
     shieldTimer = Duration.zero();
     shootingDelay = Duration.milliseconds(0);
     prevHealth = 0;
-    healthAnimation = new Animation(Duration.milliseconds(300), easeOut).end();
+    healthAnimation = new Animation(Duration.milliseconds(500), easeOut).end();
 
     readonly shieldBoundary: Rect = {
         x: this.x - this.width / 2,

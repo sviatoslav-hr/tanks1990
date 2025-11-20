@@ -134,6 +134,7 @@ export function damageTank(tank: Tank, damage: number, state: GameState): boolea
     // TODO: If the animation is still active, it should not just reset,
     //       but instead make a smooth transition. Otherwise there might be cases when health
     //       goes down and then up and then down again, which is a visual bug.
+    //       #SmoothHealthAnimation
     tank.healthAnimation.reset();
     tank.dead = tank.health <= 0;
     if (tank.dead) {
@@ -154,6 +155,8 @@ export function restoreTankHealth(tank: Tank, amount: number): boolean {
     assert(tank.needsHealing);
     tank.prevHealth = tank.health;
     tank.health = Math.min(tank.schema.maxHealth, tank.health + amount);
+    // TODO: Look #SmoothHealthAnimation
+    tank.healthAnimation.reset();
     return true;
 }
 

@@ -75,8 +75,7 @@ function drawTankHealthBarAbove(renderer: Renderer, tank: Tank) {
     }
 }
 
-function drawPlayerHealthBar(renderer: Renderer, player: Tank): void {
-    assert(isPlayerTank(player));
+function drawPlayerHealthBar(renderer: Renderer, player: PlayerTank): void {
     // TODO: Refactor these draw methods to be more flexible and configurable.
     renderer.useCameraCoords(true);
     renderer.setGlobalAlpha(0.6);
@@ -89,22 +88,26 @@ function drawPlayerHealthBar(renderer: Renderer, player: Tank): void {
     );
     const barY = (renderer.canvas.height - barHeight) / 2;
     const barX = paddingX;
-    let hpFraction = player.health / player.schema.maxHealth || 0;
+
+    const fromHealth = player.prevHealth;
+    const toHealth = player.health;
+    let animatedHpFraction = toHealth / player.schema.maxHealth || 0;
     if (!player.healthAnimation.finished) {
-        const healthLostFraction =
-            Math.abs(player.health - player.prevHealth) / player.schema.maxHealth;
-        hpFraction += (1 - player.healthAnimation.progress) * healthLostFraction;
+        const healthDiff = toHealth - fromHealth;
+        const animatedHealth = fromHealth + healthDiff * player.healthAnimation.progress;
+        animatedHpFraction = animatedHealth / player.schema.maxHealth || 0;
     }
+
     {
-        const redBarHeight = barHeight * (1 - hpFraction);
+        const bgBarHeight = barHeight * (1 - animatedHpFraction);
         renderer.setFillColor(Color.GREEN_DARKEST);
-        renderer.fillRect(barX, barY, barWidth, redBarHeight);
+        renderer.fillRect(barX, barY, barWidth, bgBarHeight);
     }
-    if (hpFraction > 0) {
+    if (animatedHpFraction > 0) {
         renderer.setFillColor(Color.GREEN);
-        const greenBarHeight = barHeight * hpFraction;
-        const greenBarY = barY + barHeight - greenBarHeight;
-        renderer.fillRect(barX, greenBarY, barWidth, greenBarHeight);
+        const hpBarHeight = barHeight * animatedHpFraction;
+        const greenBarY = barY + barHeight - hpBarHeight;
+        renderer.fillRect(barX, greenBarY, barWidth, hpBarHeight);
     }
     renderer.setGlobalAlpha(1);
     renderer.setStrokeColor(Color.GREEN);

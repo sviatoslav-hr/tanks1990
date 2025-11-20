@@ -5,6 +5,7 @@
 ## NEXT TODO
 - [ ] Add Music for completion of the game
 - [ ] Add animation/SFX to room door opening to hint player that's where he needs to go next
+- [ ] Figure out better level progression (enemies and upgrades)
 
 ## SHOULD BE FIXED
 - [ ] **Movement improvement!** (Choose one approach)
