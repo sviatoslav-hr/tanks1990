@@ -44,6 +44,7 @@ export function generateWorldGraph(options: WorldGraphOptions): WorldGraph {
         debugPaths: [],
     };
     const finalNodes = createWorldFinalNodes(startNode, depth, finalNodesCount);
+    graph.finalNodes = finalNodes;
     if (finalNodes.length === 0) return graph;
     const ctx = new WorldGraphContext(depth, startNode, finalNodes);
     ctx.positionRooms.set(getPositionKey(startNode), startNode);
