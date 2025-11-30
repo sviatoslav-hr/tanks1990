@@ -1,4 +1,4 @@
-import {effect} from '#/signals';
+import {effect, type EffectDestroyFn, signal, Signal} from '#/signals';
 
 // Q: Should components have scoped css or screw it?
 
@@ -82,7 +82,10 @@ type WComponentCreateFn<TProps, TChildren extends unknown[]> = (
 export interface WComponentNode {
     type: 'component';
     constructor: WComponentCreateFn<any, any>;
-    render: (w: WContext) => ReturnType<WComponentRenderFn<any, any>>;
+    render: WComponentRenderFn<any, any>;
+    propsSignal: Signal<any>;
+    slotChildren: unknown[];
+    effectDestroys: (EffectDestroyFn | null)[];
     /** Anchor node is created right before mounting the component to the DOM, not during initialization */
     anchor: WDomChildNode | null;
     children: (WAnyNode | null)[];
@@ -130,10 +133,14 @@ export function wComponent<TProps = void, TChildren extends unknown[] = never[]>
     render: WComponentRenderFn<TProps, TChildren>,
 ): WComponentCreateFn<TProps, TChildren> {
     const constructor: WComponentCreateFn<TProps, TChildren> = (props, ...slotChildren) => {
+        const propsSignal = signal(props as TProps);
         const component: WComponentNode = {
             type: 'component',
             constructor,
-            render: (w) => render(w, props, slotChildren),
+            render: render,
+            propsSignal,
+            slotChildren,
+            effectDestroys: [],
             children: [],
             anchor: null,
         };
@@ -242,30 +249,33 @@ function mountWElementChildren(
     parent.children = Array(children.length).fill(null);
     for (const [index, childOrFn] of children.entries()) {
         if (typeof childOrFn === 'function') {
-            let prevChildNode: WAnyNode | null = null;
+            let prevChild: WAnyNode | null = null;
             effect(() => {
-                const child = childOrFn();
-                const node = createWChild(child, w.dom);
-                // TODO/PERF: If it's a node of the same component, just update props instead of
-                //            destroying and recreating.
-                if (prevChildNode === node) return;
-                if (prevChildNode != null) {
-                    destroyWNode(prevChildNode, w.dom);
-                }
-                parent.children[index] = node;
-                if (node != null) {
-                    mountWNodeInsideElement(w, parent, index, node);
-                }
-                prevChildNode = node;
+                const newChildRaw = childOrFn();
+                const newChild = updateWChildAtIndex(w, parent, prevChild, newChildRaw, index);
+                prevChild = newChild;
             });
         } else {
-            const node = createWChild(childOrFn, w.dom);
-            parent.children[index] = node;
-            if (node != null) {
-                mountWNodeInsideElement(w, parent, index, node);
-            }
+            updateWChildAtIndex(w, parent, null, childOrFn, index);
         }
     }
+}
+
+function wChildChanged(node: WAnyNode | null, rawUpdate: WRawChild): boolean {
+    if (node === rawUpdate) return false;
+    if (node == null && rawUpdate == null) return false;
+    if (node == null || rawUpdate == null) return true;
+    if (isWTextLike(rawUpdate)) {
+        if (node.type !== 'text') return true;
+        if (node.value !== String(rawUpdate)) return true;
+        return false;
+    }
+    // NOTE: Assume there are node changes. In this is just an update for the same node, it should be handled accordingly.
+    return true;
+}
+
+function isSameWComponent(component: WComponentNode, updatedComponent: WComponentNode): boolean {
+    return component.constructor === updatedComponent.constructor;
 }
 
 // ------------- Collection ----------------
@@ -291,8 +301,7 @@ export function mountWComponent(w: WContext, component: WComponentNode, parent: 
     const anchor = createWComponentDomAnchor(w.dom);
     component.anchor = anchor;
     parent.append(anchor);
-    const children = toArray(component.render(w));
-    mountAllChildInputBeforeParent(w, component, children);
+    renderWComponent(w, component);
 }
 
 function mountWComponentBefore(
@@ -306,41 +315,87 @@ function mountWComponentBefore(
     const anchor = createWComponentDomAnchor(w.dom);
     component.anchor = anchor;
     before.before(anchor);
-    const children = toArray(component.render(w));
-    mountAllChildInputBeforeParent(w, component, children);
+    renderWComponent(w, component);
 }
 
-function mountAllChildInputBeforeParent(
-    w: WContext,
-    parent: WCollectionNode | WComponentNode,
-    rawChildren: WProducerFnOr<WRawChild>[],
-): void {
-    parent.children = Array(rawChildren.length).fill(null);
-    for (const [index, rawChild] of rawChildren.entries()) {
-        if (typeof rawChild === 'function') {
-            effect(() => {
-                const child = rawChild();
-                const node = createWChild(child, w.dom);
-                const prevChildNode = parent.children[index];
-                // TODO/PERF: If it's a node of the same component, just update props instead of
-                //            destroying and recreating.
-                if (prevChildNode === node) return;
-                if (prevChildNode != null) {
-                    destroyWNode(prevChildNode, w.dom);
-                }
-                if (node != null) {
-                    mountWNodeBeforeParentAtIndex(w, parent, index, node);
-                }
-                parent.children[index] = node;
-            });
-        } else {
-            const node = createWChild(rawChild, w.dom);
-            if (node != null) {
-                mountWNodeBeforeParentAtIndex(w, parent, index, node);
-            }
-            parent.children[index] = node;
+function renderWComponent(w: WContext, component: WComponentNode): void {
+    const props = component.propsSignal();
+    const rawChildren = toArray(component.render(w, props, component.slotChildren));
+
+    for (let index = rawChildren.length; index < component.children.length; index++) {
+        const destroyEffect = component.effectDestroys[index];
+        destroyEffect?.();
+        const prevChild = component.children[index];
+        if (prevChild != null) {
+            destroyWNode(prevChild, w.dom);
         }
     }
+    component.children.length = rawChildren.length;
+    component.effectDestroys.length = rawChildren.length;
+
+    for (const [index, rawChildOrFn] of rawChildren.entries()) {
+        const destroyPrevEffect = component.effectDestroys[index];
+        destroyPrevEffect?.();
+        if (typeof rawChildOrFn === 'function') {
+            let prevChild = component.children[index] ?? null;
+            const destroyEffect = effect(() => {
+                const newChildRaw = rawChildOrFn();
+                prevChild = updateWChildAtIndex(w, component, prevChild, newChildRaw, index);
+            });
+            component.effectDestroys[index] = destroyEffect;
+        } else {
+            const prevChild = component.children[index] ?? null;
+            const newChild = updateWChildAtIndex(w, component, prevChild, rawChildOrFn, index);
+            component.children[index] = newChild;
+            component.effectDestroys[index] = null;
+        }
+    }
+}
+
+function updateWChildAtIndex(
+    w: WContext,
+    parent: WElementNode | WCollectionNode | WComponentNode,
+    prevChild: WAnyNode | null,
+    newChildRaw: WRawChild,
+    index: number,
+): WAnyNode | null {
+    if (!wChildChanged(prevChild, newChildRaw)) return prevChild;
+    if (
+        isComponentNode(prevChild) &&
+        isComponentNode(newChildRaw) &&
+        isSameWComponent(prevChild, newChildRaw)
+    ) {
+        updateWComponent(w, prevChild, newChildRaw);
+        parent.children[index] = prevChild;
+        return prevChild;
+    }
+    // TODO/PERF: Handle changes to the same element node.
+    // TODO/PERF: Handle changes to the same element collection node?
+    //            (Not sure how that would work though, same source array maybe?)
+    const newChild = createWChild(newChildRaw, w.dom);
+    if (prevChild != null) {
+        destroyWNode(prevChild, w.dom);
+    }
+    parent.children[index] = newChild;
+    if (newChild != null) {
+        switch (parent.type) {
+            case 'element':
+                mountWNodeInsideElement(w, parent, index, newChild);
+                break;
+            case 'collection':
+            case 'component':
+                mountWNodeBeforeParentAtIndex(w, parent, index, newChild);
+                break;
+        }
+    }
+    return newChild;
+}
+
+function updateWComponent(w: WContext, target: WComponentNode, source: WComponentNode): void {
+    target.slotChildren = source.slotChildren;
+    const nextProps = source.propsSignal();
+    target.propsSignal.set(nextProps);
+    renderWComponent(w, target);
 }
 
 function mountWCollection(w: WContext, collection: WCollectionNode, parent: WDomElement): void {
@@ -384,12 +439,9 @@ function mountWCollectionItems(w: WContext, collection: WCollectionNode): void {
         }
         for (const added of addedItems) {
             // TODO: Add support for children to be produced via function for reactivity per child.
-            const nodeInput = collection.render(added.item, added.index);
-            const node = createWChild(nodeInput, w.dom);
-            if (node != null) {
-                mountWNodeBeforeParentAtIndex(w, collection, added.index, node);
-            }
-            collection.children[added.index] = node;
+            const rawNode = collection.render(added.item, added.index);
+            const prevChild = collection.children[added.index] ?? null;
+            updateWChildAtIndex(w, collection, prevChild, rawNode, added.index);
         }
     });
 }
@@ -661,6 +713,12 @@ function createWChild(childInput: WRawChild, input: WDom): WAnyNode | null {
     }
 }
 
+function isComponentNode(value: unknown): value is WComponentNode {
+    return Boolean(
+        value && typeof value === 'object' && (value as WComponentNode).type === 'component',
+    );
+}
+
 function destroyWNode(node: WAnyNode, dom: WDom): void {
     switch (node.type) {
         case 'text': {
@@ -674,6 +732,7 @@ function destroyWNode(node: WAnyNode, dom: WDom): void {
             break;
         }
         case 'component': {
+            cleanupWComponentEffects(node);
             for (const child of node.children) {
                 if (child == null) continue;
                 destroyWNode(child, dom);
@@ -692,6 +751,14 @@ function destroyWNode(node: WAnyNode, dom: WDom): void {
             break;
         }
     }
+}
+
+function cleanupWComponentEffects(component: WComponentNode): void {
+    if (!component.effectDestroys?.length) return;
+    for (const cleanup of component.effectDestroys) {
+        cleanup?.();
+    }
+    component.effectDestroys.length = 0;
 }
 
 function handleWElementAttributes(node: WDomElement, attributes: Record<string, unknown>): void {

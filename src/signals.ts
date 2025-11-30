@@ -13,12 +13,12 @@ type SignalUpdater<T> = (value: T) => T;
 export type ComputedSignalFn<T> = () => T;
 
 type EffectFn = () => void;
+export type EffectDestroyFn = () => void;
 
 interface SignalEffect {
     fn: EffectFn;
     destroyed: boolean;
     childEffects: Set<SignalEffect>;
-    signals: Set<ReadableSignal<unknown>>;
 }
 
 const SIGNAL_BRAND = Symbol('Signal');
@@ -91,16 +91,25 @@ export function isReadableSignal<T>(value: unknown): value is ReadableSignal<T> 
     return Object.hasOwn(value, SIGNAL_BRAND);
 }
 
-export function effect(fn: EffectFn): void {
-    const e: SignalEffect = {fn, destroyed: false, childEffects: new Set(), signals: new Set()};
-    currentEffect?.childEffects.add(e);
-    runEffect(e);
+export function effect(fn: EffectFn): EffectDestroyFn {
+    const effect: SignalEffect = {
+        fn,
+        destroyed: false,
+        childEffects: new Set(),
+    };
+    currentEffect?.childEffects.add(effect);
+    runEffect(effect);
+    return () => {
+        if (effect.destroyed) return;
+        effect.destroyed = true;
+        clearEffectDeps(effect);
+    };
 }
 
 let currentEffect: SignalEffect | null = null;
 
 function runEffect(e: SignalEffect): void {
-    assert(!e.destroyed);
+    if (e.destroyed) return;
     const prevEffect = currentEffect;
     currentEffect = e;
     clearEffectDeps(e);

@@ -77,7 +77,7 @@ describe('wlib', () => {
                 expect(textSpan?.children.length).toBe(1);
                 expect(textSpan?.children[0] instanceof MockTextNode).toBe(true);
                 const textNode = textSpan?.children[0] as MockTextNode;
-                expect(textNode.data).toBe('Value is 5');
+                expect(textNode.textContent).toBe('Value is 5');
             }
 
             const buttons = findAllElements(document, (el) => el.tagName === 'button');
@@ -91,7 +91,7 @@ describe('wlib', () => {
                 const getResultText = () => {
                     const text = textSpan?.children[0];
                     assert(text instanceof MockTextNode, 'textSpan child should be a MockTextNode');
-                    return text.data;
+                    return text.textContent;
                 };
                 buttons[0]?.triggerEvent('click');
                 expect(getResultText()).toBe('Value is 6');
@@ -104,6 +104,41 @@ describe('wlib', () => {
                 buttons[1]?.triggerEvent('click');
                 expect(getResultText()).toBe('Value is 4');
             }
+        });
+    });
+
+    describe('component updates', () => {
+        const Message = wComponent<{value: string}>((_w, props) => {
+            return () => `Message: ${props.value}`;
+        });
+
+        const Container = wComponent<{value: Signal<string>}>((w, props) => {
+            return w.div({}, () => Message({value: props.value()}));
+        });
+
+        it('should update component props without remounting', () => {
+            const value = signal('first');
+            const wrapper = Container({value});
+
+            mountWComponent(mock.ctx, wrapper, document.body);
+
+            const rootElement = wrapper.children[0];
+            assert(rootElement?.type === 'element', 'Wrapper should render a root element');
+            const messageComponent = rootElement.children[0];
+            assert(messageComponent?.type === 'component', 'Message component should be mounted');
+            const anchorBefore = messageComponent.anchor;
+
+            const textBefore = findTextNode(document);
+            expect(textBefore?.textContent).toBe('Message: first');
+
+            value.set('second');
+
+            const textAfter = findTextNode(document);
+            const messageAfter = rootElement.children.find((c) => c?.type === 'component');
+            assert(messageAfter?.type === 'component', 'Message component should still exist');
+            expect(messageAfter.propsSignal().value).toBe('second');
+            expect(messageAfter.anchor).toBe(anchorBefore);
+            expect(textAfter?.textContent).toBe('Message: second');
         });
     });
 
@@ -261,10 +296,8 @@ class MockNode implements WDomChildNode {
 }
 
 class MockTextNode extends MockNode {
-    data: string;
     constructor(data: string) {
         super();
-        this.data = data;
         this.textContent = data;
     }
 }
@@ -413,6 +446,17 @@ function findElement(root: MockElement, matches: (e: MockElement) => boolean): M
     return null;
 }
 
+function findTextNode(root: MockElement): MockTextNode | null {
+    for (const child of root.children) {
+        if (child instanceof MockTextNode) return child;
+        if (child instanceof MockElement) {
+            const grandChild = findTextNode(child);
+            if (grandChild) return grandChild;
+        }
+    }
+    return null;
+}
+
 printTree; // silence unused warning
 function printTree(root: MockElement, indent = 0): void {
     const indentChar = '| ';
@@ -422,7 +466,7 @@ function printTree(root: MockElement, indent = 0): void {
         if (child instanceof MockElement) {
             printTree(child, indent + 1);
         } else if (child instanceof MockTextNode) {
-            console.log(`${indentChar.repeat(indent + 1)}"${child.data}"`);
+            console.log(`${indentChar.repeat(indent + 1)}"${child.textContent}"`);
         } else if (child instanceof MockCommentNode) {
             console.log(`${indentChar.repeat(indent + 1)}<!-- ${child.data} -->`);
         }
