@@ -13,6 +13,7 @@
 - [ ] A make "Game Over" a 'dramatic' red text.
 
 ## SHOULD BE FIXED
+- [ ] Damage scaling is awful. Consider making damage pickup add a fixed amount of damage instead of being a multiplier.
 - [ ] Pickup icons are not drawn perfectly - sometimes you can see a line of the next icon.
 - [ ] Healing animation missing for 'above' hp bars.
 - [ ] **Movement improvement!** (Choose one approach)
